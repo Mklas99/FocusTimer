@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "simple-time-tracker": {
+      "commandName": "Project"
+    },
+    "Container (Dockerfile)": {
+      "commandName": "Docker"
+    }
+  }
+}

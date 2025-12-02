@@ -1,0 +1,162 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:converters="using:FocusTimer.App.Converters"
+        xmlns:vm="using:FocusTimer.App.ViewModels"
+        x:Class="FocusTimer.App.Views.TimerWidgetWindow"
+        x:DataType="vm:TimerWidgetViewModel"
+        Title="FocusTimer"
+        Width="360"
+        Height="100"
+        MinWidth="240"
+        MinHeight="50"
+        WindowStartupLocation="Manual"
+        SystemDecorations="None"
+        ShowInTaskbar="True"
+        Background="{DynamicResource WidgetBackgroundBrush}"
+        Topmost="{Binding Settings.AlwaysOnTop}"
+        Opacity="{Binding Settings.WidgetOpacity}">
+
+    <!-- Resources -->
+    <Window.Resources>
+        <converters:PlayPauseConverter x:Key="PlayPauseConverter" />
+        <converters:BooleanNegationConverter x:Key="BooleanNegationConverter" />
+        <converters:BooleanToAngleConverter x:Key="BooleanToAngleConverter" />
+    </Window.Resources>
+
+    <!-- Root layout: border provides rounded corners and padding -->
+    <Border Background="{DynamicResource WidgetBackgroundBrush}"
+            CornerRadius="{DynamicResource WidgetCornerRadius}"
+            Padding="{DynamicResource WidgetPadding}"
+            RenderTransformOrigin="0.5,0.5">
+        <Border.RenderTransform>
+            <!-- Apply widget scaling -->
+            <ScaleTransform ScaleX="{Binding Settings.WidgetScale}"
+                            ScaleY="{Binding Settings.WidgetScale}" />
+        </Border.RenderTransform>
+
+        <!-- Main grid with two rows: custom title bar and content -->
+        <Grid RowDefinitions="Auto,*">
+            <!-- Title Bar for dragging and minimize -->
+            <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Height="16">
+                <!-- Drag area fills available space -->
+                <Border Grid.Column="0"
+                        Background="Transparent"
+                        PointerPressed="WindowDragArea_PointerPressed" />
+                <!-- Minimize button -->
+                <Button Grid.Column="1"
+                        Background="Transparent"
+                        BorderBrush="Transparent"
+                        Padding="0"
+                        Margin="0"
+                        Width="16"
+                        Height="16"
+                        Click="MinimizeButton_Click"
+                        ToolTip.Tip="Minimize">
+                    <TextBlock Text="―"
+                               Foreground="{DynamicResource WidgetSecondaryForegroundBrush}"
+                               FontSize="12"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center" />
+                </Button>
+            </Grid>
+
+            <!-- Content area: switch between full and compact modes -->
+            <Grid Grid.Row="1">
+                <!-- Full mode view -->
+                <Grid IsVisible="{Binding Settings.UseCompactMode, Converter={StaticResource BooleanNegationConverter}}"
+                      RowDefinitions="Auto,Auto"
+                      ColumnDefinitions="Auto">
+                    <!-- Row 0: main controls -->
+                    <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto,Auto,Auto,Auto"
+                          VerticalAlignment="Center"
+                          ColumnSpacing="6">
+                        <!-- Timer -->
+                        <TextBlock Grid.Column="0"
+                                   Text="{Binding ElapsedFormatted}"
+                                   Style="{StaticResource TimerTextBlockStyle}" />
+
+                        <!-- Project Tag toggle + input; we show placeholder if collapsed -->
+                        <StackPanel Grid.Column="1"
+                                    Orientation="Horizontal"
+                                    VerticalAlignment="Center"
+                                    Spacing="4">
+                            <!-- Project Tag TextBox -->
+                            <TextBox Style="{StaticResource ProjectTagTextBoxStyle}"
+                                     Text="{Binding ProjectTag}" 
+                                     Watermark="Project"
+                                     MinWidth="120"
+                                     IsVisible="{Binding IsProjectInputVisible}" />
+                        </StackPanel>
+
+                        <!-- Play/Pause Button -->
+                        <Button Grid.Column="2"
+                                Command="{Binding ToggleCommand}"
+                                Style="{StaticResource IconButtonStyle}"
+                                ToolTip.Tip="Start/Pause">
+                            <TextBlock Text="{Binding IsRunning, Converter={StaticResource PlayPauseConverter}}"
+                                       FontSize="16"
+                                       Foreground="{DynamicResource WidgetForegroundBrush}" />
+                        </Button>
+
+                        <!-- Reset Button -->
+                        <Button Grid.Column="3"
+                                Command="{Binding ResetCommand}"
+                                Style="{StaticResource IconButtonStyle}"
+                                ToolTip.Tip="Reset">
+                            <TextBlock Text="⟲"
+                                       FontSize="16"
+                                       Foreground="{DynamicResource WidgetForegroundBrush}" />
+                        </Button>
+
+                        <!-- Project Input Toggle Button -->
+                        <Button Grid.Column="4"
+                                Command="{Binding ToggleProjectInputCommand}"
+                                Style="{StaticResource IconButtonStyle}"
+                                ToolTip.Tip="Project Tag">
+                            <!-- Use a chevron that rotates when visible -->
+                            <Path Width="12" Height="12" Stroke="{DynamicResource WidgetForegroundBrush}" StrokeThickness="2"
+                                  Data="M 0 0 L 6 6 L 12 0" RenderTransformOrigin="0.5,0.5">
+                                <Path.RenderTransform>
+                                    <RotateTransform Angle="{Binding IsProjectInputVisible, Converter={StaticResource BooleanToAngleConverter}}" />
+                                </Path.RenderTransform>
+                            </Path>
+                        </Button>
+
+                        <!-- Compact Mode Toggle Button -->
+                        <Button Grid.Column="5"
+                                Command="{Binding ToggleCompactModeCommand}"
+                                Style="{StaticResource IconButtonStyle}"
+                                ToolTip.Tip="Toggle Compact Mode">
+                            <TextBlock Text="☰"
+                                       FontSize="16"
+                                       Foreground="{DynamicResource WidgetForegroundBrush}" />
+                        </Button>
+                    </Grid>
+
+                    <!-- Row 1: project label & box (duplicate of above for alignment) -->
+                    <Grid Grid.Row="1" ColumnDefinitions="Auto,*,Auto" Margin="0,6,0,0" IsVisible="{Binding IsProjectInputVisible}">
+                        <TextBlock Grid.Column="0" Text="Project:" FontSize="14" Foreground="{DynamicResource WidgetSecondaryForegroundBrush}" VerticalAlignment="Center" />
+                        <TextBox Grid.Column="1" Style="{StaticResource ProjectTagTextBoxStyle}" Text="{Binding ProjectTag}" Watermark="optional" />
+                    </Grid>
+                </Grid>
+
+                <!-- Compact mode view -->
+                <Grid IsVisible="{Binding Settings.UseCompactMode}"
+                      ColumnDefinitions="Auto,Auto,Auto"
+                      VerticalAlignment="Center"
+                      ColumnSpacing="6">
+                    <!-- Timer small text -->
+                    <TextBlock Grid.Column="0" Text="{Binding ElapsedFormatted}" Style="{StaticResource TimerTextBlockStyle}" FontSize="28" />
+                    <!-- Play/Pause button -->
+                    <Button Grid.Column="1" Command="{Binding ToggleCommand}" Style="{StaticResource IconButtonStyle}" ToolTip.Tip="Start/Pause">
+                        <TextBlock Text="{Binding IsRunning, Converter={StaticResource PlayPauseConverter}}" FontSize="16" Foreground="{DynamicResource WidgetForegroundBrush}" />
+                    </Button>
+                    <!-- Expand to full mode button -->
+                    <Button Grid.Column="2" Command="{Binding ToggleCompactModeCommand}" Style="{StaticResource IconButtonStyle}" ToolTip.Tip="Expand">
+                        <TextBlock Text="☷" FontSize="16" Foreground="{DynamicResource WidgetForegroundBrush}" />
+                    </Button>
+                </Grid>
+            </Grid>
+        </Grid>
+    </Border>
+</Window>

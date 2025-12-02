@@ -1,0 +1,33 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="FocusTimer.App.App"
+             RequestedThemeVariant="Default">
+    <Application.Styles>
+        <FluentTheme />
+        <!-- Import the custom FocusTimer theme -->
+        <StyleInclude Source="avares://FocusTimer.App/Styles/FocusTimerTheme.axaml" />
+    </Application.Styles>
+
+    <!-- System Tray Icon -->
+    <TrayIcon.Icons>
+        <TrayIcons>
+            <TrayIcon ToolTipText="FocusTimer"
+                      Clicked="TrayIcon_Clicked">
+                <TrayIcon.Menu>
+                    <NativeMenu>
+                        <NativeMenuItem Header="Show/Hide Timer"
+                                        Click="TrayMenu_ShowHide" />
+                        <NativeMenuItem Header="Start/Pause Timer"
+                                        Click="TrayMenu_ToggleTimer" />
+                        <NativeMenuItemSeparator />
+                        <NativeMenuItem Header="Settings..."
+                                        Click="TrayMenu_Settings" />
+                        <NativeMenuItemSeparator />
+                        <NativeMenuItem Header="Exit"
+                                        Click="TrayMenu_Exit" />
+                    </NativeMenu>
+                </TrayIcon.Menu>
+            </TrayIcon>
+        </TrayIcons>
+    </TrayIcon.Icons>
+</Application>
