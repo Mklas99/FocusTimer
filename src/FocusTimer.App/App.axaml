@@ -1,8 +1,10 @@
 <Application xmlns="https://github.com/avaloniaui"
+             xmlns:materialIcons="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="FocusTimer.App.App"
              RequestedThemeVariant="Default">
     <Application.Styles>
+        <materialIcons:MaterialIconStyles />
         <FluentTheme />
         <!-- Import the custom FocusTimer theme -->
         <StyleInclude Source="avares://FocusTimer.App/Styles/FocusTimerTheme.axaml" />

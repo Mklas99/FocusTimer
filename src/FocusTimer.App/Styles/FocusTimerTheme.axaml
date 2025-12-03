@@ -1,68 +1,60 @@
-<ResourceDictionary
-    xmlns="https://github.com/avaloniaui"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <!--
-      This resource dictionary defines a simple, modern visual language for FocusTimer.
-      Colors are intentionally neutral with a single accent hue. Brushes and styles
-      are separated so they can be reused throughout the application. Adjust the
-      color values here to tune the overall look and feel.
+      This style set defines a simple, modern visual language for FocusTimer.
+      Colors are intentionally neutral with a single accent hue. Brushes and
+      styles are separated so they can be reused throughout the application.
     -->
 
-    <!-- Base colors -->
-    <Color x:Key="WidgetBackgroundColor">#2D2D30</Color>
-    <Color x:Key="WidgetForegroundColor">#F5F5F5</Color>
-    <Color x:Key="WidgetSecondaryForegroundColor">#CCCCCC</Color>
-    <Color x:Key="AccentColor">#0078D7</Color>
-    <Color x:Key="DangerColor">#D9534F</Color>
+    <Styles.Resources>
+        <!-- Base colors -->
+        <Color x:Key="WidgetBackgroundColor">#2D2D30</Color>
+        <Color x:Key="WidgetForegroundColor">#F5F5F5</Color>
+        <Color x:Key="WidgetSecondaryForegroundColor">#CCCCCC</Color>
+        <Color x:Key="AccentColor">#0078D7</Color>
+        <Color x:Key="DangerColor">#D9534F</Color>
 
-    <!-- Brushes derived from base colors -->
-    <SolidColorBrush x:Key="WidgetBackgroundBrush" Color="{DynamicResource WidgetBackgroundColor}"/>
-    <SolidColorBrush x:Key="WidgetForegroundBrush" Color="{DynamicResource WidgetForegroundColor}"/>
-    <SolidColorBrush x:Key="WidgetSecondaryForegroundBrush" Color="{DynamicResource WidgetSecondaryForegroundColor}"/>
-    <SolidColorBrush x:Key="AccentBrush" Color="{DynamicResource AccentColor}"/>
-    <SolidColorBrush x:Key="DangerBrush" Color="{DynamicResource DangerColor}"/>
+        <!-- Brushes derived from base colors -->
+        <SolidColorBrush x:Key="WidgetBackgroundBrush" Color="{DynamicResource WidgetBackgroundColor}"/>
+        <SolidColorBrush x:Key="WidgetForegroundBrush" Color="{DynamicResource WidgetForegroundColor}"/>
+        <SolidColorBrush x:Key="WidgetSecondaryForegroundBrush" Color="{DynamicResource WidgetSecondaryForegroundColor}"/>
+        <SolidColorBrush x:Key="AccentBrush" Color="{DynamicResource AccentColor}"/>
+        <SolidColorBrush x:Key="DangerBrush" Color="{DynamicResource DangerColor}"/>
 
-    <!-- Standard spacing values -->
-    <Thickness x:Key="WidgetPadding">10</Thickness>
-    <CornerRadius x:Key="WidgetCornerRadius">8</CornerRadius>
+        <!-- Standard spacing values -->
+        <Thickness x:Key="WidgetPadding">5</Thickness>
+        <CornerRadius x:Key="WidgetCornerRadius">8</CornerRadius>
+    </Styles.Resources>
 
-    <!-- Style for icon buttons -->
-    <Style x:Key="IconButtonStyle" TargetType="Button">
+    <!-- Style for icon buttons (apply via Classes="icon-button") -->
+    <Style Selector="Button.icon-button">
         <Setter Property="Background" Value="Transparent"/>
         <Setter Property="BorderBrush" Value="Transparent"/>
         <Setter Property="BorderThickness" Value="0"/>
-        <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
-        <Setter Property="Width" Value="28"/>
-        <Setter Property="Height" Value="28"/>
+        <Setter Property="Width" Value="20"/>
+        <Setter Property="Height" Value="20"/>
         <Setter Property="HorizontalAlignment" Value="Center"/>
         <Setter Property="VerticalAlignment" Value="Center"/>
         <Setter Property="Padding" Value="4"/>
         <Setter Property="Margin" Value="4"/>
         <Setter Property="Cursor" Value="Hand"/>
         <Setter Property="Focusable" Value="False"/>
-        <Setter Property="Template">
-            <ControlTemplate TargetType="Button">
-                <Border Background="{TemplateBinding Background}"
-                        CornerRadius="4"
-                        Padding="{TemplateBinding Padding}"
-                        ToolTip.Tip="{TemplateBinding ToolTip.Tip}">
-                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                </Border>
-            </ControlTemplate>
-        </Setter>
-        <Style.Triggers>
-            <Trigger Property="IsPointerOver" Value="True">
-                <Setter Property="Background" Value="#1A000000"/>
-            </Trigger>
-            <Trigger Property="IsPressed" Value="True">
-                <Setter Property="Background" Value="#33000000"/>
-            </Trigger>
-        </Style.Triggers>
+
     </Style>
 
+    <!-- Pseudo-class tweaks for icon buttons -->
+    <Style Selector="Button.icon-button:pointerover">
+        <Setter Property="Background" Value="#1A000000"/>
+    </Style>
+
+    <Style Selector="Button.icon-button:pressed">
+        <Setter Property="Background" Value="#33000000"/>
+    </Style>
+
+
     <!-- Style for the timer display text -->
-    <Style x:Key="TimerTextBlockStyle" TargetType="TextBlock">
+    <Style Selector="TextBlock.timer-text">
         <Setter Property="FontSize" Value="36"/>
         <Setter Property="FontFamily" Value="Consolas, Segoe UI Mono, monospace"/>
         <Setter Property="FontWeight" Value="Bold"/>
@@ -71,19 +63,18 @@
     </Style>
 
     <!-- Style for the project tag TextBox -->
-    <Style x:Key="ProjectTagTextBoxStyle" TargetType="TextBox">
+    <Style Selector="TextBox.project-tag">
         <Setter Property="Background" Value="#1AFFFFFF"/>
         <Setter Property="BorderBrush" Value="#35FFFFFF"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="Foreground" Value="{DynamicResource WidgetForegroundBrush}"/>
-        <Setter Property="WatermarkBrush" Value="{DynamicResource WidgetSecondaryForegroundBrush}"/>
         <Setter Property="Padding" Value="6,2"/>
         <Setter Property="FontSize" Value="14"/>
         <Setter Property="CornerRadius" Value="4"/>
     </Style>
 
     <!-- Style for section headers in settings -->
-    <Style x:Key="SettingsSectionHeaderStyle" TargetType="TextBlock">
+    <Style Selector="TextBlock.settings-section-header">
         <Setter Property="FontSize" Value="18"/>
         <Setter Property="FontWeight" Value="Bold"/>
         <Setter Property="Margin" Value="0,12,0,8"/>
@@ -91,9 +82,11 @@
     </Style>
 
     <!-- Style for labels in settings -->
-    <Style x:Key="SettingsLabelStyle" TargetType="TextBlock">
+    <Style Selector="TextBlock.settings-label">
         <Setter Property="VerticalAlignment" Value="Center"/>
-        <Setter Property="Margin" Value="0,0,8,0"/>
+        <Setter Property="Margin" Value="0,0,6,0"/>
         <Setter Property="Foreground" Value="{DynamicResource WidgetSecondaryForegroundBrush}"/>
     </Style>
-</ResourceDictionary>
+
+
+</Styles>

@@ -36,10 +36,6 @@ This project is a cross-platform desktop timer widget built with .NET 8 and Aval
 
 See `FocusTimer.Core` for models/interfaces, and `FocusTimer.App` for the Avalonia shell and DI setup.
 
-### Initial Promts:
-Initial starting promts where:
-For detailed milestone prompts and architecture, see [InitialPrompts.md](./InitialPrompts.md).
-
 
 
 ### Further improvements:

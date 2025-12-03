@@ -2,6 +2,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:converters="using:FocusTimer.App.Converters"
         xmlns:vm="using:FocusTimer.App.ViewModels"
+        xmlns:materialIcons="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
         x:Class="FocusTimer.App.Views.TimerWidgetWindow"
         x:DataType="vm:TimerWidgetViewModel"
         Title="FocusTimer"
@@ -11,7 +12,7 @@
         MinHeight="50"
         WindowStartupLocation="Manual"
         SystemDecorations="None"
-        ShowInTaskbar="True"
+        ShowInTaskbar="False"
         Background="{DynamicResource WidgetBackgroundBrush}"
         Topmost="{Binding Settings.AlwaysOnTop}"
         Opacity="{Binding Settings.WidgetOpacity}">
@@ -52,11 +53,9 @@
                         Height="16"
                         Click="MinimizeButton_Click"
                         ToolTip.Tip="Minimize">
-                    <TextBlock Text="―"
-                               Foreground="{DynamicResource WidgetSecondaryForegroundBrush}"
-                               FontSize="12"
-                               HorizontalAlignment="Center"
-                               VerticalAlignment="Center" />
+                    <materialIcons:MaterialIcon Kind="WindowMinimize"
+                                          Foreground="{DynamicResource WidgetSecondaryForegroundBrush}"
+                                          Width="16" Height="10" />
                 </Button>
             </Grid>
 
@@ -68,92 +67,82 @@
                       ColumnDefinitions="Auto">
                     <!-- Row 0: main controls -->
                     <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto,Auto,Auto,Auto"
-                          VerticalAlignment="Center"
-                          ColumnSpacing="6">
+                          VerticalAlignment="Center">
                         <!-- Timer -->
                         <TextBlock Grid.Column="0"
                                    Text="{Binding ElapsedFormatted}"
-                                   Style="{StaticResource TimerTextBlockStyle}" />
+                                   Classes="timer-text" />
 
-                        <!-- Project Tag toggle + input; we show placeholder if collapsed -->
-                        <StackPanel Grid.Column="1"
-                                    Orientation="Horizontal"
-                                    VerticalAlignment="Center"
-                                    Spacing="4">
-                            <!-- Project Tag TextBox -->
-                            <TextBox Style="{StaticResource ProjectTagTextBoxStyle}"
-                                     Text="{Binding ProjectTag}" 
-                                     Watermark="Project"
-                                     MinWidth="120"
-                                     IsVisible="{Binding IsProjectInputVisible}" />
-                        </StackPanel>
 
                         <!-- Play/Pause Button -->
                         <Button Grid.Column="2"
                                 Command="{Binding ToggleCommand}"
-                                Style="{StaticResource IconButtonStyle}"
+                                Classes="icon-button"
                                 ToolTip.Tip="Start/Pause">
-                            <TextBlock Text="{Binding IsRunning, Converter={StaticResource PlayPauseConverter}}"
-                                       FontSize="16"
-                                       Foreground="{DynamicResource WidgetForegroundBrush}" />
+                            <materialIcons:MaterialIcon Kind="{Binding IsRunning, Converter={StaticResource PlayPauseConverter}}"
+                                                Foreground="{DynamicResource WidgetSecondaryForegroundBrush}"
+                                                Width="16" Height="16" />
                         </Button>
 
                         <!-- Reset Button -->
                         <Button Grid.Column="3"
                                 Command="{Binding ResetCommand}"
-                                Style="{StaticResource IconButtonStyle}"
+                                Classes="icon-button"
                                 ToolTip.Tip="Reset">
-                            <TextBlock Text="⟲"
-                                       FontSize="16"
-                                       Foreground="{DynamicResource WidgetForegroundBrush}" />
+                            <materialIcons:MaterialIcon Kind="Refresh"
+                                                  Foreground="{DynamicResource WidgetForegroundBrush}"
+                                                  Width="16" Height="16" />
                         </Button>
 
                         <!-- Project Input Toggle Button -->
                         <Button Grid.Column="4"
                                 Command="{Binding ToggleProjectInputCommand}"
-                                Style="{StaticResource IconButtonStyle}"
+                                Classes="icon-button"
                                 ToolTip.Tip="Project Tag">
-                            <!-- Use a chevron that rotates when visible -->
-                            <Path Width="12" Height="12" Stroke="{DynamicResource WidgetForegroundBrush}" StrokeThickness="2"
-                                  Data="M 0 0 L 6 6 L 12 0" RenderTransformOrigin="0.5,0.5">
-                                <Path.RenderTransform>
+                            <materialIcons:MaterialIcon Kind="ChevronDown"
+                                                  Foreground="{DynamicResource WidgetForegroundBrush}"
+                                                  Width="16" Height="16">
+                                <materialIcons:MaterialIcon.RenderTransform>
                                     <RotateTransform Angle="{Binding IsProjectInputVisible, Converter={StaticResource BooleanToAngleConverter}}" />
-                                </Path.RenderTransform>
-                            </Path>
+                                </materialIcons:MaterialIcon.RenderTransform>
+                            </materialIcons:MaterialIcon>
                         </Button>
 
                         <!-- Compact Mode Toggle Button -->
                         <Button Grid.Column="5"
                                 Command="{Binding ToggleCompactModeCommand}"
-                                Style="{StaticResource IconButtonStyle}"
+                                Classes="icon-button"
                                 ToolTip.Tip="Toggle Compact Mode">
-                            <TextBlock Text="☰"
-                                       FontSize="16"
-                                       Foreground="{DynamicResource WidgetForegroundBrush}" />
+                            <materialIcons:MaterialIcon Kind="Menu"
+                                                  Foreground="{DynamicResource WidgetForegroundBrush}"
+                                                  Width="15" Height="15" />
                         </Button>
                     </Grid>
 
                     <!-- Row 1: project label & box (duplicate of above for alignment) -->
                     <Grid Grid.Row="1" ColumnDefinitions="Auto,*,Auto" Margin="0,6,0,0" IsVisible="{Binding IsProjectInputVisible}">
                         <TextBlock Grid.Column="0" Text="Project:" FontSize="14" Foreground="{DynamicResource WidgetSecondaryForegroundBrush}" VerticalAlignment="Center" />
-                        <TextBox Grid.Column="1" Style="{StaticResource ProjectTagTextBoxStyle}" Text="{Binding ProjectTag}" Watermark="optional" />
+                        <TextBox Grid.Column="1" Classes="project-tag" Text="{Binding ProjectTag}" Watermark="optional" />
                     </Grid>
                 </Grid>
 
                 <!-- Compact mode view -->
                 <Grid IsVisible="{Binding Settings.UseCompactMode}"
                       ColumnDefinitions="Auto,Auto,Auto"
-                      VerticalAlignment="Center"
-                      ColumnSpacing="6">
+                      VerticalAlignment="Center">
                     <!-- Timer small text -->
-                    <TextBlock Grid.Column="0" Text="{Binding ElapsedFormatted}" Style="{StaticResource TimerTextBlockStyle}" FontSize="28" />
+                    <TextBlock Grid.Column="0" Text="{Binding ElapsedFormatted}" Classes="timer-text" FontSize="25" />
                     <!-- Play/Pause button -->
-                    <Button Grid.Column="1" Command="{Binding ToggleCommand}" Style="{StaticResource IconButtonStyle}" ToolTip.Tip="Start/Pause">
-                        <TextBlock Text="{Binding IsRunning, Converter={StaticResource PlayPauseConverter}}" FontSize="16" Foreground="{DynamicResource WidgetForegroundBrush}" />
+                    <Button Grid.Column="1" Command="{Binding ToggleCommand}" Classes="icon-button" ToolTip.Tip="Start/Pause">
+                        <materialIcons:MaterialIcon Kind="{Binding IsRunning, Converter={StaticResource PlayPauseConverter}}"
+                                              Foreground="{DynamicResource WidgetForegroundBrush}"
+                                              Width="16" Height="16" />
                     </Button>
                     <!-- Expand to full mode button -->
-                    <Button Grid.Column="2" Command="{Binding ToggleCompactModeCommand}" Style="{StaticResource IconButtonStyle}" ToolTip.Tip="Expand">
-                        <TextBlock Text="☷" FontSize="16" Foreground="{DynamicResource WidgetForegroundBrush}" />
+                    <Button Grid.Column="2" Command="{Binding ToggleCompactModeCommand}" Classes="icon-button" ToolTip.Tip="Expand">
+                        <materialIcons:MaterialIcon Kind="ViewHeadline"
+                                              Foreground="{DynamicResource WidgetForegroundBrush}"
+                                              Width="16" Height="16" />
                     </Button>
                 </Grid>
             </Grid>
