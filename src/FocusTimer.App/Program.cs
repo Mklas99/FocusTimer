@@ -70,6 +70,10 @@ class Program
         // Settings provider - JSON-based persistence
         services.AddSingleton<ISettingsProvider, Persistence.JsonSettingsProvider>();
 
+        // Theme services - manages theme loading, saving, and application
+        services.AddSingleton<IThemeService, Core.Services.ThemeService>();
+        services.AddSingleton<ThemeManager>();
+
         // Session tracker - manages window change detection and TimeEntry segmentation
         // Registered as Transient because it's tied to the lifetime of TimerWidgetViewModel
         services.AddTransient<SessionTracker>();

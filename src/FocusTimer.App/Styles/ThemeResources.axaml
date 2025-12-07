@@ -1,0 +1,192 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!--
+      FocusTimer Theme Resources
+      All colors are defined as dynamic resources that can be updated at runtime.
+      Each color has both a Color and a Brush variant for flexibility.
+    -->
+
+    <Styles.Resources>
+        <!-- Window Colors -->
+        <Color x:Key="WindowBackgroundColor">#1E1E1E</Color>
+        <SolidColorBrush x:Key="WindowBackgroundBrush" Color="{DynamicResource WindowBackgroundColor}"/>
+        
+        <Color x:Key="WindowForegroundColor">#FFFFFF</Color>
+        <SolidColorBrush x:Key="WindowForegroundBrush" Color="{DynamicResource WindowForegroundColor}"/>
+        
+        <Color x:Key="WindowBorderColor">#3F3F46</Color>
+        <SolidColorBrush x:Key="WindowBorderBrush" Color="{DynamicResource WindowBorderColor}"/>
+
+        <!-- Text Colors -->
+        <Color x:Key="PrimaryTextColor">#F5F5F5</Color>
+        <SolidColorBrush x:Key="PrimaryTextBrush" Color="{DynamicResource PrimaryTextColor}"/>
+        
+        <Color x:Key="SecondaryTextColor">#CCCCCC</Color>
+        <SolidColorBrush x:Key="SecondaryTextBrush" Color="{DynamicResource SecondaryTextColor}"/>
+        
+        <Color x:Key="DisabledTextColor">#666666</Color>
+        <SolidColorBrush x:Key="DisabledTextBrush" Color="{DynamicResource DisabledTextColor}"/>
+
+        <!-- Timer Display -->
+        <Color x:Key="TimerTextColor">#FFFFFF</Color>
+        <SolidColorBrush x:Key="TimerTextBrush" Color="{DynamicResource TimerTextColor}"/>
+        
+        <Color x:Key="TimerBackgroundColor">#00000000</Color>
+        <SolidColorBrush x:Key="TimerBackgroundBrush" Color="{DynamicResource TimerBackgroundColor}"/>
+
+        <!-- Buttons & Controls -->
+        <Color x:Key="ButtonNormalColor">#4CDEFFBD</Color>
+        <SolidColorBrush x:Key="ButtonNormalBrush" Color="{DynamicResource ButtonNormalColor}"/>
+        
+        <Color x:Key="ButtonHoverColor">#5DEFFCE7</Color>
+        <SolidColorBrush x:Key="ButtonHoverBrush" Color="{DynamicResource ButtonHoverColor}"/>
+        
+        <Color x:Key="ButtonPressedColor">#3BBD99AC</Color>
+        <SolidColorBrush x:Key="ButtonPressedBrush" Color="{DynamicResource ButtonPressedColor}"/>
+        
+        <Color x:Key="ButtonDisabledColor">#40FFFFFF</Color>
+        <SolidColorBrush x:Key="ButtonDisabledBrush" Color="{DynamicResource ButtonDisabledColor}"/>
+
+        <!-- Accents -->
+        <Color x:Key="AccentPrimaryColor">#0078D7</Color>
+        <SolidColorBrush x:Key="AccentPrimaryBrush" Color="{DynamicResource AccentPrimaryColor}"/>
+        
+        <Color x:Key="AccentSecondaryColor">#005A9E</Color>
+        <SolidColorBrush x:Key="AccentSecondaryBrush" Color="{DynamicResource AccentSecondaryColor}"/>
+        
+        <Color x:Key="DangerColor">#D9534F</Color>
+        <SolidColorBrush x:Key="DangerBrush" Color="{DynamicResource DangerColor}"/>
+        
+        <Color x:Key="SuccessColor">#4CAF50</Color>
+        <SolidColorBrush x:Key="SuccessBrush" Color="{DynamicResource SuccessColor}"/>
+        
+        <Color x:Key="WarningColor">#FFA726</Color>
+        <SolidColorBrush x:Key="WarningBrush" Color="{DynamicResource WarningColor}"/>
+
+        <!-- Input Controls -->
+        <Color x:Key="InputBackgroundColor">#1AFFFFFF</Color>
+        <SolidColorBrush x:Key="InputBackgroundBrush" Color="{DynamicResource InputBackgroundColor}"/>
+        
+        <Color x:Key="InputBorderColor">#35FFFFFF</Color>
+        <SolidColorBrush x:Key="InputBorderBrush" Color="{DynamicResource InputBorderColor}"/>
+        
+        <Color x:Key="InputFocusBorderColor">#0078D7</Color>
+        <SolidColorBrush x:Key="InputFocusBorderBrush" Color="{DynamicResource InputFocusBorderColor}"/>
+        
+        <Color x:Key="InputTextColor">#FFFFFF</Color>
+        <SolidColorBrush x:Key="InputTextBrush" Color="{DynamicResource InputTextColor}"/>
+
+        <!-- Project Tag -->
+        <Color x:Key="ProjectTagBackgroundColor">#1AFFFFFF</Color>
+        <SolidColorBrush x:Key="ProjectTagBackgroundBrush" Color="{DynamicResource ProjectTagBackgroundColor}"/>
+        
+        <Color x:Key="ProjectTagBorderColor">#35FFFFFF</Color>
+        <SolidColorBrush x:Key="ProjectTagBorderBrush" Color="{DynamicResource ProjectTagBorderColor}"/>
+        
+        <Color x:Key="ProjectTagTextColor">#FFFFFF</Color>
+        <SolidColorBrush x:Key="ProjectTagTextBrush" Color="{DynamicResource ProjectTagTextColor}"/>
+
+        <!-- Title Bar (Custom Window) -->
+        <Color x:Key="TitleBarBackgroundColor">#00000000</Color>
+        <SolidColorBrush x:Key="TitleBarBackgroundBrush" Color="{DynamicResource TitleBarBackgroundColor}"/>
+        
+        <Color x:Key="TitleBarForegroundColor">#CCCCCC</Color>
+        <SolidColorBrush x:Key="TitleBarForegroundBrush" Color="{DynamicResource TitleBarForegroundColor}"/>
+        
+        <Color x:Key="TitleBarButtonHoverColor">#1A000000</Color>
+        <SolidColorBrush x:Key="TitleBarButtonHoverBrush" Color="{DynamicResource TitleBarButtonHoverColor}"/>
+        
+        <Color x:Key="TitleBarButtonPressedColor">#33000000</Color>
+        <SolidColorBrush x:Key="TitleBarButtonPressedBrush" Color="{DynamicResource TitleBarButtonPressedColor}"/>
+
+        <!-- Settings Window -->
+        <Color x:Key="SettingsBackgroundColor">#2D2D30</Color>
+        <SolidColorBrush x:Key="SettingsBackgroundBrush" Color="{DynamicResource SettingsBackgroundColor}"/>
+        
+        <Color x:Key="SettingsSectionHeaderColor">#F5F5F5</Color>
+        <SolidColorBrush x:Key="SettingsSectionHeaderBrush" Color="{DynamicResource SettingsSectionHeaderColor}"/>
+        
+        <Color x:Key="SettingsLabelTextColor">#CCCCCC</Color>
+        <SolidColorBrush x:Key="SettingsLabelTextBrush" Color="{DynamicResource SettingsLabelTextColor}"/>
+
+        <!-- Tab Control -->
+        <Color x:Key="TabBackgroundColor">#2D2D30</Color>
+        <SolidColorBrush x:Key="TabBackgroundBrush" Color="{DynamicResource TabBackgroundColor}"/>
+        
+        <Color x:Key="TabSelectedBackgroundColor">#007ACC</Color>
+        <SolidColorBrush x:Key="TabSelectedBackgroundBrush" Color="{DynamicResource TabSelectedBackgroundColor}"/>
+        
+        <Color x:Key="TabHoverBackgroundColor">#1E1E1E</Color>
+        <SolidColorBrush x:Key="TabHoverBackgroundBrush" Color="{DynamicResource TabHoverBackgroundColor}"/>
+        
+        <Color x:Key="TabTextColor">#CCCCCC</Color>
+        <SolidColorBrush x:Key="TabTextBrush" Color="{DynamicResource TabTextColor}"/>
+        
+        <Color x:Key="TabSelectedTextColor">#FFFFFF</Color>
+        <SolidColorBrush x:Key="TabSelectedTextBrush" Color="{DynamicResource TabSelectedTextColor}"/>
+
+        <!-- Standard spacing values -->
+        <Thickness x:Key="WidgetPadding">5</Thickness>
+        <CornerRadius x:Key="WidgetCornerRadius">8</CornerRadius>
+    </Styles.Resources>
+
+    <!-- Style for icon buttons (apply via Classes="icon-button") -->
+    <Style Selector="Button.icon-button">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderBrush" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Width" Value="20"/>
+        <Setter Property="Height" Value="20"/>
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="Padding" Value="4"/>
+        <Setter Property="Margin" Value="4"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Focusable" Value="False"/>
+    </Style>
+
+    <Style Selector="Button.icon-button:pointerover">
+        <Setter Property="Background" Value="{DynamicResource TitleBarButtonHoverBrush}"/>
+    </Style>
+
+    <Style Selector="Button.icon-button:pressed">
+        <Setter Property="Background" Value="{DynamicResource TitleBarButtonPressedBrush}"/>
+    </Style>
+
+    <!-- Style for the timer display text -->
+    <Style Selector="TextBlock.timer-text">
+        <Setter Property="FontSize" Value="36"/>
+        <Setter Property="FontFamily" Value="Consolas, Segoe UI Mono, monospace"/>
+        <Setter Property="FontWeight" Value="Bold"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="Foreground" Value="{DynamicResource TimerTextBrush}"/>
+    </Style>
+
+    <!-- Style for the project tag TextBox -->
+    <Style Selector="TextBox.project-tag">
+        <Setter Property="Background" Value="{DynamicResource ProjectTagBackgroundBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource ProjectTagBorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Foreground" Value="{DynamicResource ProjectTagTextBrush}"/>
+        <Setter Property="Padding" Value="6,2"/>
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="CornerRadius" Value="4"/>
+    </Style>
+
+    <!-- Style for section headers in settings -->
+    <Style Selector="TextBlock.settings-section-header">
+        <Setter Property="FontSize" Value="18"/>
+        <Setter Property="FontWeight" Value="Bold"/>
+        <Setter Property="Margin" Value="0,12,0,8"/>
+        <Setter Property="Foreground" Value="{DynamicResource SettingsSectionHeaderBrush}"/>
+    </Style>
+
+    <!-- Style for labels in settings -->
+    <Style Selector="TextBlock.settings-label">
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="Margin" Value="0,0,6,0"/>
+        <Setter Property="Foreground" Value="{DynamicResource SettingsLabelTextBrush}"/>
+    </Style>
+
+</Styles>

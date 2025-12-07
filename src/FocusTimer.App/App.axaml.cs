@@ -8,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Avalonia.Threading;
 using System;
 using Avalonia.Controls;
+using System.Threading.Tasks;
 
 namespace FocusTimer.App;
 
@@ -109,7 +110,7 @@ public partial class App : Application
         // Exit cleanly via AppController
         if (_appController != null)
         {
-            _ = _appController.ExitApplicationAsync();
+            _appController.ExitApplication();
         }
     }
 

@@ -1,0 +1,30 @@
+{
+  "name": "DotNet Dev",
+  // Build from local Dockerfile that starts with FROM mcr.microsoft.com/dotnet/sdk:8.0
+  "build": {
+    "dockerfile": "./Dockerfile",
+    "context": ".."
+  },
+  // Optional: give the container Docker-in-Docker support
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
+  },
+  "workspaceFolder": "/workspace",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind",
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "dotnet.defaultSolution": "FocusTimer.sln",
+        "editor.formatOnSave": true
+      },
+      "extensions": [
+        "ms-dotnettools.csdevkit",
+        "dennismaxjung.vscode-dotnet-auto-attach",
+        "github.copilot-chat",
+        "ms-azuretools.vscode-docker",
+        "eamodio.gitlens"
+      ]
+    }
+  },
+  "postCreateCommand": "dotnet restore"
+}

@@ -19,11 +19,14 @@ public class Settings : INotifyPropertyChanged
         "FocusTimer",
         "logs");
     private int _dataRetentionDays = 90;
-    private double _widgetOpacity = 0.95;
     private double _widgetScale = 1.0;
+    private double _widgetOpacity = 1.0;
     private bool _useCompactMode;
     private string? _hotkeyShowHide;
     private string? _hotkeyToggleTimer;
+    private Theme _theme = new Theme();
+    private string _activeThemeName = "Dark";
+    private string? _customThemePath;
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -73,16 +76,6 @@ public class Settings : INotifyPropertyChanged
     }
 
     // Widget appearance - with validation
-    public double WidgetOpacity
-    {
-        get => _widgetOpacity;
-        set
-        {
-            var clamped = Math.Clamp(value, 0.1, 1.0);
-            SetField(ref _widgetOpacity, clamped);
-        }
-    }
-
     public double WidgetScale
     {
         get => _widgetScale;
@@ -90,6 +83,19 @@ public class Settings : INotifyPropertyChanged
         {
             var clamped = Math.Clamp(value, 0.5, 3.0);
             SetField(ref _widgetScale, clamped);
+        }
+    }
+
+    /// <summary>
+    /// Gets or sets the opacity of the widget (0.0 to 1.0).
+    /// </summary>
+    public double WidgetOpacity
+    {
+        get => _widgetOpacity;
+        set
+        {
+            var clamped = Math.Clamp(value, 0.0, 1.0);
+            SetField(ref _widgetOpacity, clamped);
         }
     }
 
@@ -110,6 +116,25 @@ public class Settings : INotifyPropertyChanged
     {
         get => _hotkeyToggleTimer;
         set => SetField(ref _hotkeyToggleTimer, value);
+    }
+
+    // Theme Management
+    public Theme Theme
+    {
+        get => _theme;
+        set => SetField(ref _theme, value);
+    }
+
+    public string ActiveThemeName
+    {
+        get => _activeThemeName;
+        set => SetField(ref _activeThemeName, value);
+    }
+
+    public string? CustomThemePath
+    {
+        get => _customThemePath;
+        set => SetField(ref _customThemePath, value);
     }
 
     protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)

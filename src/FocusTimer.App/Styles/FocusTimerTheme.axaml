@@ -15,10 +15,7 @@
         <Color x:Key="AccentColor">#0078D7</Color>
         <Color x:Key="DangerColor">#D9534F</Color>
 
-        <!-- Brushes derived from base colors -->
-        <SolidColorBrush x:Key="WidgetBackgroundBrush" Color="{DynamicResource WidgetBackgroundColor}"/>
-        <SolidColorBrush x:Key="WidgetForegroundBrush" Color="{DynamicResource WidgetForegroundColor}"/>
-        <SolidColorBrush x:Key="WidgetSecondaryForegroundBrush" Color="{DynamicResource WidgetSecondaryForegroundColor}"/>
+        <!-- Brushes derived from base colors (removed WidgetBackgroundBrush, WidgetForegroundBrush, WidgetSecondaryForegroundBrush for dynamic theme) -->
         <SolidColorBrush x:Key="AccentBrush" Color="{DynamicResource AccentColor}"/>
         <SolidColorBrush x:Key="DangerBrush" Color="{DynamicResource DangerColor}"/>
 
@@ -58,7 +55,6 @@
         <Setter Property="FontSize" Value="36"/>
         <Setter Property="FontFamily" Value="Consolas, Segoe UI Mono, monospace"/>
         <Setter Property="FontWeight" Value="Bold"/>
-        <Setter Property="Foreground" Value="{DynamicResource WidgetForegroundBrush}"/>
         <Setter Property="VerticalAlignment" Value="Center"/>
     </Style>
 
@@ -67,7 +63,7 @@
         <Setter Property="Background" Value="#1AFFFFFF"/>
         <Setter Property="BorderBrush" Value="#35FFFFFF"/>
         <Setter Property="BorderThickness" Value="1"/>
-        <Setter Property="Foreground" Value="{DynamicResource WidgetForegroundBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource WidgetForegroundColor}"/>
         <Setter Property="Padding" Value="6,2"/>
         <Setter Property="FontSize" Value="14"/>
         <Setter Property="CornerRadius" Value="4"/>
@@ -78,14 +74,14 @@
         <Setter Property="FontSize" Value="18"/>
         <Setter Property="FontWeight" Value="Bold"/>
         <Setter Property="Margin" Value="0,12,0,8"/>
-        <Setter Property="Foreground" Value="{DynamicResource WidgetForegroundBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource WidgetForegroundColor}"/>
     </Style>
 
     <!-- Style for labels in settings -->
     <Style Selector="TextBlock.settings-label">
         <Setter Property="VerticalAlignment" Value="Center"/>
         <Setter Property="Margin" Value="0,0,6,0"/>
-        <Setter Property="Foreground" Value="{DynamicResource WidgetSecondaryForegroundBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource WidgetSecondaryForegroundColor}"/>
     </Style>
 
 

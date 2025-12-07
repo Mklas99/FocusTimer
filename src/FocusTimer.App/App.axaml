@@ -6,8 +6,8 @@
     <Application.Styles>
         <materialIcons:MaterialIconStyles />
         <FluentTheme />
-        <!-- Import the custom FocusTimer theme -->
-        <StyleInclude Source="avares://FocusTimer.App/Styles/FocusTimerTheme.axaml" />
+        <!-- Import the new theme resources -->
+        <StyleInclude Source="avares://FocusTimer.App/Styles/ThemeResources.axaml" />
     </Application.Styles>
 
     <!-- System Tray Icon -->

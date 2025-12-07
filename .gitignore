@@ -45,6 +45,9 @@ TestResults/
 [Rr]eleasePS/
 dlldata.c
 
+
+.avalonia-build-tasks/
+
 # BenchmarkDotNet Artifacts
 BenchmarkDotNet.Artifacts/
 

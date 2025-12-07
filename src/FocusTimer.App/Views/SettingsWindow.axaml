@@ -11,8 +11,8 @@
         MinWidth="500" MinHeight="400"
         WindowStartupLocation="CenterOwner"
         CanResize="True"
-        Background="{DynamicResource WidgetBackgroundBrush}"
-        Foreground="{DynamicResource WidgetForegroundBrush}">
+        Background="{DynamicResource SettingsBackgroundBrush}"
+        Foreground="{DynamicResource PrimaryTextBrush}">
 
     <Design.DataContext>
         <vm:SettingsWindowViewModel />
@@ -24,12 +24,12 @@
             <Setter Property="FontSize" Value="18" />
             <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="Margin" Value="0,12,0,8" />
-            <Setter Property="Foreground" Value="{DynamicResource WidgetForegroundBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource SettingsSectionHeaderBrush}" />
         </Style>
         <Style Selector="TextBlock.SettingLabel">
             <Setter Property="VerticalAlignment" Value="Center" />
             <Setter Property="Margin" Value="0,0,8,0" />
-            <Setter Property="Foreground" Value="{DynamicResource WidgetSecondaryForegroundBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource SettingsLabelTextBrush}" />
         </Style>
     </Window.Styles>
 
@@ -107,45 +107,158 @@
             <TabItem Header="Appearance">
                 <ScrollViewer>
                     <StackPanel Spacing="15">
-                        <TextBlock Classes="SectionHeader" Text="Widget Opacity" />
+                        <!-- Theme Presets Section -->
+                        <TextBlock Classes="SectionHeader" Text="Theme Presets" />
+                        <Grid ColumnDefinitions="*,Auto,Auto,Auto">
+                            <ComboBox Grid.Column="0" 
+                                      SelectedItem="{Binding SelectedThemeName}"
+                                      ItemsSource="{Binding AvailableThemes}"
+                                      HorizontalAlignment="Stretch" />
+                            <Button Grid.Column="1" Content="Import..." 
+                                    Command="{Binding ImportThemeCommand}"
+                                    CommandParameter="{Binding $parent[Window]}" 
+                                    Width="80" Margin="10,0,0,0" />
+                            <Button Grid.Column="2" Content="Export..." 
+                                    Command="{Binding ExportThemeCommand}"
+                                    CommandParameter="{Binding $parent[Window]}" 
+                                    Width="80" Margin="10,0,0,0" />
+                            <Button Grid.Column="3" Content="Reset" 
+                                    Command="{Binding ResetThemeCommand}" 
+                                    Width="80" Margin="10,0,0,0" />
+                        </Grid>
 
-                        <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto">
-                            <Slider Grid.Column="0"
-                                    Value="{Binding Settings.WidgetOpacity}"
-                                    Minimum="0.1"
-                                    Maximum="1.0"
+                        <!-- Window Colors Section -->
+                        <TextBlock Classes="SectionHeader" Text="Window Colors" />
+                        <Grid ColumnDefinitions="140,*,Auto" RowDefinitions="Auto,Auto,Auto">
+                            <TextBlock Grid.Row="0" Grid.Column="0" Classes="SettingLabel" Text="Background:" />
+                            <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Settings.Theme.WindowBackground}" Watermark="#1E1E1E" Margin="0,0,8,0" />
+                            <Border Grid.Row="0" Grid.Column="2" Width="24" Height="24" Background="{Binding Settings.Theme.WindowBackground}" BorderBrush="#666" BorderThickness="1" CornerRadius="3" />
+
+                            <TextBlock Grid.Row="1" Grid.Column="0" Classes="SettingLabel" Text="Text:" Margin="0,8,0,0" />
+                            <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Settings.Theme.PrimaryText}" Watermark="#F5F5F5" Margin="0,8,8,0" />
+                            <Border Grid.Row="1" Grid.Column="2" Width="24" Height="24" Background="{Binding Settings.Theme.PrimaryText}" BorderBrush="#666" BorderThickness="1" CornerRadius="3" Margin="0,8,0,0" />
+
+                            <TextBlock Grid.Row="2" Grid.Column="0" Classes="SettingLabel" Text="Border:" Margin="0,8,0,0" />
+                            <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding Settings.Theme.WindowBorder}" Watermark="#3F3F46" Margin="0,8,8,0" />
+                            <Border Grid.Row="2" Grid.Column="2" Width="24" Height="24" Background="{Binding Settings.Theme.WindowBorder}" BorderBrush="#666" BorderThickness="1" CornerRadius="3" Margin="0,8,0,0" />
+                        </Grid>
+
+                        <!-- Timer Display Section -->
+                        <TextBlock Classes="SectionHeader" Text="Timer Display" />
+                        <Grid ColumnDefinitions="140,*,Auto" RowDefinitions="Auto,Auto">
+                            <TextBlock Grid.Row="0" Grid.Column="0" Classes="SettingLabel" Text="Timer Text:" />
+                            <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Settings.Theme.TimerText}" Watermark="#FFFFFF" Margin="0,0,8,0" />
+                            <Border Grid.Row="0" Grid.Column="2" Width="24" Height="24" Background="{Binding Settings.Theme.TimerText}" BorderBrush="#666" BorderThickness="1" CornerRadius="3" />
+
+                            <TextBlock Grid.Row="1" Grid.Column="0" Classes="SettingLabel" Text="Secondary Text:" Margin="0,8,0,0" />
+                            <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Settings.Theme.SecondaryText}" Watermark="#CCCCCC" Margin="0,8,8,0" />
+                            <Border Grid.Row="1" Grid.Column="2" Width="24" Height="24" Background="{Binding Settings.Theme.SecondaryText}" BorderBrush="#666" BorderThickness="1" CornerRadius="3" Margin="0,8,0,0" />
+                        </Grid>
+
+                        <!-- Buttons & Controls Section -->
+                        <TextBlock Classes="SectionHeader" Text="Buttons &amp; Controls" />
+                        <Grid ColumnDefinitions="140,*,Auto" RowDefinitions="Auto,Auto,Auto">
+                            <TextBlock Grid.Row="0" Grid.Column="0" Classes="SettingLabel" Text="Button Normal:" />
+                            <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Settings.Theme.ButtonNormal}" Watermark="#4CDEFFBD" Margin="0,0,8,0" />
+                            <Border Grid.Row="0" Grid.Column="2" Width="24" Height="24" Background="{Binding Settings.Theme.ButtonNormal}" BorderBrush="#666" BorderThickness="1" CornerRadius="3" />
+
+                            <TextBlock Grid.Row="1" Grid.Column="0" Classes="SettingLabel" Text="Button Hover:" Margin="0,8,0,0" />
+                            <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Settings.Theme.ButtonHover}" Watermark="#5DEFFCE7" Margin="0,8,8,0" />
+                            <Border Grid.Row="1" Grid.Column="2" Width="24" Height="24" Background="{Binding Settings.Theme.ButtonHover}" BorderBrush="#666" BorderThickness="1" CornerRadius="3" Margin="0,8,0,0" />
+
+                            <TextBlock Grid.Row="2" Grid.Column="0" Classes="SettingLabel" Text="Button Pressed:" Margin="0,8,0,0" />
+                            <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding Settings.Theme.ButtonPressed}" Watermark="#3BBD99AC" Margin="0,8,8,0" />
+                            <Border Grid.Row="2" Grid.Column="2" Width="24" Height="24" Background="{Binding Settings.Theme.ButtonPressed}" BorderBrush="#666" BorderThickness="1" CornerRadius="3" Margin="0,8,0,0" />
+                        </Grid>
+
+                        <!-- Accent Colors Section -->
+                        <TextBlock Classes="SectionHeader" Text="Accent Colors" />
+                        <Grid ColumnDefinitions="140,*,Auto" RowDefinitions="Auto,Auto,Auto">
+                            <TextBlock Grid.Row="0" Grid.Column="0" Classes="SettingLabel" Text="Primary Accent:" />
+                            <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Settings.Theme.AccentPrimary}" Watermark="#0078D7" Margin="0,0,8,0" />
+                            <Border Grid.Row="0" Grid.Column="2" Width="24" Height="24" Background="{Binding Settings.Theme.AccentPrimary}" BorderBrush="#666" BorderThickness="1" CornerRadius="3" />
+
+                            <TextBlock Grid.Row="1" Grid.Column="0" Classes="SettingLabel" Text="Danger:" Margin="0,8,0,0" />
+                            <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Settings.Theme.DangerColor}" Watermark="#D9534F" Margin="0,8,8,0" />
+                            <Border Grid.Row="1" Grid.Column="2" Width="24" Height="24" Background="{Binding Settings.Theme.DangerColor}" BorderBrush="#666" BorderThickness="1" CornerRadius="3" Margin="0,8,0,0" />
+
+                            <TextBlock Grid.Row="2" Grid.Column="0" Classes="SettingLabel" Text="Success:" Margin="0,8,0,0" />
+                            <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding Settings.Theme.SuccessColor}" Watermark="#4CAF50" Margin="0,8,8,0" />
+                            <Border Grid.Row="2" Grid.Column="2" Width="24" Height="24" Background="{Binding Settings.Theme.SuccessColor}" BorderBrush="#666" BorderThickness="1" CornerRadius="3" Margin="0,8,0,0" />
+                        </Grid>
+
+                        <!-- Opacity Controls Section -->
+                        
+                        <TextBlock Classes="SectionHeader" Text="Opacity Controls" />
+                        <Grid ColumnDefinitions="140,*,Auto" RowDefinitions="Auto,Auto,Auto,Auto">
+                            <TextBlock Grid.Row="0" Grid.Column="0" Classes="SettingLabel" Text="Background:" />
+                            <Slider Grid.Row="0" Grid.Column="1"
+                                    Value="{Binding Settings.Theme.BackgroundOpacity}"
+                                    Minimum="0.0" Maximum="1.0"
                                     TickFrequency="0.05"
                                     IsSnapToTickEnabled="True" />
-                            <TextBlock Grid.Column="1"
+                            <TextBlock Grid.Row="0" Grid.Column="2"
+                                       Text="{Binding Settings.Theme.BackgroundOpacity, StringFormat='{}{0:P0}'}"
+                                       Width="50"
+                                       TextAlignment="Right"
+                                       VerticalAlignment="Center"
+                                       Margin="10,0,0,0" />
+
+                            <TextBlock Grid.Row="1" Grid.Column="0" Classes="SettingLabel" Text="Clock:" Margin="0,8,0,0" />
+                            <Slider Grid.Row="1" Grid.Column="1"
+                                    Value="{Binding Settings.Theme.TimerOpacity}"
+                                    Minimum="0.0" Maximum="1.0"
+                                    TickFrequency="0.05"
+                                    IsSnapToTickEnabled="True"
+                                    Margin="0,8,0,0" />
+                            <TextBlock Grid.Row="1" Grid.Column="2"
+                                       Text="{Binding Settings.Theme.TimerOpacity, StringFormat='{}{0:P0}'}"
+                                       Width="50"
+                                       TextAlignment="Right"
+                                       VerticalAlignment="Center"
+                                       Margin="10,8,0,0" />
+
+                            <TextBlock Grid.Row="2" Grid.Column="0" Classes="SettingLabel" Text="Buttons:" Margin="0,8,0,0" />
+                            <Slider Grid.Row="2" Grid.Column="1"
+                                    Value="{Binding Settings.Theme.ButtonOpacity}"
+                                    Minimum="0.0" Maximum="1.0"
+                                    TickFrequency="0.05"
+                                    IsSnapToTickEnabled="True"
+                                    Margin="0,8,0,0" />
+                            <TextBlock Grid.Row="2" Grid.Column="2"
+                                       Text="{Binding Settings.Theme.ButtonOpacity, StringFormat='{}{0:P0}'}"
+                                       Width="50"
+                                       TextAlignment="Right"
+                                       VerticalAlignment="Center"
+                                       Margin="10,8,0,0" />
+
+                            <TextBlock Grid.Row="3" Grid.Column="0" Classes="SettingLabel" Text="Overall Fade:" Margin="0,8,0,0" />
+                            <Slider Grid.Row="3" Grid.Column="1"
+                                    Value="{Binding Settings.WidgetOpacity}"
+                                    Minimum="0.2" Maximum="1.0"
+                                    TickFrequency="0.05"
+                                    IsSnapToTickEnabled="True"
+                                    Margin="0,8,0,0" />
+                            <TextBlock Grid.Row="3" Grid.Column="2"
                                        Text="{Binding Settings.WidgetOpacity, StringFormat='{}{0:P0}'}"
                                        Width="50"
                                        TextAlignment="Right"
                                        VerticalAlignment="Center"
-                                       Margin="10,0,0,0" />
+                                       Margin="10,8,0,0" />
                         </Grid>
 
-                        <TextBlock Classes="SectionHeader" Text="Widget Scale" />
+<!-- Widget Options Section -->
+                        <TextBlock Classes="SectionHeader" Text="Widget Options" />
+                        <Grid ColumnDefinitions="140,*,Auto" RowDefinitions="Auto,Auto">
 
-                        <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto">
-                            <Slider Grid.Column="0"
-                                    Value="{Binding Settings.WidgetScale}"
-                                    Minimum="0.5"
-                                    Maximum="3.0"
-                                    TickFrequency="0.1"
-                                    IsSnapToTickEnabled="True" />
-                            <TextBlock Grid.Column="1"
-                                       Text="{Binding Settings.WidgetScale, StringFormat='{}{0:F1}×'}"
-                                       Width="50"
-                                       TextAlignment="Right"
-                                       VerticalAlignment="Center"
-                                       Margin="10,0,0,0" />
+                            <TextBlock Grid.Row="1" Grid.Column="0" Classes="SettingLabel" Text="Scale:" Margin="0,8,0,0" />
+                            <Slider Grid.Row="1" Grid.Column="1" Value="{Binding Settings.WidgetScale}" Minimum="0.5" Maximum="3.0" TickFrequency="0.1" IsSnapToTickEnabled="True" Margin="0,8,0,0" />
+                            <TextBlock Grid.Row="1" Grid.Column="2" Text="{Binding Settings.WidgetScale, StringFormat='{}{0:F1}×'}" Width="50" TextAlignment="Right" VerticalAlignment="Center" Margin="10,8,0,0" />
                         </Grid>
 
-                        <CheckBox IsChecked="{Binding Settings.UseCompactMode}"
-                                  Content="Use compact mode"
-                                  ToolTip.Tip="Switches the timer widget into a minimal mode" />
-
-                        <TextBlock TextWrapping="Wrap" FontSize="12" Foreground="{DynamicResource WidgetSecondaryForegroundBrush}" Text="Compact mode reduces the widget to a tiny bar with only the timer and play/pause button." />
+                        <CheckBox IsChecked="{Binding Settings.UseCompactMode}" Content="Use compact mode" ToolTip.Tip="Switches the timer widget into a minimal mode" />
+                        <TextBlock TextWrapping="Wrap" FontSize="12" Foreground="{DynamicResource SettingsLabelTextBrush}" 
+                                   Text="Note: Color changes apply immediately. Use hex format (#RRGGBBAA or #RRGGBB). Import/export .fttheme files to share themes." />
                     </StackPanel>
                 </ScrollViewer>
             </TabItem>
@@ -155,7 +268,7 @@
                 <ScrollViewer>
                     <StackPanel Spacing="15">
                         <TextBlock Classes="SectionHeader" Text="Global Hotkeys" />
-                        <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource WidgetSecondaryForegroundBrush}"
+                        <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource SettingsLabelTextBrush}"
                                    Margin="0,0,0,10"
                                    Text="Note: Hotkeys work system‑wide even when the app is not focused. Windows only." />
 
@@ -180,7 +293,7 @@
                                      Margin="0,10,0,0" />
                         </Grid>
 
-                        <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource WidgetSecondaryForegroundBrush}" FontSize="11" Margin="0,10,0,0"
+                        <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource SettingsLabelTextBrush}" FontSize="11" Margin="0,10,0,0"
                                    Text="Tip: Hotkeys are registered when the app starts. Changes require restart." />
                     </StackPanel>
                 </ScrollViewer>

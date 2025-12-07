@@ -20,6 +20,8 @@ public class AppController
     private readonly ISettingsProvider _settingsProvider;
     private readonly IHotkeyService _hotkeyService;
     private readonly INotificationService _notificationService;
+    private readonly IThemeService _themeService;
+    private readonly ThemeManager _themeManager;
     private readonly Func<TimerWidgetViewModel> _timerViewModelFactory;
     private readonly Func<SettingsWindowViewModel> _settingsViewModelFactory;
     
@@ -31,12 +33,16 @@ public class AppController
         ISettingsProvider settingsProvider,
         IHotkeyService hotkeyService,
         INotificationService notificationService,
+        IThemeService themeService,
+        ThemeManager themeManager,
         Func<TimerWidgetViewModel> timerViewModelFactory,
         Func<SettingsWindowViewModel> settingsViewModelFactory)
     {
         _settingsProvider = settingsProvider;
         _hotkeyService = hotkeyService;
         _notificationService = notificationService;
+        _themeService = themeService;
+        _themeManager = themeManager;
         _timerViewModelFactory = timerViewModelFactory;
         _settingsViewModelFactory = settingsViewModelFactory;
         _currentSettings = new Settings();
@@ -49,7 +55,24 @@ public class AppController
     {
         try
         {
+            // Initialize theme resources first
+            _themeManager.InitializeThemeResources();
+            
+            // Load settings
             _currentSettings = await _settingsProvider.LoadAsync();
+            
+            // Apply saved theme
+            if (!string.IsNullOrEmpty(_currentSettings.ActiveThemeName))
+            {
+                var theme = _themeService.GetBuiltInTheme(_currentSettings.ActiveThemeName);
+                if (theme != null)
+                {
+                    _currentSettings.Theme = theme;
+                }
+            }
+            
+            // Apply theme to UI
+            _themeManager.ApplyTheme(_currentSettings.Theme);
         }
         catch (Exception ex)
         {
@@ -212,6 +235,9 @@ public class AppController
             // Reload settings
             _currentSettings = await _settingsProvider.LoadAsync();
 
+            // Apply theme
+            _themeManager.ApplyTheme(_currentSettings.Theme);
+
             // Apply to timer widget if it exists
             if (_timerWindow?.DataContext is TimerWidgetViewModel vm)
             {
@@ -221,7 +247,7 @@ public class AppController
             // Apply window-level settings
             if (_timerWindow != null)
             {
-                _timerWindow.Opacity = _currentSettings.WidgetOpacity;
+                _timerWindow.Opacity = 1.0;
                 _timerWindow.Topmost = _currentSettings.AlwaysOnTop;
                 
                 // Apply scale via RenderTransform
@@ -243,7 +269,7 @@ public class AppController
     /// Exit the application cleanly.
     /// Stops timer, flushes logs, and disposes resources.
     /// </summary>
-    public async Task ExitApplicationAsync()
+    public void ExitApplication()
     {
         try
         {

@@ -7,10 +7,12 @@
         x:Class="FocusTimer.App.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Title="FocusTimer - Skeleton"
-        Width="400" Height="200">
+        Width="400" Height="200"
+        Background="Transparent"
+        Opacity="0">
 
     <StackPanel Margin="20" Spacing="15" VerticalAlignment="Center">
-        <TextBlock Text="FocusTimer — Skeleton" 
+        <TextBlock Text="FocusTimer ï¿½ Skeleton" 
                    FontSize="24" 
                    FontWeight="Bold"
                    HorizontalAlignment="Center"/>
