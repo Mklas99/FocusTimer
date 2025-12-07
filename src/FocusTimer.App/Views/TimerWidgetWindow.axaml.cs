@@ -12,6 +12,20 @@ namespace FocusTimer.App.Views;
 
 public partial class TimerWidgetWindow : Window
 {
+    // Set cursor to Grab when pointer enters drag area (if not dragging)
+    private void DragArea_PointerEnter(object? sender, PointerEventArgs e)
+    {
+        if (!_isDragging && sender is Border dragArea)
+            dragArea.Cursor = new Cursor(StandardCursorType.DragMove);
+    }
+
+    // Set cursor to SizeAll when pointer leaves drag area (if not dragging)
+    private void DragArea_PointerLeave(object? sender, PointerEventArgs e)
+    {
+        if (!_isDragging && sender is Border dragArea)
+            dragArea.Cursor = new Cursor(StandardCursorType.Arrow);
+    }
+
     public TimerWidgetWindow()
     {
         InitializeComponent();
@@ -80,13 +94,27 @@ public partial class TimerWidgetWindow : Window
         base.OnClosed(e);
     }
 
+    private bool _isDragging = false;
+
     // Handler for draggable area
     private void WindowDragArea_PointerPressed(object? sender, PointerPressedEventArgs e)
     {
         if (e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
         {
+            _isDragging = true;
+            if (sender is Border dragArea)
+                dragArea.Cursor = new Cursor(StandardCursorType.SizeAll);
             BeginMoveDrag(e);
         }
+    }
+
+    protected override void OnPointerReleased(PointerReleasedEventArgs e)
+    {
+        base.OnPointerReleased(e);
+        _isDragging = false;
+        var dragArea = this.FindControl<Border>("DragArea");
+        if (dragArea != null)
+            dragArea.Cursor = new Cursor(StandardCursorType.DragMove);
     }
 
     // Handler for minimize button

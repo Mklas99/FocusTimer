@@ -1,0 +1,45 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:converters="using:FocusTimer.App.Converters"
+             xmlns:materialIcons="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
+             xmlns:vm="using:FocusTimer.App.ViewModels" 
+             x:DataType="vm:TimerWidgetViewModel"
+             x:Class="FocusTimer.App.Views.CompactModeView">
+    <UserControl.Resources>
+        <converters:PlayPauseConverter x:Key="PlayPauseConverter" />
+        <converters:BooleanNegationConverter x:Key="BooleanNegationConverter" />
+        <converters:BooleanToAngleConverter x:Key="BooleanToAngleConverter" />
+    </UserControl.Resources>
+
+    <Grid ColumnDefinitions="Auto,Auto,Auto"
+          VerticalAlignment="Center">
+        <!-- Timer small text -->
+        <TextBlock Grid.Column="0"
+                   Text="{Binding ElapsedFormatted}"
+                   Classes="timer-text"
+                   FontSize="25"
+                   Opacity="{Binding EffectiveClockOpacity}" />
+        <!-- Play/Pause button -->
+        <Button Grid.Column="1"
+                Command="{Binding ToggleCommand}"
+                Classes="icon-button"
+                ToolTip.Tip="Start/Pause"
+                Opacity="{Binding EffectiveControlsOpacity}">
+            <materialIcons:MaterialIcon Kind="{Binding IsRunning, Converter={StaticResource PlayPauseConverter}}"
+                                        Foreground="{DynamicResource ButtonNormalBrush}"
+                                        Width="16"
+                                        Height="16" />
+        </Button>
+        <!-- Expand to full mode button -->
+        <Button Grid.Column="2"
+                Command="{Binding ToggleCompactModeCommand}"
+                Classes="icon-button"
+                ToolTip.Tip="Expand"
+                Opacity="{Binding EffectiveControlsOpacity}">
+            <materialIcons:MaterialIcon Kind="ViewHeadline"
+                                        Foreground="{DynamicResource ButtonNormalBrush}"
+                                        Width="16"
+                                        Height="16" />
+        </Button>
+    </Grid>
+</UserControl>
