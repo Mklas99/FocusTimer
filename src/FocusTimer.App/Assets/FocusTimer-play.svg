@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="32" height="32">
+    <!-- Focus corners with 90 degree angles, 1 unit from edges -->
+    <line x1="16" y1="3" x2="3" y2="3"    stroke="#34C759" stroke-width="6" stroke-linecap="round"/>
+    <line x1="3" y1="3" x2="3" y2="16"    stroke="#34C759" stroke-width="6" stroke-linecap="round"/>
+
+    <line x1="48" y1="3" x2="61" y2="3"   stroke="#34C759" stroke-width="6" stroke-linecap="round"/>
+    <line x1="61" y1="3" x2="61" y2="16"  stroke="#34C759" stroke-width="6" stroke-linecap="round"/>
+
+    <line x1="3" y1="48" x2="3" y2="61"   stroke="#34C759" stroke-width="6" stroke-linecap="round"/>
+    <line x1="3" y1="61" x2="16" y2="61"  stroke="#34C759" stroke-width="6" stroke-linecap="round"/>
+    <line x1="48" y1="61" x2="61" y2="61" stroke="#34C759" stroke-width="6" stroke-linecap="round"/>
+    <line x1="61" y1="48" x2="61" y2="61" stroke="#34C759" stroke-width="6" stroke-linecap="round"/>
+    <!-- Background circle -->
+    <circle cx="32" cy="32" r="25" fill="#e1faf4ff" fill-opacity="0.5"/>
+
+    <!-- Clock ring -->
+    <circle cx="32" cy="32" r="26" stroke="#00084dff" stroke-width="8" fill="none"/>
+    <circle cx="32" cy="32" r="25" stroke="#72efffff" stroke-width="8" fill="none"/>
+
+    <!-- Hour hand -->
+    <line x1="32" y1="32" x2="16" y2="26" stroke="#d8d8d8ff" stroke-width="9" stroke-linecap="round"/>
+    <line x1="32" y1="32" x2="16" y2="26" stroke="#222222" stroke-width="8.5" stroke-linecap="round"/>
+
+    <!-- Minute hand -->
+    <line x1="32" y1="32" x2="48" y2="13" stroke="#d8d8d8ff" stroke-width="9" stroke-linecap="round"/>
+    <line x1="32" y1="32" x2="48" y2="13" stroke="#222222" stroke-width="8.5" stroke-linecap="round"/>
+    <!-- Center dot -->
+  <polygon
+    points="27,25 27,39 40,33"
+    fill="#1B5E20"
+    stroke="#69ff73ff"
+    stroke-width="2"
+    stroke-linejoin="round"
+    stroke-linecap="round" />
+</svg>

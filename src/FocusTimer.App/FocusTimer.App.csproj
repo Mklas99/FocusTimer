@@ -25,5 +25,9 @@
     <ProjectReference Include="..\FocusTimer.Persistence\FocusTimer.Persistence.csproj" />
     <ProjectReference Include="..\FocusTimer.Platform.Windows\FocusTimer.Platform.Windows.csproj" Condition="$([MSBuild]::IsOSPlatform('Windows'))" />
   </ItemGroup>
-  
+
+  <ItemGroup>
+    <AvaloniaResource Include="Assets\FocusTimer-idle.png" />
+  </ItemGroup>
+
 </Project>

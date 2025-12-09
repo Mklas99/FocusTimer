@@ -9,7 +9,8 @@
         Title="FocusTimer - Skeleton"
         Width="400" Height="200"
         Background="Transparent"
-        Opacity="0">
+        Opacity="0"
+        Icon="avares://FocusTimer.App/Assets/FocusTimer-idle.png">
 
     <StackPanel Margin="20" Spacing="15" VerticalAlignment="Center">
         <TextBlock Text="FocusTimer � Skeleton" 
