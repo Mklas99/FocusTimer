@@ -9,16 +9,35 @@ using Avalonia.Threading;
 using System;
 using Avalonia.Controls;
 using System.Threading.Tasks;
+using FocusTimer.Core.Interfaces;
+using System.Linq;
 
 namespace FocusTimer.App;
 
 public partial class App : Application
 {
     private AppController? _appController;
+    private TrayIcon? _trayIcon;
+
+    public static TrayIcon? TrayIconInstance { get; private set; }
 
     public override void Initialize()
     {
         AvaloniaXamlLoader.Load(this);
+        _trayIcon = this.GetLogicalChildren().OfType<TrayIcon>().FirstOrDefault();
+        if (_trayIcon != null)
+        {
+            _trayIcon.Clicked += TrayIcon_Clicked;
+          /// _trayIcon.MenuShowHide += TrayMenu_ShowHide;
+          /// _trayIcon.MenuToggleTimer += TrayMenu_ToggleTimer;
+          /// _trayIcon.MenuSettings += TrayMenu_Settings;
+          /// _trayIcon.MenuExit += TrayMenu_Exit;
+        }
+    }
+
+    private System.Collections.IEnumerable GetLogicalChildren()
+    {
+        return this.GetLogicalChildren();
     }
 
     public override void OnFrameworkInitializationCompleted()
@@ -37,7 +56,6 @@ public partial class App : Application
 
         base.OnFrameworkInitializationCompleted();
     }
-
     private async System.Threading.Tasks.Task InitializeAppAsync(IClassicDesktopStyleApplicationLifetime desktop)
     {
         try
@@ -86,6 +104,9 @@ public partial class App : Application
 
     private void TrayIcon_Clicked(object? sender, EventArgs e)
     {
+        // Store TrayIcon instance statically on first event
+        if (TrayIconInstance == null && sender is TrayIcon tray)
+            TrayIconInstance = tray;
         // Toggle widget visibility on tray icon click
         _appController?.ToggleTimerWidget();
     }

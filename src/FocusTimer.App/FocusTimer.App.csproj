@@ -21,13 +21,13 @@
   </ItemGroup>
 
   <ItemGroup>
+    <AvaloniaResource Include="Assets\FocusTimer-play.png" />
+    <AvaloniaResource Include="Assets\FocusTimer-pause.png" />
+    <AvaloniaResource Include="Assets\FocusTimer-idle.png" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\FocusTimer.Core\FocusTimer.Core.csproj" />
     <ProjectReference Include="..\FocusTimer.Persistence\FocusTimer.Persistence.csproj" />
     <ProjectReference Include="..\FocusTimer.Platform.Windows\FocusTimer.Platform.Windows.csproj" Condition="$([MSBuild]::IsOSPlatform('Windows'))" />
   </ItemGroup>
-
-  <ItemGroup>
-    <AvaloniaResource Include="Assets\FocusTimer-idle.png" />
-  </ItemGroup>
-
 </Project>

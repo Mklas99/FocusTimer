@@ -13,9 +13,9 @@
     <!-- System Tray Icon -->
     <TrayIcon.Icons>
         <TrayIcons>
-            <TrayIcon ToolTipText="FocusTimer"
+            <TrayIcon ToolTipText="FocusTimer – Paused"
                       Clicked="TrayIcon_Clicked"
-                      Icon="avares://FocusTimer.App/Assets/FocusTimer-idle.png">
+                      Icon="avares://FocusTimer.App/Assets/FocusTimer-pause.png">
                 <TrayIcon.Menu>
                     <NativeMenu>
                         <NativeMenuItem Header="Show/Hide Timer"

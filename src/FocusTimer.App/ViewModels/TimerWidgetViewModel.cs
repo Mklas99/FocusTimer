@@ -1,3 +1,4 @@
+using FocusTimer.App.Services;
 using System;
 using System.Reactive;
 using System.Threading.Tasks;
@@ -477,6 +478,9 @@ private readonly ISettingsProvider _settingsProvider;
                 // Write entries
                 await _logWriter.WriteEntriesAsync(entries, currentSettings);
                 System.Diagnostics.Debug.WriteLine($"Successfully logged {entries.Count} time entries to {currentSettings.LogDirectory}");
+                // Notify AppController for tray update
+                var appController = Program.Services.GetService(typeof(AppController)) as AppController;
+                appController?.OnEntriesLogged(entries);
             }
             else
             {

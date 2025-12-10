@@ -24,6 +24,9 @@ public class AppController
     private readonly ThemeManager _themeManager;
     private readonly Func<TimerWidgetViewModel> _timerViewModelFactory;
     private readonly Func<SettingsWindowViewModel> _settingsViewModelFactory;
+    private readonly TodayStatsService _todayStatsService;
+    private TrayStateController? _trayStateController;
+    private readonly TrayIcon _trayIcon;
     
     private TimerWidgetWindow? _timerWindow;
     private SettingsWindow? _settingsWindow;
@@ -36,7 +39,8 @@ public class AppController
         IThemeService themeService,
         ThemeManager themeManager,
         Func<TimerWidgetViewModel> timerViewModelFactory,
-        Func<SettingsWindowViewModel> settingsViewModelFactory)
+        Func<SettingsWindowViewModel> settingsViewModelFactory,
+        TrayIcon trayIcon)
     {
         _settingsProvider = settingsProvider;
         _hotkeyService = hotkeyService;
@@ -46,6 +50,8 @@ public class AppController
         _timerViewModelFactory = timerViewModelFactory;
         _settingsViewModelFactory = settingsViewModelFactory;
         _currentSettings = new Settings();
+        _todayStatsService = new TodayStatsService();
+        _trayIcon = trayIcon;
     }
 
     /// <summary>
@@ -73,6 +79,23 @@ public class AppController
             
             // Apply theme to UI
             _themeManager.ApplyTheme(_currentSettings.Theme);
+            
+            // Setup tray state controller after timer window is created
+            if (_timerWindow == null)
+            {
+                var viewModel = _timerViewModelFactory();
+                _timerWindow = new TimerWidgetWindow
+                {
+                    DataContext = viewModel
+                };
+                _trayStateController = new TrayStateController(
+                    _trayIcon,
+                    viewModel,
+                    _todayStatsService);
+
+                // Initialize settings async
+                _ = viewModel.InitializeSettingsAsync();
+            }
         }
         catch (Exception ex)
         {
@@ -119,6 +142,11 @@ public class AppController
                     DataContext = viewModel
                 };
                 
+                _trayStateController = new TrayStateController(
+                    _trayIcon,
+                    viewModel,
+                    _todayStatsService);
+
                 // Initialize settings async
                 _ = viewModel.InitializeSettingsAsync();
             }
@@ -313,4 +341,12 @@ public class AppController
     /// Get the current settings (for initialization purposes).
     /// </summary>
     public Settings CurrentSettings => _currentSettings;
+
+    /// <summary>
+    /// Call this after time entries are logged to update tray tooltip.
+    /// </summary>
+    public void OnEntriesLogged(System.Collections.Generic.IEnumerable<FocusTimer.Core.Models.TimeEntry> entries)
+    {
+        _trayStateController?.OnEntriesLogged(entries);
+    }
 }
