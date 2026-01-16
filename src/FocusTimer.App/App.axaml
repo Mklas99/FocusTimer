@@ -10,12 +10,12 @@
         <StyleInclude Source="avares://FocusTimer.App/Styles/ThemeResources.axaml" />
     </Application.Styles>
 
-    <!-- System Tray Icon -->
+    <!-- System Tray Icon
     <TrayIcon.Icons>
         <TrayIcons>
-            <TrayIcon ToolTipText="FocusTimer – Paused"
+            <TrayIcon ToolTipText="Focus Timer: Idle"
                       Clicked="TrayIcon_Clicked"
-                      Icon="avares://FocusTimer.App/Assets/FocusTimer-pause.png">
+                      Icon="avares://FocusTimer.App/Assets/FocusTimer-idle.png">
                 <TrayIcon.Menu>
                     <NativeMenu>
                         <NativeMenuItem Header="Show/Hide Timer"
@@ -32,5 +32,5 @@
                 </TrayIcon.Menu>
             </TrayIcon>
         </TrayIcons>
-    </TrayIcon.Icons>
+    </TrayIcon.Icons> -->
 </Application>

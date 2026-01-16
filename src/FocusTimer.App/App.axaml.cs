@@ -11,6 +11,7 @@ using Avalonia.Controls;
 using System.Threading.Tasks;
 using FocusTimer.Core.Interfaces;
 using System.Linq;
+using Avalonia.LogicalTree;
 
 namespace FocusTimer.App;
 
@@ -19,25 +20,37 @@ public partial class App : Application
     private AppController? _appController;
     private TrayIcon? _trayIcon;
 
-    public static TrayIcon? TrayIconInstance { get; private set; }
 
     public override void Initialize()
     {
         AvaloniaXamlLoader.Load(this);
-        _trayIcon = this.GetLogicalChildren().OfType<TrayIcon>().FirstOrDefault();
+        if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop && desktop.MainWindow != null)
+        {
+            _trayIcon = FindTrayIcon();
+        }
+
+        
         if (_trayIcon != null)
         {
+            _appController.SetTrayIcon(_trayIcon);
             _trayIcon.Clicked += TrayIcon_Clicked;
+        }
           /// _trayIcon.MenuShowHide += TrayMenu_ShowHide;
           /// _trayIcon.MenuToggleTimer += TrayMenu_ToggleTimer;
           /// _trayIcon.MenuSettings += TrayMenu_Settings;
           /// _trayIcon.MenuExit += TrayMenu_Exit;
-        }
     }
 
-    private System.Collections.IEnumerable GetLogicalChildren()
+    private TrayIcon? FindTrayIcon()
     {
-        return this.GetLogicalChildren();
+        if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop && desktop.MainWindow != null)
+        {
+            // Search for TrayIcon in MainWindow's logical tree
+            return desktop.MainWindow.GetLogicalChildren()
+                .OfType<TrayIcon>()
+                .FirstOrDefault();
+        }
+        return null;
     }
 
     public override void OnFrameworkInitializationCompleted()
@@ -46,7 +59,32 @@ public partial class App : Application
         {
             // Get the AppController from DI
             _appController = Program.Services.GetRequiredService<AppController>();
-            
+
+            // Create and configure the tray icon in code
+            _trayIcon = new TrayIcon
+            {
+                ToolTipText = "Focus Timer: Idle",
+                Icon = new WindowIcon(
+                    Avalonia.Platform.AssetLoader.Open(
+                        new Uri("avares://FocusTimer.App/Assets/FocusTimer-idle.png"))
+                ),
+                Menu = new NativeMenu
+                {
+                    CreateMenuItem("Show/Hide Timer", TrayMenu_ShowHide),
+                    CreateMenuItem("Start/Pause Timer", TrayMenu_ToggleTimer),
+                    new NativeMenuItemSeparator(),
+                    CreateMenuItem("Settings...", TrayMenu_Settings),
+                    new NativeMenuItemSeparator(),
+                    CreateMenuItem("Exit", TrayMenu_Exit)
+                }
+            };
+            _trayIcon.Clicked += TrayIcon_Clicked;
+
+            // Register tray icon with controllers
+            _appController.SetTrayIcon(_trayIcon);
+            var trayController = Program.Services.GetRequiredService<ITrayIconController>();
+            trayController.SetTrayIcon(_trayIcon);
+
             // Initialize settings asynchronously
             _ = InitializeAppAsync(desktop);
 
@@ -56,6 +94,7 @@ public partial class App : Application
 
         base.OnFrameworkInitializationCompleted();
     }
+
     private async System.Threading.Tasks.Task InitializeAppAsync(IClassicDesktopStyleApplicationLifetime desktop)
     {
         try
@@ -100,13 +139,21 @@ public partial class App : Application
         }
     }
 
+    private NativeMenuItem CreateMenuItem(string header, EventHandler? onClick)
+    {
+        var item = new NativeMenuItem(header);
+        if (onClick != null)
+            item.Click += onClick;
+        return item;
+    }
+
     #region TrayIcon Event Handlers
 
     private void TrayIcon_Clicked(object? sender, EventArgs e)
     {
         // Store TrayIcon instance statically on first event
-        if (TrayIconInstance == null && sender is TrayIcon tray)
-            TrayIconInstance = tray;
+        if (_trayIcon == null && sender is TrayIcon tray)
+            _trayIcon = tray;
         // Toggle widget visibility on tray icon click
         _appController?.ToggleTimerWidget();
     }

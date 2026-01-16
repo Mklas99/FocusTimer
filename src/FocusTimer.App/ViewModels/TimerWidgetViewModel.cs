@@ -143,7 +143,7 @@ private readonly ISettingsProvider _settingsProvider;
     private readonly ILogWriter _logWriter;
     private readonly SessionTracker _sessionTracker;
     private readonly BreakReminderService _breakReminderService;
-    private readonly DispatcherTimer _timer;
+    private readonly ITimerService _timerService;
     
     // Timer state using DateTime-based measurement to avoid drift
     private DateTime? _startTime;
@@ -160,7 +160,8 @@ private readonly ISettingsProvider _settingsProvider;
         ISettingsProvider settingsProvider,
         ILogWriter logWriter,
         SessionTracker sessionTracker,
-        BreakReminderService breakReminderService)
+        BreakReminderService breakReminderService,
+        ITimerService timerService)
     {
         // Defensive: Ensure ViewModel is constructed on the UI thread
         if (!Dispatcher.UIThread.CheckAccess())
@@ -170,17 +171,25 @@ private readonly ISettingsProvider _settingsProvider;
         _logWriter = logWriter;
         _sessionTracker = sessionTracker;
         _breakReminderService = breakReminderService;
+        _timerService = timerService;
         _settings = new Settings(); // Safe defaults with validation
 
         SubscribeToThemeChanges(_settings.Theme);
         SubscribeToSettingsChanges(_settings);
         
-        // Initialize timer (ticks every second)
-        _timer = new DispatcherTimer
+        // Initialize timer events
+        _timerService.Tick += (s, elapsed) => 
         {
-            Interval = TimeSpan.FromSeconds(1)
+            Dispatcher.UIThread.Post(() => OnTimerTick(elapsed));
         };
-        _timer.Tick += OnTimerTick;
+        
+        _timerService.StateChanged += (s, state) =>
+        {
+            Dispatcher.UIThread.Post(() =>
+            {
+                IsRunning = state == TimerState.Running;
+            });
+        };
 
         // Initialize commands with explicit UI thread scheduler
         ToggleCommand = ReactiveCommand.Create(Toggle, outputScheduler: RxApp.MainThreadScheduler);
@@ -199,7 +208,7 @@ private readonly ISettingsProvider _settingsProvider;
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Failed to save settings after toggling compact mode: {ex.Message}");
+                _logWriter.LogError("Failed to save settings after toggling compact mode.", ex);
             }
         }, outputScheduler: RxApp.MainThreadScheduler);
     }
@@ -328,95 +337,19 @@ private readonly ISettingsProvider _settingsProvider;
 
     private void Toggle()
     {
-        // Use proper async handling instead of fire-and-forget
-        if (IsRunning)
+        if (_timerService.CurrentState == TimerState.Running)
         {
-            PauseAsync().ContinueWith(t =>
-            {
-                if (t.IsFaulted)
-                {
-                    System.Diagnostics.Debug.WriteLine($"Error pausing timer: {t.Exception?.GetBaseException().Message}");
-                }
-            });
+            _timerService.Pause();
         }
         else
         {
-            StartAsync().ContinueWith(t =>
-            {
-                if (t.IsFaulted)
-                {
-                    System.Diagnostics.Debug.WriteLine($"Error starting timer: {t.Exception?.GetBaseException().Message}");
-                }
-            });
-        }
-    }
-
-    private async Task StartAsync()
-    {
-        if (!IsRunning)
-        {
-            IsRunning = true;
-            _startTime ??= DateTime.Now; // Only set if not already set (resume case)
-            
-            try
-            {
-                // Start session tracking
-                await _sessionTracker.StartAsync(_projectTag);
-                
-                // Start break reminder tracking
-                _breakReminderService.OnTimerStarted();
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Failed to start session tracking: {ex.Message}");
-                // Continue anyway - timer still works even if tracking fails
-            }
-            
-            _timer.Start();
-        }
-    }
-
-    private async Task PauseAsync()
-    {
-        if (IsRunning)
-        {
-            IsRunning = false;
-            _timer.Stop();
-
-            // Accumulate elapsed time up to now
-            if (_startTime.HasValue)
-            {
-                _accumulatedElapsed += DateTime.Now - _startTime.Value;
-                _startTime = null;
-            }
-
-            // Update display with final accumulated time
-            Elapsed = _accumulatedElapsed;
-
-            // Cancel break reminder
-            _breakReminderService.OnTimerPaused();
-
-            // Collect and log entries
-            await FlushEntriesAsync();
+            _timerService.Start(ProjectTag);
         }
     }
 
     private void Reset()
     {
-        ResetAsync().ContinueWith(t =>
-        {
-            if (t.IsFaulted)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error resetting timer: {t.Exception?.GetBaseException().Message}");
-            }
-        });
-    }
-
-    private async Task ResetAsync()
-    {
-        await PauseAsync(); // Ensure timer is stopped and entries are flushed
-        _accumulatedElapsed = TimeSpan.Zero;
-        Elapsed = TimeSpan.Zero;
+        _timerService.Reset();
     }
 
     private void ToggleProjectInput()
@@ -428,21 +361,30 @@ private readonly ISettingsProvider _settingsProvider;
 
     #region Timer Logic
 
-    private void OnTimerTick(object? sender, EventArgs e)
+    private void OnTimerTick(TimeSpan elapsed)
     {
-        if (IsRunning && _startTime.HasValue)
+        Elapsed = elapsed;
+    }
+
+    private void OnTimerStateChanged(TimerState state)
+    {
+        IsRunning = state == TimerState.Running;
+        
+        if (state == TimerState.Running)
         {
-            // Calculate actual elapsed time from DateTime measurement
-            Elapsed = _accumulatedElapsed + (DateTime.Now - _startTime.Value);
-            
-            // Check for active window changes (fire and forget, but log errors)
-            _sessionTracker.OnTimerTickAsync().ContinueWith(t =>
+             _breakReminderService.OnTimerStarted();
+        }
+        else
+        {
+            _breakReminderService.OnTimerPaused();
+            // Flush entries when paused or stopped
+            FlushEntriesAsync().ContinueWith(t =>
             {
                 if (t.IsFaulted)
                 {
-                    System.Diagnostics.Debug.WriteLine($"Error tracking window: {t.Exception?.GetBaseException().Message}");
+                    _logWriter.LogError("Error flushing entries.", t.Exception);
                 }
-            }, TaskScheduler.Default);
+            });
         }
     }
 
@@ -471,25 +413,25 @@ private readonly ISettingsProvider _settingsProvider;
                 }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Debug.WriteLine($"Failed to reload settings, using cached: {ex.Message}");
+                    _logWriter.LogError("Failed to reload settings, using cached.", ex);
                     currentSettings = _settings; // Fall back to cached settings
                 }
 
                 // Write entries
                 await _logWriter.WriteEntriesAsync(entries, currentSettings);
-                System.Diagnostics.Debug.WriteLine($"Successfully logged {entries.Count} time entries to {currentSettings.LogDirectory}");
+                _logWriter.LogInformation($"Successfully logged {entries.Count} time entries to {currentSettings.LogDirectory}");
                 // Notify AppController for tray update
                 var appController = Program.Services.GetService(typeof(AppController)) as AppController;
                 appController?.OnEntriesLogged(entries);
             }
             else
             {
-                System.Diagnostics.Debug.WriteLine("No time entries to log");
+                _logWriter.LogDebug("No time entries to log");
             }
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Failed to flush entries: {ex.Message}");
+            _logWriter.LogError("Failed to flush entries.", ex);
             // TODO: Consider showing a user notification about log write failure
         }
     }
@@ -506,7 +448,7 @@ private readonly ISettingsProvider _settingsProvider;
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error updating project tag: {ex.Message}");
+            _logWriter.LogError("Error updating project tag.", ex);
         }
     }
 
@@ -532,7 +474,7 @@ private readonly ISettingsProvider _settingsProvider;
         catch (Exception ex)
         {
             // Log error but continue with defaults
-            System.Diagnostics.Debug.WriteLine($"Failed to load settings: {ex}");
+            _logWriter.LogError("Failed to load settings.", ex);
             // TODO: Consider showing a notification to the user about failed settings load
         }
     }
@@ -571,8 +513,8 @@ private readonly ISettingsProvider _settingsProvider;
         try
         {
             // Stop timer
-            _timer.Stop();
-            _timer.Tick -= OnTimerTick;
+            _timerService.Stop();
+            // No need to unsubscribe from Tick here, as we use lambda subscriptions in the constructor
 
             // Stop break reminder
             _breakReminderService.OnTimerPaused();
@@ -588,12 +530,12 @@ private readonly ISettingsProvider _settingsProvider;
                     {
                         // We can't await here, so we'll do our best effort
                         _logWriter.WriteEntriesAsync(entries, _settings).Wait(TimeSpan.FromSeconds(2));
-                        System.Diagnostics.Debug.WriteLine($"Flushed {entries.Count} entries on dispose");
+                        _logWriter.LogInformation($"Flushed {entries.Count} entries on dispose");
                     }
                 }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Debug.WriteLine($"Failed to flush entries on dispose: {ex.Message}");
+                    _logWriter.LogError("Failed to flush entries on dispose.", ex);
                 }
             }
         }
@@ -645,7 +587,7 @@ private readonly ISettingsProvider _settingsProvider;
 
     private void Theme_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
-        System.Diagnostics.Debug.WriteLine($"[Theme_PropertyChanged] Property changed: {e.PropertyName}");
+        _logWriter.LogDebug($"[Theme_PropertyChanged] Property changed: {e.PropertyName}");
 
         if (e.PropertyName == nameof(FocusTimer.Core.Models.Theme.BackgroundOpacity))
         {

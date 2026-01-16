@@ -1,47 +1,105 @@
-using Avalonia.Controls;
 using System;
-using FocusTimer.App.ViewModels;
+using System.Collections.Generic;
+using Avalonia.Controls;
+using Avalonia.Threading;
+using FocusTimer.Core.Interfaces;
 using FocusTimer.Core.Models;
+using FocusTimer.Core.Services;
 
 namespace FocusTimer.App.Services
 {
-    public class TrayStateController
+    public class TrayStateController : ITrayIconController
     {
-        private readonly TrayIcon _trayIcon;
-        private readonly TimerWidgetViewModel _timerViewModel;
-        private readonly TodayStatsService _todayStats;
-        private readonly WindowIcon _iconRunning = new WindowIcon("avares://FocusTimer.App/Assets/FocusTimer-play.png");
-        private readonly WindowIcon _iconPaused = new WindowIcon("avares://FocusTimer.App/Assets/FocusTimer-pause.png");
+        private readonly ITimerService _timerService;
+        private readonly TrayIconAssets _trayIconAssets;
+        private TrayIcon? _trayIcon;
+        private TimerState _pendingState;
+        private bool _isInitialized;
 
-        public TrayStateController(TrayIcon trayIcon, TimerWidgetViewModel timerViewModel, TodayStatsService todayStats)
+        public event EventHandler<MenuActionEventArgs>? MenuAction;
+        public event EventHandler? OnEntriesLogged;
+
+        public TrayStateController(ITimerService timerService)
+        {
+            _timerService = timerService;
+            _trayIconAssets = new TrayIconAssets();
+            _pendingState = timerService.CurrentState;
+            _isInitialized = false;
+        }
+
+        public void SetTrayIcon(TrayIcon trayIcon)
         {
             _trayIcon = trayIcon;
-            _timerViewModel = timerViewModel;
-            _todayStats = todayStats;
-
-            _timerViewModel.PropertyChanged += TimerViewModel_PropertyChanged;
-            UpdateTrayIconAndTooltip();
+            
+            // Subscribe to state changes only after tray icon is set
+            if (!_isInitialized)
+            {
+                _timerService.StateChanged += OnTimerStateChanged;
+                _isInitialized = true;
+                
+                // Apply pending state immediately
+                UpdateState(_pendingState);
+            }
         }
 
-        public void OnEntriesLogged(IEnumerable<TimeEntry> entries)
+        private void OnTimerStateChanged(object? sender, TimerState state)
         {
-            _todayStats.AddEntries(entries);
-            UpdateTrayIconAndTooltip();
+            if (_trayIcon == null)
+            {
+                _pendingState = state;
+                return;
+            }
+            
+            UpdateState(state);
         }
 
-        private void TimerViewModel_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+        public void UpdateState(TimerState state)
         {
-            if (e.PropertyName == nameof(TimerWidgetViewModel.IsRunning))
-                UpdateTrayIconAndTooltip();
+            _pendingState = state;
+            
+            if (_trayIcon == null)
+            {
+                return;
+            }
+
+            if (Dispatcher.UIThread.CheckAccess())
+            {
+                UpdateTrayIconInternal(state);
+            }
+            else
+            {
+                Dispatcher.UIThread.Invoke(() => UpdateTrayIconInternal(state));
+            }
         }
 
-        private void UpdateTrayIconAndTooltip()
+        private void UpdateTrayIconInternal(TimerState state)
         {
-            _trayIcon.Icon = _timerViewModel.IsRunning ? _iconRunning : _iconPaused;
-            var state = _timerViewModel.IsRunning ? "Running" : "Paused";
-            var today = _todayStats.GetTodayTotal();
-            var todayStr = today.TotalMinutes > 0 ? $"\nToday: {(int)today.TotalHours}h {today.Minutes}m" : "";
-            _trayIcon.ToolTipText = $"FocusTimer – {state}{todayStr}";
+            if (_trayIcon == null) return;
+
+            _trayIcon.Icon = _trayIconAssets.GetIcon(state);
+
+            _trayIcon.ToolTipText = state switch
+            {
+                TimerState.Running => "Focus Timer: Running",
+                TimerState.Paused => "Focus Timer: Paused",
+                TimerState.Idle => "Focus Timer: Idle",
+                _ => "Focus Timer"
+            };
+        }
+
+        public void ShowMenu()
+        {
+            // Menu is shown automatically by the TrayIcon control
+        }
+
+        public void HideMenu()
+        {
+            // Menu is hidden automatically by the TrayIcon control
+        }
+
+        public void RaiseEntriesLogged(IEnumerable<TimeEntry> entries)
+        {
+            OnEntriesLogged?.Invoke(this, EventArgs.Empty);
         }
     }
 }

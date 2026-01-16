@@ -1,4 +1,5 @@
 using System;
+using System.ComponentModel;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
@@ -18,15 +19,16 @@ namespace FocusTimer.App.Services;
 public class AppController
 {
     private readonly ISettingsProvider _settingsProvider;
-    private readonly IHotkeyService _hotkeyService;
+    private readonly IGlobalHotkeyService _hotkeyService;
     private readonly INotificationService _notificationService;
     private readonly IThemeService _themeService;
     private readonly ThemeManager _themeManager;
     private readonly Func<TimerWidgetViewModel> _timerViewModelFactory;
     private readonly Func<SettingsWindowViewModel> _settingsViewModelFactory;
     private readonly TodayStatsService _todayStatsService;
-    private TrayStateController? _trayStateController;
-    private readonly TrayIcon _trayIcon;
+    private ITrayIconController? _trayIconController;
+    private TrayIcon _trayIcon;
+    private readonly ILogWriter _logWriter;
     
     private TimerWidgetWindow? _timerWindow;
     private SettingsWindow? _settingsWindow;
@@ -34,13 +36,14 @@ public class AppController
 
     public AppController(
         ISettingsProvider settingsProvider,
-        IHotkeyService hotkeyService,
+        IGlobalHotkeyService hotkeyService,
         INotificationService notificationService,
         IThemeService themeService,
         ThemeManager themeManager,
         Func<TimerWidgetViewModel> timerViewModelFactory,
         Func<SettingsWindowViewModel> settingsViewModelFactory,
-        TrayIcon trayIcon)
+        ITrayIconController trayIconController,
+        ILogWriter logWriter)
     {
         _settingsProvider = settingsProvider;
         _hotkeyService = hotkeyService;
@@ -51,7 +54,8 @@ public class AppController
         _settingsViewModelFactory = settingsViewModelFactory;
         _currentSettings = new Settings();
         _todayStatsService = new TodayStatsService();
-        _trayIcon = trayIcon;
+        _trayIconController = trayIconController;
+        _logWriter = logWriter;
     }
 
     /// <summary>
@@ -80,7 +84,7 @@ public class AppController
             // Apply theme to UI
             _themeManager.ApplyTheme(_currentSettings.Theme);
             
-            // Setup tray state controller after timer window is created
+            // Setup tray icon controller after timer window is created
             if (_timerWindow == null)
             {
                 var viewModel = _timerViewModelFactory();
@@ -88,18 +92,13 @@ public class AppController
                 {
                     DataContext = viewModel
                 };
-                _trayStateController = new TrayStateController(
-                    _trayIcon,
-                    viewModel,
-                    _todayStatsService);
-
                 // Initialize settings async
                 _ = viewModel.InitializeSettingsAsync();
             }
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Failed to load settings: {ex.Message}");
+            _logWriter.LogError($"Failed to load settings.", ex);
             // Continue with defaults
         }
     }
@@ -113,11 +112,13 @@ public class AppController
         {
             // Register show/hide hotkey (default: Ctrl+Alt+T)
             var showHideHotkey = _currentSettings.HotkeyShowHide ?? "Ctrl+Alt+T";
-            _hotkeyService.RegisterHotkey(showHideHotkey, ToggleTimerWidget);
+            HotkeyDefinition? showHideDef = HotkeyDefinition.Parse(showHideHotkey);
+            _hotkeyService.Register(showHideDef.Value);
 
             // Register toggle timer hotkey (default: Ctrl+Alt+P)
             var toggleTimerHotkey = _currentSettings.HotkeyToggleTimer ?? "Ctrl+Alt+P";
-            _hotkeyService.RegisterHotkey(toggleTimerHotkey, ToggleTimer);
+            HotkeyDefinition? toggleTimerDef = HotkeyDefinition.Parse(toggleTimerHotkey);
+            _hotkeyService.Register(toggleTimerDef.Value);
 
             System.Diagnostics.Debug.WriteLine($"Hotkeys registered: {showHideHotkey}, {toggleTimerHotkey}");
         }
@@ -141,12 +142,11 @@ public class AppController
                 {
                     DataContext = viewModel
                 };
-                
-                _trayStateController = new TrayStateController(
-                    _trayIcon,
-                    viewModel,
-                    _todayStatsService);
-
+                // If tray icon is available, set it in the controller
+                if (_trayIcon != null && _trayIconController != null)
+                {
+                    (_trayIconController as TrayStateController)?.SetTrayIcon(_trayIcon);
+                }
                 // Initialize settings async
                 _ = viewModel.InitializeSettingsAsync();
             }
@@ -289,7 +289,7 @@ public class AppController
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Failed to apply settings: {ex.Message}");
+            _logWriter.LogError($"Failed to apply settings.", ex);
         }
     }
 
@@ -328,7 +328,7 @@ public class AppController
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error during exit: {ex.Message}");
+            _logWriter.LogError($"Error during exit.", ex);
             // Force shutdown anyway
             if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
             {
@@ -347,6 +347,15 @@ public class AppController
     /// </summary>
     public void OnEntriesLogged(System.Collections.Generic.IEnumerable<FocusTimer.Core.Models.TimeEntry> entries)
     {
-        _trayStateController?.OnEntriesLogged(entries);
+        _trayIconController?.RaiseEntriesLogged(entries);
+    }
+
+    /// <summary>
+    /// Set the tray icon instance.
+    /// </summary>
+    public void SetTrayIcon(TrayIcon trayIcon)
+    {
+        _trayIcon = trayIcon;
+        _trayIconController?.SetTrayIcon(_trayIcon);
     }
 }

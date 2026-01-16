@@ -12,9 +12,32 @@ public class LogWriterStub : ILogWriter
     {
         ArgumentNullException.ThrowIfNull(entries);
         ArgumentNullException.ThrowIfNull(settings);
-        
-        // Stub: just log to console/debug for now
         Console.WriteLine($"[LogWriterStub] Would write {entries.Count()} entries to {settings.LogDirectory}");
         return Task.CompletedTask;
+    }
+
+    public void LogDebug(string message)
+    {
+        Console.WriteLine($"[DEBUG] {message}");
+    }
+
+    public void LogInformation(string message)
+    {
+        Console.WriteLine($"[INFO] {message}");
+    }
+
+    public void LogWarning(string message)
+    {
+        Console.WriteLine($"[WARN] {message}");
+    }
+
+    public void LogError(string message, Exception? ex = null)
+    {
+        Console.WriteLine($"[ERROR] {message} " + (ex != null ? ex.ToString() : ""));
+    }
+
+    public void LogCritical(string message, Exception? ex = null)
+    {
+        Console.WriteLine($"[CRITICAL] {message} " + (ex != null ? ex.ToString() : ""));
     }
 }

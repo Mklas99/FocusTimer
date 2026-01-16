@@ -7,10 +7,12 @@ namespace FocusTimer.Platform.Windows;
 /// <summary>
 /// Windows implementation of global hotkey service using Win32 RegisterHotKey API.
 /// </summary>
-public class WindowsHotkeyService : IHotkeyService, IDisposable
+public class WindowsHotkeyService : IGlobalHotkeyService, IDisposable
 {
     private const int WM_HOTKEY = 0x0312;
+    private readonly Dictionary<int, HotkeyDefinition> _hotkeyDefinitions = new();
     private readonly Dictionary<int, Action> _hotkeyCallbacks = new();
+    public event EventHandler<HotkeyPressedEventArgs> HotkeyPressed;
     private int _nextHotkeyId = 1;
     private IntPtr _hwnd;
     private bool _disposed;
@@ -31,6 +33,7 @@ public class WindowsHotkeyService : IHotkeyService, IDisposable
         _hwnd = hwnd;
     }
 
+    // Legacy registration for compatibility
     public void RegisterHotkey(string hotkeyDefinition, Action callback)
     {
         if (_hwnd == IntPtr.Zero)
@@ -46,10 +49,11 @@ public class WindowsHotkeyService : IHotkeyService, IDisposable
             return;
         }
 
-        RegisterHotkey(hotkey.Value, callback);
+        Register(hotkey.Value);
     }
 
-    public void RegisterHotkey(HotkeyDefinition hotkey, Action callback)
+    // New interface method
+    public void Register(HotkeyDefinition definition)
     {
         if (_hwnd == IntPtr.Zero)
         {
@@ -60,17 +64,16 @@ public class WindowsHotkeyService : IHotkeyService, IDisposable
         try
         {
             var id = _nextHotkeyId++;
-            var modifiers = ConvertModifiers(hotkey.Modifiers);
-            
-            if (RegisterHotKey(_hwnd, id, modifiers, (uint)hotkey.KeyCode))
+            var modifiers = ConvertModifiers(definition.Modifiers);
+            if (RegisterHotKey(_hwnd, id, modifiers, (uint)definition.KeyCode))
             {
-                _hotkeyCallbacks[id] = callback;
-                System.Diagnostics.Debug.WriteLine($"Registered hotkey {id}: {hotkey}");
+                _hotkeyDefinitions[id] = definition;
+                System.Diagnostics.Debug.WriteLine($"Registered hotkey {id}: {definition}");
             }
             else
             {
                 var error = Marshal.GetLastWin32Error();
-                System.Diagnostics.Debug.WriteLine($"Failed to register hotkey {hotkey}: Win32 error {error}");
+                System.Diagnostics.Debug.WriteLine($"Failed to register hotkey {definition}: Win32 error {error}");
             }
         }
         catch (Exception ex)
@@ -84,7 +87,7 @@ public class WindowsHotkeyService : IHotkeyService, IDisposable
         if (_hwnd == IntPtr.Zero)
             return;
 
-        foreach (var id in _hotkeyCallbacks.Keys.ToList())
+        foreach (var id in _hotkeyDefinitions.Keys.ToList())
         {
             try
             {
@@ -96,8 +99,7 @@ public class WindowsHotkeyService : IHotkeyService, IDisposable
                 System.Diagnostics.Debug.WriteLine($"Failed to unregister hotkey {id}: {ex.Message}");
             }
         }
-
-        _hotkeyCallbacks.Clear();
+        _hotkeyDefinitions.Clear();
     }
 
     /// <summary>
@@ -105,16 +107,9 @@ public class WindowsHotkeyService : IHotkeyService, IDisposable
     /// </summary>
     public void ProcessHotkeyMessage(int hotkeyId)
     {
-        if (_hotkeyCallbacks.TryGetValue(hotkeyId, out var callback))
+        if (_hotkeyDefinitions.TryGetValue(hotkeyId, out var definition))
         {
-            try
-            {
-                callback.Invoke();
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Hotkey callback failed: {ex.Message}");
-            }
+            HotkeyPressed?.Invoke(this, new HotkeyPressedEventArgs(definition));
         }
     }
 

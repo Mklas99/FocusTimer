@@ -18,11 +18,15 @@
     <PackageReference Include="Avalonia.ReactiveUI" Version="11.2.0" />
     <PackageReference Include="Material.Icons.Avalonia" Version="2.4.1" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
+    <PackageReference Include="Serilog" Version="4.3.0" />
+    <PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />
+    <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
   </ItemGroup>
 
   <ItemGroup>
     <AvaloniaResource Include="Assets\FocusTimer-play.png" />
     <AvaloniaResource Include="Assets\FocusTimer-pause.png" />
+    <AvaloniaResource Include="Assets\FocusTimer-pause.svg" />
     <AvaloniaResource Include="Assets\FocusTimer-idle.png" />
   </ItemGroup>
   <ItemGroup>

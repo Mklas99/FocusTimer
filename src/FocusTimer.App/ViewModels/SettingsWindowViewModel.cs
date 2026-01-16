@@ -18,26 +18,78 @@ namespace FocusTimer.App.ViewModels;
 /// </summary>
 public class SettingsWindowViewModel : ReactiveObject
 {
+    private async Task ApplyAsync()
+    {
+        try
+        {
+            // Apply auto-start setting to registry before saving
+            _autoStartService.SetAutoStart(_settings.AutoStartOnLogin);
+            
+            await _settingsProvider.SaveAsync(_settings);
+            SettingsApplied?.Invoke(this, EventArgs.Empty);
+            _logWriter.LogDebug("Settings saved successfully");
+        }
+        catch (Exception ex)
+        {
+            _logWriter.LogDebug($"Failed to save settings: {ex.Message}");
+            // TODO: Show error dialog to user
+        }
+    }
+
+
+    private void Cancel(Window window)
+    {
+        window?.Close();
+    }
+
+    private async Task BrowseLogDirectoryAsync(Window window)
+    {
+        try
+        {
+            var storageProvider = window.StorageProvider;
+            
+            var options = new FolderPickerOpenOptions
+            {
+                Title = "Select Log Directory",
+                AllowMultiple = false
+            };
+
+            var result = await storageProvider.OpenFolderPickerAsync(options);
+            
+            if (result.Count > 0)
+            {
+                Settings.LogDirectory = result[0].Path.LocalPath;
+            }
+        }
+        catch (Exception ex)
+        {
+            _logWriter.LogDebug($"Failed to browse folder: {ex.Message}");
+        }
+    }
+
     private readonly ISettingsProvider _settingsProvider;
     private readonly IAutoStartService _autoStartService;
     private readonly IThemeService _themeService;
     private readonly ThemeManager _themeManager;
+    private readonly ILogWriter _logWriter;
     private Settings _settings;
     private string _selectedThemeName;
     
     public SettingsWindowViewModel(
-        ISettingsProvider settingsProvider, 
+        ISettingsProvider settingsProvider,
         IAutoStartService autoStartService,
         IThemeService themeService,
-        ThemeManager themeManager)
+        ThemeManager themeManager,
+        ILogWriter logWriter)
     {
         _settingsProvider = settingsProvider;
         _autoStartService = autoStartService;
         _themeService = themeService;
         _themeManager = themeManager;
+        _logWriter = logWriter;
         _settings = new Settings();
         _selectedThemeName = "Dark";
-        
+
         // Initialize commands
         ApplyCommand = ReactiveCommand.CreateFromTask(ApplyAsync);
         OkCommand = ReactiveCommand.CreateFromTask(OkAsync);
@@ -46,12 +98,13 @@ public class SettingsWindowViewModel : ReactiveObject
         ImportThemeCommand = ReactiveCommand.CreateFromTask<Window>(ImportThemeAsync);
         ExportThemeCommand = ReactiveCommand.CreateFromTask<Window>(ExportThemeAsync);
         ResetThemeCommand = ReactiveCommand.Create(ResetTheme);
-        
+
         // Load settings
         _ = LoadSettingsAsync();
-        
+
         // Subscribe to theme property changes to apply them immediately
         _settings.Theme.PropertyChanged += (s, e) => ApplyThemeChanges();
+
     }
 
     #region Properties
@@ -87,7 +140,6 @@ public class SettingsWindowViewModel : ReactiveObject
             }
         }
     }
-
     #endregion
 
     #region Commands
@@ -112,14 +164,11 @@ public class SettingsWindowViewModel : ReactiveObject
     #endregion
 
     #region Command Implementations
-
     private async Task LoadSettingsAsync()
     {
         try
         {
             Settings = await _settingsProvider.LoadAsync();
-            
-            // Sync auto-start setting with actual registry state
             var isAutoStartEnabled = _autoStartService.IsAutoStartEnabled();
             if (Settings.AutoStartOnLogin != isAutoStartEnabled)
             {
@@ -128,26 +177,8 @@ public class SettingsWindowViewModel : ReactiveObject
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Failed to load settings: {ex.Message}");
+            _logWriter.LogError("Failed to load settings.", ex);
             // Keep default settings
-        }
-    }
-
-    private async Task ApplyAsync()
-    {
-        try
-        {
-            // Apply auto-start setting to registry before saving
-            _autoStartService.SetAutoStart(_settings.AutoStartOnLogin);
-            
-            await _settingsProvider.SaveAsync(_settings);
-            SettingsApplied?.Invoke(this, EventArgs.Empty);
-            System.Diagnostics.Debug.WriteLine("Settings saved successfully");
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Failed to save settings: {ex.Message}");
-            // TODO: Show error dialog to user
         }
     }
 
@@ -157,42 +188,11 @@ public class SettingsWindowViewModel : ReactiveObject
         // Window will be closed by the calling code
     }
 
-    private void Cancel(Window window)
-    {
-        window?.Close();
-    }
-
-    private async Task BrowseLogDirectoryAsync(Window window)
-    {
-        try
-        {
-            var storageProvider = window.StorageProvider;
-            
-            var options = new FolderPickerOpenOptions
-            {
-                Title = "Select Log Directory",
-                AllowMultiple = false
-            };
-
-            var result = await storageProvider.OpenFolderPickerAsync(options);
-            
-            if (result.Count > 0)
-            {
-                Settings.LogDirectory = result[0].Path.LocalPath;
-            }
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Failed to browse folder: {ex.Message}");
-        }
-    }
-
     private async Task ImportThemeAsync(Window window)
     {
         try
         {
             var storageProvider = window.StorageProvider;
-            
             var options = new FilePickerOpenOptions
             {
                 Title = "Import Theme",
@@ -206,28 +206,23 @@ public class SettingsWindowViewModel : ReactiveObject
                     FilePickerFileTypes.All
                 }
             };
-
             var result = await storageProvider.OpenFilePickerAsync(options);
-            
             if (result.Count > 0)
             {
                 var filePath = result[0].Path.LocalPath;
                 var theme = await _themeService.LoadThemeFromFileAsync(filePath);
-                
                 Settings.Theme = theme;
                 Settings.CustomThemePath = filePath;
                 Settings.ActiveThemeName = theme.ThemeName;
                 _selectedThemeName = "Custom";
                 this.RaisePropertyChanged(nameof(SelectedThemeName));
-                
                 ApplyThemeChanges();
-                
-                System.Diagnostics.Debug.WriteLine($"Theme '{theme.ThemeName}' imported successfully");
+                _logWriter.LogInformation($"Theme '{theme.ThemeName}' imported successfully");
             }
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Failed to import theme: {ex.Message}");
+            _logWriter.LogError($"Failed to import theme: {ex.Message}", ex);
             // TODO: Show error dialog
         }
     }

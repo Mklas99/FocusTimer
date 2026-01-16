@@ -16,6 +16,30 @@ namespace FocusTimer.Persistence;
 /// </summary>
 public class CsvLogWriter : ILogWriter
 {
+    public void LogDebug(string message)
+    {
+        System.Diagnostics.Debug.WriteLine($"[DEBUG] {message}");
+    }
+
+    public void LogInformation(string message)
+    {
+        System.Diagnostics.Debug.WriteLine($"[INFO] {message}");
+    }
+
+    public void LogWarning(string message)
+    {
+        System.Diagnostics.Debug.WriteLine($"[WARN] {message}");
+    }
+
+    public void LogError(string message, Exception? ex = null)
+    {
+        System.Diagnostics.Debug.WriteLine($"[ERROR] {message} " + (ex != null ? ex.ToString() : ""));
+    }
+
+    public void LogCritical(string message, Exception? ex = null)
+    {
+        System.Diagnostics.Debug.WriteLine($"[CRITICAL] {message} " + (ex != null ? ex.ToString() : ""));
+    }
     private const string CsvHeader = "Date,StartTime,EndTime,DurationSeconds,AppName,WindowTitle,ProjectTag";
 
     public async Task WriteEntriesAsync(IEnumerable<TimeEntry> entries, Settings settings)
@@ -166,4 +190,5 @@ public class CsvLogWriter : ILogWriter
 
         return field;
     }
+
 }

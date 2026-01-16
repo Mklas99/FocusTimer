@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Media;
+using FocusTimer.Core.Interfaces;
 using FocusTimer.Core.Models;
 
 namespace FocusTimer.App.Services;
@@ -34,6 +35,7 @@ public class ThemeManager
             UpdateColorResource(resources, "WindowBackgroundColor", theme.WindowBackground, theme.BackgroundOpacity);
             resources["WindowBackgroundBrush"] = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse(theme.WindowBackground), theme.BackgroundOpacity);
         }
+        
         UpdateColorResource(resources, "WindowForegroundColor", theme.WindowForeground);
         UpdateColorResource(resources, "WindowBorderColor", theme.WindowBorder);
 
@@ -106,8 +108,15 @@ public class ThemeManager
         catch (Exception ex)
         {
             // Log error but don't crash the application
-            Console.WriteLine($"Failed to parse color '{colorHex}' for key '{key}': {ex.Message}");
+            _logWriter?.LogError($"Failed to parse color '{colorHex}' for key '{key}': {ex.Message}", ex);
         }
+    }
+
+    private readonly ILogWriter? _logWriter;
+
+    public ThemeManager(ILogWriter? logWriter = null)
+    {
+        _logWriter = logWriter;
     }
 
     /// <summary>
