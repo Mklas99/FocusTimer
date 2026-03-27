@@ -1,0 +1,45 @@
+{
+  "$schema": "https://raw.githubusercontent.com/DotNetAnalyzers/StyleCopAnalyzers/master/StyleCop.Analyzers/StyleCop.Analyzers/Settings/stylecop.schema.json",
+  "settings": {
+    "documentationRules": {
+      "documentExposedElements": true,
+      "documentInternalElements": false,
+      "documentPrivateElements": false,
+      "documentInterfaces": true,
+      "documentPrivateFields": false,
+      "companyName": "FocusTimer",
+      "copyrightText": "Copyright (c) {companyName}. All rights reserved.",
+      "variables": {
+        "companyName": "FocusTimer"
+      },
+      "xmlHeader": false,
+      "fileNamingConvention": "stylecop"
+    },
+    "namingRules": {
+      "allowCommonHungarianPrefix": false,
+      "allowedHungarianPrefixes": [],
+      "includeInferred": false
+    },
+    "layoutRules": {
+      "newlineEndOfFile": "require",
+      "allowConsecutiveUsings": "global"
+    },
+    "indentation": {
+      "indentationSize": 4,
+      "useTabs": false,
+      "tabSize": 4
+    },
+    "spacing": {
+      "indentClosingBraces": false
+    },
+    "orderingRules": {
+      "elementOrder": [
+        "Kind",
+        "Accessibility",
+        "Modifiers"
+      ],
+      "systemUsingDirectivesFirst": true,
+      "usingDirectivesPlacement": "outsideNamespace"
+    }
+  }
+}

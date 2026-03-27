@@ -108,11 +108,13 @@ namespace FocusTimer.Persistence
                 // Skip header
                 foreach (var line in lines.Skip(1))
                 {
-                    if (string.IsNullOrWhiteSpace(line)) continue;
+                    if (string.IsNullOrWhiteSpace(line))
+                        continue;
                     try
                     {
                         var entry = ParseCsvLine(line);
-                        if (entry != null) entries.Add(entry);
+                        if (entry != null)
+                            entries.Add(entry);
                     }
                     catch (Exception ex)
                     {
@@ -151,7 +153,8 @@ namespace FocusTimer.Persistence
         private async Task WriteEntriesToFileAsync(string logFilePath, IEnumerable<TimeEntry> entries)
         {
             var directory = Path.GetDirectoryName(logFilePath);
-            if (string.IsNullOrEmpty(directory)) return;
+            if (string.IsNullOrEmpty(directory))
+                return;
 
             if (!Directory.Exists(directory))
                 Directory.CreateDirectory(directory);
@@ -167,7 +170,8 @@ namespace FocusTimer.Persistence
 
             foreach (var entry in entries)
             {
-                if (entry.StartTime == default || entry.EndTime == null) continue;
+                if (entry.StartTime == default || entry.EndTime == null)
+                    continue;
                 await writer.WriteLineAsync(FormatCsvLine(entry));
             }
         }
@@ -269,7 +273,8 @@ namespace FocusTimer.Persistence
 
         private string EscapeCsvField(string field)
         {
-            if (string.IsNullOrEmpty(field)) return "";
+            if (string.IsNullOrEmpty(field))
+                return "";
             if (field.Contains(',') || field.Contains('"') || field.Contains('\n') || field.Contains('\r'))
             {
                 return $"\"{field.Replace("\"", "\"\"")}\"";
@@ -277,56 +282,58 @@ namespace FocusTimer.Persistence
             return field;
         }
 
-       private TimeEntry? ParseCsvLine(string line)
+        private TimeEntry? ParseCsvLine(string line)
         {
-             // Regex matches: "quoted field" OR non-comma-chars
-             var pattern = "(?:^|,)(\\\"(?:[^\\\"]+|\\\"\\\")*\\\"|[^,]*)";
-             var matches = Regex.Matches(line, pattern);
-             
-             // We expect 7 columns: Date,StartTime,EndTime,DurationSeconds,AppName,WindowTitle,ProjectTag
-             if (matches.Count < 7) return null;
+            // Regex matches: "quoted field" OR non-comma-chars
+            var pattern = "(?:^|,)(\\\"(?:[^\\\"]+|\\\"\\\")*\\\"|[^,]*)";
+            var matches = Regex.Matches(line, pattern);
 
-             var values = new string[matches.Count];
-             for(int i = 0; i < matches.Count; i++)
-             {
-                 var val = matches[i].Value;
-                 if (val.StartsWith(",")) val = val.Substring(1);
-                 
-                 if (val.StartsWith("\"") && val.EndsWith("\"")) 
-                 {
-                     val = val.Substring(1, val.Length - 2).Replace("\"\"", "\"");
-                 }
-                 values[i] = val;
-             }
+            // We expect 7 columns: Date,StartTime,EndTime,DurationSeconds,AppName,WindowTitle,ProjectTag
+            if (matches.Count < 7)
+                return null;
 
-             // values[0] = Date (yyyy-MM-dd)
-             // values[1] = StartTime (HH:mm:ss)
-             // values[2] = EndTime (HH:mm:ss)
-             // values[3] = Duration
-             // values[4] = AppName
-             // values[5] = WindowTitle
-             // values[6] = ProjectTag
+            var values = new string[matches.Count];
+            for (int i = 0; i < matches.Count; i++)
+            {
+                var val = matches[i].Value;
+                if (val.StartsWith(","))
+                    val = val.Substring(1);
 
-             if (!DateTime.TryParseExact(values[0], "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var date))
-                 return null;
-             
-             if (!TimeSpan.TryParse(values[1], CultureInfo.InvariantCulture, out var startTime))
-                 return null;
+                if (val.StartsWith("\"") && val.EndsWith("\""))
+                {
+                    val = val.Substring(1, val.Length - 2).Replace("\"\"", "\"");
+                }
+                values[i] = val;
+            }
 
-             TimeSpan? endTime = null;
-             if (!string.IsNullOrEmpty(values[2]) && TimeSpan.TryParse(values[2], CultureInfo.InvariantCulture, out var et))
-             {
-                 endTime = et;
-             }
+            // values[0] = Date (yyyy-MM-dd)
+            // values[1] = StartTime (HH:mm:ss)
+            // values[2] = EndTime (HH:mm:ss)
+            // values[3] = Duration
+            // values[4] = AppName
+            // values[5] = WindowTitle
+            // values[6] = ProjectTag
 
-             return new TimeEntry
-             {
-                 StartTime = date.Add(startTime),
-                 EndTime = endTime.HasValue ? date.Add(endTime.Value) : null,
-                 AppName = values.Length > 4 ? values[4] : "Unknown",
-                 WindowTitle = values.Length > 5 ? values[5] : "",
-                 ProjectTag = values.Length > 6 ? values[6] : null
-             };
+            if (!DateTime.TryParseExact(values[0], "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var date))
+                return null;
+
+            if (!TimeSpan.TryParse(values[1], CultureInfo.InvariantCulture, out var startTime))
+                return null;
+
+            TimeSpan? endTime = null;
+            if (!string.IsNullOrEmpty(values[2]) && TimeSpan.TryParse(values[2], CultureInfo.InvariantCulture, out var et))
+            {
+                endTime = et;
+            }
+
+            return new TimeEntry
+            {
+                StartTime = date.Add(startTime),
+                EndTime = endTime.HasValue ? date.Add(endTime.Value) : null,
+                AppName = values.Length > 4 ? values[4] : "Unknown",
+                WindowTitle = values.Length > 5 ? values[5] : "",
+                ProjectTag = values.Length > 6 ? values[6] : null
+            };
         }
     }
 }

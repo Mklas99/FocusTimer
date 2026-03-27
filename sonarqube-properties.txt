@@ -1,0 +1,41 @@
+# SonarQube Configuration for FocusTimer
+# This file is used by SonarScanner to configure analysis
+
+# Project information
+sonar.projectKey=focustimer
+sonar.projectName=FocusTimer
+sonar.projectVersion=1.0
+
+# Source code location
+sonar.sources=src
+sonar.sourceEncoding=UTF-8
+
+# Inclusions and Exclusions
+sonar.inclusions=**/*.cs
+sonar.exclusions=**/bin/**,**/obj/**,**/artifacts/**,**/*Tests.cs,**/test/**
+
+# Test files
+sonar.tests=src
+sonar.test.inclusions=**/*Tests.cs,**/test/**
+
+# Code coverage
+sonar.coverageReportPaths=coverage/sonar-coverage.xml
+
+# C# specific settings
+sonar.cs.opencover.reportsPaths=coverage/opencover.xml
+sonar.cs.roslyn.reportFilePath=coverage/roslyh-report.json
+
+# Technical debt settings
+sonar.technicalDebt.ratingGrid=0.05,0.1,0.2,0.5
+
+# Authentication (if using SonarCloud/SonarQube server)
+# sonar.host.url=https://sonarcloud.io
+# sonar.login=YOUR_TOKEN_HERE
+
+# Code smell threshold
+sonar.issue.ignore.multicriteria=e1
+sonar.issue.ignore.multicriteria.e1.ruleKey=*
+sonar.issue.ignore.multicriteria.e1.resourceKey=**/*Tests.cs
+
+# Plugin configuration
+sonar.plugins=csharp,resharper

@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project>
+  <!-- Solution-wide properties and analyzer configuration -->
+
+  <!-- Roslyn Analyzers Configuration -->
+  <PropertyGroup>
+    <!-- Enable nullable reference types -->
+    <Nullable>enable</Nullable>
+
+    <!-- Enable implicit usings -->
+    <ImplicitUsings>enable</ImplicitUsings>
+
+    <!-- Treat warnings as errors -->
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarningLevel>4</WarningLevel>
+
+    <!-- Suppress specific warnings if needed (update as necessary) -->
+    <NoWarn>$(NoWarn)</NoWarn>
+
+    <!-- Language features -->
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <!-- Code Analysis Rules -->
+  <PropertyGroup>
+    <!-- Enable rule set -->
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisLevel>latest</AnalysisLevel>
+
+    <!-- Code quality rules -->
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+  </PropertyGroup>
+
+  <!-- Packages for code analysis -->
+  <ItemGroup>
+    <!-- Microsoft.CodeAnalysis.NetAnalyzers for .NET code quality rules -->
+    <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="9.0.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+
+    <!-- StyleCop Analyzers for code style -->
+    <PackageReference Include="StyleCop.Analyzers" Version="1.2.0-beta.556">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <!-- StyleCop Configuration -->
+  <PropertyGroup>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(MSBuildProjectName).xml</DocumentationFile>
+  </PropertyGroup>
+
+  <!-- Analyzer Rules Configuration -->
+  <ItemGroup>
+    <!-- Unused imports should generate warnings -->
+    <CompilerVisibleProperty Include="StylecopTreatErrorsAsWarnings" />
+  </ItemGroup>
+
+</Project>
