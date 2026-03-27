@@ -9,7 +9,7 @@ namespace FocusTimer.Core.Stubs;
 /// </summary>
 public class LinuxHotkeyServiceStub : IGlobalHotkeyService
 {
-    public event EventHandler<HotkeyPressedEventArgs> HotkeyPressed;
+    public event EventHandler<HotkeyPressedEventArgs>? HotkeyPressed;
 
     public void Register(HotkeyDefinition definition)
     {

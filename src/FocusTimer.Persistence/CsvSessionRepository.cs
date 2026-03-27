@@ -16,6 +16,7 @@ namespace FocusTimer.Persistence
         private readonly ISettingsProvider _settingsProvider;
         private readonly IAppLogger? _logger;
         private const string CsvHeader = "Date,StartTime,EndTime,DurationSeconds,AppName,WindowTitle,ProjectTag";
+        private DateTime _lastRetentionCleanupDate = DateTime.MinValue;
 
         public CsvSessionRepository(ISettingsProvider settingsProvider, IAppLogger? logger = null)
         {
@@ -34,6 +35,8 @@ namespace FocusTimer.Persistence
                     _logger?.LogWarning("Worklog directory is not configured. Session entries will not be saved.");
                     return;
                 }
+
+                await EnforceRetentionPolicyAsync(settings, worklogDirectory);
 
                 var entriesList = entries?.ToList() ?? new List<TimeEntry>();
                 if (!entriesList.Any())
@@ -166,6 +169,88 @@ namespace FocusTimer.Persistence
             {
                 if (entry.StartTime == default || entry.EndTime == null) continue;
                 await writer.WriteLineAsync(FormatCsvLine(entry));
+            }
+        }
+
+        private async Task EnforceRetentionPolicyAsync(Settings settings, string worklogDirectory)
+        {
+            if (!Directory.Exists(worklogDirectory))
+            {
+                return;
+            }
+
+            if (settings.DataRetentionDays <= 0)
+            {
+                return;
+            }
+
+            var today = DateTime.Today;
+            if (_lastRetentionCleanupDate == today)
+            {
+                return;
+            }
+
+            _lastRetentionCleanupDate = today;
+            var cutoff = today.AddDays(-settings.DataRetentionDays);
+            var deletedFiles = 0;
+
+            await Task.Run(() =>
+            {
+                foreach (var filePath in Directory.EnumerateFiles(worklogDirectory, "*-worklog.csv", SearchOption.AllDirectories))
+                {
+                    var fileName = Path.GetFileName(filePath);
+                    if (fileName.Length < 10)
+                    {
+                        continue;
+                    }
+
+                    var datePart = fileName.Substring(0, 10);
+                    if (!DateTime.TryParseExact(
+                            datePart,
+                            "yyyy-MM-dd",
+                            CultureInfo.InvariantCulture,
+                            DateTimeStyles.None,
+                            out var fileDate))
+                    {
+                        continue;
+                    }
+
+                    if (fileDate.Date >= cutoff)
+                    {
+                        continue;
+                    }
+
+                    try
+                    {
+                        File.Delete(filePath);
+                        deletedFiles++;
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger?.LogWarning($"Failed to delete expired worklog file '{filePath}': {ex.Message}");
+                    }
+                }
+
+                DeleteEmptyDirectories(worklogDirectory);
+            });
+
+            if (deletedFiles > 0)
+            {
+                _logger?.LogInformation($"Retention cleanup removed {deletedFiles} expired worklog file(s). Cutoff: {cutoff:yyyy-MM-dd}");
+            }
+        }
+
+        private static void DeleteEmptyDirectories(string rootDirectory)
+        {
+            foreach (var directory in Directory.EnumerateDirectories(rootDirectory, "*", SearchOption.AllDirectories)
+                         .OrderByDescending(path => path.Length))
+            {
+                if (Directory.EnumerateFileSystemEntries(directory).Any())
+                {
+                    continue;
+                }
+
+                Directory.Delete(directory);
             }
         }
 

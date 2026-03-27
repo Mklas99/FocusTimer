@@ -14,6 +14,7 @@ namespace FocusTimer.Core.Services;
 public class SessionTracker
 {
     private readonly IActiveWindowService _activeWindowService;
+    private readonly IAppLogger _logger;
     private readonly List<TimeEntry> _completedEntries = new();
     
     private ActiveWindowInfo? _currentWindowInfo;
@@ -21,9 +22,10 @@ public class SessionTracker
     private string? _currentProjectTag;
     private bool _isTracking;
 
-    public SessionTracker(IActiveWindowService activeWindowService)
+    public SessionTracker(IActiveWindowService activeWindowService, IAppLogger logger)
     {
         _activeWindowService = activeWindowService ?? throw new ArgumentNullException(nameof(activeWindowService));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     /// <summary>
@@ -46,7 +48,7 @@ public class SessionTracker
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Failed to start session tracking: {ex.Message}");
+            _logger.LogError("Failed to start session tracking.", ex);
             // Create a fallback entry even if window detection fails
             CreateNewEntry(null, DateTime.Now);
         }
@@ -83,7 +85,7 @@ public class SessionTracker
         {
             // Silently ignore errors during tracking to avoid crashes
             // The app should continue running even if window detection fails
-            System.Diagnostics.Debug.WriteLine($"Error during window tracking: {ex.Message}");
+            _logger.LogWarning($"Window tracking tick failed: {ex.Message}");
         }
     }
 

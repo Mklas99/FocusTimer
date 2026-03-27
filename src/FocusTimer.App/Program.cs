@@ -102,6 +102,7 @@ namespace FocusTimer.App
                 services.AddSingleton<INotificationService, LinuxNotificationServiceStub>();
                 services.AddSingleton<IAutoStartService, LinuxAutoStartServiceStub>();
                 services.AddSingleton<IGlobalHotkeyService, LinuxHotkeyServiceStub>();
+                services.AddSingleton<IIdleDetectionService, LinuxIdleDetectionServiceStub>();
             }
 
             // Settings provider - JSON-based persistence

@@ -68,10 +68,12 @@ public partial class TimerWidgetWindow : Window
             if (TryGetPlatformHandle()?.Handle is IntPtr hwnd && hwnd != IntPtr.Zero)
             {
                 var hotkeyService = Program.Services.GetService<Core.Interfaces.IGlobalHotkeyService>();
+                var appController = Program.Services.GetService<Services.AppController>();
                 
                 if (hotkeyService is Platform.Windows.WindowsHotkeyService windowsHotkeyService)
                 {
                     windowsHotkeyService.SetWindowHandle(hwnd);
+                    appController?.RegisterHotkeys();
                     System.Diagnostics.Debug.WriteLine($"Window handle set for hotkeys: {hwnd}");
                 }
             }

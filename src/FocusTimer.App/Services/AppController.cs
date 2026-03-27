@@ -9,6 +9,7 @@ using FocusTimer.App.ViewModels;
 using FocusTimer.App.Views;
 using FocusTimer.Core.Interfaces;
 using FocusTimer.Core.Models;
+using FocusTimer.Core.Services;
 
 namespace FocusTimer.App.Services;
 
@@ -20,6 +21,7 @@ public class AppController
 {
     private readonly ISettingsProvider _settingsProvider;
     private readonly IGlobalHotkeyService _hotkeyService;
+    private readonly IIdleDetectionService _idleDetectionService;
     private readonly INotificationService _notificationService;
     private readonly IThemeService _themeService;
     private readonly ThemeManager _themeManager;
@@ -27,35 +29,47 @@ public class AppController
     private readonly Func<SettingsWindowViewModel> _settingsViewModelFactory;
     private readonly TodayStatsService _todayStatsService;
     private ITrayIconController? _trayIconController;
-    private TrayIcon _trayIcon;
+    private TrayIcon? _trayIcon;
     private readonly IAppLogger _logWriter;
     
     private TimerWidgetWindow? _timerWindow;
     private SettingsWindow? _settingsWindow;
     private Settings _currentSettings;
+    private HotkeyDefinition _showHideHotkeyDefinition;
+    private HotkeyDefinition _toggleTimerHotkeyDefinition;
+    private bool _pausedByIdle;
 
     public AppController(
         ISettingsProvider settingsProvider,
         IGlobalHotkeyService hotkeyService,
+        IIdleDetectionService idleDetectionService,
         INotificationService notificationService,
         IThemeService themeService,
         ThemeManager themeManager,
         Func<TimerWidgetViewModel> timerViewModelFactory,
         Func<SettingsWindowViewModel> settingsViewModelFactory,
+        TodayStatsService todayStatsService,
         ITrayIconController trayIconController,
         IAppLogger logWriter)
     {
         _settingsProvider = settingsProvider;
         _hotkeyService = hotkeyService;
+        _idleDetectionService = idleDetectionService;
         _notificationService = notificationService;
         _themeService = themeService;
         _themeManager = themeManager;
         _timerViewModelFactory = timerViewModelFactory;
         _settingsViewModelFactory = settingsViewModelFactory;
         _currentSettings = new Settings();
-        _todayStatsService = new TodayStatsService();
+        _todayStatsService = todayStatsService;
         _trayIconController = trayIconController;
         _logWriter = logWriter;
+
+        _showHideHotkeyDefinition = ParseHotkeyOrDefault(_currentSettings.HotkeyShowHide, "Ctrl+Alt+T");
+        _toggleTimerHotkeyDefinition = ParseHotkeyOrDefault(_currentSettings.HotkeyToggleTimer, "Ctrl+Alt+P");
+        _hotkeyService.HotkeyPressed += OnHotkeyPressed;
+        _idleDetectionService.UserBecameIdle += OnUserBecameIdle;
+        _idleDetectionService.UserReturned += OnUserReturned;
     }
 
     /// <summary>
@@ -110,22 +124,90 @@ public class AppController
     {
         try
         {
+            _hotkeyService.UnregisterAll();
+
             // Register show/hide hotkey (default: Ctrl+Alt+T)
             var showHideHotkey = _currentSettings.HotkeyShowHide ?? "Ctrl+Alt+T";
-            HotkeyDefinition? showHideDef = HotkeyDefinition.Parse(showHideHotkey);
-            _hotkeyService.Register(showHideDef.Value);
+            _showHideHotkeyDefinition = ParseHotkeyOrDefault(showHideHotkey, "Ctrl+Alt+T");
+            _hotkeyService.Register(_showHideHotkeyDefinition);
 
             // Register toggle timer hotkey (default: Ctrl+Alt+P)
             var toggleTimerHotkey = _currentSettings.HotkeyToggleTimer ?? "Ctrl+Alt+P";
-            HotkeyDefinition? toggleTimerDef = HotkeyDefinition.Parse(toggleTimerHotkey);
-            _hotkeyService.Register(toggleTimerDef.Value);
+            _toggleTimerHotkeyDefinition = ParseHotkeyOrDefault(toggleTimerHotkey, "Ctrl+Alt+P");
+            _hotkeyService.Register(_toggleTimerHotkeyDefinition);
 
-            System.Diagnostics.Debug.WriteLine($"Hotkeys registered: {showHideHotkey}, {toggleTimerHotkey}");
+            _logWriter.LogInformation($"Hotkeys registered: {_showHideHotkeyDefinition}, {_toggleTimerHotkeyDefinition}");
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Failed to register hotkeys: {ex.Message}");
+            _logWriter.LogError("Failed to register hotkeys.", ex);
         }
+    }
+
+    private HotkeyDefinition ParseHotkeyOrDefault(string? hotkey, string fallback)
+    {
+        if (HotkeyDefinition.Parse(hotkey) is HotkeyDefinition parsed)
+        {
+            return parsed;
+        }
+
+        if (HotkeyDefinition.Parse(fallback) is HotkeyDefinition fallbackParsed)
+        {
+            _logWriter.LogWarning($"Invalid hotkey '{hotkey ?? "<null>"}'. Falling back to '{fallback}'.");
+            return fallbackParsed;
+        }
+
+        throw new InvalidOperationException($"Failed to parse required fallback hotkey '{fallback}'.");
+    }
+
+    private void OnHotkeyPressed(object? sender, HotkeyPressedEventArgs e)
+    {
+        Dispatcher.UIThread.Post(() =>
+        {
+            if (IsHotkeyMatch(e.Definition, _showHideHotkeyDefinition))
+            {
+                ToggleTimerWidget();
+                return;
+            }
+
+            if (IsHotkeyMatch(e.Definition, _toggleTimerHotkeyDefinition))
+            {
+                ToggleTimer();
+            }
+        });
+    }
+
+    private static bool IsHotkeyMatch(HotkeyDefinition left, HotkeyDefinition right)
+    {
+        return left.KeyCode == right.KeyCode && left.Modifiers == right.Modifiers;
+    }
+
+    private void OnUserBecameIdle(object? sender, UserIdleEventArgs e)
+    {
+        Dispatcher.UIThread.Post(() =>
+        {
+            if (!IsTimerRunning())
+            {
+                return;
+            }
+
+            _pausedByIdle = true;
+            ToggleTimer();
+            _ = _notificationService.ShowNotificationAsync("Focus Timer", "Timer paused because no activity was detected.");
+            _logWriter.LogInformation($"Timer paused due to user idle at {e.Timestamp:O}");
+        });
+    }
+
+    private void OnUserReturned(object? sender, UserIdleEventArgs e)
+    {
+        if (!_pausedByIdle)
+        {
+            return;
+        }
+
+        _pausedByIdle = false;
+        _ = _notificationService.ShowNotificationAsync("Focus Timer", "Welcome back. Press Play to resume your focus session.");
+        _logWriter.LogInformation($"User activity resumed at {e.Timestamp:O}");
     }
 
     /// <summary>

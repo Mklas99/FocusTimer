@@ -11,6 +11,8 @@ namespace FocusTimer.App.Services
     public class TrayStateController : ITrayIconController
     {
         private readonly ITimerService _timerService;
+        private readonly TodayStatsService _todayStatsService;
+        private readonly IAppLogger _logger;
         private readonly TrayIconAssets _trayIconAssets;
         private TrayIcon? _trayIcon;
         private TimerState _pendingState;
@@ -19,9 +21,14 @@ namespace FocusTimer.App.Services
         public event EventHandler<MenuActionEventArgs>? MenuAction;
         public event EventHandler? OnEntriesLogged;
 
-        public TrayStateController(ITimerService timerService)
+        public TrayStateController(
+            ITimerService timerService,
+            TodayStatsService todayStatsService,
+            IAppLogger logger)
         {
             _timerService = timerService;
+            _todayStatsService = todayStatsService;
+            _logger = logger;
             _trayIconAssets = new TrayIconAssets();
             _pendingState = timerService.CurrentState;
             _isInitialized = false;
@@ -36,6 +43,8 @@ namespace FocusTimer.App.Services
             {
                 _timerService.StateChanged += OnTimerStateChanged;
                 _isInitialized = true;
+
+                _ = RefreshTodayAndUpdateTooltipAsync();
                 
                 // Apply pending state immediately
                 UpdateState(_pendingState);
@@ -78,13 +87,15 @@ namespace FocusTimer.App.Services
 
             _trayIcon.Icon = _trayIconAssets.GetIcon(state);
 
-            _trayIcon.ToolTipText = state switch
+            var stateText = state switch
             {
-                TimerState.Running => "Focus Timer: Running",
-                TimerState.Paused => "Focus Timer: Paused",
-                TimerState.Idle => "Focus Timer: Idle",
-                _ => "Focus Timer"
+                TimerState.Running => "Running",
+                TimerState.Paused => "Paused",
+                TimerState.Idle => "Idle",
+                _ => "Unknown"
             };
+
+            _trayIcon.ToolTipText = $"Focus Timer: {stateText} | {_todayStatsService.GetTodaySummaryText()}";
         }
 
         public void ShowMenu()
@@ -99,7 +110,34 @@ namespace FocusTimer.App.Services
 
         public void RaiseEntriesLogged(IEnumerable<TimeEntry> entries)
         {
+            _ = RefreshAfterEntriesLoggedAsync(entries);
             OnEntriesLogged?.Invoke(this, EventArgs.Empty);
+        }
+
+        private async Task RefreshAfterEntriesLoggedAsync(IEnumerable<TimeEntry> entries)
+        {
+            try
+            {
+                await _todayStatsService.AddEntriesAsync(entries);
+                UpdateState(_pendingState);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("Failed to refresh tray tooltip after entries were logged.", ex);
+            }
+        }
+
+        private async Task RefreshTodayAndUpdateTooltipAsync()
+        {
+            try
+            {
+                await _todayStatsService.RefreshTodayAsync();
+                UpdateState(_pendingState);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("Failed to initialize tray tooltip with today's stats.", ex);
+            }
         }
     }
 }

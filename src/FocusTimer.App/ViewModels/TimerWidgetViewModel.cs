@@ -147,10 +147,7 @@ public class TimerWidgetViewModel : ReactiveObject, IDisposable
     private readonly BreakReminderService _breakReminderService;
     private readonly ITimerService _timerService;
     private readonly SemaphoreSlim _persistenceSemaphore = new(1, 1);
-    
-    // Timer state using DateTime-based measurement to avoid drift
-    private DateTime? _startTime;
-    private TimeSpan _accumulatedElapsed;
+
     private TimeSpan _elapsed;
     private string _elapsedFormatted = "00:00:00";
     

@@ -29,10 +29,8 @@ public partial class App : Application
             _trayIcon = FindTrayIcon();
         }
 
-        
         if (_trayIcon != null)
         {
-            _appController.SetTrayIcon(_trayIcon);
             _trayIcon.Clicked += TrayIcon_Clicked;
         }
           /// _trayIcon.MenuShowHide += TrayMenu_ShowHide;

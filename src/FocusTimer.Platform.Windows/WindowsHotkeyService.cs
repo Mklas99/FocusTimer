@@ -10,11 +10,13 @@ namespace FocusTimer.Platform.Windows;
 public class WindowsHotkeyService : IGlobalHotkeyService, IDisposable
 {
     private const int WM_HOTKEY = 0x0312;
+    private const int GWL_WNDPROC = -4;
     private readonly Dictionary<int, HotkeyDefinition> _hotkeyDefinitions = new();
-    private readonly Dictionary<int, Action> _hotkeyCallbacks = new();
-    public event EventHandler<HotkeyPressedEventArgs> HotkeyPressed;
+    public event EventHandler<HotkeyPressedEventArgs>? HotkeyPressed;
     private int _nextHotkeyId = 1;
     private IntPtr _hwnd;
+    private IntPtr _originalWndProc;
+    private WndProcDelegate? _subclassWndProc;
     private bool _disposed;
 
     // Win32 API imports
@@ -24,13 +26,41 @@ public class WindowsHotkeyService : IGlobalHotkeyService, IDisposable
     [DllImport("user32.dll", SetLastError = true)]
     private static extern bool UnregisterHotKey(IntPtr hWnd, int id);
 
+    [DllImport("user32.dll", SetLastError = true)]
+    private static extern IntPtr SetWindowLongPtr(IntPtr hWnd, int nIndex, IntPtr dwNewLong);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    private static extern IntPtr GetWindowLongPtr(IntPtr hWnd, int nIndex);
+
+    [DllImport("user32.dll")]
+    private static extern IntPtr CallWindowProc(IntPtr lpPrevWndFunc, IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam);
+
+    private delegate IntPtr WndProcDelegate(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam);
+
     /// <summary>
     /// Sets the window handle for receiving hotkey messages.
     /// Must be called before registering hotkeys.
     /// </summary>
     public void SetWindowHandle(IntPtr hwnd)
     {
+        if (hwnd == IntPtr.Zero)
+        {
+            return;
+        }
+
+        if (_hwnd == hwnd)
+        {
+            return;
+        }
+
+        if (_hwnd != IntPtr.Zero)
+        {
+            UnregisterAll();
+            RestoreWndProc();
+        }
+
         _hwnd = hwnd;
+        HookWndProc();
     }
 
     // Legacy registration for compatibility
@@ -100,6 +130,7 @@ public class WindowsHotkeyService : IGlobalHotkeyService, IDisposable
             }
         }
         _hotkeyDefinitions.Clear();
+        _nextHotkeyId = 1;
     }
 
     /// <summary>
@@ -111,6 +142,67 @@ public class WindowsHotkeyService : IGlobalHotkeyService, IDisposable
         {
             HotkeyPressed?.Invoke(this, new HotkeyPressedEventArgs(definition));
         }
+    }
+
+    private void HookWndProc()
+    {
+        if (_hwnd == IntPtr.Zero || _subclassWndProc != null)
+        {
+            return;
+        }
+
+        _originalWndProc = GetWindowLongPtr(_hwnd, GWL_WNDPROC);
+        if (_originalWndProc == IntPtr.Zero)
+        {
+            var error = Marshal.GetLastWin32Error();
+            System.Diagnostics.Debug.WriteLine($"Failed to get current WndProc. Win32 error {error}");
+            return;
+        }
+
+        _subclassWndProc = SubclassWndProc;
+        var newWndProcPtr = Marshal.GetFunctionPointerForDelegate(_subclassWndProc);
+        var previousWndProc = SetWindowLongPtr(_hwnd, GWL_WNDPROC, newWndProcPtr);
+        if (previousWndProc == IntPtr.Zero)
+        {
+            var error = Marshal.GetLastWin32Error();
+            System.Diagnostics.Debug.WriteLine($"Failed to subclass WndProc. Win32 error {error}");
+            _subclassWndProc = null;
+            _originalWndProc = IntPtr.Zero;
+            return;
+        }
+
+        _originalWndProc = previousWndProc;
+        System.Diagnostics.Debug.WriteLine("Hotkey message hook installed.");
+    }
+
+    private void RestoreWndProc()
+    {
+        if (_hwnd == IntPtr.Zero || _originalWndProc == IntPtr.Zero)
+        {
+            _subclassWndProc = null;
+            return;
+        }
+
+        var result = SetWindowLongPtr(_hwnd, GWL_WNDPROC, _originalWndProc);
+        if (result == IntPtr.Zero)
+        {
+            var error = Marshal.GetLastWin32Error();
+            System.Diagnostics.Debug.WriteLine($"Failed to restore WndProc. Win32 error {error}");
+        }
+
+        _originalWndProc = IntPtr.Zero;
+        _subclassWndProc = null;
+    }
+
+    private IntPtr SubclassWndProc(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam)
+    {
+        if (msg == WM_HOTKEY)
+        {
+            ProcessHotkeyMessage(wParam.ToInt32());
+            return IntPtr.Zero;
+        }
+
+        return CallWindowProc(_originalWndProc, hWnd, msg, wParam, lParam);
     }
 
     private static uint ConvertModifiers(HotkeyModifiers modifiers)
@@ -135,6 +227,8 @@ public class WindowsHotkeyService : IGlobalHotkeyService, IDisposable
             return;
 
         UnregisterAll();
+        RestoreWndProc();
+        _hwnd = IntPtr.Zero;
         _disposed = true;
     }
 }
