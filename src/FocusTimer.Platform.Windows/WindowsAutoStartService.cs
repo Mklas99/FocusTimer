@@ -11,6 +11,17 @@ public class WindowsAutoStartService : IAutoStartService
 {
     private const string RunKey = @"Software\Microsoft\Windows\CurrentVersion\Run";
     private const string AppName = "FocusTimer";
+    private readonly IAppLogger? _logger;
+
+    public WindowsAutoStartService()
+        : this(null)
+    {
+    }
+
+    public WindowsAutoStartService(IAppLogger? logger)
+    {
+        _logger = logger;
+    }
 
     public void SetAutoStart(bool enabled)
     {
@@ -19,7 +30,7 @@ public class WindowsAutoStartService : IAutoStartService
             using var key = Registry.CurrentUser.OpenSubKey(RunKey, writable: true);
             if (key == null)
             {
-                System.Diagnostics.Debug.WriteLine("Failed to open registry key for auto-start.");
+                _logger?.LogWarning("Failed to open registry key for auto-start.");
                 return;
             }
 
@@ -30,7 +41,7 @@ public class WindowsAutoStartService : IAutoStartService
                 if (!string.IsNullOrEmpty(exePath))
                 {
                     key.SetValue(AppName, $"\"{exePath}\"");
-                    System.Diagnostics.Debug.WriteLine($"Auto-start enabled: {exePath}");
+                    _logger?.LogInformation($"Auto-start enabled: {exePath}");
                 }
             }
             else
@@ -39,13 +50,13 @@ public class WindowsAutoStartService : IAutoStartService
                 if (key.GetValue(AppName) != null)
                 {
                     key.DeleteValue(AppName);
-                    System.Diagnostics.Debug.WriteLine("Auto-start disabled.");
+                    _logger?.LogInformation("Auto-start disabled.");
                 }
             }
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Failed to set auto-start: {ex.Message}");
+            _logger?.LogError("Failed to set auto-start.", ex);
         }
     }
 
@@ -62,7 +73,7 @@ public class WindowsAutoStartService : IAutoStartService
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Failed to check auto-start status: {ex.Message}");
+            _logger?.LogError("Failed to check auto-start status.", ex);
             return false;
         }
     }

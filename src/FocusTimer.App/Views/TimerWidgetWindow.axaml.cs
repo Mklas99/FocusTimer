@@ -7,11 +7,14 @@ using Avalonia.Interactivity;
 using System;
 using System.Runtime.InteropServices;
 using Microsoft.Extensions.DependencyInjection;
+using FocusTimer.Core.Interfaces;
 
 namespace FocusTimer.App.Views;
 
 public partial class TimerWidgetWindow : Window
 {
+    private IAppLogger?_logger => Program.Services.GetService<IAppLogger>();
+
     // Set cursor to Grab when pointer enters drag area (if not dragging)
     private void DragArea_PointerEnter(object? sender, PointerEventArgs e)
     {
@@ -74,13 +77,13 @@ public partial class TimerWidgetWindow : Window
                 {
                     windowsHotkeyService.SetWindowHandle(hwnd);
                     appController?.RegisterHotkeys();
-                    System.Diagnostics.Debug.WriteLine($"Window handle set for hotkeys: {hwnd}");
+                    _logger?.LogDebug($"Window handle set for hotkeys: {hwnd}");
                 }
             }
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Failed to setup hotkey window handle: {ex.Message}");
+            _logger?.LogError("Failed to set up hotkey window handle.", ex);
         }
     }
 
@@ -123,6 +126,7 @@ public partial class TimerWidgetWindow : Window
     private void MinimizeButton_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
         WindowState = WindowState.Minimized;
+        _logger?.LogDebug("Timer widget minimized.");
     }
 
     private void OnWindowClosing(object? sender, WindowClosingEventArgs e)

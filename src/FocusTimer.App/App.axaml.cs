@@ -18,6 +18,7 @@ namespace FocusTimer.App;
 public partial class App : Application
 {
     private AppController? _appController;
+    private IAppLogger? _logger;
     private TrayIcon? _trayIcon;
 
 
@@ -57,6 +58,7 @@ public partial class App : Application
         {
             // Get the AppController from DI
             _appController = Program.Services.GetRequiredService<AppController>();
+            _logger = Program.Services.GetService<IAppLogger>();
 
             // Create and configure the tray icon in code
             _trayIcon = new TrayIcon
@@ -115,7 +117,7 @@ public partial class App : Application
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error initializing app: {ex.Message}");
+            _logger?.LogError("Error initializing application.", ex);
             // Show widget anyway as fallback
             _appController?.ShowTimerWidget();
         }
@@ -133,7 +135,7 @@ public partial class App : Application
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error during shutdown: {ex.Message}");
+            (_logger ?? Program.Services.GetService<IAppLogger>())?.LogError("Error during application shutdown.", ex);
         }
     }
 
@@ -154,21 +156,25 @@ public partial class App : Application
             _trayIcon = tray;
         // Toggle widget visibility on tray icon click
         _appController?.ToggleTimerWidget();
+        _logger?.LogDebug("Tray icon clicked - toggling timer widget.");
     }
 
     private void TrayMenu_ShowHide(object? sender, EventArgs e)
     {
         _appController?.ToggleTimerWidget();
+        _logger?.LogDebug("Tray menu item 'Show/Hide Timer' clicked - toggling timer widget.");
     }
 
     private void TrayMenu_ToggleTimer(object? sender, EventArgs e)
     {
         _appController?.ToggleTimer();
+        _logger?.LogDebug("Tray menu item 'Toggle Timer' clicked - toggling timer.");
     }
 
     private void TrayMenu_Settings(object? sender, EventArgs e)
     {
         _appController?.ShowSettings();
+        _logger?.LogDebug("Tray menu item 'Settings' clicked - showing settings window.");
     }
 
     private void TrayMenu_Exit(object? sender, EventArgs e)
@@ -176,6 +182,7 @@ public partial class App : Application
         // Exit cleanly via AppController
         if (_appController != null)
         {
+            _logger?.LogInformation("Tray menu item 'Exit' clicked - exiting application.");
             _appController.ExitApplication();
         }
     }

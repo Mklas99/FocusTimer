@@ -27,11 +27,11 @@ public class SettingsWindowViewModel : ReactiveObject
             
             await _settingsProvider.SaveAsync(_settings);
             SettingsApplied?.Invoke(this, EventArgs.Empty);
-            _logWriter.LogDebug("Settings saved successfully");
+            _logger.LogDebug("Settings saved successfully");
         }
         catch (Exception ex)
         {
-            _logWriter.LogDebug($"Failed to save settings: {ex.Message}");
+            _logger.LogDebug($"Failed to save settings: {ex.Message}");
             // TODO: Show error dialog to user
         }
     }
@@ -63,7 +63,7 @@ public class SettingsWindowViewModel : ReactiveObject
         }
         catch (Exception ex)
         {
-            _logWriter.LogDebug($"Failed to browse folder: {ex.Message}");
+            _logger.LogDebug($"Failed to browse folder: {ex.Message}");
         }
     }
 
@@ -71,7 +71,7 @@ public class SettingsWindowViewModel : ReactiveObject
     private readonly IAutoStartService _autoStartService;
     private readonly IThemeService _themeService;
     private readonly ThemeManager _themeManager;
-    private readonly IAppLogger _logWriter;
+    private readonly IAppLogger _logger;
     private Settings _settings;
     private string _selectedThemeName;
     
@@ -86,7 +86,7 @@ public class SettingsWindowViewModel : ReactiveObject
         _autoStartService = autoStartService;
         _themeService = themeService;
         _themeManager = themeManager;
-        _logWriter = logWriter;
+        _logger = logWriter;
         _settings = new Settings();
         _selectedThemeName = "Dark";
 
@@ -177,7 +177,7 @@ public class SettingsWindowViewModel : ReactiveObject
         }
         catch (Exception ex)
         {
-            _logWriter.LogError("Failed to load settings.", ex);
+            _logger.LogError("Failed to load settings.", ex);
             // Keep default settings
         }
     }
@@ -185,6 +185,7 @@ public class SettingsWindowViewModel : ReactiveObject
     private async Task OkAsync()
     {
         await ApplyAsync();
+        _logger.LogInformation("OK command executed - settings applied and window will be closed.");
         // Window will be closed by the calling code
     }
 
@@ -217,12 +218,12 @@ public class SettingsWindowViewModel : ReactiveObject
                 _selectedThemeName = "Custom";
                 this.RaisePropertyChanged(nameof(SelectedThemeName));
                 ApplyThemeChanges();
-                _logWriter.LogInformation($"Theme '{theme.ThemeName}' imported successfully");
+                _logger.LogInformation($"Theme '{theme.ThemeName}' imported successfully");
             }
         }
         catch (Exception ex)
         {
-            _logWriter.LogError($"Failed to import theme: {ex.Message}", ex);
+            _logger.LogError($"Failed to import theme: {ex.Message}", ex);
             // TODO: Show error dialog
         }
     }
@@ -253,12 +254,12 @@ public class SettingsWindowViewModel : ReactiveObject
             {
                 var filePath = result.Path.LocalPath;
                 await _themeService.SaveThemeToFileAsync(Settings.Theme, filePath);
-                System.Diagnostics.Debug.WriteLine($"Theme exported to: {filePath}");
+                _logger.LogInformation($"Theme exported to: {filePath}");
             }
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Failed to export theme: {ex.Message}");
+            _logger.LogError("Failed to export theme.", ex);
             // TODO: Show error dialog
         }
     }
@@ -272,6 +273,7 @@ public class SettingsWindowViewModel : ReactiveObject
         this.RaisePropertyChanged(nameof(SelectedThemeName));
         
         ApplyThemeChanges();
+        _logger.LogInformation("Theme reset to default.");
     }
 
     private void LoadThemeByName(string themeName)
@@ -288,6 +290,7 @@ public class SettingsWindowViewModel : ReactiveObject
     private void ApplyThemeChanges()
     {
         _themeManager.ApplyTheme(Settings.Theme);
+        _logger.LogInformation($"Applied theme: {Settings.Theme.ThemeName}");
     }
 
     #endregion

@@ -15,9 +15,17 @@ public class JsonSettingsProvider : ISettingsProvider
 {
     private readonly string _settingsFilePath;
     private readonly JsonSerializerOptions _jsonOptions;
+    private readonly IAppLogger? _logger;
 
     public JsonSettingsProvider()
+        : this(null)
     {
+    }
+
+    public JsonSettingsProvider(IAppLogger? logger)
+    {
+        _logger = logger;
+
         // Store settings in user's AppData\Roaming\FocusTimer folder
         var appDataFolder = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
         var settingsFolder = Path.Combine(appDataFolder, "FocusTimer");
@@ -42,7 +50,7 @@ public class JsonSettingsProvider : ISettingsProvider
         {
             if (!File.Exists(_settingsFilePath))
             {
-                System.Diagnostics.Debug.WriteLine($"Settings file not found at {_settingsFilePath}, using defaults");
+                _logger?.LogDebug($"Settings file not found at {_settingsFilePath}, using defaults.");
                 return new Settings();
             }
 
@@ -51,16 +59,16 @@ public class JsonSettingsProvider : ISettingsProvider
             
             if (settings == null)
             {
-                System.Diagnostics.Debug.WriteLine("Failed to deserialize settings, using defaults");
+                _logger?.LogWarning("Failed to deserialize settings; using defaults.");
                 return new Settings();
             }
 
-            System.Diagnostics.Debug.WriteLine($"Settings loaded from {_settingsFilePath}");
+            _logger?.LogDebug($"Settings loaded from {_settingsFilePath}.");
             return settings;
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error loading settings: {ex.Message}");
+            _logger?.LogError("Error loading settings.", ex);
             return new Settings();
         }
     }
@@ -76,11 +84,11 @@ public class JsonSettingsProvider : ISettingsProvider
         {
             var json = JsonSerializer.Serialize(settings, _jsonOptions);
             await File.WriteAllTextAsync(_settingsFilePath, json);
-            System.Diagnostics.Debug.WriteLine($"Settings saved to {_settingsFilePath}");
+            _logger?.LogDebug($"Settings saved to {_settingsFilePath}.");
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error saving settings: {ex.Message}");
+            _logger?.LogError("Error saving settings.", ex);
             throw;
         }
     }

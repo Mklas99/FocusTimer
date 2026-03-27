@@ -12,6 +12,7 @@ public class WindowsHotkeyService : IGlobalHotkeyService, IDisposable
     private const int WM_HOTKEY = 0x0312;
     private const int GWL_WNDPROC = -4;
     private readonly Dictionary<int, HotkeyDefinition> _hotkeyDefinitions = new();
+    private readonly IAppLogger? _logger;
     public event EventHandler<HotkeyPressedEventArgs>? HotkeyPressed;
     private int _nextHotkeyId = 1;
     private IntPtr _hwnd;
@@ -36,6 +37,16 @@ public class WindowsHotkeyService : IGlobalHotkeyService, IDisposable
     private static extern IntPtr CallWindowProc(IntPtr lpPrevWndFunc, IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam);
 
     private delegate IntPtr WndProcDelegate(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam);
+
+    public WindowsHotkeyService()
+        : this(null)
+    {
+    }
+
+    public WindowsHotkeyService(IAppLogger? logger)
+    {
+        _logger = logger;
+    }
 
     /// <summary>
     /// Sets the window handle for receiving hotkey messages.
@@ -68,14 +79,14 @@ public class WindowsHotkeyService : IGlobalHotkeyService, IDisposable
     {
         if (_hwnd == IntPtr.Zero)
         {
-            System.Diagnostics.Debug.WriteLine("Window handle not set. Cannot register hotkeys.");
+            _logger?.LogWarning("Window handle not set. Cannot register hotkeys.");
             return;
         }
 
         var hotkey = HotkeyDefinition.Parse(hotkeyDefinition);
         if (hotkey == null)
         {
-            System.Diagnostics.Debug.WriteLine($"Invalid hotkey definition: {hotkeyDefinition}");
+            _logger?.LogWarning($"Invalid hotkey definition: {hotkeyDefinition}");
             return;
         }
 
@@ -87,7 +98,7 @@ public class WindowsHotkeyService : IGlobalHotkeyService, IDisposable
     {
         if (_hwnd == IntPtr.Zero)
         {
-            System.Diagnostics.Debug.WriteLine("Window handle not set. Cannot register hotkeys.");
+            _logger?.LogWarning("Window handle not set. Cannot register hotkeys.");
             return;
         }
 
@@ -98,17 +109,17 @@ public class WindowsHotkeyService : IGlobalHotkeyService, IDisposable
             if (RegisterHotKey(_hwnd, id, modifiers, (uint)definition.KeyCode))
             {
                 _hotkeyDefinitions[id] = definition;
-                System.Diagnostics.Debug.WriteLine($"Registered hotkey {id}: {definition}");
+                _logger?.LogInformation($"Registered hotkey {id}: {definition}");
             }
             else
             {
                 var error = Marshal.GetLastWin32Error();
-                System.Diagnostics.Debug.WriteLine($"Failed to register hotkey {definition}: Win32 error {error}");
+                _logger?.LogWarning($"Failed to register hotkey {definition}: Win32 error {error}");
             }
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Exception registering hotkey: {ex.Message}");
+            _logger?.LogError("Exception registering hotkey.", ex);
         }
     }
 
@@ -122,11 +133,11 @@ public class WindowsHotkeyService : IGlobalHotkeyService, IDisposable
             try
             {
                 UnregisterHotKey(_hwnd, id);
-                System.Diagnostics.Debug.WriteLine($"Unregistered hotkey {id}");
+                _logger?.LogDebug($"Unregistered hotkey {id}");
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Failed to unregister hotkey {id}: {ex.Message}");
+                _logger?.LogWarning($"Failed to unregister hotkey {id}: {ex.Message}");
             }
         }
         _hotkeyDefinitions.Clear();
@@ -155,7 +166,7 @@ public class WindowsHotkeyService : IGlobalHotkeyService, IDisposable
         if (_originalWndProc == IntPtr.Zero)
         {
             var error = Marshal.GetLastWin32Error();
-            System.Diagnostics.Debug.WriteLine($"Failed to get current WndProc. Win32 error {error}");
+            _logger?.LogWarning($"Failed to get current WndProc. Win32 error {error}");
             return;
         }
 
@@ -165,14 +176,14 @@ public class WindowsHotkeyService : IGlobalHotkeyService, IDisposable
         if (previousWndProc == IntPtr.Zero)
         {
             var error = Marshal.GetLastWin32Error();
-            System.Diagnostics.Debug.WriteLine($"Failed to subclass WndProc. Win32 error {error}");
+            _logger?.LogWarning($"Failed to subclass WndProc. Win32 error {error}");
             _subclassWndProc = null;
             _originalWndProc = IntPtr.Zero;
             return;
         }
 
         _originalWndProc = previousWndProc;
-        System.Diagnostics.Debug.WriteLine("Hotkey message hook installed.");
+        _logger?.LogDebug("Hotkey message hook installed.");
     }
 
     private void RestoreWndProc()
@@ -187,7 +198,7 @@ public class WindowsHotkeyService : IGlobalHotkeyService, IDisposable
         if (result == IntPtr.Zero)
         {
             var error = Marshal.GetLastWin32Error();
-            System.Diagnostics.Debug.WriteLine($"Failed to restore WndProc. Win32 error {error}");
+            _logger?.LogWarning($"Failed to restore WndProc. Win32 error {error}");
         }
 
         _originalWndProc = IntPtr.Zero;

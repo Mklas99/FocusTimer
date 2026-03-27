@@ -8,9 +8,21 @@ namespace FocusTimer.Core.Stubs;
 /// </summary>
 public class LinuxAutoStartServiceStub : IAutoStartService
 {
+    private readonly IAppLogger? _logger;
+
+    public LinuxAutoStartServiceStub()
+        : this(null)
+    {
+    }
+
+    public LinuxAutoStartServiceStub(IAppLogger? logger)
+    {
+        _logger = logger;
+    }
+
     public void SetAutoStart(bool enabled)
     {
-        System.Diagnostics.Debug.WriteLine($"[Linux Stub] SetAutoStart: {enabled}");
+        _logger?.LogInformation($"[Linux Stub] SetAutoStart: {enabled}");
         
         // TODO: Implement by creating/removing .desktop file
         // Example path: ~/.config/autostart/FocusTimer.desktop
@@ -24,7 +36,7 @@ public class LinuxAutoStartServiceStub : IAutoStartService
 
     public bool IsAutoStartEnabled()
     {
-        System.Diagnostics.Debug.WriteLine("[Linux Stub] IsAutoStartEnabled called");
+        _logger?.LogDebug("[Linux Stub] IsAutoStartEnabled called.");
         // TODO: Check if .desktop file exists in ~/.config/autostart/
         return false;
     }

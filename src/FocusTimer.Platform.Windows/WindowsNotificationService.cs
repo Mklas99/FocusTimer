@@ -5,7 +5,6 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Threading;
-using System.Diagnostics;
 using System.Linq;
 
 namespace FocusTimer.Platform.Windows;
@@ -16,6 +15,18 @@ namespace FocusTimer.Platform.Windows;
 /// </summary>
 public class WindowsNotificationService : INotificationService
 {
+    private readonly IAppLogger? _logger;
+
+    public WindowsNotificationService()
+        : this(null)
+    {
+    }
+
+    public WindowsNotificationService(IAppLogger? logger)
+    {
+        _logger = logger;
+    }
+
     public Task ShowBreakReminderAsync(string message)
     {
         return ShowNotificationAsync("Break Reminder", message);
@@ -34,17 +45,17 @@ public class WindowsNotificationService : INotificationService
                 Dispatcher.UIThread.Post(() => ShowToastWindow(title, message));
             }
 
-            Debug.WriteLine($"[Notification] {title}: {message}");
+            _logger?.LogInformation($"[Notification] {title}: {message}");
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"Notification failed: {ex.Message}");
+            _logger?.LogError("Notification failed.", ex);
         }
 
         return Task.CompletedTask;
     }
 
-    private static void ShowToastWindow(string title, string message)
+    private void ShowToastWindow(string title, string message)
     {
         var toastWindow = new Window
         {
@@ -85,6 +96,7 @@ public class WindowsNotificationService : INotificationService
         PositionToastNearBottomRight(toastWindow);
 
         toastWindow.Show();
+        _logger?.LogDebug("Toast notification displayed.");
 
         var closeTimer = new DispatcherTimer
         {

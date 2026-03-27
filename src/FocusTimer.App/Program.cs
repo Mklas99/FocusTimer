@@ -29,7 +29,6 @@ namespace FocusTimer.App
             => AppBuilder.Configure<App>()
                 .UsePlatformDetect()
                 .WithInterFont()
-                .LogToTrace()
                 .UseReactiveUI();
 
         // Dependency injection container (exposed for App to use)

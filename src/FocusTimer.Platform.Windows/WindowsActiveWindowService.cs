@@ -14,6 +14,17 @@ namespace FocusTimer.Platform.Windows;
 public class WindowsActiveWindowService : IActiveWindowService
 {
     private const int MaxTitleLength = 256;
+    private readonly IAppLogger? _logger;
+
+    public WindowsActiveWindowService()
+        : this(null)
+    {
+    }
+
+    public WindowsActiveWindowService(IAppLogger? logger)
+    {
+        _logger = logger;
+    }
 
     public Task<ActiveWindowInfo?> GetForegroundWindowAsync()
     {
@@ -82,7 +93,7 @@ public class WindowsActiveWindowService : IActiveWindowService
         catch (Exception ex)
         {
             // Don't crash on Win32 errors; just return null
-            System.Diagnostics.Debug.WriteLine($"Error getting active window: {ex.Message}");
+            _logger?.LogWarning($"Error getting active window: {ex.Message}");
             return null;
         }
     }

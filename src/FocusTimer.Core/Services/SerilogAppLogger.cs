@@ -68,9 +68,8 @@ public class SerilogAppLogger : IAppLogger, IDisposable
             _logger.Information("Application logger shutting down.");
             Log.CloseAndFlush();
         }
-        catch (Exception ex)
+        catch
         {
-            System.Diagnostics.Debug.WriteLine($"Error closing logger: {ex.Message}");
         }
     }
 }

@@ -9,6 +9,17 @@ namespace FocusTimer.Core.Stubs;
 public class SettingsProviderStub : ISettingsProvider
 {
     private readonly Settings _defaultSettings = new();
+    private readonly IAppLogger? _logger;
+
+    public SettingsProviderStub()
+        : this(null)
+    {
+    }
+
+    public SettingsProviderStub(IAppLogger? logger)
+    {
+        _logger = logger;
+    }
 
     public Task<Settings> LoadAsync()
     {
@@ -21,7 +32,7 @@ public class SettingsProviderStub : ISettingsProvider
         ArgumentNullException.ThrowIfNull(settings);
 
         // Stub: just log
-        Console.WriteLine($"[SettingsProviderStub] Would save settings to disk");
+        _logger?.LogInformation("[SettingsProviderStub] Would save settings to disk.");
         return Task.CompletedTask;
     }
 }

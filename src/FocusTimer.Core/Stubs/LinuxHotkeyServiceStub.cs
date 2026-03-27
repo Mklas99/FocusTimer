@@ -9,6 +9,18 @@ namespace FocusTimer.Core.Stubs;
 /// </summary>
 public class LinuxHotkeyServiceStub : IGlobalHotkeyService
 {
+    private readonly IAppLogger? _logger;
+
+    public LinuxHotkeyServiceStub()
+        : this(null)
+    {
+    }
+
+    public LinuxHotkeyServiceStub(IAppLogger? logger)
+    {
+        _logger = logger;
+    }
+
     public event EventHandler<HotkeyPressedEventArgs>? HotkeyPressed;
 
     public void Register(HotkeyDefinition definition)
@@ -18,7 +30,7 @@ public class LinuxHotkeyServiceStub : IGlobalHotkeyService
 
     public void RegisterHotkey(string hotkeyDefinition, Action callback)
     {
-        System.Diagnostics.Debug.WriteLine($"[Linux Stub] RegisterHotkey: {hotkeyDefinition}");
+        _logger?.LogInformation($"[Linux Stub] RegisterHotkey: {hotkeyDefinition}");
         
         // TODO: Implement using X11 XGrabKey or other platform-specific APIs
         // Note: This is complex on Linux and may require different approaches
@@ -27,7 +39,7 @@ public class LinuxHotkeyServiceStub : IGlobalHotkeyService
 
     public void UnregisterAll()
     {
-        System.Diagnostics.Debug.WriteLine("[Linux Stub] UnregisterAll");
+        _logger?.LogInformation("[Linux Stub] UnregisterAll");
         // TODO: Implement hotkey cleanup
     }
 }
