@@ -1,11 +1,18 @@
-using Avalonia.Controls;
-
-namespace FocusTimer.App.Views;
-
-public partial class MainWindow : Window
+namespace FocusTimer.App.Views
 {
-    public MainWindow()
+    using Avalonia.Controls;
+
+    /// <summary>
+    /// Represents the main window for the FocusTimer application.
+    /// </summary>
+    public partial class MainWindow : Window
     {
-        InitializeComponent();
+        /// <summary>
+        /// Initializes a new instance of the <see cref="MainWindow"/> class.
+        /// </summary>
+        public MainWindow()
+        {
+            this.InitializeComponent();
+        }
     }
 }

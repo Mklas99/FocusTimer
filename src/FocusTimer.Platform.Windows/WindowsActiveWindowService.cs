@@ -1,112 +1,126 @@
-using System;
-using System.Diagnostics;
-using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
-using FocusTimer.Core.Interfaces;
-using FocusTimer.Core.Models;
-
-namespace FocusTimer.Platform.Windows;
-
-/// <summary>
-/// Windows implementation of IActiveWindowService using Win32 APIs.
-/// </summary>
-public class WindowsActiveWindowService : IActiveWindowService
+namespace FocusTimer.Platform.Windows
 {
-    private const int MaxTitleLength = 256;
-    private readonly IAppLogger? _logger;
+    using System;
+    using System.Diagnostics;
+    using System.Runtime.InteropServices;
+    using System.Text;
+    using System.Threading.Tasks;
+    using FocusTimer.Core.Interfaces;
+    using FocusTimer.Core.Models;
 
-    public WindowsActiveWindowService()
-        : this(null)
+    /// <summary>
+    /// Windows implementation of IActiveWindowService using Win32 APIs.
+    /// </summary>
+    public class WindowsActiveWindowService : IActiveWindowService
     {
-    }
+        private const int MaxTitleLength = 256;
+        private readonly IAppLogger? _logger;
 
-    public WindowsActiveWindowService(IAppLogger? logger)
-    {
-        _logger = logger;
-    }
-
-    public Task<ActiveWindowInfo?> GetForegroundWindowAsync()
-    {
-        // Perform synchronous Win32 call wrapped in Task for interface compatibility
-        var info = GetActiveWindow();
-        return Task.FromResult(info);
-    }
-
-    private ActiveWindowInfo? GetActiveWindow()
-    {
-        try
+        /// <summary>
+        /// Initializes a new instance of the <see cref="WindowsActiveWindowService"/> class without a logger.
+        /// </summary>
+        public WindowsActiveWindowService()
+            : this(null)
         {
-            // Get foreground window handle
-            IntPtr hwnd = NativeMethods.GetForegroundWindow();
-            if (hwnd == IntPtr.Zero)
-                return null;
+        }
 
-            // Get window title
-            var titleBuilder = new StringBuilder(MaxTitleLength);
-            int titleLength = NativeMethods.GetWindowText(hwnd, titleBuilder, MaxTitleLength);
-            string windowTitle = titleLength > 0 ? titleBuilder.ToString() : string.Empty;
+        /// <summary>
+        /// Initializes a new instance of the <see cref="WindowsActiveWindowService"/> class with an optional logger.
+        /// </summary>
+        /// <param name="logger">An optional logger for diagnostics.</param>
+        public WindowsActiveWindowService(IAppLogger? logger)
+        {
+            this._logger = logger;
+        }
 
-            // Get process ID
-            NativeMethods.GetWindowThreadProcessId(hwnd, out uint processId);
-            string processName = "Unknown";
+        /// <inheritdoc/>
+        public Task<ActiveWindowInfo?> GetForegroundWindowAsync()
+        {
+            // Perform synchronous Win32 call wrapped in Task for interface compatibility
+            var info = this.GetActiveWindow();
+            return Task.FromResult(info);
+        }
 
-            if (processId != 0)
+        private ActiveWindowInfo? GetActiveWindow()
+        {
+            try
             {
-                try
+                // Get foreground window handle
+                IntPtr hwnd = NativeMethods.GetForegroundWindow();
+                if (hwnd == IntPtr.Zero)
                 {
-                    using var process = Process.GetProcessById((int)processId);
-                    // Some system processes may deny access to ProcessName
+                    return null;
+                }
+
+                // Get window title
+                var titleBuilder = new StringBuilder(MaxTitleLength);
+                int titleLength = NativeMethods.GetWindowText(hwnd, titleBuilder, MaxTitleLength);
+                string windowTitle = titleLength > 0 ? titleBuilder.ToString() : string.Empty;
+
+                // Get process ID
+                NativeMethods.GetWindowThreadProcessId(hwnd, out uint processId);
+                string processName = "Unknown";
+
+                if (processId != 0)
+                {
                     try
                     {
-                        processName = process.ProcessName;
+                        using var process = Process.GetProcessById((int)processId);
+
+                        // Some system processes may deny access to ProcessName
+                        try
+                        {
+                            processName = process.ProcessName;
+                        }
+                        catch (Exception ex) when (ex is System.ComponentModel.Win32Exception ||
+                                                   ex is InvalidOperationException)
+                        {
+                            // Access denied or process exited - use fallback
+                            processName = $"Process_{processId}";
+                        }
                     }
-                    catch (Exception ex) when (ex is System.ComponentModel.Win32Exception ||
-                                               ex is InvalidOperationException)
+                    catch (ArgumentException)
                     {
-                        // Access denied or process exited - use fallback
+                        // Process not found (may have exited between calls)
+                        processName = "Unknown";
+                    }
+                    catch (InvalidOperationException)
+                    {
+                        // Process access error
                         processName = $"Process_{processId}";
                     }
                 }
-                catch (ArgumentException)
+
+                // Only return if we have at least window title or process name
+                if (string.IsNullOrWhiteSpace(windowTitle) && processName == "Unknown")
                 {
-                    // Process not found (may have exited between calls)
-                    processName = "Unknown";
+                    return null;
                 }
-                catch (InvalidOperationException)
+
+                return new ActiveWindowInfo
                 {
-                    // Process access error
-                    processName = $"Process_{processId}";
-                }
+                    ProcessName = processName,
+                    WindowTitle = windowTitle,
+                };
             }
-
-            // Only return if we have at least window title or process name
-            if (string.IsNullOrWhiteSpace(windowTitle) && processName == "Unknown")
-                return null;
-
-            return new ActiveWindowInfo
+            catch (Exception ex)
             {
-                ProcessName = processName,
-                WindowTitle = windowTitle
-            };
+                // Don't crash on Win32 errors; just return null
+                this._logger?.LogWarning($"Error getting active window: {ex.Message}");
+                return null;
+            }
         }
-        catch (Exception ex)
+
+        private static class NativeMethods
         {
-            // Don't crash on Win32 errors; just return null
-            _logger?.LogWarning($"Error getting active window: {ex.Message}");
-            return null;
+            [DllImport("user32.dll")]
+            public static extern IntPtr GetForegroundWindow();
+
+            [DllImport("user32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+            public static extern int GetWindowText(IntPtr hWnd, StringBuilder lpString, int nMaxCount);
+
+            [DllImport("user32.dll", SetLastError = true)]
+            public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
         }
-    }
-
-    private static class NativeMethods
-    {
-        [DllImport("user32.dll")]
-        public static extern IntPtr GetForegroundWindow();
-
-        [DllImport("user32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
-        public static extern int GetWindowText(IntPtr hWnd, StringBuilder lpString, int nMaxCount);
-
-        [DllImport("user32.dll", SetLastError = true)]
-        public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
     }
 }

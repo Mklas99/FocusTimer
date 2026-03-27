@@ -1,95 +1,106 @@
-using System;
-using System.IO;
-using System.Text.Json;
-using System.Threading.Tasks;
-using FocusTimer.Core.Interfaces;
-using FocusTimer.Core.Models;
-
-namespace FocusTimer.Persistence;
-
-/// <summary>
-/// JSON-based implementation of ISettingsProvider.
-/// Stores settings in user's AppData folder.
-/// </summary>
-public class JsonSettingsProvider : ISettingsProvider
+namespace FocusTimer.Persistence
 {
-    private readonly string _settingsFilePath;
-    private readonly JsonSerializerOptions _jsonOptions;
-    private readonly IAppLogger? _logger;
-
-    public JsonSettingsProvider()
-        : this(null)
-    {
-    }
-
-    public JsonSettingsProvider(IAppLogger? logger)
-    {
-        _logger = logger;
-
-        // Store settings in user's AppData\Roaming\FocusTimer folder
-        var appDataFolder = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-        var settingsFolder = Path.Combine(appDataFolder, "FocusTimer");
-        
-        Directory.CreateDirectory(settingsFolder);
-        
-        _settingsFilePath = Path.Combine(settingsFolder, "settings.json");
-        
-        _jsonOptions = new JsonSerializerOptions
-        {
-            WriteIndented = true,
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-        };
-    }
+    using System;
+    using System.IO;
+    using System.Text.Json;
+    using System.Threading.Tasks;
+    using FocusTimer.Core.Interfaces;
+    using FocusTimer.Core.Models;
 
     /// <summary>
-    /// Load settings from JSON file. Returns defaults if file doesn't exist or is invalid.
+    /// JSON-based implementation of ISettingsProvider.
+    /// Stores settings in user's AppData folder.
     /// </summary>
-    public async Task<Settings> LoadAsync()
+    public class JsonSettingsProvider : ISettingsProvider
     {
-        try
+        private readonly string _settingsFilePath;
+        private readonly JsonSerializerOptions _jsonOptions;
+        private readonly IAppLogger? _logger;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="JsonSettingsProvider"/> class.
+        /// </summary>
+        public JsonSettingsProvider()
+            : this(null)
         {
-            if (!File.Exists(_settingsFilePath))
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="JsonSettingsProvider"/> class with an optional logger.
+        /// </summary>
+        /// <param name="logger">An optional logger for diagnostics.</param>
+        public JsonSettingsProvider(IAppLogger? logger)
+        {
+            this._logger = logger;
+
+            // Store settings in user's AppData\Roaming\FocusTimer folder
+            var appDataFolder = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+            var settingsFolder = Path.Combine(appDataFolder, "FocusTimer");
+
+            Directory.CreateDirectory(settingsFolder);
+
+            this._settingsFilePath = Path.Combine(settingsFolder, "settings.json");
+
+            this._jsonOptions = new JsonSerializerOptions
             {
-                _logger?.LogDebug($"Settings file not found at {_settingsFilePath}, using defaults.");
+                WriteIndented = true,
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            };
+        }
+
+        /// <summary>
+        /// Load settings from JSON file. Returns defaults if file doesn't exist or is invalid.
+        /// </summary>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        public async Task<Settings> LoadAsync()
+        {
+            try
+            {
+                if (!File.Exists(this._settingsFilePath))
+                {
+                    this._logger?.LogDebug($"Settings file not found at {this._settingsFilePath}, using defaults.");
+                    return new Settings();
+                }
+
+                var json = await File.ReadAllTextAsync(this._settingsFilePath);
+                var settings = JsonSerializer.Deserialize<Settings>(json, this._jsonOptions);
+
+                if (settings == null)
+                {
+                    this._logger?.LogWarning("Failed to deserialize settings; using defaults.");
+                    return new Settings();
+                }
+
+                this._logger?.LogDebug($"Settings loaded from {this._settingsFilePath}.");
+                return settings;
+            }
+            catch (Exception ex)
+            {
+                this._logger?.LogError("Error loading settings.", ex);
                 return new Settings();
             }
+        }
 
-            var json = await File.ReadAllTextAsync(_settingsFilePath);
-            var settings = JsonSerializer.Deserialize<Settings>(json, _jsonOptions);
-            
-            if (settings == null)
+        /// <summary>
+        /// Save settings to JSON file.
+        /// </summary>
+        /// <param name="settings">The settings object to save.</param>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        public async Task SaveAsync(Settings settings)
+        {
+            ArgumentNullException.ThrowIfNull(settings);
+
+            try
             {
-                _logger?.LogWarning("Failed to deserialize settings; using defaults.");
-                return new Settings();
+                var json = JsonSerializer.Serialize(settings, this._jsonOptions);
+                await File.WriteAllTextAsync(this._settingsFilePath, json);
+                this._logger?.LogDebug($"Settings saved to {this._settingsFilePath}.");
             }
-
-            _logger?.LogDebug($"Settings loaded from {_settingsFilePath}.");
-            return settings;
-        }
-        catch (Exception ex)
-        {
-            _logger?.LogError("Error loading settings.", ex);
-            return new Settings();
-        }
-    }
-
-    /// <summary>
-    /// Save settings to JSON file.
-    /// </summary>
-    public async Task SaveAsync(Settings settings)
-    {
-        ArgumentNullException.ThrowIfNull(settings);
-
-        try
-        {
-            var json = JsonSerializer.Serialize(settings, _jsonOptions);
-            await File.WriteAllTextAsync(_settingsFilePath, json);
-            _logger?.LogDebug($"Settings saved to {_settingsFilePath}.");
-        }
-        catch (Exception ex)
-        {
-            _logger?.LogError("Error saving settings.", ex);
-            throw;
+            catch (Exception ex)
+            {
+                this._logger?.LogError("Error saving settings.", ex);
+                throw;
+            }
         }
     }
 }

@@ -1,26 +1,30 @@
-using System;
-using System.Globalization;
-using Avalonia.Data.Converters;
-
-namespace FocusTimer.App.Converters;
-
-/// <summary>
-/// Converts IsRunning boolean to "Pause" or "Play" text.
-/// </summary>
-public class PlayPauseConverter : IValueConverter
+namespace FocusTimer.App.Converters
 {
-    public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
-    {
-        // Return MaterialIcon name depending on isRunning
-        if (value is bool isRunning)
-        {
-            return isRunning ? "Pause" : "Play";
-        }
-        return "Play";
-    }
+    using System;
+    using System.Globalization;
+    using Avalonia.Data.Converters;
 
-    public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+    /// <summary>
+    /// Converts IsRunning boolean to "Pause" or "Play" text.
+    /// </summary>
+    public class PlayPauseConverter : IValueConverter
     {
-        throw new NotImplementedException();
+        /// <inheritdoc/>
+        public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+        {
+            // Return MaterialIcon name depending on isRunning
+            if (value is bool isRunning)
+            {
+                return isRunning ? "Pause" : "Play";
+            }
+
+            return "Play";
+        }
+
+        /// <inheritdoc/>
+        public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

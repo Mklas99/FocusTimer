@@ -1,18 +1,25 @@
-using Avalonia.Controls;
-using Avalonia.Interactivity;
-
-namespace FocusTimer.App.Views;
-
-public partial class SettingsWindow : Window
+namespace FocusTimer.App.Views
 {
-    public SettingsWindow()
-    {
-        InitializeComponent();
-    }
+    using Avalonia.Controls;
+    using Avalonia.Interactivity;
 
-    private void OnOkClicked(object? sender, RoutedEventArgs e)
+    /// <summary>
+    /// Represents the settings window for the FocusTimer application.
+    /// </summary>
+    public partial class SettingsWindow : Window
     {
-        // Close the window after OK command completes
-        Close();
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SettingsWindow"/> class.
+        /// </summary>
+        public SettingsWindow()
+        {
+            this.InitializeComponent();
+        }
+
+        private void OnOkClicked(object? sender, RoutedEventArgs e)
+        {
+            // Close the window after OK command completes
+            this.Close();
+        }
     }
 }

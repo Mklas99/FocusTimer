@@ -1,39 +1,36 @@
-using System;
-using Avalonia;
-using Avalonia.ReactiveUI;
-using Microsoft.Extensions.DependencyInjection;
-using System.Runtime.InteropServices;
-using FocusTimer.Core.Interfaces;
-using FocusTimer.Core.Models;
-using FocusTimer.Core.Services;
-using FocusTimer.Core.Stubs;
-using FocusTimer.App.ViewModels;
-using FocusTimer.App.Services;
-using Serilog;
-using ReactiveUI;
-using FocusTimer.Platform.Windows;
-
 namespace FocusTimer.App
 {
-    class Program
+    using System;
+    using System.Runtime.InteropServices;
+    using Avalonia;
+    using Avalonia.ReactiveUI;
+    using FocusTimer.App.Services;
+    using FocusTimer.App.ViewModels;
+    using FocusTimer.Core.Interfaces;
+    using FocusTimer.Core.Models;
+    using FocusTimer.Core.Services;
+    using FocusTimer.Core.Stubs;
+    using Microsoft.Extensions.DependencyInjection;
+    using ReactiveUI;
+    using Serilog;
+
+    /// <summary>
+    /// Application entry point and dependency injection configuration.
+    /// </summary>
+    /// <remarks>
+    /// Initializes the service container with platform-specific implementations,
+    /// logging configuration, and Avalonia application setup.
+    /// </remarks>
+    internal static class Program
     {
-        // Initialization code. Don't use any Avalonia, third-party APIs or any
-        // SynchronizationContext-reliant code before AppMain is called: things aren't initialized
-        // yet and stuff might break.
-        [STAThread]
-        public static void Main(string[] args) => BuildAvaloniaApp()
-            .StartWithClassicDesktopLifetime(args);
-
-        // Avalonia configuration, don't remove; also used by visual designer.
-        public static AppBuilder BuildAvaloniaApp()
-            => AppBuilder.Configure<App>()
-                .UsePlatformDetect()
-                .WithInterFont()
-                .UseReactiveUI();
-
-        // Dependency injection container (exposed for App to use)
-        public static IServiceProvider Services { get; private set; }
-
+        /// <remarks>
+        /// Configures the dependency injection container. This static constructor runs once when
+        /// the class is first accessed and sets up:
+        /// - Platform-specific service implementations (Windows vs Linux).
+        /// - Serilog logging configuration.
+        /// - All application services (timer, notifications, settings, etc.).
+        /// - ViewModels and factories.
+        /// </remarks>
         static Program()
         {
             // Setup DI container with platform-specific implementations
@@ -42,11 +39,11 @@ namespace FocusTimer.App
             // Register platform-specific services based on OS
             // Windows: Full implementation using Win32 APIs for active window tracking
             // Linux: Stub implementation (TODO: X11/Wayland support in future milestone)
-            
+
             // Determine log directory from environment or use default
             var logDirectory = Settings.DefaultApplicationLogDirectory;
             var worklogDirectory = Settings.DefaultWorklogDirectory;
-            
+
             // Allow override via environment variable
             var envLogDir = Environment.GetEnvironmentVariable("FOCUSTIMER_LOG_DIR");
             if (!string.IsNullOrWhiteSpace(envLogDir))
@@ -71,7 +68,7 @@ namespace FocusTimer.App
                     flushToDiskInterval: TimeSpan.FromSeconds(1));
 
             var serilogLogger = serilogConfig.CreateLogger();
-            
+
             // Register IAppLogger as a managed singleton that can be disposed
             var appLogger = new SerilogAppLogger(serilogLogger);
             services.AddSingleton<IAppLogger>(appLogger);
@@ -106,7 +103,7 @@ namespace FocusTimer.App
 
             // Settings provider - JSON-based persistence
             services.AddSingleton<ISettingsProvider, Persistence.JsonSettingsProvider>();
-            
+
             // Session Repository - CSV-based persistence
             services.AddSingleton<ISessionRepository>(sp =>
             {
@@ -129,7 +126,7 @@ namespace FocusTimer.App
 
             // Break reminder service - manages break reminder scheduling
             services.AddSingleton<BreakReminderService>();
-            
+
             // TodayStatsService - required by TrayStateController
             services.AddSingleton<TodayStatsService>();
 
@@ -147,5 +144,39 @@ namespace FocusTimer.App
 
             Services = services.BuildServiceProvider();
         }
+
+        /// <summary>
+        /// Gets the dependency injection service provider for the application.
+        /// </summary>
+        /// <remarks>
+        /// Exposed for the App to use for service resolution throughout the application lifetime.
+        /// </remarks>
+        public static IServiceProvider Services { get; private set; }
+
+        /// <summary>
+        /// Application entry point. Initializes and starts the Avalonia application with classic desktop lifetime.
+        /// </summary>
+        /// <remarks>
+        /// Initialization code. Don't use any Avalonia, third-party APIs or any
+        /// SynchronizationContext-reliant code before AppMain is called: things aren't initialized
+        /// yet and stuff might break.
+        /// </remarks>
+        /// <param name="args">Command-line arguments passed to the application.</param>
+        [STAThread]
+        public static void Main(string[] args) => BuildAvaloniaApp()
+            .StartWithClassicDesktopLifetime(args);
+
+        /// <summary>
+        /// Configures and builds the Avalonia application builder with platform detection and ReactiveUI support.
+        /// </summary>
+        /// <remarks>
+        /// Avalonia configuration, don't remove; also used by visual designer.
+        /// </remarks>
+        /// <returns>A configured <see cref="AppBuilder"/> instance ready for application startup.</returns>
+        public static AppBuilder BuildAvaloniaApp()
+            => AppBuilder.Configure<App>()
+                .UsePlatformDetect()
+                .WithInterFont()
+                .UseReactiveUI();
     }
 }

@@ -1,137 +1,147 @@
-using Avalonia;
-using Avalonia.Media;
-using FocusTimer.Core.Interfaces;
-using FocusTimer.Core.Models;
-
-namespace FocusTimer.App.Services;
-
-/// <summary>
-/// Manages theme application by updating Avalonia's resource dictionary at runtime.
-/// </summary>
-public class ThemeManager
+namespace FocusTimer.App.Services
 {
+    using Avalonia;
+    using Avalonia.Media;
+    using FocusTimer.Core.Interfaces;
+    using FocusTimer.Core.Models;
+
     /// <summary>
-    /// Applies a theme by updating all color resources in the application.
+    /// Manages theme application by updating Avalonia's resource dictionary at runtime.
     /// </summary>
-    public void ApplyTheme(Theme theme)
+    public class ThemeManager
     {
-        if (Application.Current == null)
-            return;
+        private readonly IAppLogger? _logWriter;
 
-        var resources = Application.Current.Resources;
-
-        // Store opacity values as resources
-        resources["BackgroundOpacity"] = theme.BackgroundOpacity;
-        resources["TimerOpacity"] = theme.TimerOpacity;
-        resources["ButtonOpacity"] = theme.ButtonOpacity;
-
-        // Window Colors (with background opacity applied to brush, but transparent if opacity is 0)
-        if (theme.BackgroundOpacity <= 0)
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ThemeManager"/> class.
+        /// </summary>
+        /// <param name="logWriter">Optional logger for error logging.</param>
+        public ThemeManager(IAppLogger? logWriter = null)
         {
-            resources["WindowBackgroundBrush"] = Avalonia.Media.Brushes.Transparent;
+            this._logWriter = logWriter;
         }
-        else
+
+        /// <summary>
+        /// Initializes the resource dictionary with default theme color keys.
+        /// This should be called once during app startup.
+        /// </summary>
+        public void InitializeThemeResources()
         {
-            UpdateColorResource(resources, "WindowBackgroundColor", theme.WindowBackground, theme.BackgroundOpacity);
-            resources["WindowBackgroundBrush"] = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse(theme.WindowBackground), theme.BackgroundOpacity);
-        }
-        
-        UpdateColorResource(resources, "WindowForegroundColor", theme.WindowForeground);
-        UpdateColorResource(resources, "WindowBorderColor", theme.WindowBorder);
-
-        // Text Colors
-        UpdateColorResource(resources, "PrimaryTextColor", theme.PrimaryText);
-        UpdateColorResource(resources, "SecondaryTextColor", theme.SecondaryText);
-        UpdateColorResource(resources, "DisabledTextColor", theme.DisabledText);
-
-        // Timer Display (with timer opacity applied to text brush)
-        UpdateColorResource(resources, "TimerTextColor", theme.TimerText, theme.TimerOpacity);
-        UpdateColorResource(resources, "TimerBackgroundColor", theme.TimerBackground);
-
-        // Buttons & Controls (with button opacity applied to brushes)
-        UpdateColorResource(resources, "ButtonNormalColor", theme.ButtonNormal, theme.ButtonOpacity);
-        UpdateColorResource(resources, "ButtonHoverColor", theme.ButtonHover, theme.ButtonOpacity);
-        UpdateColorResource(resources, "ButtonPressedColor", theme.ButtonPressed, theme.ButtonOpacity);
-        UpdateColorResource(resources, "ButtonDisabledColor", theme.ButtonDisabled);
-
-        // Accents
-        UpdateColorResource(resources, "AccentPrimaryColor", theme.AccentPrimary);
-        UpdateColorResource(resources, "AccentSecondaryColor", theme.AccentSecondary);
-        UpdateColorResource(resources, "DangerColor", theme.DangerColor);
-        UpdateColorResource(resources, "SuccessColor", theme.SuccessColor);
-        UpdateColorResource(resources, "WarningColor", theme.WarningColor);
-
-        // Input Controls
-        UpdateColorResource(resources, "InputBackgroundColor", theme.InputBackground);
-        UpdateColorResource(resources, "InputBorderColor", theme.InputBorder);
-        UpdateColorResource(resources, "InputFocusBorderColor", theme.InputFocusBorder);
-        UpdateColorResource(resources, "InputTextColor", theme.InputText);
-
-        // Project Tag
-        UpdateColorResource(resources, "ProjectTagBackgroundColor", theme.ProjectTagBackground);
-        UpdateColorResource(resources, "ProjectTagBorderColor", theme.ProjectTagBorder);
-        UpdateColorResource(resources, "ProjectTagTextColor", theme.ProjectTagText);
-
-        // Title Bar
-        UpdateColorResource(resources, "TitleBarBackgroundColor", theme.TitleBarBackground);
-        UpdateColorResource(resources, "TitleBarForegroundColor", theme.TitleBarForeground);
-        UpdateColorResource(resources, "TitleBarButtonHoverColor", theme.TitleBarButtonHover);
-        UpdateColorResource(resources, "TitleBarButtonPressedColor", theme.TitleBarButtonPressed);
-
-        // Settings Window
-        UpdateColorResource(resources, "SettingsBackgroundColor", theme.SettingsBackground);
-        UpdateColorResource(resources, "SettingsSectionHeaderColor", theme.SettingsSectionHeader);
-        UpdateColorResource(resources, "SettingsLabelTextColor", theme.SettingsLabelText);
-
-        // Tab Control
-        UpdateColorResource(resources, "TabBackgroundColor", theme.TabBackground);
-        UpdateColorResource(resources, "TabSelectedBackgroundColor", theme.TabSelectedBackground);
-        UpdateColorResource(resources, "TabHoverBackgroundColor", theme.TabHoverBackground);
-        UpdateColorResource(resources, "TabTextColor", theme.TabText);
-        UpdateColorResource(resources, "TabSelectedTextColor", theme.TabSelectedText);
-    }
-
-    private void UpdateColorResource(Avalonia.Controls.IResourceDictionary resources, string key, string colorHex, double opacity = 1.0)
-    {
-        try
-        {
-            var color = Color.Parse(colorHex);
-            resources[key] = color;
-
-            // Also update the corresponding brush with opacity baked in
-            var brushKey = key.Replace("Color", "Brush");
-            if (resources.ContainsKey(brushKey))
+            if (Application.Current == null)
             {
-                resources[brushKey] = new SolidColorBrush(color, opacity);
+                return;
+            }
+
+            var resources = Application.Current.Resources;
+            var defaultTheme = new Theme(); // Uses default values
+
+            // Initialize all color resources
+            this.ApplyTheme(defaultTheme);
+        }
+
+        /// <summary>
+        /// Applies a theme by updating all color resources in the application.
+        /// </summary>
+        /// <param name="theme">The theme to apply.</param>
+        public void ApplyTheme(Theme theme)
+        {
+            if (Application.Current == null)
+            {
+                return;
+            }
+
+            var resources = Application.Current.Resources;
+
+            // Store opacity values as resources
+            resources["BackgroundOpacity"] = theme.BackgroundOpacity;
+            resources["TimerOpacity"] = theme.TimerOpacity;
+            resources["ButtonOpacity"] = theme.ButtonOpacity;
+
+            // Window Colors (with background opacity applied to brush, but transparent if opacity is 0)
+            if (theme.BackgroundOpacity <= 0)
+            {
+                resources["WindowBackgroundBrush"] = Avalonia.Media.Brushes.Transparent;
+            }
+            else
+            {
+                this.UpdateColorResource(resources, "WindowBackgroundColor", theme.WindowBackground, theme.BackgroundOpacity);
+                resources["WindowBackgroundBrush"] = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse(theme.WindowBackground), theme.BackgroundOpacity);
+            }
+
+            this.UpdateColorResource(resources, "WindowForegroundColor", theme.WindowForeground);
+            this.UpdateColorResource(resources, "WindowBorderColor", theme.WindowBorder);
+
+            // Text Colors
+            this.UpdateColorResource(resources, "PrimaryTextColor", theme.PrimaryText);
+            this.UpdateColorResource(resources, "SecondaryTextColor", theme.SecondaryText);
+            this.UpdateColorResource(resources, "DisabledTextColor", theme.DisabledText);
+
+            // Timer Display (with timer opacity applied to text brush)
+            this.UpdateColorResource(resources, "TimerTextColor", theme.TimerText, theme.TimerOpacity);
+            this.UpdateColorResource(resources, "TimerBackgroundColor", theme.TimerBackground);
+
+            // Buttons & Controls (with button opacity applied to brushes)
+            this.UpdateColorResource(resources, "ButtonNormalColor", theme.ButtonNormal, theme.ButtonOpacity);
+            this.UpdateColorResource(resources, "ButtonHoverColor", theme.ButtonHover, theme.ButtonOpacity);
+            this.UpdateColorResource(resources, "ButtonPressedColor", theme.ButtonPressed, theme.ButtonOpacity);
+            this.UpdateColorResource(resources, "ButtonDisabledColor", theme.ButtonDisabled);
+
+            // Accents
+            this.UpdateColorResource(resources, "AccentPrimaryColor", theme.AccentPrimary);
+            this.UpdateColorResource(resources, "AccentSecondaryColor", theme.AccentSecondary);
+            this.UpdateColorResource(resources, "DangerColor", theme.DangerColor);
+            this.UpdateColorResource(resources, "SuccessColor", theme.SuccessColor);
+            this.UpdateColorResource(resources, "WarningColor", theme.WarningColor);
+
+            // Input Controls
+            this.UpdateColorResource(resources, "InputBackgroundColor", theme.InputBackground);
+            this.UpdateColorResource(resources, "InputBorderColor", theme.InputBorder);
+            this.UpdateColorResource(resources, "InputFocusBorderColor", theme.InputFocusBorder);
+            this.UpdateColorResource(resources, "InputTextColor", theme.InputText);
+
+            // Project Tag
+            this.UpdateColorResource(resources, "ProjectTagBackgroundColor", theme.ProjectTagBackground);
+            this.UpdateColorResource(resources, "ProjectTagBorderColor", theme.ProjectTagBorder);
+            this.UpdateColorResource(resources, "ProjectTagTextColor", theme.ProjectTagText);
+
+            // Title Bar
+            this.UpdateColorResource(resources, "TitleBarBackgroundColor", theme.TitleBarBackground);
+            this.UpdateColorResource(resources, "TitleBarForegroundColor", theme.TitleBarForeground);
+            this.UpdateColorResource(resources, "TitleBarButtonHoverColor", theme.TitleBarButtonHover);
+            this.UpdateColorResource(resources, "TitleBarButtonPressedColor", theme.TitleBarButtonPressed);
+
+            // Settings Window
+            this.UpdateColorResource(resources, "SettingsBackgroundColor", theme.SettingsBackground);
+            this.UpdateColorResource(resources, "SettingsSectionHeaderColor", theme.SettingsSectionHeader);
+            this.UpdateColorResource(resources, "SettingsLabelTextColor", theme.SettingsLabelText);
+
+            // Tab Control
+            this.UpdateColorResource(resources, "TabBackgroundColor", theme.TabBackground);
+            this.UpdateColorResource(resources, "TabSelectedBackgroundColor", theme.TabSelectedBackground);
+            this.UpdateColorResource(resources, "TabHoverBackgroundColor", theme.TabHoverBackground);
+            this.UpdateColorResource(resources, "TabTextColor", theme.TabText);
+            this.UpdateColorResource(resources, "TabSelectedTextColor", theme.TabSelectedText);
+        }
+
+        private void UpdateColorResource(Avalonia.Controls.IResourceDictionary resources, string key, string colorHex, double opacity = 1.0)
+        {
+            try
+            {
+                var color = Color.Parse(colorHex);
+                resources[key] = color;
+
+                // Also update the corresponding brush with opacity baked in
+                var brushKey = key.Replace("Color", "Brush");
+                if (resources.ContainsKey(brushKey))
+                {
+                    resources[brushKey] = new SolidColorBrush(color, opacity);
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log error but don't crash the application
+                this._logWriter?.LogError($"Failed to parse color '{colorHex}' for key '{key}': {ex.Message}", ex);
             }
         }
-        catch (Exception ex)
-        {
-            // Log error but don't crash the application
-            _logWriter?.LogError($"Failed to parse color '{colorHex}' for key '{key}': {ex.Message}", ex);
-        }
-    }
-
-    private readonly IAppLogger? _logWriter;
-
-    public ThemeManager(IAppLogger? logWriter = null)
-    {
-        _logWriter = logWriter;
-    }
-
-    /// <summary>
-    /// Initializes the resource dictionary with default theme color keys.
-    /// This should be called once during app startup.
-    /// </summary>
-    public void InitializeThemeResources()
-    {
-        if (Application.Current == null)
-            return;
-
-        var resources = Application.Current.Resources;
-        var defaultTheme = new Theme(); // Uses default values
-
-        // Initialize all color resources
-        ApplyTheme(defaultTheme);
     }
 }

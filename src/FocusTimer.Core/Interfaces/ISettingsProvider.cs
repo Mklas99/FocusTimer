@@ -1,19 +1,23 @@
-using FocusTimer.Core.Models;
-
-namespace FocusTimer.Core.Interfaces;
-
-/// <summary>
-/// Service for loading and saving application settings.
-/// </summary>
-public interface ISettingsProvider
+namespace FocusTimer.Core.Interfaces
 {
-    /// <summary>
-    /// Loads settings from persistent storage.
-    /// </summary>
-    Task<Settings> LoadAsync();
+    using FocusTimer.Core.Models;
 
     /// <summary>
-    /// Saves settings to persistent storage.
+    /// Service for loading and saving application settings.
     /// </summary>
-    Task SaveAsync(Settings settings);
+    public interface ISettingsProvider
+    {
+        /// <summary>
+        /// Loads settings from persistent storage.
+        /// </summary>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        Task<Settings> LoadAsync();
+
+        /// <summary>
+        /// Saves settings to persistent storage.
+        /// </summary>
+        /// <param name="settings">The settings object to save.</param>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        Task SaveAsync(Settings settings);
+    }
 }

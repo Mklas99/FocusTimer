@@ -1,97 +1,121 @@
-using System;
-using System.Timers;
-using System.Threading.Tasks;
-using FocusTimer.Core.Interfaces;
-using FocusTimer.Core.Models;
-
 namespace FocusTimer.Core.Services
 {
+    using System;
+    using System.Timers;
+    using FocusTimer.Core.Interfaces;
+    using FocusTimer.Core.Models;
+
+    /// <summary>
+    /// Manages timer state and elapsed time tracking for focus sessions.
+    /// </summary>
     public class TimerService : ITimerService, IDisposable
     {
         private readonly SessionTracker _sessionTracker;
         private readonly System.Timers.Timer _timer;
-        private TimerState _currentState = TimerState.Idle;
-        private TimeSpan _elapsed;
-        
+
         // Lock for thread safety
         private readonly object _lock = new object();
 
+        private TimerState _currentState = TimerState.Idle;
+        private TimeSpan _elapsed;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TimerService"/> class.
+        /// </summary>
+        /// <param name="sessionTracker">The session tracker to use for tracking timer sessions.</param>
+        public TimerService(SessionTracker sessionTracker)
+        {
+            this._sessionTracker = sessionTracker;
+            this._timer = new System.Timers.Timer(1000);
+            this._timer.Elapsed += this.OnTimerElapsed;
+            this._timer.AutoReset = true;
+        }
+
+        /// <inheritdoc/>
+        public event EventHandler<TimerState>? StateChanged;
+
+        /// <inheritdoc/>
+        public event EventHandler<TimeSpan>? Tick;
+
+        /// <inheritdoc/>
         public TimerState CurrentState
         {
-            get => _currentState;
+            get => this._currentState;
             private set
             {
-                if (_currentState != value)
+                if (this._currentState != value)
                 {
-                    _currentState = value;
-                    StateChanged?.Invoke(this, _currentState);
+                    this._currentState = value;
+                    this.StateChanged?.Invoke(this, this._currentState);
                 }
             }
         }
 
-        public TimeSpan Elapsed => _elapsed;
+        /// <inheritdoc/>
+        public TimeSpan Elapsed => this._elapsed;
 
-        public event EventHandler<TimerState>? StateChanged;
-        public event EventHandler<TimeSpan>? Tick;
-
-        public TimerService(SessionTracker sessionTracker)
+        /// <inheritdoc/>
+        public void Start(string? projectTag = null)
         {
-            _sessionTracker = sessionTracker;
-            _timer = new System.Timers.Timer(1000);
-            _timer.Elapsed += OnTimerElapsed;
-            _timer.AutoReset = true;
+            if (this._currentState == TimerState.Running)
+            {
+                return;
+            }
+
+            this._sessionTracker.StartAsync(projectTag).ConfigureAwait(false);
+
+            this._timer.Start();
+            this.CurrentState = TimerState.Running;
+        }
+
+        /// <inheritdoc/>
+        public void Pause()
+        {
+            if (this._currentState != TimerState.Running)
+            {
+                return;
+            }
+
+            this._timer.Stop();
+            this.CurrentState = TimerState.Paused;
+        }
+
+        /// <inheritdoc/>
+        public void Stop()
+        {
+            this._timer.Stop();
+            this.CurrentState = TimerState.Idle;
+        }
+
+        /// <inheritdoc/>
+        public void Reset()
+        {
+            this.Stop();
+            lock (this._lock)
+            {
+                this._elapsed = TimeSpan.Zero;
+            }
+
+            this.Tick?.Invoke(this, this._elapsed);
+        }
+
+        /// <inheritdoc/>
+        public void Dispose()
+        {
+            this._timer.Dispose();
         }
 
         private void OnTimerElapsed(object? sender, ElapsedEventArgs e)
         {
-            lock (_lock)
+            lock (this._lock)
             {
-                _elapsed = _elapsed.Add(TimeSpan.FromSeconds(1));
+                this._elapsed = this._elapsed.Add(TimeSpan.FromSeconds(1));
             }
-            
-            Tick?.Invoke(this, _elapsed);
-            
+
+            this.Tick?.Invoke(this, this._elapsed);
+
             // Fire and forget tracking update
-            _ = _sessionTracker.OnTimerTickAsync();
-        }
-
-        public void Start(string? projectTag = null)
-        {
-            if (_currentState == TimerState.Running) return;
-
-            _sessionTracker.StartAsync(projectTag).ConfigureAwait(false);
-
-            _timer.Start();
-            CurrentState = TimerState.Running;
-        }
-
-        public void Pause()
-        {
-            if (_currentState != TimerState.Running) return;
-
-            _timer.Stop();
-            CurrentState = TimerState.Paused;
-        }
-
-        public void Stop()
-        {
-            _timer.Stop();
-            CurrentState = TimerState.Idle;
-        }
-
-        public void Reset()
-        {
-            Stop();
-            lock (_lock)
-            {
-                _elapsed = TimeSpan.Zero;
-            }
-            Tick?.Invoke(this, _elapsed);
-        }
-
-        public void Dispose()
-        {
-            _timer.Dispose();
+            _ = this._sessionTracker.OnTimerTickAsync();
         }
     }
 }

@@ -1,38 +1,55 @@
-using FocusTimer.Core.Interfaces;
-using FocusTimer.Core.Models;
-
-namespace FocusTimer.Core.Stubs;
-
-/// <summary>
-/// Stub implementation of ISettingsProvider that returns default settings.
-/// </summary>
-public class SettingsProviderStub : ISettingsProvider
+namespace FocusTimer.Core.Stubs
 {
-    private readonly Settings _defaultSettings = new();
-    private readonly IAppLogger? _logger;
+    using FocusTimer.Core.Interfaces;
+    using FocusTimer.Core.Models;
 
-    public SettingsProviderStub()
-        : this(null)
+    /// <summary>
+    /// Stub implementation of ISettingsProvider that returns default settings.
+    /// </summary>
+    public class SettingsProviderStub : ISettingsProvider
     {
-    }
+        /// <summary>
+        /// Gets the default settings instance.
+        /// </summary>
+        private readonly Settings _defaultSettings = new();
 
-    public SettingsProviderStub(IAppLogger? logger)
-    {
-        _logger = logger;
-    }
+        /// <summary>
+        /// Gets the optional app logger instance.
+        /// </summary>
+        private readonly IAppLogger? _logger;
 
-    public Task<Settings> LoadAsync()
-    {
-        // Return default settings for now
-        return Task.FromResult(_defaultSettings);
-    }
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SettingsProviderStub"/> class.
+        /// </summary>
+        public SettingsProviderStub()
+            : this(null)
+        {
+        }
 
-    public Task SaveAsync(Settings settings)
-    {
-        ArgumentNullException.ThrowIfNull(settings);
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SettingsProviderStub"/> class.
+        /// </summary>
+        /// <param name="logger">The optional app logger instance.</param>
+        public SettingsProviderStub(IAppLogger? logger)
+        {
+            this._logger = logger;
+        }
 
-        // Stub: just log
-        _logger?.LogInformation("[SettingsProviderStub] Would save settings to disk.");
-        return Task.CompletedTask;
+        /// <inheritdoc/>
+        public Task<Settings> LoadAsync()
+        {
+            // Return default settings for now
+            return Task.FromResult(this._defaultSettings);
+        }
+
+        /// <inheritdoc/>
+        public Task SaveAsync(Settings settings)
+        {
+            ArgumentNullException.ThrowIfNull(settings);
+
+            // Stub: just log
+            this._logger?.LogInformation("[SettingsProviderStub] Would save settings to disk.");
+            return Task.CompletedTask;
+        }
     }
 }

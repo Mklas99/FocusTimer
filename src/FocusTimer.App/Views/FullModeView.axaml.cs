@@ -1,11 +1,18 @@
-using Avalonia.Controls;
-
-namespace FocusTimer.App.Views;
-
-public partial class FullModeView : UserControl
+namespace FocusTimer.App.Views
 {
-    public FullModeView()
+    using Avalonia.Controls;
+
+    /// <summary>
+    /// Represents the full mode view for the FocusTimer application.
+    /// </summary>
+    public partial class FullModeView : UserControl
     {
-        InitializeComponent();
+        /// <summary>
+        /// Initializes a new instance of the <see cref="FullModeView"/> class.
+        /// </summary>
+        public FullModeView()
+        {
+            this.InitializeComponent();
+        }
     }
 }

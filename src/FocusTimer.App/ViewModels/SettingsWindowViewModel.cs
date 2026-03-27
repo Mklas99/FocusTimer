@@ -1,297 +1,319 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reactive;
-using System.Threading.Tasks;
-using System.Windows.Input;
-using Avalonia.Controls;
-using Avalonia.Platform.Storage;
-using FocusTimer.Core.Interfaces;
-using FocusTimer.Core.Models;
-using FocusTimer.App.Services;
-using ReactiveUI;
-
-namespace FocusTimer.App.ViewModels;
-
-/// <summary>
-/// ViewModel for the Settings window.
-/// </summary>
-public class SettingsWindowViewModel : ReactiveObject
+namespace FocusTimer.App.ViewModels
 {
-    private async Task ApplyAsync()
-    {
-        try
-        {
-            // Apply auto-start setting to registry before saving
-            _autoStartService.SetAutoStart(_settings.AutoStartOnLogin);
-            
-            await _settingsProvider.SaveAsync(_settings);
-            SettingsApplied?.Invoke(this, EventArgs.Empty);
-            _logger.LogDebug("Settings saved successfully");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogDebug($"Failed to save settings: {ex.Message}");
-            // TODO: Show error dialog to user
-        }
-    }
-
-
-    private void Cancel(Window window)
-    {
-        window?.Close();
-    }
-
-    private async Task BrowseWorklogDirectoryAsync(Window window)
-    {
-        try
-        {
-            var storageProvider = window.StorageProvider;
-            
-            var options = new FolderPickerOpenOptions
-            {
-                Title = "Select Worklog Directory",
-                AllowMultiple = false
-            };
-
-            var result = await storageProvider.OpenFolderPickerAsync(options);
-            
-            if (result.Count > 0)
-            {
-                Settings.WorklogDirectory = result[0].Path.LocalPath;
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogDebug($"Failed to browse folder: {ex.Message}");
-        }
-    }
-
-    private readonly ISettingsProvider _settingsProvider;
-    private readonly IAutoStartService _autoStartService;
-    private readonly IThemeService _themeService;
-    private readonly ThemeManager _themeManager;
-    private readonly IAppLogger _logger;
-    private Settings _settings;
-    private string _selectedThemeName;
-    
-    public SettingsWindowViewModel(
-        ISettingsProvider settingsProvider,
-        IAutoStartService autoStartService,
-        IThemeService themeService,
-        ThemeManager themeManager,
-        IAppLogger logWriter)
-    {
-        _settingsProvider = settingsProvider;
-        _autoStartService = autoStartService;
-        _themeService = themeService;
-        _themeManager = themeManager;
-        _logger = logWriter;
-        _settings = new Settings();
-        _selectedThemeName = "Dark";
-
-        // Initialize commands
-        ApplyCommand = ReactiveCommand.CreateFromTask(ApplyAsync);
-        OkCommand = ReactiveCommand.CreateFromTask(OkAsync);
-        CancelCommand = ReactiveCommand.Create<Window>(Cancel);
-        BrowseWorklogDirectoryCommand = ReactiveCommand.CreateFromTask<Window>(BrowseWorklogDirectoryAsync);
-        ImportThemeCommand = ReactiveCommand.CreateFromTask<Window>(ImportThemeAsync);
-        ExportThemeCommand = ReactiveCommand.CreateFromTask<Window>(ExportThemeAsync);
-        ResetThemeCommand = ReactiveCommand.Create(ResetTheme);
-
-        // Load settings
-        _ = LoadSettingsAsync();
-
-        // Subscribe to theme property changes to apply them immediately
-        _settings.Theme.PropertyChanged += (s, e) => ApplyThemeChanges();
-
-    }
-
-    #region Properties
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Threading.Tasks;
+    using System.Windows.Input;
+    using Avalonia.Controls;
+    using Avalonia.Platform.Storage;
+    using FocusTimer.App.Services;
+    using FocusTimer.Core.Interfaces;
+    using FocusTimer.Core.Models;
+    using ReactiveUI;
 
     /// <summary>
-    /// The settings being edited.
+    /// ViewModel for the Settings window.
     /// </summary>
-    public Settings Settings
+    public class SettingsWindowViewModel : ReactiveObject
     {
-        get => _settings;
-        set => this.RaiseAndSetIfChanged(ref _settings, value);
-    }
+        private readonly ISettingsProvider _settingsProvider;
+        private readonly IAutoStartService _autoStartService;
+        private readonly IThemeService _themeService;
+        private readonly ThemeManager _themeManager;
+        private readonly IAppLogger _logger;
+        private Settings _settings;
+        private string _selectedThemeName;
 
-    /// <summary>
-    /// List of available theme names for the ComboBox.
-    /// </summary>
-    public List<string> AvailableThemes => _themeService.BuiltInThemes
-        .Select(t => t.ThemeName)
-        .ToList();
-
-    /// <summary>
-    /// Currently selected theme name in the ComboBox.
-    /// </summary>
-    public string SelectedThemeName
-    {
-        get => _selectedThemeName;
-        set
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SettingsWindowViewModel"/> class.
+        /// </summary>
+        /// <param name="settingsProvider">The settings provider service.</param>
+        /// <param name="autoStartService">The auto-start service.</param>
+        /// <param name="themeService">The theme service.</param>
+        /// <param name="themeManager">The theme manager.</param>
+        /// <param name="logWriter">The application logger.</param>
+        public SettingsWindowViewModel(
+            ISettingsProvider settingsProvider,
+            IAutoStartService autoStartService,
+            IThemeService themeService,
+            ThemeManager themeManager,
+            IAppLogger logWriter)
         {
-            this.RaiseAndSetIfChanged(ref _selectedThemeName, value);
-            if (!string.IsNullOrEmpty(value))
-            {
-                LoadThemeByName(value);
-            }
+            this._settingsProvider = settingsProvider;
+            this._autoStartService = autoStartService;
+            this._themeService = themeService;
+            this._themeManager = themeManager;
+            this._logger = logWriter;
+            this._settings = new Settings();
+            this._selectedThemeName = "Dark";
+
+            // Initialize commands
+            this.ApplyCommand = ReactiveCommand.CreateFromTask(this.ApplyAsync);
+            this.OkCommand = ReactiveCommand.CreateFromTask(this.OkAsync);
+            this.CancelCommand = ReactiveCommand.Create<Window>(this.Cancel);
+            this.BrowseWorklogDirectoryCommand = ReactiveCommand.CreateFromTask<Window>(this.BrowseWorklogDirectoryAsync);
+            this.ImportThemeCommand = ReactiveCommand.CreateFromTask<Window>(this.ImportThemeAsync);
+            this.ExportThemeCommand = ReactiveCommand.CreateFromTask<Window>(this.ExportThemeAsync);
+            this.ResetThemeCommand = ReactiveCommand.Create(this.ResetTheme);
+
+            // Load settings
+            _ = this.LoadSettingsAsync();
+
+            // Subscribe to theme property changes to apply them immediately
+            this._settings.Theme.PropertyChanged += (s, e) => this.ApplyThemeChanges();
         }
-    }
-    #endregion
 
-    #region Commands
+        /// <summary>
+        /// Raised when settings have been applied/saved.
+        /// </summary>
+        public event EventHandler? SettingsApplied;
 
-    public ICommand ApplyCommand { get; }
-    public ICommand OkCommand { get; }
-    public ICommand CancelCommand { get; }
-    public ICommand BrowseWorklogDirectoryCommand { get; }
-    public ICommand ImportThemeCommand { get; }
-    public ICommand ExportThemeCommand { get; }
-    public ICommand ResetThemeCommand { get; }
+        /// <summary>
+        /// Gets the command for applying settings.
+        /// </summary>
+        public ICommand ApplyCommand { get; }
 
-    #endregion
+        /// <summary>
+        /// Gets the command for confirming settings changes.
+        /// </summary>
+        public ICommand OkCommand { get; }
 
-    #region Events
+        /// <summary>
+        /// Gets the command for canceling settings changes.
+        /// </summary>
+        public ICommand CancelCommand { get; }
 
-    /// <summary>
-    /// Raised when settings have been applied/saved.
-    /// </summary>
-    public event EventHandler? SettingsApplied;
+        /// <summary>
+        /// Gets the command for browsing the worklog directory.
+        /// </summary>
+        public ICommand BrowseWorklogDirectoryCommand { get; }
 
-    #endregion
+        /// <summary>
+        /// Gets the command for importing a theme.
+        /// </summary>
+        public ICommand ImportThemeCommand { get; }
 
-    #region Command Implementations
-    private async Task LoadSettingsAsync()
-    {
-        try
+        /// <summary>
+        /// Gets the command for exporting the current theme.
+        /// </summary>
+        public ICommand ExportThemeCommand { get; }
+
+        /// <summary>
+        /// Gets the command for resetting the theme to default.
+        /// </summary>
+        public ICommand ResetThemeCommand { get; }
+
+        /// <summary>
+        /// Gets or sets the settings being edited.
+        /// </summary>
+        public Settings Settings
         {
-            Settings = await _settingsProvider.LoadAsync();
-            var isAutoStartEnabled = _autoStartService.IsAutoStartEnabled();
-            if (Settings.AutoStartOnLogin != isAutoStartEnabled)
-            {
-                Settings.AutoStartOnLogin = isAutoStartEnabled;
-            }
+            get => this._settings;
+            set => this.RaiseAndSetIfChanged(ref this._settings, value);
         }
-        catch (Exception ex)
-        {
-            _logger.LogError("Failed to load settings.", ex);
-            // Keep default settings
-        }
-    }
 
-    private async Task OkAsync()
-    {
-        await ApplyAsync();
-        _logger.LogInformation("OK command executed - settings applied and window will be closed.");
-        // Window will be closed by the calling code
-    }
+        /// <summary>
+        /// Gets list of available theme names for the ComboBox.
+        /// </summary>
+        public List<string> AvailableThemes => [.. this._themeService.BuiltInThemes.Select(t => t.ThemeName)];
 
-    private async Task ImportThemeAsync(Window window)
-    {
-        try
+        /// <summary>
+        /// Gets or sets currently selected theme name in the ComboBox.
+        /// </summary>
+        public string SelectedThemeName
         {
-            var storageProvider = window.StorageProvider;
-            var options = new FilePickerOpenOptions
+            get => this._selectedThemeName;
+            set
             {
-                Title = "Import Theme",
-                AllowMultiple = false,
-                FileTypeFilter = new[]
+                this.RaiseAndSetIfChanged(ref this._selectedThemeName, value);
+                if (!string.IsNullOrEmpty(value))
                 {
-                    new FilePickerFileType("FocusTimer Theme")
+                    this.LoadThemeByName(value);
+                }
+            }
+        }
+
+        private async Task ApplyAsync()
+        {
+            try
+            {
+                // Apply auto-start setting to registry before saving
+                this._autoStartService.SetAutoStart(this._settings.AutoStartOnLogin);
+
+                await this._settingsProvider.SaveAsync(this._settings);
+                this.SettingsApplied?.Invoke(this, EventArgs.Empty);
+                this._logger.LogDebug("Settings saved successfully");
+            }
+            catch (Exception ex)
+            {
+                this._logger.LogDebug($"Failed to save settings: {ex.Message}");
+
+                // TODO: Show error dialog to user
+            }
+        }
+
+        private void Cancel(Window window)
+        {
+            window?.Close();
+        }
+
+        private async Task BrowseWorklogDirectoryAsync(Window window)
+        {
+            try
+            {
+                var storageProvider = window.StorageProvider;
+
+                var options = new FolderPickerOpenOptions
+                {
+                    Title = "Select Worklog Directory",
+                    AllowMultiple = false,
+                };
+
+                var result = await storageProvider.OpenFolderPickerAsync(options);
+
+                if (result.Count > 0)
+                {
+                    this.Settings.WorklogDirectory = result[0].Path.LocalPath;
+                }
+            }
+            catch (Exception ex)
+            {
+                this._logger.LogDebug($"Failed to browse folder: {ex.Message}");
+            }
+        }
+
+        private async Task LoadSettingsAsync()
+        {
+            try
+            {
+                this.Settings = await this._settingsProvider.LoadAsync();
+                var isAutoStartEnabled = this._autoStartService.IsAutoStartEnabled();
+                if (this.Settings.AutoStartOnLogin != isAutoStartEnabled)
+                {
+                    this.Settings.AutoStartOnLogin = isAutoStartEnabled;
+                }
+            }
+            catch (Exception ex)
+            {
+                this._logger.LogError("Failed to load settings.", ex);
+
+                // Keep default settings
+            }
+        }
+
+        private async Task OkAsync()
+        {
+            await this.ApplyAsync();
+            this._logger.LogInformation("OK command executed - settings applied and window will be closed.");
+
+            // Window will be closed by the calling code
+        }
+
+        private async Task ImportThemeAsync(Window window)
+        {
+            try
+            {
+                var storageProvider = window.StorageProvider;
+                var options = new FilePickerOpenOptions
+                {
+                    Title = "Import Theme",
+                    AllowMultiple = false,
+                    FileTypeFilter = new[]
                     {
-                        Patterns = new[] { "*.fttheme" }
+                        new FilePickerFileType("FocusTimer Theme")
+                        {
+                            Patterns = new[] { "*.fttheme" },
+                        },
+                        FilePickerFileTypes.All,
                     },
-                    FilePickerFileTypes.All
-                }
-            };
-            var result = await storageProvider.OpenFilePickerAsync(options);
-            if (result.Count > 0)
-            {
-                var filePath = result[0].Path.LocalPath;
-                var theme = await _themeService.LoadThemeFromFileAsync(filePath);
-                Settings.Theme = theme;
-                Settings.CustomThemePath = filePath;
-                Settings.ActiveThemeName = theme.ThemeName;
-                _selectedThemeName = "Custom";
-                this.RaisePropertyChanged(nameof(SelectedThemeName));
-                ApplyThemeChanges();
-                _logger.LogInformation($"Theme '{theme.ThemeName}' imported successfully");
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError($"Failed to import theme: {ex.Message}", ex);
-            // TODO: Show error dialog
-        }
-    }
-
-    private async Task ExportThemeAsync(Window window)
-    {
-        try
-        {
-            var storageProvider = window.StorageProvider;
-            
-            var options = new FilePickerSaveOptions
-            {
-                Title = "Export Theme",
-                DefaultExtension = "fttheme",
-                SuggestedFileName = $"{Settings.Theme.ThemeName}.fttheme",
-                FileTypeChoices = new[]
+                };
+                var result = await storageProvider.OpenFilePickerAsync(options);
+                if (result.Count > 0)
                 {
-                    new FilePickerFileType("FocusTimer Theme")
-                    {
-                        Patterns = new[] { "*.fttheme" }
-                    }
+                    var filePath = result[0].Path.LocalPath;
+                    var theme = await this._themeService.LoadThemeFromFileAsync(filePath);
+                    this.Settings.Theme = theme;
+                    this.Settings.CustomThemePath = filePath;
+                    this.Settings.ActiveThemeName = theme.ThemeName;
+                    this._selectedThemeName = "Custom";
+                    this.RaisePropertyChanged(nameof(this.SelectedThemeName));
+                    this.ApplyThemeChanges();
+                    this._logger.LogInformation($"Theme '{theme.ThemeName}' imported successfully");
                 }
-            };
-
-            var result = await storageProvider.SaveFilePickerAsync(options);
-            
-            if (result != null)
+            }
+            catch (Exception ex)
             {
-                var filePath = result.Path.LocalPath;
-                await _themeService.SaveThemeToFileAsync(Settings.Theme, filePath);
-                _logger.LogInformation($"Theme exported to: {filePath}");
+                this._logger.LogError($"Failed to import theme: {ex.Message}", ex);
+
+                // TODO: Show error dialog
             }
         }
-        catch (Exception ex)
+
+        private async Task ExportThemeAsync(Window window)
         {
-            _logger.LogError("Failed to export theme.", ex);
-            // TODO: Show error dialog
+            try
+            {
+                var storageProvider = window.StorageProvider;
+
+                var options = new FilePickerSaveOptions
+                {
+                    Title = "Export Theme",
+                    DefaultExtension = "fttheme",
+                    SuggestedFileName = $"{this.Settings.Theme.ThemeName}.fttheme",
+                    FileTypeChoices = new[]
+                    {
+                        new FilePickerFileType("FocusTimer Theme")
+                        {
+                            Patterns = new[] { "*.fttheme" },
+                        },
+                    },
+                };
+
+                var result = await storageProvider.SaveFilePickerAsync(options);
+
+                if (result != null)
+                {
+                    var filePath = result.Path.LocalPath;
+                    await this._themeService.SaveThemeToFileAsync(this.Settings.Theme, filePath);
+                    this._logger.LogInformation($"Theme exported to: {filePath}");
+                }
+            }
+            catch (Exception ex)
+            {
+                this._logger.LogError("Failed to export theme.", ex);
+
+                // TODO: Show error dialog
+            }
+        }
+
+        private void ResetTheme()
+        {
+            this._themeService.ResetToDefault();
+            this.Settings.Theme = this._themeService.CurrentTheme.Clone();
+            this.Settings.ActiveThemeName = "Dark";
+            this._selectedThemeName = "Dark";
+            this.RaisePropertyChanged(nameof(this.SelectedThemeName));
+
+            this.ApplyThemeChanges();
+            this._logger.LogInformation("Theme reset to default.");
+        }
+
+        private void LoadThemeByName(string themeName)
+        {
+            var theme = this._themeService.GetBuiltInTheme(themeName);
+            if (theme != null)
+            {
+                this.Settings.Theme = theme.Clone();
+                this.Settings.ActiveThemeName = themeName;
+                this.ApplyThemeChanges();
+            }
+        }
+
+        private void ApplyThemeChanges()
+        {
+            this._themeManager.ApplyTheme(this.Settings.Theme);
+            this._logger.LogInformation($"Applied theme: {this.Settings.Theme.ThemeName}");
         }
     }
-
-    private void ResetTheme()
-    {
-        _themeService.ResetToDefault();
-        Settings.Theme = _themeService.CurrentTheme.Clone();
-        Settings.ActiveThemeName = "Dark";
-        _selectedThemeName = "Dark";
-        this.RaisePropertyChanged(nameof(SelectedThemeName));
-        
-        ApplyThemeChanges();
-        _logger.LogInformation("Theme reset to default.");
-    }
-
-    private void LoadThemeByName(string themeName)
-    {
-        var theme = _themeService.GetBuiltInTheme(themeName);
-        if (theme != null)
-        {
-            Settings.Theme = theme.Clone();
-            Settings.ActiveThemeName = themeName;
-            ApplyThemeChanges();
-        }
-    }
-
-    private void ApplyThemeChanges()
-    {
-        _themeManager.ApplyTheme(Settings.Theme);
-        _logger.LogInformation($"Applied theme: {Settings.Theme.ThemeName}");
-    }
-
-    #endregion
 }

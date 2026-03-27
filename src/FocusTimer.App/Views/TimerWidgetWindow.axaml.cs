@@ -1,153 +1,171 @@
-using Avalonia;
-using Avalonia.Controls;
-using Avalonia.Input;
-using Avalonia.Markup.Xaml;
-using FocusTimer.App.ViewModels;
-using Avalonia.Interactivity;
-using System;
-using System.Runtime.InteropServices;
-using Microsoft.Extensions.DependencyInjection;
-using FocusTimer.Core.Interfaces;
-
-namespace FocusTimer.App.Views;
-
-public partial class TimerWidgetWindow : Window
+namespace FocusTimer.App.Views
 {
-    private IAppLogger?_logger => Program.Services.GetService<IAppLogger>();
-
-    // Set cursor to Grab when pointer enters drag area (if not dragging)
-    private void DragArea_PointerEnter(object? sender, PointerEventArgs e)
-    {
-        if (!_isDragging && sender is Border dragArea)
-            dragArea.Cursor = new Cursor(StandardCursorType.DragMove);
-    }
-
-    // Set cursor to SizeAll when pointer leaves drag area (if not dragging)
-    private void DragArea_PointerLeave(object? sender, PointerEventArgs e)
-    {
-        if (!_isDragging && sender is Border dragArea)
-            dragArea.Cursor = new Cursor(StandardCursorType.Arrow);
-    }
-
-    public TimerWidgetWindow()
-    {
-        InitializeComponent();
-        Opened += OnWindowOpened;
-
-        // Handle closing event to hide instead of close
-        Closing += OnWindowClosing;
-        
-        // Setup Windows-specific hotkey message handling
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-        {
-            Opened += OnWindowOpenedForHotkeys;
-        }
-    }
-
-    private void InitializeComponent()
-    {
-        AvaloniaXamlLoader.Load(this);
-    }
+    using System;
+    using System.Runtime.InteropServices;
+    using Avalonia.Controls;
+    using Avalonia.Input;
+    using Avalonia.Interactivity;
+    using Avalonia.Markup.Xaml;
+    using FocusTimer.App.ViewModels;
+    using FocusTimer.Core.Interfaces;
+    using Microsoft.Extensions.DependencyInjection;
 
     /// <summary>
-    /// Initialize settings after window is opened.
+    /// Timer widget window for displaying and interacting with the focus timer.
     /// </summary>
-    private async void OnWindowOpened(object? sender, EventArgs e)
+    public partial class TimerWidgetWindow : Window
     {
-        if (DataContext is TimerWidgetViewModel viewModel)
-        {
-            await viewModel.InitializeSettingsAsync();
-        }
-    }
+        private bool _isDragging = false;
 
-    /// <summary>
-    /// Setup Windows hotkey service with window handle.
-    /// </summary>
-    private void OnWindowOpenedForHotkeys(object? sender, EventArgs e)
-    {
-        try
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TimerWidgetWindow"/> class.
+        /// </summary>
+        public TimerWidgetWindow()
         {
-            // Get the native window handle
-            if (TryGetPlatformHandle()?.Handle is IntPtr hwnd && hwnd != IntPtr.Zero)
+            this.InitializeComponent();
+            this.Opened += this.OnWindowOpened;
+
+            // Handle closing event to hide instead of close
+            this.Closing += this.OnWindowClosing;
+
+            // Setup Windows-specific hotkey message handling
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                var hotkeyService = Program.Services.GetService<Core.Interfaces.IGlobalHotkeyService>();
-                var appController = Program.Services.GetService<Services.AppController>();
-                
-                if (hotkeyService is Platform.Windows.WindowsHotkeyService windowsHotkeyService)
-                {
-                    windowsHotkeyService.SetWindowHandle(hwnd);
-                    appController?.RegisterHotkeys();
-                    _logger?.LogDebug($"Window handle set for hotkeys: {hwnd}");
-                }
+                this.Opened += this.OnWindowOpenedForHotkeys;
             }
         }
-        catch (Exception ex)
+
+        /// <summary>
+        /// Gets or sets a value indicating whether flag to allow actual window close during app shutdown.
+        /// Set this to true before calling Close() during app exit.
+        /// </summary>
+        public bool IsAppShuttingDown { get; set; }
+
+        private static IAppLogger? Logger => Program.Services.GetService<IAppLogger>();
+
+        /// <summary>
+        /// Clean up the ViewModel when window closes.
+        /// </summary>
+        /// <param name="e">The event args.</param>
+        protected override void OnClosed(EventArgs e)
         {
-            _logger?.LogError("Failed to set up hotkey window handle.", ex);
-        }
-    }
+            if (this.DataContext is TimerWidgetViewModel viewModel)
+            {
+                viewModel.Dispose();
+            }
 
-    /// <summary>
-    /// Clean up the ViewModel when window closes.
-    /// </summary>
-    protected override void OnClosed(EventArgs e)
-    {
-        if (DataContext is TimerWidgetViewModel viewModel)
+            base.OnClosed(e);
+        }
+
+        /// <inheritdoc/>
+        protected override void OnPointerReleased(PointerReleasedEventArgs e)
         {
-            viewModel.Dispose();
+            base.OnPointerReleased(e);
+            this._isDragging = false;
+            var dragArea = this.FindControl<Border>("DragArea");
+            if (dragArea != null)
+            {
+                dragArea.Cursor = new Cursor(StandardCursorType.DragMove);
+            }
         }
-        base.OnClosed(e);
-    }
 
-    private bool _isDragging = false;
-
-    // Handler for draggable area
-    private void WindowDragArea_PointerPressed(object? sender, PointerPressedEventArgs e)
-    {
-        if (e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
+        private void InitializeComponent()
         {
-            _isDragging = true;
-            if (sender is Border dragArea)
-                dragArea.Cursor = new Cursor(StandardCursorType.SizeAll);
-            BeginMoveDrag(e);
+            AvaloniaXamlLoader.Load(this);
         }
-    }
 
-    protected override void OnPointerReleased(PointerReleasedEventArgs e)
-    {
-        base.OnPointerReleased(e);
-        _isDragging = false;
-        var dragArea = this.FindControl<Border>("DragArea");
-        if (dragArea != null)
-            dragArea.Cursor = new Cursor(StandardCursorType.DragMove);
-    }
-
-    // Handler for minimize button
-    private void MinimizeButton_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
-    {
-        WindowState = WindowState.Minimized;
-        _logger?.LogDebug("Timer widget minimized.");
-    }
-
-    private void OnWindowClosing(object? sender, WindowClosingEventArgs e)
-    {
-        // Prevent the window from actually closing
-        // Instead, just hide it (unless app is shutting down)
-        if (!IsAppShuttingDown)
+        /// <summary>
+        /// Initialize settings after window is opened.
+        /// </summary>
+        private async void OnWindowOpened(object? sender, EventArgs e)
         {
-            e.Cancel = true;
-            Hide();
+            if (this.DataContext is TimerWidgetViewModel viewModel)
+            {
+                await viewModel.InitializeSettingsAsync();
+            }
         }
-    }
 
-    /// <summary>
-    /// Flag to allow actual window close during app shutdown.
-    /// Set this to true before calling Close() during app exit.
-    /// </summary>
-    public bool IsAppShuttingDown { get; set; }
+        /// <summary>
+        /// Setup Windows hotkey service with window handle.
+        /// </summary>
+        private void OnWindowOpenedForHotkeys(object? sender, EventArgs e)
+        {
+            try
+            {
+                // Get the native window handle
+                if (this.TryGetPlatformHandle()?.Handle is IntPtr hwnd && hwnd != IntPtr.Zero)
+                {
+                    var hotkeyService = Program.Services.GetService<Core.Interfaces.IGlobalHotkeyService>();
+                    var appController = Program.Services.GetService<Services.AppController>();
 
-    private void OnToggleProjectInputClicked(object? sender, RoutedEventArgs e)
-    {
-        // Handled by command binding
+                    if (hotkeyService is Platform.Windows.WindowsHotkeyService windowsHotkeyService)
+                    {
+                        windowsHotkeyService.SetWindowHandle(hwnd);
+                        appController?.RegisterHotkeys();
+                        Logger?.LogDebug($"Window handle set for hotkeys: {hwnd}");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger?.LogError("Failed to set up hotkey window handle.", ex);
+            }
+        }
+
+        // Set cursor to Grab when pointer enters drag area (if not dragging)
+        private void DragArea_PointerEnter(object? sender, PointerEventArgs e)
+        {
+            if (!this._isDragging && sender is Border dragArea)
+            {
+                dragArea.Cursor = new Cursor(StandardCursorType.DragMove);
+            }
+        }
+
+        // Set cursor to SizeAll when pointer leaves drag area (if not dragging)
+        private void DragArea_PointerLeave(object? sender, PointerEventArgs e)
+        {
+            if (!this._isDragging && sender is Border dragArea)
+            {
+                dragArea.Cursor = new Cursor(StandardCursorType.Arrow);
+            }
+        }
+
+        // Handler for draggable area
+        private void WindowDragArea_PointerPressed(object? sender, PointerPressedEventArgs e)
+        {
+            if (e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
+            {
+                this._isDragging = true;
+                if (sender is Border dragArea)
+                {
+                    dragArea.Cursor = new Cursor(StandardCursorType.SizeAll);
+                }
+
+                this.BeginMoveDrag(e);
+            }
+        }
+
+        // Handler for minimize button
+        private void MinimizeButton_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+        {
+            this.WindowState = WindowState.Minimized;
+            Logger?.LogDebug("Timer widget minimized.");
+        }
+
+        private void OnWindowClosing(object? sender, WindowClosingEventArgs e)
+        {
+            // Prevent the window from actually closing
+            // Instead, just hide it (unless app is shutting down)
+            if (!this.IsAppShuttingDown)
+            {
+                e.Cancel = true;
+                this.Hide();
+            }
+        }
+
+        private void OnToggleProjectInputClicked(object? sender, RoutedEventArgs e)
+        {
+            // Handled by command binding
+        }
     }
 }
