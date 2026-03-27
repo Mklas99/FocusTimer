@@ -73,24 +73,24 @@
             <TabItem Header="Logging">
                 <ScrollViewer>
                     <StackPanel Spacing="15">
-                        <TextBlock Classes="SectionHeader" Text="Log Location" />
+                        <TextBlock Classes="SectionHeader" Text="Worklog CSV Location" />
 
                         <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,10">
                             <TextBox Grid.Column="0"
-                                     Text="{Binding Settings.LogDirectory}"
-                                     Watermark="Log directory path"
+                                     Text="{Binding Settings.WorklogDirectory}"
+                                     Watermark="Worklog directory path"
                                      IsReadOnly="True" />
                             <Button Grid.Column="1"
                                     Content="Browse…"
                                     Margin="5,0,0,0"
-                                    Command="{Binding BrowseLogDirectoryCommand}"
+                                    Command="{Binding BrowseWorklogDirectoryCommand}"
                                     CommandParameter="{Binding $parent[Window]}" />
                         </Grid>
 
                         <TextBlock Classes="SectionHeader" Text="Data Retention" />
 
                         <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto">
-                            <TextBlock Grid.Column="0" Classes="SettingLabel" Text="Keep logs for (days):" />
+                            <TextBlock Grid.Column="0" Classes="SettingLabel" Text="Keep worklogs for (days):" />
                             <NumericUpDown Grid.Column="1"
                                            Value="{Binding Settings.DataRetentionDays}"
                                            Minimum="1"

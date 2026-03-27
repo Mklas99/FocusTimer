@@ -121,6 +121,22 @@ public class SessionTracker
     }
 
     /// <summary>
+    /// Returns completed entries without stopping the current tracking session.
+    /// The active entry remains open so tracking can continue uninterrupted.
+    /// </summary>
+    public IReadOnlyList<TimeEntry> DrainCompletedSegments()
+    {
+        var entries = _completedEntries.ToList();
+        _completedEntries.Clear();
+        return entries;
+    }
+
+    /// <summary>
+    /// Gets whether any completed entries are currently buffered and ready to persist.
+    /// </summary>
+    public bool HasCompletedEntries => _completedEntries.Count > 0;
+
+    /// <summary>
     /// Gets the count of entries (completed + current open entry).
     /// Useful for diagnostics and testing.
     /// </summary>

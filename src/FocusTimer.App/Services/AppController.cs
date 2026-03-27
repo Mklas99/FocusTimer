@@ -28,7 +28,7 @@ public class AppController
     private readonly TodayStatsService _todayStatsService;
     private ITrayIconController? _trayIconController;
     private TrayIcon _trayIcon;
-    private readonly ILogWriter _logWriter;
+    private readonly IAppLogger _logWriter;
     
     private TimerWidgetWindow? _timerWindow;
     private SettingsWindow? _settingsWindow;
@@ -43,7 +43,7 @@ public class AppController
         Func<TimerWidgetViewModel> timerViewModelFactory,
         Func<SettingsWindowViewModel> settingsViewModelFactory,
         ITrayIconController trayIconController,
-        ILogWriter logWriter)
+        IAppLogger logWriter)
     {
         _settingsProvider = settingsProvider;
         _hotkeyService = hotkeyService;

@@ -42,7 +42,7 @@ public class SettingsWindowViewModel : ReactiveObject
         window?.Close();
     }
 
-    private async Task BrowseLogDirectoryAsync(Window window)
+    private async Task BrowseWorklogDirectoryAsync(Window window)
     {
         try
         {
@@ -50,7 +50,7 @@ public class SettingsWindowViewModel : ReactiveObject
             
             var options = new FolderPickerOpenOptions
             {
-                Title = "Select Log Directory",
+                Title = "Select Worklog Directory",
                 AllowMultiple = false
             };
 
@@ -58,7 +58,7 @@ public class SettingsWindowViewModel : ReactiveObject
             
             if (result.Count > 0)
             {
-                Settings.LogDirectory = result[0].Path.LocalPath;
+                Settings.WorklogDirectory = result[0].Path.LocalPath;
             }
         }
         catch (Exception ex)
@@ -71,7 +71,7 @@ public class SettingsWindowViewModel : ReactiveObject
     private readonly IAutoStartService _autoStartService;
     private readonly IThemeService _themeService;
     private readonly ThemeManager _themeManager;
-    private readonly ILogWriter _logWriter;
+    private readonly IAppLogger _logWriter;
     private Settings _settings;
     private string _selectedThemeName;
     
@@ -80,7 +80,7 @@ public class SettingsWindowViewModel : ReactiveObject
         IAutoStartService autoStartService,
         IThemeService themeService,
         ThemeManager themeManager,
-        ILogWriter logWriter)
+        IAppLogger logWriter)
     {
         _settingsProvider = settingsProvider;
         _autoStartService = autoStartService;
@@ -94,7 +94,7 @@ public class SettingsWindowViewModel : ReactiveObject
         ApplyCommand = ReactiveCommand.CreateFromTask(ApplyAsync);
         OkCommand = ReactiveCommand.CreateFromTask(OkAsync);
         CancelCommand = ReactiveCommand.Create<Window>(Cancel);
-        BrowseLogDirectoryCommand = ReactiveCommand.CreateFromTask<Window>(BrowseLogDirectoryAsync);
+        BrowseWorklogDirectoryCommand = ReactiveCommand.CreateFromTask<Window>(BrowseWorklogDirectoryAsync);
         ImportThemeCommand = ReactiveCommand.CreateFromTask<Window>(ImportThemeAsync);
         ExportThemeCommand = ReactiveCommand.CreateFromTask<Window>(ExportThemeAsync);
         ResetThemeCommand = ReactiveCommand.Create(ResetTheme);
@@ -147,7 +147,7 @@ public class SettingsWindowViewModel : ReactiveObject
     public ICommand ApplyCommand { get; }
     public ICommand OkCommand { get; }
     public ICommand CancelCommand { get; }
-    public ICommand BrowseLogDirectoryCommand { get; }
+    public ICommand BrowseWorklogDirectoryCommand { get; }
     public ICommand ImportThemeCommand { get; }
     public ICommand ExportThemeCommand { get; }
     public ICommand ResetThemeCommand { get; }

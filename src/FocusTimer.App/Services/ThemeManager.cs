@@ -112,9 +112,9 @@ public class ThemeManager
         }
     }
 
-    private readonly ILogWriter? _logWriter;
+    private readonly IAppLogger? _logWriter;
 
-    public ThemeManager(ILogWriter? logWriter = null)
+    public ThemeManager(IAppLogger? logWriter = null)
     {
         _logWriter = logWriter;
     }

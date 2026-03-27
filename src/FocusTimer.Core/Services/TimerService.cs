@@ -59,12 +59,7 @@ namespace FocusTimer.Core.Services
         {
             if (_currentState == TimerState.Running) return;
 
-            if (_currentState == TimerState.Idle)
-            {
-                // Starting fresh
-                _sessionTracker.StartAsync(projectTag).ConfigureAwait(false);
-            }
-            // If Paused, we just resume timer, session tracking continues (it wasn't stopped)
+            _sessionTracker.StartAsync(projectTag).ConfigureAwait(false);
 
             _timer.Start();
             CurrentState = TimerState.Running;

@@ -10,6 +10,7 @@ using FocusTimer.Core.Models;
 using FocusTimer.Core.Services;
 using ReactiveUI;
 using System.Reactive.Concurrency;
+using System.Threading;
 
 namespace FocusTimer.App.ViewModels;
 
@@ -139,11 +140,13 @@ public class TimerWidgetViewModel : ReactiveObject, IDisposable
     public double EffectiveClockOpacity => ClockOpacity * OverallOpacity;
     public double EffectiveControlsOpacity => ControlsOpacity * OverallOpacity;
 
-private readonly ISettingsProvider _settingsProvider;
-    private readonly ILogWriter _logWriter;
+    private readonly ISettingsProvider _settingsProvider;
+    private readonly IAppLogger _logWriter;
+    private readonly ISessionRepository _sessionRepository;
     private readonly SessionTracker _sessionTracker;
     private readonly BreakReminderService _breakReminderService;
     private readonly ITimerService _timerService;
+    private readonly SemaphoreSlim _persistenceSemaphore = new(1, 1);
     
     // Timer state using DateTime-based measurement to avoid drift
     private DateTime? _startTime;
@@ -158,7 +161,8 @@ private readonly ISettingsProvider _settingsProvider;
 
     public TimerWidgetViewModel(
         ISettingsProvider settingsProvider,
-        ILogWriter logWriter,
+        IAppLogger logWriter,
+        ISessionRepository sessionRepository,
         SessionTracker sessionTracker,
         BreakReminderService breakReminderService,
         ITimerService timerService)
@@ -169,6 +173,7 @@ private readonly ISettingsProvider _settingsProvider;
 
         _settingsProvider = settingsProvider;
         _logWriter = logWriter;
+        _sessionRepository = sessionRepository;
         _sessionTracker = sessionTracker;
         _breakReminderService = breakReminderService;
         _timerService = timerService;
@@ -185,10 +190,7 @@ private readonly ISettingsProvider _settingsProvider;
         
         _timerService.StateChanged += (s, state) =>
         {
-            Dispatcher.UIThread.Post(() =>
-            {
-                IsRunning = state == TimerState.Running;
-            });
+            Dispatcher.UIThread.Post(() => OnTimerStateChanged(state));
         };
 
         // Initialize commands with explicit UI thread scheduler
@@ -364,11 +366,17 @@ private readonly ISettingsProvider _settingsProvider;
     private void OnTimerTick(TimeSpan elapsed)
     {
         Elapsed = elapsed;
+
+        if (_sessionTracker.HasCompletedEntries)
+        {
+            _ = PersistCompletedSegmentsAsync();
+        }
     }
 
     private void OnTimerStateChanged(TimerState state)
     {
         IsRunning = state == TimerState.Running;
+        _logWriter.LogDebug($"Timer state changed to {state}");
         
         if (state == TimerState.Running)
         {
@@ -378,7 +386,7 @@ private readonly ISettingsProvider _settingsProvider;
         {
             _breakReminderService.OnTimerPaused();
             // Flush entries when paused or stopped
-            FlushEntriesAsync().ContinueWith(t =>
+            FlushEntriesAsync($"state change to {state}").ContinueWith(t =>
             {
                 if (t.IsFaulted)
                 {
@@ -396,44 +404,74 @@ private readonly ISettingsProvider _settingsProvider;
     /// Flushes completed time entries to CSV log.
     /// Reloads settings to ensure we use the latest log directory.
     /// </summary>
-    private async Task FlushEntriesAsync()
+    private async Task FlushEntriesAsync(string reason)
     {
+        await _persistenceSemaphore.WaitAsync();
         try
         {
-            // Collect entries first
-            var entries = _sessionTracker.CollectAndResetSegments();
-            
-            if (entries.Count > 0)
-            {
-                // Reload settings to ensure we have the latest configuration
-                Settings currentSettings;
-                try
-                {
-                    currentSettings = await _settingsProvider.LoadAsync();
-                }
-                catch (Exception ex)
-                {
-                    _logWriter.LogError("Failed to reload settings, using cached.", ex);
-                    currentSettings = _settings; // Fall back to cached settings
-                }
+            _logWriter.LogDebug($"Attempting full session flush due to {reason}.");
 
-                // Write entries
-                await _logWriter.WriteEntriesAsync(entries, currentSettings);
-                _logWriter.LogInformation($"Successfully logged {entries.Count} time entries to {currentSettings.LogDirectory}");
-                // Notify AppController for tray update
-                var appController = Program.Services.GetService(typeof(AppController)) as AppController;
-                appController?.OnEntriesLogged(entries);
-            }
-            else
-            {
-                _logWriter.LogDebug("No time entries to log");
-            }
+            var entries = _sessionTracker.CollectAndResetSegments();
+            await PersistEntriesAsync(entries, reason);
         }
         catch (Exception ex)
         {
             _logWriter.LogError("Failed to flush entries.", ex);
             // TODO: Consider showing a user notification about log write failure
         }
+        finally
+        {
+            _persistenceSemaphore.Release();
+        }
+    }
+
+    private async Task PersistCompletedSegmentsAsync()
+    {
+        if (!await _persistenceSemaphore.WaitAsync(0))
+        {
+            return;
+        }
+
+        try
+        {
+            var entries = _sessionTracker.DrainCompletedSegments();
+            await PersistEntriesAsync(entries, "completed window segment");
+        }
+        catch (Exception ex)
+        {
+            _logWriter.LogError("Failed to persist completed segments.", ex);
+        }
+        finally
+        {
+            _persistenceSemaphore.Release();
+        }
+    }
+
+    private async Task PersistEntriesAsync(IReadOnlyList<TimeEntry> entries, string reason)
+    {
+        if (entries.Count == 0)
+        {
+            _logWriter.LogDebug($"No time entries available for persistence during {reason}.");
+            return;
+        }
+
+        Settings currentSettings;
+        try
+        {
+            currentSettings = await _settingsProvider.LoadAsync();
+        }
+        catch (Exception ex)
+        {
+            _logWriter.LogError("Failed to reload settings, using cached.", ex);
+            currentSettings = _settings;
+        }
+
+        _logWriter.LogInformation($"Persisting {entries.Count} time entries due to {reason}.");
+        await _sessionRepository.SaveSessionAsync(entries);
+        _logWriter.LogInformation($"Successfully logged {entries.Count} time entries to {currentSettings.WorklogDirectory}");
+
+        var appController = Program.Services.GetService(typeof(AppController)) as AppController;
+        appController?.OnEntriesLogged(entries);
     }
 
     /// <summary>
@@ -529,7 +567,7 @@ private readonly ISettingsProvider _settingsProvider;
                     if (entries.Count > 0)
                     {
                         // We can't await here, so we'll do our best effort
-                        _logWriter.WriteEntriesAsync(entries, _settings).Wait(TimeSpan.FromSeconds(2));
+                        _sessionRepository.SaveSessionAsync(entries).Wait(TimeSpan.FromSeconds(2));
                         _logWriter.LogInformation($"Flushed {entries.Count} entries on dispose");
                     }
                 }

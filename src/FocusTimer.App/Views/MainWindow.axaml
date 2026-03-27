@@ -29,8 +29,8 @@
             <StackPanel Spacing="5">
                 <TextBlock Text="Loaded Settings:" FontWeight="SemiBold"/>
                 <TextBlock>
-                    <Run Text="Log Directory: "/>
-                    <Run Text="{Binding LogDirectory}" FontStyle="Italic"/>
+                    <Run Text="Worklog Directory: "/>
+                    <Run Text="{Binding WorklogDirectory}" FontStyle="Italic"/>
                 </TextBlock>
             </StackPanel>
         </Border>

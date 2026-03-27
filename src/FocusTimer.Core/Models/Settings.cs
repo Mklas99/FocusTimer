@@ -9,15 +9,21 @@ namespace FocusTimer.Core.Models;
 /// </summary>
 public class Settings : INotifyPropertyChanged
 {
+    public static string DefaultRootDirectory => Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+        "FocusTimer");
+
+    public static string DefaultApplicationLogDirectory => Path.Combine(DefaultRootDirectory, "logs");
+
+    public static string DefaultWorklogDirectory => Path.Combine(DefaultRootDirectory, "worklogs");
+
     private bool _autoStartOnLogin;
     private bool _startMinimized;
     private bool _alwaysOnTop = true;
     private int _breakIntervalMinutes = 50;
     private bool _breakRemindersEnabled = true;
-    private string _logDirectory = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
-        "FocusTimer",
-        "logs");
+    private string _logDirectory = DefaultApplicationLogDirectory;
+    private string _worklogDirectory = DefaultWorklogDirectory;
     private int _dataRetentionDays = 90;
     private double _widgetScale = 1.0;
     private double _widgetOpacity = 1.0;
@@ -67,6 +73,12 @@ public class Settings : INotifyPropertyChanged
     {
         get => _logDirectory;
         set => SetField(ref _logDirectory, value);
+    }
+
+    public string WorklogDirectory
+    {
+        get => _worklogDirectory;
+        set => SetField(ref _worklogDirectory, value);
     }
 
     public int DataRetentionDays

@@ -13,7 +13,7 @@ public class MainWindowViewModel : INotifyPropertyChanged
 {
     private readonly ISettingsProvider _settingsProvider;
     private Settings? _settings;
-    private string _logDirectory = "Loading...";
+    private string _worklogDirectory = "Loading...";
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -23,12 +23,12 @@ public class MainWindowViewModel : INotifyPropertyChanged
         _ = LoadSettingsAsync();
     }
 
-    public string LogDirectory
+    public string WorklogDirectory
     {
-        get => _logDirectory;
+        get => _worklogDirectory;
         private set
         {
-            _logDirectory = value;
+            _worklogDirectory = value;
             OnPropertyChanged();
         }
     }
@@ -36,7 +36,7 @@ public class MainWindowViewModel : INotifyPropertyChanged
     private async Task LoadSettingsAsync()
     {
         _settings = await _settingsProvider.LoadAsync();
-        LogDirectory = _settings.LogDirectory;
+        WorklogDirectory = _settings.WorklogDirectory;
     }
 
     protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
