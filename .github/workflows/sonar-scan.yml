@@ -1,0 +1,43 @@
+name: SonarQube Scan
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+
+jobs:
+  sonar:
+    name: Sonar Scanner
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '8.0.x'
+      - name: Restore
+        run: dotnet restore FocusTimer.sln
+      - name: Build
+        run: dotnet build FocusTimer.sln -c Release --no-restore
+      - name: Install SonarScanner for .NET
+        run: |
+          dotnet tool install --global dotnet-sonarscanner || true
+          export PATH="$PATH:$HOME/.dotnet/tools"
+
+      - name: Run SonarScanner (MSBuild) begin
+        env:
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          echo "Starting dotnet sonarscanner (begin) with verbose output"
+          dotnet sonarscanner begin /k:"focustimer" /d:sonar.host.url=$SONAR_HOST_URL /d:sonar.login=$SONAR_TOKEN /d:sonar.verbose=true
+
+      - name: Build
+        run: dotnet build FocusTimer.sln -c Release --no-restore
+
+      - name: Run SonarScanner (MSBuild) end
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          echo "Ending dotnet sonarscanner (end)"
+          dotnet sonarscanner end /d:sonar.login=$SONAR_TOKEN

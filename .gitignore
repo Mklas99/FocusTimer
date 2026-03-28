@@ -117,3 +117,8 @@ $RECYCLE.BIN/
 
 # VS Code directories
 .history/
+
+# Local env
+.env
+
+.sonarqube/

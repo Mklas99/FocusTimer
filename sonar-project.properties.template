@@ -1,0 +1,23 @@
+# SonarQube project configuration (template)
+# NOTE: SonarScanner for .NET (MSBuild) does not accept sonar-project.properties files.
+# Rename this file to sonar-project.properties only if you use the standalone scanner.
+
+sonar.projectKey=focustimer
+sonar.projectName=FocusTimer
+sonar.projectVersion=1.0
+
+sonar.sources=src
+sonar.sourceEncoding=UTF-8
+
+sonar.inclusions=**/*.cs
+sonar.exclusions=**/bin/**,**/obj/**,**/artifacts/**,**/*Tests.cs,**/test/**
+
+sonar.tests=src
+sonar.test.inclusions=**/*Tests.cs,**/test/**
+
+## Coverage/report paths are commented out by default to avoid scan failures
+## when coverage files are not generated in local runs. To enable coverage,
+## generate the reports and uncomment the lines below.
+# sonar.coverageReportPaths=coverage/sonar-coverage.xml
+# sonar.cs.opencover.reportsPaths=coverage/opencover.xml
+# sonar.cs.roslyn.reportFilePath=coverage/roslyh-report.json

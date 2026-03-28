@@ -137,6 +137,30 @@ The project includes SonarQube configuration for cloud-based code quality analys
      -Dsonar.login=YOUR_TOKEN
    ```
 
+#### Run SonarQube locally in Docker
+
+You can run a local SonarQube server and the SonarScanner CLI in Docker. Files added:
+
+- [docker-compose.yml](docker-compose.yml#L1): Compose for SonarQube server + scanner container.
+- [sonar-project.properties.template](sonar-project.properties.template#L1): Project settings template (converted from sonarqube-properties.txt). Rename if you use the standalone scanner.
+- [scripts/run-sonar.sh](scripts/run-sonar.sh#L1): Bash helper to run the server and scanner.
+- [scripts/run-sonar.ps1](scripts/run-sonar.ps1#L1): PowerShell helper for Windows.
+
+Usage (macOS / Linux):
+```bash
+.\scripts\run-sonar-dotnet.sh YOUR_SONAR_TOKEN
+```
+
+Usage (Windows PowerShell):
+```powershell
+.\scripts\run-sonar-dotnet.ps1 -Token YOUR_SONAR_TOKEN
+```
+
+Notes:
+- The scripts start a SonarQube container on `http://localhost:9000` and then run the scanner container connected to it.
+- Provide your Sonar token via the `SONAR_TOKEN` environment variable or as the first argument.
+- For CI, you can run `docker-compose up -d sonarqube` and then `docker-compose run --rm -e SONAR_TOKEN=$TOKEN scanner`.
+
 ### 7. Common Tasks
 
 #### Organize Imports in a File
