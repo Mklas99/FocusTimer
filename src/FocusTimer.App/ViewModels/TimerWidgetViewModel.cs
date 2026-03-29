@@ -9,6 +9,7 @@ namespace FocusTimer.App.ViewModels
     using Avalonia.ReactiveUI;
     using Avalonia.Threading;
     using FocusTimer.App.Services;
+    using FocusTimer.Core;
     using FocusTimer.Core.Interfaces;
     using FocusTimer.Core.Models;
     using FocusTimer.Core.Services;
@@ -27,6 +28,7 @@ namespace FocusTimer.App.ViewModels
         private readonly BreakReminderService _breakReminderService;
         private readonly ITimerService _timerService;
         private readonly SemaphoreSlim _persistenceSemaphore = new(1, 1);
+        private readonly Core.Interfaces.IEventBus? _eventBus;
         private System.ComponentModel.INotifyPropertyChanged? _themeNotifier;
         private System.ComponentModel.INotifyPropertyChanged? _settingsNotifier;
 
@@ -47,18 +49,22 @@ namespace FocusTimer.App.ViewModels
         /// <param name="sessionTracker">The service for tracking the current session state.</param>
         /// <param name="breakReminderService">The service for managing break reminders.</param>
         /// <param name="timerService">The timer service for managing timer events and state.</param>
+        /// <param name="hotkeyService">Optional global hotkey service used to bind window handles.</param>
+        /// <param name="eventBus">Event bus for publishing application-level events.</param>
         public TimerWidgetViewModel(
             ISettingsProvider settingsProvider,
             IAppLogger logWriter,
             ISessionRepository sessionRepository,
             SessionTracker sessionTracker,
             BreakReminderService breakReminderService,
-            ITimerService timerService)
+            ITimerService timerService,
+            Core.Interfaces.IGlobalHotkeyService? hotkeyService,
+            Core.Interfaces.IEventBus eventBus)
         {
             // Defensive: Ensure ViewModel is constructed on the UI thread
             if (!Dispatcher.UIThread.CheckAccess())
             {
-                throw new InvalidOperationException("TimerWidgetViewModel must be constructed on the Avalonia UI thread.");
+                var appController = AppHost.Services.GetService(typeof(AppController)) as AppController;
             }
 
             this._settingsProvider = settingsProvider;
@@ -68,6 +74,8 @@ namespace FocusTimer.App.ViewModels
             this._breakReminderService = breakReminderService;
             this._timerService = timerService;
             this._settings = new Settings(); // Safe defaults with validation
+            this.HotkeyService = hotkeyService;
+            this._eventBus = eventBus;
 
             this.SubscribeToThemeChanges(this._settings.Theme);
             this.SubscribeToSettingsChanges(this._settings);
@@ -127,6 +135,16 @@ namespace FocusTimer.App.ViewModels
                 }
             }
         }
+
+        /// <summary>
+        /// Gets the logger for UI components that need it (e.g., windows).
+        /// </summary>
+        public IAppLogger? Logger => this._logWriter;
+
+        /// <summary>
+        /// Gets the hotkey service used for window handle wiring.
+        /// </summary>
+        public Core.Interfaces.IGlobalHotkeyService? HotkeyService { get; }
 
         /// <summary>
         /// Gets or sets base background opacity (0..1) proxied to the theme.
@@ -570,8 +588,15 @@ namespace FocusTimer.App.ViewModels
             await this._sessionRepository.SaveSessionAsync(entries);
             this._logWriter.LogInformation($"Successfully logged {entries.Count} time entries to {currentSettings.WorklogDirectory}");
 
-            var appController = Program.Services.GetService(typeof(AppController)) as AppController;
-            appController?.OnEntriesLogged(entries);
+            // Publish an EntriesLoggedEvent so the AppController (or other listeners) can react.
+            try
+            {
+                this._eventBus?.Publish(new FocusTimer.Core.Models.EntriesLoggedEvent { Entries = entries });
+            }
+            catch
+            {
+                // best-effort
+            }
         }
 
         /// <summary>

@@ -7,6 +7,7 @@ namespace FocusTimer.App.Views
     using Avalonia.Interactivity;
     using Avalonia.Markup.Xaml;
     using FocusTimer.App.ViewModels;
+    using FocusTimer.Core;
     using FocusTimer.Core.Interfaces;
     using Microsoft.Extensions.DependencyInjection;
 
@@ -41,7 +42,7 @@ namespace FocusTimer.App.Views
         /// </summary>
         public bool IsAppShuttingDown { get; set; }
 
-        private static IAppLogger? Logger => Program.Services.GetService<IAppLogger>();
+        // Instance-based logger via DataContext (TimerWidgetViewModel exposes Logger)
 
         /// <summary>
         /// Clean up the ViewModel when window closes.
@@ -95,20 +96,24 @@ namespace FocusTimer.App.Views
                 // Get the native window handle
                 if (this.TryGetPlatformHandle()?.Handle is IntPtr hwnd && hwnd != IntPtr.Zero)
                 {
-                    var hotkeyService = Program.Services.GetService<Core.Interfaces.IGlobalHotkeyService>();
-                    var appController = Program.Services.GetService<Services.AppController>();
+                    var hotkeyService = (this.DataContext as TimerWidgetViewModel)?.HotkeyService;
+                    var appController = AppHost.Services.GetService<Services.AppController>();
 
-                    if (hotkeyService is Platform.Windows.WindowsHotkeyService windowsHotkeyService)
+                    if (hotkeyService != null)
                     {
-                        windowsHotkeyService.SetWindowHandle(hwnd);
-                        appController?.RegisterHotkeys();
-                        Logger?.LogDebug($"Window handle set for hotkeys: {hwnd}");
+                        var setHandle = hotkeyService.GetType().GetMethod("SetWindowHandle");
+                        if (setHandle != null)
+                        {
+                            setHandle.Invoke(hotkeyService, new object[] { hwnd });
+                            appController?.RegisterHotkeys();
+                            (this.DataContext as TimerWidgetViewModel)?.Logger?.LogDebug($"Window handle set for hotkeys: {hwnd}");
+                        }
                     }
                 }
             }
             catch (Exception ex)
             {
-                Logger?.LogError("Failed to set up hotkey window handle.", ex);
+                (this.DataContext as TimerWidgetViewModel)?.Logger?.LogError("Failed to set up hotkey window handle.", ex);
             }
         }
 
@@ -149,7 +154,7 @@ namespace FocusTimer.App.Views
         private void MinimizeButton_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
         {
             this.WindowState = WindowState.Minimized;
-            Logger?.LogDebug("Timer widget minimized.");
+            (this.DataContext as TimerWidgetViewModel)?.Logger?.LogDebug("Timer widget minimized.");
         }
 
         private void OnWindowClosing(object? sender, WindowClosingEventArgs e)

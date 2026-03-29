@@ -8,6 +8,7 @@ namespace FocusTimer.App.Services
     using Avalonia.Threading;
     using FocusTimer.App.ViewModels;
     using FocusTimer.App.Views;
+    using FocusTimer.Core;
     using FocusTimer.Core.Interfaces;
     using FocusTimer.Core.Models;
     using FocusTimer.Core.Services;
@@ -29,6 +30,7 @@ namespace FocusTimer.App.Services
         private readonly TodayStatsService _todayStatsService;
         private readonly ITrayIconController? _trayIconController;
         private readonly IAppLogger _logWriter;
+        private readonly IEventBus? _eventBus;
         private TrayIcon? _trayIcon;
         private TimerWidgetWindow? _timerWindow;
         private SettingsWindow? _settingsWindow;
@@ -51,6 +53,7 @@ namespace FocusTimer.App.Services
         /// <param name="todayStatsService">Service for managing today's statistics.</param>
         /// <param name="trayIconController">Controller for managing the system tray icon.</param>
         /// <param name="logWriter">Logger for application logging.</param>
+        /// <param name="eventBus">Event bus for subscribing to application-level events.</param>
         public AppController(
             ISettingsProvider settingsProvider,
             IGlobalHotkeyService hotkeyService,
@@ -62,7 +65,8 @@ namespace FocusTimer.App.Services
             Func<SettingsWindowViewModel> settingsViewModelFactory,
             TodayStatsService todayStatsService,
             ITrayIconController trayIconController,
-            IAppLogger logWriter)
+            IAppLogger logWriter,
+            IEventBus? eventBus)
         {
             this._settingsProvider = settingsProvider;
             this._hotkeyService = hotkeyService;
@@ -76,12 +80,19 @@ namespace FocusTimer.App.Services
             this._todayStatsService = todayStatsService;
             this._trayIconController = trayIconController;
             this._logWriter = logWriter;
+            this._eventBus = eventBus;
 
             this._showHideHotkeyDefinition = this.ParseHotkeyOrDefault(this._currentSettings.HotkeyShowHide, "Ctrl+Alt+T");
             this._toggleTimerHotkeyDefinition = this.ParseHotkeyOrDefault(this._currentSettings.HotkeyToggleTimer, "Ctrl+Alt+P");
             this._hotkeyService.HotkeyPressed += this.OnHotkeyPressed;
             this._idleDetectionService.UserBecameIdle += this.OnUserBecameIdle;
             this._idleDetectionService.UserReturned += this.OnUserReturned;
+
+            // Subscribe to EntriesLoggedEvent via event bus
+            if (this._eventBus != null)
+            {
+                this._eventBus.Subscribe<EntriesLoggedEvent>(e => this.OnEntriesLogged(e.Entries));
+            }
         }
 
         /// <summary>

@@ -12,17 +12,19 @@ namespace FocusTimer.App
     using FocusTimer.App.Services;
     using FocusTimer.App.ViewModels;
     using FocusTimer.App.Views;
+    using FocusTimer.Core;
     using FocusTimer.Core.Interfaces;
     using Microsoft.Extensions.DependencyInjection;
 
     /// <summary>
     /// The main application class for the Focus Timer application.
     /// </summary>
-    public partial class App : Application
+    public partial class App : Application, IAppInitializer
     {
         private AppController? _appController;
         private IAppLogger? _logger;
         private TrayIcon? _trayIcon;
+        private object? _serviceProvider;
 
         /// <inheritdoc/>
         public override void Initialize()
@@ -44,47 +46,78 @@ namespace FocusTimer.App
             // _trayIcon.MenuExit += TrayMenu_Exit;
         }
 
+        /// <summary>
+        /// Implements IAppInitializer to receive injected services from Host.
+        /// </summary>
+        /// <param name="appController">The application controller instance from DI.</param>
+        /// <param name="logger">The logger instance from DI.</param>
+        /// <param name="trayIconController">The tray icon controller instance from DI.</param>
+        /// <param name="serviceProvider">The root service provider for cleanup on shutdown.</param>
+        /// <returns>A <see cref="Task"/> representing the asynchronous initialization.</returns>
+        async Task IAppInitializer.InitializeAsync(
+            object? appController,
+            IAppLogger? logger,
+            object? trayIconController,
+            object? serviceProvider)
+        {
+            this._appController = appController as AppController;
+            this._logger = logger;
+            this._serviceProvider = serviceProvider;
+
+            // Create and configure the tray icon in code
+            this._trayIcon = new TrayIcon
+            {
+                ToolTipText = "Focus Timer: Idle",
+                Icon = new WindowIcon(
+                    Avalonia.Platform.AssetLoader.Open(
+                        new Uri("avares://FocusTimer.App/Assets/FocusTimer-idle.png"))),
+                Menu = new NativeMenu
+                {
+                    CreateMenuItem("Show/Hide Timer", this.TrayMenu_ShowHide),
+                    CreateMenuItem("Start/Pause Timer", this.TrayMenu_ToggleTimer),
+                    new NativeMenuItemSeparator(),
+                    CreateMenuItem("Settings...", this.TrayMenu_Settings),
+                    new NativeMenuItemSeparator(),
+                    CreateMenuItem("Exit", this.TrayMenu_Exit),
+                },
+            };
+            this._trayIcon.Clicked += this.TrayIcon_Clicked;
+
+            // Register tray icon with controllers
+            if (this._appController != null)
+            {
+                this._appController.SetTrayIcon(this._trayIcon);
+            }
+
+            if (trayIconController is ITrayIconController trayCtrl)
+            {
+                trayCtrl.SetTrayIcon(this._trayIcon);
+            }
+
+            // Initialize settings asynchronously
+            await this.InitializeAppAsync();
+
+            // Ensure cleanup on shutdown
+            if (this.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+            {
+                desktop.ShutdownRequested += this.OnShutdownRequested;
+            }
+        }
+
         /// <inheritdoc/>
         public override void OnFrameworkInitializationCompleted()
         {
-            if (this.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
-            {
-                // Get the AppController from DI
-                this._appController = Program.Services.GetRequiredService<AppController>();
-                this._logger = Program.Services.GetService<IAppLogger>();
-
-                // Create and configure the tray icon in code
-                this._trayIcon = new TrayIcon
-                {
-                    ToolTipText = "Focus Timer: Idle",
-                    Icon = new WindowIcon(
-                        Avalonia.Platform.AssetLoader.Open(
-                            new Uri("avares://FocusTimer.App/Assets/FocusTimer-idle.png"))),
-                    Menu = new NativeMenu
-                    {
-                        CreateMenuItem("Show/Hide Timer", this.TrayMenu_ShowHide),
-                        CreateMenuItem("Start/Pause Timer", this.TrayMenu_ToggleTimer),
-                        new NativeMenuItemSeparator(),
-                        CreateMenuItem("Settings...", this.TrayMenu_Settings),
-                        new NativeMenuItemSeparator(),
-                        CreateMenuItem("Exit", this.TrayMenu_Exit),
-                    },
-                };
-                this._trayIcon.Clicked += this.TrayIcon_Clicked;
-
-                // Register tray icon with controllers
-                this._appController.SetTrayIcon(this._trayIcon);
-                var trayController = Program.Services.GetRequiredService<ITrayIconController>();
-                trayController.SetTrayIcon(this._trayIcon);
-
-                // Initialize settings asynchronously
-                _ = this.InitializeAppAsync();
-
-                // Ensure cleanup on shutdown
-                desktop.ShutdownRequested += this.OnShutdownRequested;
-            }
-
             base.OnFrameworkInitializationCompleted();
+
+            // Initialize app with injected services from AppHost
+            if (AppHost.Services != null)
+            {
+                var appController = AppHost.Services.GetService<AppController>();
+                var logger = AppHost.Services.GetService<IAppLogger>();
+                var trayController = AppHost.Services.GetService<ITrayIconController>();
+
+                ((IAppInitializer)this).InitializeAsync(appController, logger, trayController, AppHost.Services).Wait();
+            }
         }
 
         private static NativeMenuItem CreateMenuItem(string header, EventHandler? onClick)
@@ -146,14 +179,12 @@ namespace FocusTimer.App
             // Dispose ViewModels and flush any pending data
             try
             {
-                var timerViewModel = Program.Services.GetService<TimerWidgetViewModel>();
-                timerViewModel?.Dispose();
-
-                (Program.Services as IDisposable)?.Dispose();
+                // Dispose service provider and any resources
+                (this._serviceProvider as IDisposable)?.Dispose();
             }
             catch (Exception ex)
             {
-                (this._logger ?? Program.Services.GetService<IAppLogger>())?.LogError("Error during application shutdown.", ex);
+                this._logger?.LogError("Error during application shutdown.", ex);
             }
         }
 
