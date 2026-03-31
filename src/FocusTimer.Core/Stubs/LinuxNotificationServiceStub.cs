@@ -28,9 +28,9 @@ namespace FocusTimer.Core.Stubs
         }
 
         /// <inheritdoc/>
-        public Task ShowBreakReminderAsync(string message)
+        public Task ShowBreakReminderAsync(string message, bool requireAcknowledgement)
         {
-            this._logger?.LogInformation($"[Linux Stub] Break reminder: {message}");
+            this._logger?.LogInformation($"[Linux Stub] Break reminder (requires ack: {requireAcknowledgement}): {message}");
 
             // TODO: Implement using notify-send or DBus
             // Example: Process.Start("notify-send", $"\"Break Reminder\" \"{message}\"");

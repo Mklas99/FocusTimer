@@ -1,0 +1,85 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:controls="using:FocusTimer.App.Controls"
+        xmlns:vm="using:FocusTimer.App.ViewModels"
+        mc:Ignorable="d"
+        x:Class="FocusTimer.App.Views.ColorPickerWindow"
+        x:DataType="vm:ColorPickerWindowViewModel"
+        Title="Select Color"
+    Width="396"
+    SizeToContent="Height"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False"
+        Background="{DynamicResource SettingsBackgroundBrush}"
+        Foreground="{DynamicResource PrimaryTextBrush}">
+
+    <Design.DataContext>
+        <vm:ColorPickerWindowViewModel>#0078D7</vm:ColorPickerWindowViewModel>
+    </Design.DataContext>
+
+    <Grid RowDefinitions="Auto,Auto,Auto" Margin="18">
+        <controls:CompactColorPicker Grid.Row="0" />
+
+        <Expander Grid.Row="1"
+                  Header="Advanced"
+                  IsExpanded="False"
+                  Classes="settings-accordion"
+                  Margin="0,14,0,0">
+            <StackPanel Margin="12" Spacing="10">
+                <TextBox Text="{Binding ColorHex}" Watermark="#RRGGBB or #AARRGGBB" />
+
+                <Border Height="14"
+                        CornerRadius="7"
+                        BorderBrush="{DynamicResource InputBorderBrush}"
+                        BorderThickness="1"
+                        ClipToBounds="True">
+                    <Grid>
+                        <Border Background="{DynamicResource ColorPickerTransparencyBrush}" />
+                        <Border Background="{Binding AlphaGradientBrush}" />
+                    </Grid>
+                </Border>
+
+                <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto">
+                    <StackPanel Grid.Row="0" Grid.Column="0" Spacing="4" Margin="0,0,4,4">
+                        <TextBlock Classes="settings-label" Text="Alpha" />
+                        <NumericUpDown Minimum="0" Maximum="255" Increment="1" Value="{Binding Alpha}" />
+                    </StackPanel>
+                    <StackPanel Grid.Row="0" Grid.Column="1" Spacing="4" Margin="4,0,0,4">
+                        <TextBlock Classes="settings-label" Text="Hue" />
+                        <NumericUpDown Minimum="0" Maximum="360" Increment="1" Value="{Binding Hue}" />
+                    </StackPanel>
+                    <StackPanel Grid.Row="1" Grid.Column="0" Spacing="4" Margin="0,4,4,0">
+                        <TextBlock Classes="settings-label" Text="Sat %" />
+                        <NumericUpDown Minimum="0" Maximum="100" Increment="1" Value="{Binding SaturationPercent}" />
+                    </StackPanel>
+                    <StackPanel Grid.Row="1" Grid.Column="1" Spacing="4" Margin="4,4,0,0">
+                        <TextBlock Classes="settings-label" Text="Val %" />
+                        <NumericUpDown Minimum="0" Maximum="100" Increment="1" Value="{Binding ValuePercent}" />
+                    </StackPanel>
+                </Grid>
+
+                <Grid ColumnDefinitions="*,*,*">
+                    <StackPanel Grid.Column="0" Spacing="4" Margin="0,0,5,0">
+                        <TextBlock Classes="settings-label" Text="Red" />
+                        <NumericUpDown Minimum="0" Maximum="255" Increment="1" Value="{Binding Red}" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Spacing="4" Margin="3,0,3,0">
+                        <TextBlock Classes="settings-label" Text="Green" />
+                        <NumericUpDown Minimum="0" Maximum="255" Increment="1" Value="{Binding Green}" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="2" Spacing="4" Margin="5,0,0,0">
+                        <TextBlock Classes="settings-label" Text="Blue" />
+                        <NumericUpDown Minimum="0" Maximum="255" Increment="1" Value="{Binding Blue}" />
+                    </StackPanel>
+                </Grid>
+            </StackPanel>
+        </Expander>
+
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="10" Margin="0,16,0,0">
+            <Button Content="OK" Width="80" Click="OnOkClicked" IsDefault="True" />
+            <Button Content="Cancel" Width="80" Click="OnCancelClicked" IsCancel="True" />
+        </StackPanel>
+    </Grid>
+</Window>

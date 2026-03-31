@@ -21,6 +21,7 @@ namespace FocusTimer.Core.Services
         private TimeEntry? _currentEntry;
         private string? _currentProjectTag;
         private bool _isTracking;
+        private bool _trackingEnabled = true;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SessionTracker"/> class.
@@ -46,6 +47,25 @@ namespace FocusTimer.Core.Services
         public int CompletedEntryCount => this._completedEntries.Count + (this._currentEntry != null ? 1 : 0);
 
         /// <summary>
+        /// Enables or disables tracking behavior at runtime.
+        /// Disabling clears any in-flight and buffered entries.
+        /// </summary>
+        /// <param name="enabled">True to enable tracking; false to disable it.</param>
+        public void SetTrackingEnabled(bool enabled)
+        {
+            this._trackingEnabled = enabled;
+            if (enabled)
+            {
+                return;
+            }
+
+            this._isTracking = false;
+            this._currentEntry = null;
+            this._currentWindowInfo = null;
+            this._completedEntries.Clear();
+        }
+
+        /// <summary>
         /// Starts tracking with the given project tag.
         /// Should be called when timer starts.
         /// </summary>
@@ -53,6 +73,12 @@ namespace FocusTimer.Core.Services
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         public async Task StartAsync(string? projectTag)
         {
+            if (!this._trackingEnabled)
+            {
+                this._currentProjectTag = projectTag;
+                return;
+            }
+
             if (this._isTracking)
             {
                 return; // Already tracking
@@ -83,7 +109,7 @@ namespace FocusTimer.Core.Services
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         public async Task OnTimerTickAsync()
         {
-            if (!this._isTracking)
+            if (!this._trackingEnabled || !this._isTracking)
             {
                 return;
             }

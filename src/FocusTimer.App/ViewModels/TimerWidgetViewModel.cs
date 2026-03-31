@@ -482,6 +482,12 @@ namespace FocusTimer.App.ViewModels
                 {
                     this.Settings = loadedSettings;
                 });
+
+                this._sessionTracker.SetTrackingEnabled(this.Settings.WorkLoggingEnabled);
+                if (this.IsRunning && this.Settings.WorkLoggingEnabled)
+                {
+                    await this._sessionTracker.StartAsync(this.ProjectTag);
+                }
             }
             catch (Exception ex)
             {
@@ -698,6 +704,12 @@ namespace FocusTimer.App.ViewModels
                 currentSettings = this._settings;
             }
 
+            if (!currentSettings.WorkLoggingEnabled)
+            {
+                this._logWriter.LogDebug($"Skipping persistence because work logging is disabled during {reason}.");
+                return;
+            }
+
             this._logWriter.LogInformation($"Persisting {entries.Count} time entries due to {reason}.");
             await this._sessionRepository.SaveSessionAsync(entries);
             this._logWriter.LogInformation($"Successfully logged {entries.Count} time entries to {currentSettings.WorklogDirectory}");
@@ -778,6 +790,15 @@ namespace FocusTimer.App.ViewModels
                 this.RaisePropertyChanged(nameof(this.EffectiveBackgroundOpacity));
                 this.RaisePropertyChanged(nameof(this.EffectiveClockOpacity));
                 this.RaisePropertyChanged(nameof(this.EffectiveControlsOpacity));
+            }
+            else if (e.PropertyName == nameof(this.Settings.WorkLoggingEnabled))
+            {
+                this._sessionTracker.SetTrackingEnabled(this.Settings.WorkLoggingEnabled);
+
+                if (this.Settings.WorkLoggingEnabled && this.IsRunning)
+                {
+                    _ = this._sessionTracker.StartAsync(this.ProjectTag);
+                }
             }
         }
 

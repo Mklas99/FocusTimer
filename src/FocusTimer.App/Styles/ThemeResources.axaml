@@ -110,6 +110,51 @@
         <Color x:Key="SettingsLabelTextColor">#CCCCCC</Color>
         <SolidColorBrush x:Key="SettingsLabelTextBrush" Color="{DynamicResource SettingsLabelTextColor}"/>
 
+        <Color x:Key="SettingsAccordionHeaderColor">#161B22</Color>
+        <SolidColorBrush x:Key="SettingsAccordionHeaderBrush" Color="{DynamicResource SettingsAccordionHeaderColor}"/>
+
+        <Color x:Key="SettingsAccordionHeaderHoverColor">#2A313A</Color>
+        <SolidColorBrush x:Key="SettingsAccordionHeaderHoverBrush" Color="{DynamicResource SettingsAccordionHeaderHoverColor}"/>
+
+        <Color x:Key="SettingsAccordionBorderColor">#33FFFFFF</Color>
+        <SolidColorBrush x:Key="SettingsAccordionBorderBrush" Color="{DynamicResource SettingsAccordionBorderColor}"/>
+
+        <DrawingBrush x:Key="ColorPickerTransparencyBrush"
+                      TileMode="Tile"
+                      Stretch="None"
+                      AlignmentX="Left"
+                      AlignmentY="Top"
+                      DestinationRect="0,0,12,12"
+                      SourceRect="0,0,12,12">
+            <DrawingBrush.Drawing>
+                <DrawingGroup>
+                    <GeometryDrawing Brush="#26303A" Geometry="M0,0 H12 V12 H0 Z" />
+                    <GeometryDrawing Brush="#3A4654" Geometry="M0,0 H6 V6 H0 Z" />
+                    <GeometryDrawing Brush="#3A4654" Geometry="M6,6 H12 V12 H6 Z" />
+                </DrawingGroup>
+            </DrawingBrush.Drawing>
+        </DrawingBrush>
+
+        <LinearGradientBrush x:Key="ColorPickerHueBrush" StartPoint="50%, 0%" EndPoint="50%, 100%">
+            <GradientStop Color="#FFFF0000" Offset="0" />
+            <GradientStop Color="#FFFFFF00" Offset="0.16" />
+            <GradientStop Color="#FF00FF00" Offset="0.33" />
+            <GradientStop Color="#FF00FFFF" Offset="0.5" />
+            <GradientStop Color="#FF0000FF" Offset="0.66" />
+            <GradientStop Color="#FFFF00FF" Offset="0.83" />
+            <GradientStop Color="#FFFF0000" Offset="1" />
+        </LinearGradientBrush>
+
+        <LinearGradientBrush x:Key="ColorPickerSaturationOverlayBrush" StartPoint="0%, 50%" EndPoint="100%, 50%">
+            <GradientStop Color="#FFFFFFFF" Offset="0" />
+            <GradientStop Color="#00FFFFFF" Offset="1" />
+        </LinearGradientBrush>
+
+        <LinearGradientBrush x:Key="ColorPickerValueOverlayBrush" StartPoint="50%, 0%" EndPoint="50%, 100%">
+            <GradientStop Color="#00000000" Offset="0" />
+            <GradientStop Color="#FF000000" Offset="1" />
+        </LinearGradientBrush>
+
         <!-- Tab Control -->
         <Color x:Key="TabBackgroundColor">#2D2D30</Color>
         <SolidColorBrush x:Key="TabBackgroundBrush" Color="{DynamicResource TabBackgroundColor}"/>
@@ -187,6 +232,85 @@
         <Setter Property="VerticalAlignment" Value="Center"/>
         <Setter Property="Margin" Value="0,0,6,0"/>
         <Setter Property="Foreground" Value="{DynamicResource SettingsLabelTextBrush}"/>
+    </Style>
+
+    <Style Selector="ScrollViewer.settings-scroll">
+        <Setter Property="Padding" Value="0,0,14,0"/>
+        <Setter Property="HorizontalScrollBarVisibility" Value="Disabled"/>
+    </Style>
+
+    <Style Selector="Expander.settings-accordion">
+        <Setter Property="Margin" Value="0,0,0,10"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource SettingsAccordionBorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Background" Value="{DynamicResource InputBackgroundBrush}"/>
+    </Style>
+
+    <Style Selector="Expander.settings-accordion /template/ ToggleButton">
+        <Setter Property="Background" Value="{DynamicResource SettingsAccordionHeaderBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource SettingsAccordionBorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="7"/>
+        <Setter Property="Padding" Value="12,6"/>
+        <Setter Property="Foreground" Value="{DynamicResource SettingsSectionHeaderBrush}"/>
+    </Style>
+
+    <Style Selector="Expander.settings-accordion /template/ ToggleButton:pointerover">
+        <Setter Property="Background" Value="{DynamicResource SettingsAccordionHeaderHoverBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource SettingsAccordionBorderBrush}"/>
+    </Style>
+
+    <Style Selector="Button.color-swatch">
+        <Setter Property="Width" Value="28"/>
+        <Setter Property="Height" Value="28"/>
+        <Setter Property="Padding" Value="0"/>
+        <Setter Property="CornerRadius" Value="7"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource AccentPrimaryBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="HorizontalAlignment" Value="Right"/>
+    </Style>
+
+    <Style Selector="Border.color-picker-surface">
+        <Setter Property="CornerRadius" Value="10"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource InputBorderBrush}"/>
+        <Setter Property="ClipToBounds" Value="True"/>
+    </Style>
+
+    <Style Selector="Border.color-picker-hue-strip">
+        <Setter Property="CornerRadius" Value="9"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource InputBorderBrush}"/>
+        <Setter Property="ClipToBounds" Value="True"/>
+    </Style>
+
+    <Style Selector="Border.color-picker-preview">
+        <Setter Property="CornerRadius" Value="10"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource WindowBorderBrush}"/>
+        <Setter Property="ClipToBounds" Value="True"/>
+    </Style>
+
+    <Style Selector="Border.color-picker-chip">
+        <Setter Property="CornerRadius" Value="8"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource InputBorderBrush}"/>
+        <Setter Property="Background" Value="{DynamicResource InputBackgroundBrush}"/>
+        <Setter Property="Padding" Value="6,5"/>
+    </Style>
+
+    <Style Selector="Border.color-picker-thumb">
+        <Setter Property="CornerRadius" Value="7"/>
+        <Setter Property="BorderThickness" Value="2"/>
+        <Setter Property="BorderBrush" Value="#FFFFFFFF"/>
+        <Setter Property="Background" Value="#22000000"/>
+    </Style>
+
+    <Style Selector="Border.color-picker-strip-thumb">
+        <Setter Property="CornerRadius" Value="2"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="BorderBrush" Value="#CCFFFFFF"/>
+        <Setter Property="Background" Value="#66000000"/>
     </Style>
 
 </Styles>

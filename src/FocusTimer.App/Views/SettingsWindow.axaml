@@ -31,6 +31,10 @@
             <Setter Property="Margin" Value="0,0,8,0" />
             <Setter Property="Foreground" Value="{DynamicResource SettingsLabelTextBrush}" />
         </Style>
+        <Style Selector="TextBlock.VersionInfoText">
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+        </Style>
     </Window.Styles>
 
     <Grid RowDefinitions="*,Auto" Margin="20">
@@ -38,7 +42,7 @@
         <TabControl Grid.Row="0">
             <!-- General Tab -->
             <TabItem Header="General">
-                <ScrollViewer>
+                <ScrollViewer Classes="settings-scroll">
                     <StackPanel Spacing="15">
                         <TextBlock Classes="SectionHeader" Text="Startup" />
 
@@ -53,6 +57,10 @@
                         <TextBlock Classes="SectionHeader" Text="Break Reminders" />
 
                         <CheckBox IsChecked="{Binding Settings.BreakRemindersEnabled}" Content="Enable break reminders" />
+
+                        <CheckBox IsChecked="{Binding Settings.RequireBreakReminderAcknowledgement}"
+                                  Content="Require acknowledgement before break reminders disappear"
+                                  IsEnabled="{Binding Settings.BreakRemindersEnabled}" />
 
                         <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto" Margin="0,0,0,0">
                             <TextBlock Grid.Column="0" Classes="SettingLabel" Text="Remind every (minutes):" />
@@ -71,9 +79,13 @@
 
             <!-- Logging Tab -->
             <TabItem Header="Logging">
-                <ScrollViewer>
+                <ScrollViewer Classes="settings-scroll">
                     <StackPanel Spacing="15">
                         <TextBlock Classes="SectionHeader" Text="Worklog CSV Location" />
+
+                        <CheckBox IsChecked="{Binding Settings.WorkLoggingEnabled}"
+                                  Content="Enable work logging"
+                                  ToolTip.Tip="When disabled, session tracking and persistence are paused." />
 
                         <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,10">
                             <TextBox Grid.Column="0"
@@ -105,7 +117,7 @@
 
             <!-- Appearance Tab -->
             <TabItem Header="Appearance">
-                <ScrollViewer>
+                <ScrollViewer Classes="settings-scroll">
                     <StackPanel Spacing="15">
                         <!-- Theme Presets Section -->
                         <TextBlock Classes="SectionHeader" Text="Theme Presets" />
@@ -127,64 +139,84 @@
                                     Width="80" Margin="10,0,0,0" />
                         </Grid>
 
-                        <!-- Window Colors Section -->
-                        <TextBlock Classes="SectionHeader" Text="Window Colors" />
-                        <Grid ColumnDefinitions="140,*,Auto" RowDefinitions="Auto,Auto,Auto">
-                            <TextBlock Grid.Row="0" Grid.Column="0" Classes="SettingLabel" Text="Background:" />
-                            <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Settings.Theme.WindowBackground}" Watermark="#1E1E1E" Margin="0,0,8,0" />
-                            <Border Grid.Row="0" Grid.Column="2" Width="24" Height="24" Background="{Binding Settings.Theme.WindowBackground}" BorderBrush="#666" BorderThickness="1" CornerRadius="3" />
+                        <TextBlock Classes="SectionHeader" Text="Color Palette" />
 
-                            <TextBlock Grid.Row="1" Grid.Column="0" Classes="SettingLabel" Text="Text:" Margin="0,8,0,0" />
-                            <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Settings.Theme.PrimaryText}" Watermark="#F5F5F5" Margin="0,8,8,0" />
-                            <Border Grid.Row="1" Grid.Column="2" Width="24" Height="24" Background="{Binding Settings.Theme.PrimaryText}" BorderBrush="#666" BorderThickness="1" CornerRadius="3" Margin="0,8,0,0" />
+                        <Grid ColumnDefinitions="*,12,*">
+                            <Expander Grid.Column="0" Header="Timer Widget" IsExpanded="True" Classes="settings-accordion">
+                                <Grid ColumnDefinitions="126,*,Auto" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" Margin="0,8,0,0">
+                                    <TextBlock Grid.Row="0" Grid.Column="0" Classes="SettingLabel" Text="Background:" />
+                                    <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Settings.Theme.WindowBackground}" Watermark="#1E1E1E" Margin="0,0,8,0" />
+                                    <Button Grid.Row="0" Grid.Column="2" Classes="color-swatch" Background="{Binding Settings.Theme.WindowBackground}" Tag="WindowBackground" Click="OnColorPreviewClicked" ToolTip.Tip="Open color picker" />
 
-                            <TextBlock Grid.Row="2" Grid.Column="0" Classes="SettingLabel" Text="Border:" Margin="0,8,0,0" />
-                            <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding Settings.Theme.WindowBorder}" Watermark="#3F3F46" Margin="0,8,8,0" />
-                            <Border Grid.Row="2" Grid.Column="2" Width="24" Height="24" Background="{Binding Settings.Theme.WindowBorder}" BorderBrush="#666" BorderThickness="1" CornerRadius="3" Margin="0,8,0,0" />
-                        </Grid>
+                                    <TextBlock Grid.Row="1" Grid.Column="0" Classes="SettingLabel" Text="Border:" Margin="0,6,0,0" />
+                                    <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Settings.Theme.WindowBorder}" Watermark="#3F3F46" Margin="0,6,8,0" />
+                                    <Button Grid.Row="1" Grid.Column="2" Classes="color-swatch" Background="{Binding Settings.Theme.WindowBorder}" Tag="WindowBorder" Click="OnColorPreviewClicked" ToolTip.Tip="Open color picker" Margin="0,6,0,0" />
 
-                        <!-- Timer Display Section -->
-                        <TextBlock Classes="SectionHeader" Text="Timer Display" />
-                        <Grid ColumnDefinitions="140,*,Auto" RowDefinitions="Auto,Auto">
-                            <TextBlock Grid.Row="0" Grid.Column="0" Classes="SettingLabel" Text="Timer Text:" />
-                            <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Settings.Theme.TimerText}" Watermark="#FFFFFF" Margin="0,0,8,0" />
-                            <Border Grid.Row="0" Grid.Column="2" Width="24" Height="24" Background="{Binding Settings.Theme.TimerText}" BorderBrush="#666" BorderThickness="1" CornerRadius="3" />
+                                    <TextBlock Grid.Row="2" Grid.Column="0" Classes="SettingLabel" Text="Timer Text:" Margin="0,6,0,0" />
+                                    <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding Settings.Theme.TimerText}" Watermark="#FFFFFF" Margin="0,6,8,0" />
+                                    <Button Grid.Row="2" Grid.Column="2" Classes="color-swatch" Background="{Binding Settings.Theme.TimerText}" Tag="TimerText" Click="OnColorPreviewClicked" ToolTip.Tip="Open color picker" Margin="0,6,0,0" />
 
-                            <TextBlock Grid.Row="1" Grid.Column="0" Classes="SettingLabel" Text="Secondary Text:" Margin="0,8,0,0" />
-                            <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Settings.Theme.SecondaryText}" Watermark="#CCCCCC" Margin="0,8,8,0" />
-                            <Border Grid.Row="1" Grid.Column="2" Width="24" Height="24" Background="{Binding Settings.Theme.SecondaryText}" BorderBrush="#666" BorderThickness="1" CornerRadius="3" Margin="0,8,0,0" />
-                        </Grid>
+                                    <TextBlock Grid.Row="3" Grid.Column="0" Classes="SettingLabel" Text="Timer Background:" Margin="0,6,0,0" />
+                                    <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding Settings.Theme.TimerBackground}" Watermark="#00000000" Margin="0,6,8,0" />
+                                    <Button Grid.Row="3" Grid.Column="2" Classes="color-swatch" Background="{Binding Settings.Theme.TimerBackground}" Tag="TimerBackground" Click="OnColorPreviewClicked" ToolTip.Tip="Open color picker" Margin="0,6,0,0" />
 
-                        <!-- Buttons & Controls Section -->
-                        <TextBlock Classes="SectionHeader" Text="Buttons &amp; Controls" />
-                        <Grid ColumnDefinitions="140,*,Auto" RowDefinitions="Auto,Auto,Auto">
-                            <TextBlock Grid.Row="0" Grid.Column="0" Classes="SettingLabel" Text="Button Normal:" />
-                            <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Settings.Theme.ButtonNormal}" Watermark="#4CDEFFBD" Margin="0,0,8,0" />
-                            <Border Grid.Row="0" Grid.Column="2" Width="24" Height="24" Background="{Binding Settings.Theme.ButtonNormal}" BorderBrush="#666" BorderThickness="1" CornerRadius="3" />
+                                    <TextBlock Grid.Row="4" Grid.Column="0" Classes="SettingLabel" Text="Button Normal:" Margin="0,6,0,0" />
+                                    <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding Settings.Theme.ButtonNormal}" Watermark="#4CDEFFBD" Margin="0,6,8,0" />
+                                    <Button Grid.Row="4" Grid.Column="2" Classes="color-swatch" Background="{Binding Settings.Theme.ButtonNormal}" Tag="ButtonNormal" Click="OnColorPreviewClicked" ToolTip.Tip="Open color picker" Margin="0,6,0,0" />
 
-                            <TextBlock Grid.Row="1" Grid.Column="0" Classes="SettingLabel" Text="Button Hover:" Margin="0,8,0,0" />
-                            <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Settings.Theme.ButtonHover}" Watermark="#5DEFFCE7" Margin="0,8,8,0" />
-                            <Border Grid.Row="1" Grid.Column="2" Width="24" Height="24" Background="{Binding Settings.Theme.ButtonHover}" BorderBrush="#666" BorderThickness="1" CornerRadius="3" Margin="0,8,0,0" />
+                                    <TextBlock Grid.Row="5" Grid.Column="0" Classes="SettingLabel" Text="Button Hover:" Margin="0,6,0,0" />
+                                    <TextBox Grid.Row="5" Grid.Column="1" Text="{Binding Settings.Theme.ButtonHover}" Watermark="#5DEFFCE7" Margin="0,6,8,0" />
+                                    <Button Grid.Row="5" Grid.Column="2" Classes="color-swatch" Background="{Binding Settings.Theme.ButtonHover}" Tag="ButtonHover" Click="OnColorPreviewClicked" ToolTip.Tip="Open color picker" Margin="0,6,0,0" />
 
-                            <TextBlock Grid.Row="2" Grid.Column="0" Classes="SettingLabel" Text="Button Pressed:" Margin="0,8,0,0" />
-                            <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding Settings.Theme.ButtonPressed}" Watermark="#3BBD99AC" Margin="0,8,8,0" />
-                            <Border Grid.Row="2" Grid.Column="2" Width="24" Height="24" Background="{Binding Settings.Theme.ButtonPressed}" BorderBrush="#666" BorderThickness="1" CornerRadius="3" Margin="0,8,0,0" />
-                        </Grid>
+                                    <TextBlock Grid.Row="6" Grid.Column="0" Classes="SettingLabel" Text="Button Pressed:" Margin="0,6,0,0" />
+                                    <TextBox Grid.Row="6" Grid.Column="1" Text="{Binding Settings.Theme.ButtonPressed}" Watermark="#3BBD99AC" Margin="0,6,8,0" />
+                                    <Button Grid.Row="6" Grid.Column="2" Classes="color-swatch" Background="{Binding Settings.Theme.ButtonPressed}" Tag="ButtonPressed" Click="OnColorPreviewClicked" ToolTip.Tip="Open color picker" Margin="0,6,0,0" />
 
-                        <!-- Accent Colors Section -->
-                        <TextBlock Classes="SectionHeader" Text="Accent Colors" />
-                        <Grid ColumnDefinitions="140,*,Auto" RowDefinitions="Auto,Auto,Auto">
-                            <TextBlock Grid.Row="0" Grid.Column="0" Classes="SettingLabel" Text="Primary Accent:" />
-                            <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Settings.Theme.AccentPrimary}" Watermark="#0078D7" Margin="0,0,8,0" />
-                            <Border Grid.Row="0" Grid.Column="2" Width="24" Height="24" Background="{Binding Settings.Theme.AccentPrimary}" BorderBrush="#666" BorderThickness="1" CornerRadius="3" />
+                                    <TextBlock Grid.Row="7" Grid.Column="0" Classes="SettingLabel" Text="Button Disabled:" Margin="0,6,0,0" />
+                                    <TextBox Grid.Row="7" Grid.Column="1" Text="{Binding Settings.Theme.ButtonDisabled}" Watermark="#40FFFFFF" Margin="0,6,8,0" />
+                                    <Button Grid.Row="7" Grid.Column="2" Classes="color-swatch" Background="{Binding Settings.Theme.ButtonDisabled}" Tag="ButtonDisabled" Click="OnColorPreviewClicked" ToolTip.Tip="Open color picker" Margin="0,6,0,0" />
+                                </Grid>
+                            </Expander>
 
-                            <TextBlock Grid.Row="1" Grid.Column="0" Classes="SettingLabel" Text="Danger:" Margin="0,8,0,0" />
-                            <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Settings.Theme.DangerColor}" Watermark="#D9534F" Margin="0,8,8,0" />
-                            <Border Grid.Row="1" Grid.Column="2" Width="24" Height="24" Background="{Binding Settings.Theme.DangerColor}" BorderBrush="#666" BorderThickness="1" CornerRadius="3" Margin="0,8,0,0" />
+                            <Expander Grid.Column="2" Header="Dialogs &amp; Notifications" IsExpanded="True" Classes="settings-accordion">
+                                <Grid ColumnDefinitions="126,*,Auto" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" Margin="0,8,0,0">
+                                    <TextBlock Grid.Row="0" Grid.Column="0" Classes="SettingLabel" Text="Background:" />
+                                    <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Settings.Theme.SettingsBackground}" Watermark="#2D2D30" Margin="0,0,8,0" />
+                                    <Button Grid.Row="0" Grid.Column="2" Classes="color-swatch" Background="{Binding Settings.Theme.SettingsBackground}" Tag="SettingsBackground" Click="OnColorPreviewClicked" ToolTip.Tip="Open color picker" />
 
-                            <TextBlock Grid.Row="2" Grid.Column="0" Classes="SettingLabel" Text="Success:" Margin="0,8,0,0" />
-                            <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding Settings.Theme.SuccessColor}" Watermark="#4CAF50" Margin="0,8,8,0" />
-                            <Border Grid.Row="2" Grid.Column="2" Width="24" Height="24" Background="{Binding Settings.Theme.SuccessColor}" BorderBrush="#666" BorderThickness="1" CornerRadius="3" Margin="0,8,0,0" />
+                                    <TextBlock Grid.Row="1" Grid.Column="0" Classes="SettingLabel" Text="Primary Text:" Margin="0,6,0,0" />
+                                    <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Settings.Theme.PrimaryText}" Watermark="#F5F5F5" Margin="0,6,8,0" />
+                                    <Button Grid.Row="1" Grid.Column="2" Classes="color-swatch" Background="{Binding Settings.Theme.PrimaryText}" Tag="PrimaryText" Click="OnColorPreviewClicked" ToolTip.Tip="Open color picker" Margin="0,6,0,0" />
+
+                                    <TextBlock Grid.Row="2" Grid.Column="0" Classes="SettingLabel" Text="Secondary Text:" Margin="0,6,0,0" />
+                                    <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding Settings.Theme.SecondaryText}" Watermark="#CCCCCC" Margin="0,6,8,0" />
+                                    <Button Grid.Row="2" Grid.Column="2" Classes="color-swatch" Background="{Binding Settings.Theme.SecondaryText}" Tag="SecondaryText" Click="OnColorPreviewClicked" ToolTip.Tip="Open color picker" Margin="0,6,0,0" />
+
+                                    <TextBlock Grid.Row="3" Grid.Column="0" Classes="SettingLabel" Text="Header Text:" Margin="0,6,0,0" />
+                                    <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding Settings.Theme.SettingsSectionHeader}" Watermark="#F5F5F5" Margin="0,6,8,0" />
+                                    <Button Grid.Row="3" Grid.Column="2" Classes="color-swatch" Background="{Binding Settings.Theme.SettingsSectionHeader}" Tag="SettingsSectionHeader" Click="OnColorPreviewClicked" ToolTip.Tip="Open color picker" Margin="0,6,0,0" />
+
+                                    <TextBlock Grid.Row="4" Grid.Column="0" Classes="SettingLabel" Text="Body Text:" Margin="0,6,0,0" />
+                                    <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding Settings.Theme.SettingsLabelText}" Watermark="#CCCCCC" Margin="0,6,8,0" />
+                                    <Button Grid.Row="4" Grid.Column="2" Classes="color-swatch" Background="{Binding Settings.Theme.SettingsLabelText}" Tag="SettingsLabelText" Click="OnColorPreviewClicked" ToolTip.Tip="Open color picker" Margin="0,6,0,0" />
+
+                                    <TextBlock Grid.Row="5" Grid.Column="0" Classes="SettingLabel" Text="Accent:" Margin="0,6,0,0" />
+                                    <TextBox Grid.Row="5" Grid.Column="1" Text="{Binding Settings.Theme.AccentPrimary}" Watermark="#0078D7" Margin="0,6,8,0" />
+                                    <Button Grid.Row="5" Grid.Column="2" Classes="color-swatch" Background="{Binding Settings.Theme.AccentPrimary}" Tag="AccentPrimary" Click="OnColorPreviewClicked" ToolTip.Tip="Open color picker" Margin="0,6,0,0" />
+
+                                    <TextBlock Grid.Row="6" Grid.Column="0" Classes="SettingLabel" Text="Success:" Margin="0,6,0,0" />
+                                    <TextBox Grid.Row="6" Grid.Column="1" Text="{Binding Settings.Theme.SuccessColor}" Watermark="#4CAF50" Margin="0,6,8,0" />
+                                    <Button Grid.Row="6" Grid.Column="2" Classes="color-swatch" Background="{Binding Settings.Theme.SuccessColor}" Tag="SuccessColor" Click="OnColorPreviewClicked" ToolTip.Tip="Open color picker" Margin="0,6,0,0" />
+
+                                    <TextBlock Grid.Row="7" Grid.Column="0" Classes="SettingLabel" Text="Warning:" Margin="0,6,0,0" />
+                                    <TextBox Grid.Row="7" Grid.Column="1" Text="{Binding Settings.Theme.WarningColor}" Watermark="#FFA726" Margin="0,6,8,0" />
+                                    <Button Grid.Row="7" Grid.Column="2" Classes="color-swatch" Background="{Binding Settings.Theme.WarningColor}" Tag="WarningColor" Click="OnColorPreviewClicked" ToolTip.Tip="Open color picker" Margin="0,6,0,0" />
+
+                                    <TextBlock Grid.Row="8" Grid.Column="0" Classes="SettingLabel" Text="Danger:" Margin="0,6,0,0" />
+                                    <TextBox Grid.Row="8" Grid.Column="1" Text="{Binding Settings.Theme.DangerColor}" Watermark="#D9534F" Margin="0,6,8,0" />
+                                    <Button Grid.Row="8" Grid.Column="2" Classes="color-swatch" Background="{Binding Settings.Theme.DangerColor}" Tag="DangerColor" Click="OnColorPreviewClicked" ToolTip.Tip="Open color picker" Margin="0,6,0,0" />
+                                </Grid>
+                            </Expander>
                         </Grid>
 
                         <!-- Opacity Controls Section -->
@@ -204,47 +236,47 @@
                                        VerticalAlignment="Center"
                                        Margin="10,0,0,0" />
 
-                            <TextBlock Grid.Row="1" Grid.Column="0" Classes="SettingLabel" Text="Clock:" Margin="0,8,0,0" />
+                            <TextBlock Grid.Row="1" Grid.Column="0" Classes="SettingLabel" Text="Clock:" Margin="0,4,0,0" />
                             <Slider Grid.Row="1" Grid.Column="1"
                                     Value="{Binding Settings.Theme.TimerOpacity}"
                                     Minimum="0.0" Maximum="1.0"
                                     TickFrequency="0.05"
                                     IsSnapToTickEnabled="True"
-                                    Margin="0,8,0,0" />
+                                    Margin="0,4,0,0" />
                             <TextBlock Grid.Row="1" Grid.Column="2"
                                        Text="{Binding Settings.Theme.TimerOpacity, StringFormat='{}{0:P0}'}"
                                        Width="50"
                                        TextAlignment="Right"
                                        VerticalAlignment="Center"
-                                       Margin="10,8,0,0" />
+                                       Margin="10,4,0,0" />
 
-                            <TextBlock Grid.Row="2" Grid.Column="0" Classes="SettingLabel" Text="Buttons:" Margin="0,8,0,0" />
+                            <TextBlock Grid.Row="2" Grid.Column="0" Classes="SettingLabel" Text="Buttons:" Margin="0,4,0,0" />
                             <Slider Grid.Row="2" Grid.Column="1"
                                     Value="{Binding Settings.Theme.ButtonOpacity}"
                                     Minimum="0.0" Maximum="1.0"
                                     TickFrequency="0.05"
                                     IsSnapToTickEnabled="True"
-                                    Margin="0,8,0,0" />
+                                    Margin="0,4,0,0" />
                             <TextBlock Grid.Row="2" Grid.Column="2"
                                        Text="{Binding Settings.Theme.ButtonOpacity, StringFormat='{}{0:P0}'}"
                                        Width="50"
                                        TextAlignment="Right"
                                        VerticalAlignment="Center"
-                                       Margin="10,8,0,0" />
+                                       Margin="10,4,0,0" />
 
-                            <TextBlock Grid.Row="3" Grid.Column="0" Classes="SettingLabel" Text="Overall Fade:" Margin="0,8,0,0" />
+                            <TextBlock Grid.Row="3" Grid.Column="0" Classes="SettingLabel" Text="Overall Fade:" Margin="0,4,0,0" />
                             <Slider Grid.Row="3" Grid.Column="1"
                                     Value="{Binding Settings.WidgetOpacity}"
                                     Minimum="0.2" Maximum="1.0"
                                     TickFrequency="0.05"
                                     IsSnapToTickEnabled="True"
-                                    Margin="0,8,0,0" />
+                                    Margin="0,4,0,0" />
                             <TextBlock Grid.Row="3" Grid.Column="2"
                                        Text="{Binding Settings.WidgetOpacity, StringFormat='{}{0:P0}'}"
                                        Width="50"
                                        TextAlignment="Right"
                                        VerticalAlignment="Center"
-                                       Margin="10,8,0,0" />
+                                       Margin="10,4,0,0" />
                         </Grid>
 
 <!-- Widget Options Section -->
@@ -263,9 +295,67 @@
                 </ScrollViewer>
             </TabItem>
 
+            <TabItem Header="About">
+                <ScrollViewer Classes="settings-scroll">
+                    <StackPanel Spacing="12">
+                        <TextBlock Classes="SectionHeader" Text="Application" />
+
+                        <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto" Margin="0,0,0,8">
+                            <TextBlock Grid.Row="0" Grid.Column="0" Classes="SettingLabel" Text="Version:" />
+                            <TextBlock Grid.Row="0" Grid.Column="1"
+                                       Classes="VersionInfoText"
+                                       HorizontalAlignment="Left"
+                                       Text="{Binding AppVersion}"
+                                       PointerPressed="OnVersionInfoPressed"
+                                       ToolTip.Tip="Click 7 times to unlock developer mode" />
+
+                            <TextBlock Grid.Row="1" Grid.Column="0" Classes="SettingLabel" Text="Repository:" Margin="0,8,0,0" />
+                            <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Spacing="8" Margin="0,8,0,0">
+                                <TextBlock VerticalAlignment="Center" Text="{Binding RepositoryUrl}" TextWrapping="Wrap" />
+                                <Button Content="Open" Width="70" Command="{Binding OpenRepositoryCommand}" />
+                            </StackPanel>
+
+                            <TextBlock Grid.Row="2" Grid.Column="0" Classes="SettingLabel" Text="Author:" Margin="0,8,0,0" />
+                            <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding AppAuthor}" Margin="0,8,0,0" TextWrapping="Wrap" />
+
+                            <TextBlock Grid.Row="3" Grid.Column="0" Classes="SettingLabel" Text="Info:" Margin="0,8,0,0" />
+                            <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding AppInformation}" Margin="0,8,0,0" TextWrapping="Wrap" />
+                        </Grid>
+
+                        <Expander Header="Changelog" IsExpanded="False" Classes="settings-accordion">
+                            <Border Padding="0,8,0,0">
+                                <ScrollViewer MaxHeight="220">
+                                    <TextBlock Text="{Binding ChangelogContent}" TextWrapping="Wrap" FontFamily="Consolas" FontSize="12" />
+                                </ScrollViewer>
+                            </Border>
+                        </Expander>
+
+                        <Expander Header="Developer Options"
+                                  Classes="settings-accordion"
+                                  IsVisible="{Binding IsDeveloperModeVisible}">
+                            <StackPanel Spacing="10" Margin="0,8,0,0">
+                                <Grid ColumnDefinitions="120,*" RowDefinitions="Auto">
+                                    <TextBlock Grid.Column="0" Classes="SettingLabel" Text="Log Level:" />
+                                    <ComboBox Grid.Column="1"
+                                              SelectedItem="{Binding SelectedDeveloperLogLevel}"
+                                              ItemsSource="{Binding AvailableDeveloperLogLevels}"
+                                              HorizontalAlignment="Left"
+                                              Width="180" />
+                                </Grid>
+
+                                <TextBlock TextWrapping="Wrap"
+                                           Foreground="{DynamicResource SettingsLabelTextBrush}"
+                                           FontSize="11"
+                                           Text="Developer options are experimental and will grow over time." />
+                            </StackPanel>
+                        </Expander>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
             <!-- Hotkeys Tab -->
             <TabItem Header="Hotkeys">
-                <ScrollViewer>
+                <ScrollViewer Classes="settings-scroll">
                     <StackPanel Spacing="15">
                         <TextBlock Classes="SectionHeader" Text="Global Hotkeys" />
                         <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource SettingsLabelTextBrush}"

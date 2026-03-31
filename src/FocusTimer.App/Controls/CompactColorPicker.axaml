@@ -1,0 +1,100 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:FocusTimer.App.ViewModels"
+             mc:Ignorable="d"
+             x:Class="FocusTimer.App.Controls.CompactColorPicker"
+             x:DataType="vm:ColorPickerWindowViewModel">
+
+    <Grid ColumnDefinitions="190,18,96" RowDefinitions="190">
+        <Border Grid.Column="0"
+                x:Name="SaturationValueSurface"
+                Classes="color-picker-surface"
+                Margin="0,0,10,0"
+                PointerPressed="OnSaturationValuePointerPressed"
+                PointerMoved="OnSaturationValuePointerMoved"
+                PointerReleased="OnSurfacePointerReleased"
+                PointerCaptureLost="OnSurfacePointerCaptureLost">
+            <Grid ClipToBounds="True">
+                <Border Background="{Binding SaturationValueBaseBrush}" />
+                <Border Background="{DynamicResource ColorPickerSaturationOverlayBrush}" />
+                <Border Background="{DynamicResource ColorPickerValueOverlayBrush}" />
+                <Canvas>
+                    <Border x:Name="SaturationValueThumb"
+                            Classes="color-picker-thumb"
+                            Width="14"
+                            Height="14"
+                            RenderTransformOrigin="0.5,0.5">
+                        <Border.RenderTransform>
+                            <TranslateTransform X="-7" Y="-7" />
+                        </Border.RenderTransform>
+                    </Border>
+                </Canvas>
+            </Grid>
+        </Border>
+
+        <Border Grid.Column="1"
+                x:Name="HueStrip"
+                Classes="color-picker-hue-strip"
+            Margin="0,0,10,0"
+                PointerPressed="OnHuePointerPressed"
+                PointerMoved="OnHuePointerMoved"
+                PointerReleased="OnHuePointerReleased"
+                PointerCaptureLost="OnHuePointerCaptureLost">
+            <Grid ClipToBounds="True">
+                <Border Background="{DynamicResource ColorPickerHueBrush}" />
+                <Canvas>
+                    <Border x:Name="HueThumb"
+                            Classes="color-picker-strip-thumb"
+                            Width="26"
+                            Height="4"
+                            RenderTransformOrigin="0.5,0.5">
+                        <Border.RenderTransform>
+                            <TranslateTransform X="-4" Y="-2" />
+                        </Border.RenderTransform>
+                    </Border>
+                </Canvas>
+            </Grid>
+        </Border>
+
+        <StackPanel Grid.Column="2" Spacing="8">
+            <Border Classes="color-picker-preview" Height="56">
+                <Grid>
+                    <Border Background="{DynamicResource ColorPickerTransparencyBrush}" />
+                    <Border Background="{Binding PreviewBrush}" />
+                    <TextBlock HorizontalAlignment="Center"
+                               VerticalAlignment="Center"
+                               FontSize="11"
+                               FontWeight="Bold"
+                               Foreground="{Binding PreviewTextBrush}"
+                               Text="{Binding SelectedColorHex}" />
+                </Grid>
+            </Border>
+
+            <Border Classes="color-picker-chip">
+                <TextBlock HorizontalAlignment="Center"
+                           TextAlignment="Center"
+                           Text="{Binding Hue, StringFormat='H {0:F0}'}" />
+            </Border>
+
+            <Border Classes="color-picker-chip">
+                <TextBlock HorizontalAlignment="Center"
+                           TextAlignment="Center"
+                           Text="{Binding SaturationPercent, StringFormat='S {0:F0}%'}" />
+            </Border>
+
+            <Border Classes="color-picker-chip">
+                <TextBlock HorizontalAlignment="Center"
+                           TextAlignment="Center"
+                           Text="{Binding ValuePercent, StringFormat='V {0:F0}%'}" />
+            </Border>
+
+            <Border Classes="color-picker-chip">
+                <TextBlock HorizontalAlignment="Center"
+                           TextAlignment="Center"
+                           Text="{Binding Alpha, StringFormat='A {0:F0}'}" />
+            </Border>
+        </StackPanel>
+    </Grid>
+</UserControl>

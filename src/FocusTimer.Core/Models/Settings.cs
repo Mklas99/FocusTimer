@@ -13,12 +13,16 @@ namespace FocusTimer.Core.Models
         private bool _alwaysOnTop = true;
         private int _breakIntervalMinutes = 50;
         private bool _breakRemindersEnabled = true;
+        private bool _requireBreakReminderAcknowledgement;
         private string _logDirectory = DefaultApplicationLogDirectory;
         private string _worklogDirectory = DefaultWorklogDirectory;
+        private bool _workLoggingEnabled = true;
         private int _dataRetentionDays = 90;
         private double _widgetScale = 1.0;
         private double _widgetOpacity = 1.0;
         private bool _useCompactMode;
+        private bool _developerModeEnabled;
+        private string _developerLogLevel = "Debug";
         private string? _hotkeyShowHide;
         private string? _hotkeyToggleTimer;
         private Theme _theme = new Theme();
@@ -94,6 +98,15 @@ namespace FocusTimer.Core.Models
             set => this.SetField(ref this._breakRemindersEnabled, value);
         }
 
+        /// <summary>
+        /// Gets or sets a value indicating whether break reminders require explicit acknowledgement.
+        /// </summary>
+        public bool RequireBreakReminderAcknowledgement
+        {
+            get => this._requireBreakReminderAcknowledgement;
+            set => this.SetField(ref this._requireBreakReminderAcknowledgement, value);
+        }
+
         // Logging
 
         /// <summary>
@@ -112,6 +125,15 @@ namespace FocusTimer.Core.Models
         {
             get => this._worklogDirectory;
             set => this.SetField(ref this._worklogDirectory, value);
+        }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether work logging and activity tracking are enabled.
+        /// </summary>
+        public bool WorkLoggingEnabled
+        {
+            get => this._workLoggingEnabled;
+            set => this.SetField(ref this._workLoggingEnabled, value);
         }
 
         /// <summary>
@@ -158,6 +180,24 @@ namespace FocusTimer.Core.Models
         {
             get => this._useCompactMode;
             set => this.SetField(ref this._useCompactMode, value);
+        }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether developer options are unlocked.
+        /// </summary>
+        public bool DeveloperModeEnabled
+        {
+            get => this._developerModeEnabled;
+            set => this.SetField(ref this._developerModeEnabled, value);
+        }
+
+        /// <summary>
+        /// Gets or sets the preferred log level used by developer tooling.
+        /// </summary>
+        public string DeveloperLogLevel
+        {
+            get => this._developerLogLevel;
+            set => this.SetField(ref this._developerLogLevel, value);
         }
 
         // Future: Hotkey settings (placeholders)

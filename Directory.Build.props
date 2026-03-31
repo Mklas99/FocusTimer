@@ -19,6 +19,12 @@
 
     <!-- Language features -->
     <LangVersion>latest</LangVersion>
+
+    <!-- Shared assembly metadata -->
+    <Company>Mklas99</Company>
+    <Product>FocusTimer</Product>
+    <Description>FocusTimer is a desktop focus timer with break reminders, work logging, and customizable appearance.</Description>
+    <RepositoryUrl>https://github.com/Mklas99/FocusTimer</RepositoryUrl>
   </PropertyGroup>
 
   <!-- Code Analysis Rules -->
