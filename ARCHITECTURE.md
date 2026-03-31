@@ -308,7 +308,7 @@ Publishers (ViewModels) emit domain events; subscribers (AppController) react:
 await _eventBus.Publish(new EntriesLoggedEvent { Entries = entries });
 
 // In AppController (subscriber)
-_eventBus.Subscribe<EntriesLoggedEvent>(e => 
+_eventBus.Subscribe<EntriesLoggedEvent>(e =>
 {
     foreach (var entry in e.Entries)
         _sessionRepository.AddSessionEntry(entry);

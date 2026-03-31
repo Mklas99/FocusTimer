@@ -64,7 +64,7 @@ public static IServiceCollection BuildServices()
             .CreateLogger()));
 
     // Core services
-    services.AddSingleton<IAppLogger>(sp => 
+    services.AddSingleton<IAppLogger>(sp =>
         new SerilogAdapter(sp.GetRequiredService<ILogger<IAppLogger>>()));
     services.AddSingleton<IAppInitializer, App>();
 
@@ -80,7 +80,7 @@ public static IServiceCollection BuildServices()
     // App services
     services.AddSingleton<AppController>();
     services.AddSingleton<ThemeManager>();
-    services.AddSingleton<ITrayIconController>(sp => 
+    services.AddSingleton<ITrayIconController>(sp =>
         sp.GetRequiredService<AppController>());
 
     // Event bus
@@ -124,7 +124,7 @@ public override void OnFrameworkInitializationCompleted()
     {
         var appController = AppHost.Services.GetService<AppController>();
         var logger = AppHost.Services.GetService<IAppLogger>();
-        
+
         // Use services...
     }
 }
@@ -303,7 +303,7 @@ if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
 public class MyViewModel
 {
     public MyViewModel(IClipboardService clipboard) { ... }
-    
+
     public async Task CopyToClipboard(string text)
     {
         await _clipboard.SetTextAsync(text);
@@ -327,7 +327,7 @@ public class StatsViewModel : ViewModelBase
 {
     private readonly ISessionRepository _repository;
     private readonly IAppLogger _logger;
-    
+
     private int _todayTotal;
     public int TodayTotal
     {
@@ -402,11 +402,11 @@ public class JsonSettingsProvider : ISettingsProvider
         var old = _currentSettings;
         // ... save to JSON ...
         _currentSettings = settings;
-        
-        await _eventBus.Publish(new SettingsChangedEvent 
-        { 
-            OldSettings = old, 
-            NewSettings = settings 
+
+        await _eventBus.Publish(new SettingsChangedEvent
+        {
+            OldSettings = old,
+            NewSettings = settings
         });
     }
 }
@@ -440,7 +440,7 @@ public class TimerWidgetViewModelTests
     {
         _mockLogger = new Mock<IAppLogger>();
         _mockEventBus = new Mock<IEventBus<EntriesLoggedEvent>>();
-        
+
         _viewModel = new TimerWidgetViewModel(
             _mockLogger.Object,
             _mockEventBus.Object,
@@ -457,7 +457,7 @@ public class TimerWidgetViewModelTests
         await _viewModel.StartTimer();
 
         // Assert
-        _mockEventBus.Verify(x => 
+        _mockEventBus.Verify(x =>
             x.Publish(It.IsAny<TimerStartedEvent>()), Times.Once);
     }
 }
@@ -649,25 +649,25 @@ _logger.LogInformation($"Startup took {sw.ElapsedMilliseconds}ms");
 
 ### "Service not registered" Exception
 
-**Problem**: `InvalidOperationException` when resolving a service  
+**Problem**: `InvalidOperationException` when resolving a service
 **Solution**: Verify service is registered in Host.Program.BuildServices()
 
 ### ViewModel Properties Not Updating
 
-**Problem**: UI doesn't reflect ViewModel changes  
+**Problem**: UI doesn't reflect ViewModel changes
 **Solution**: Use `RaiseAndSetIfChanged()` for all properties in MVVM ViewModels
 
 ### EventBus Subscribers Not Firing
 
-**Problem**: Published event not received by subscribers  
-**Solution**: 
+**Problem**: Published event not received by subscribers
+**Solution**:
 - Verify event type matches exactly (including namespace)
 - Ensure subscriber is registered before publish
 - Check for exceptions in handler (swallowed by EventBus)
 
 ### Hotkeys Not Working
 
-**Problem**: Global hotkey doesn't trigger  
+**Problem**: Global hotkey doesn't trigger
 **Solution**:
 - Call RegisterHotkeys() after window is shown (needs window handle)
 - Check if another app registered the same hotkey

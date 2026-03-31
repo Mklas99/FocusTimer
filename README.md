@@ -85,7 +85,7 @@ dotnet publish src/FocusTimer.Host/FocusTimer.Host.csproj -c Release -f net8.0-w
 
 Output: `artifacts/publish/win-x64-selfcontained/FocusTimer.Host.exe`
 
-**Pros**: One file to distribute  
+**Pros**: One file to distribute
 **Cons**: Larger file size due to included runtime
 
 ### Framework-Dependent Executable
@@ -98,7 +98,7 @@ dotnet publish src/FocusTimer.Host/FocusTimer.Host.csproj -c Release -f net8.0-w
 
 Output: `publish/` directory with FocusTimer.Host.exe and supporting .dll files
 
-**Pros**: Smaller size  
+**Pros**: Smaller size
 **Cons**: Requires .NET 8 runtime on target machine
 
 ### Windows Installer (MSI) via WiX Toolset

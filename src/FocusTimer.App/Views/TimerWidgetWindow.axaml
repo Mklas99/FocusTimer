@@ -32,7 +32,7 @@
     <Window.RenderTransform>
         <ScaleTransform ScaleX="{Binding Settings.WidgetScale}" ScaleY="{Binding Settings.WidgetScale}" />
     </Window.RenderTransform>
-    
+
     <!-- Root container: keep window transparent, all visuals inside -->
     <Border Background="Transparent"
             CornerRadius="{DynamicResource WidgetCornerRadius}"
@@ -79,11 +79,11 @@
             </Button>
             <!-- Content area: switch between full and compact modes -->
             <Grid Grid.Row="1">
-                <views:FullModeView 
+                <views:FullModeView
                     Margin="10,0,1,5"
                     IsVisible="{Binding Settings.UseCompactMode, Converter={StaticResource BooleanNegationConverter}}" />
-                <!-- Margin: left=10, top=0, right=1, bottom=5 -->    
-                <views:CompactModeView 
+                <!-- Margin: left=10, top=0, right=1, bottom=5 -->
+                <views:CompactModeView
                     Margin="10,0,1,5"
                     IsVisible="{Binding Settings.UseCompactMode}" />
             </Grid>
