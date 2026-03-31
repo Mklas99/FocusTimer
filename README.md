@@ -1,112 +1,264 @@
-﻿## FocusTimer – Project Setup & Architecture Skeleton
+﻿# FocusTimer
 
-This project is a cross-platform desktop timer widget built with .NET 8 and Avalonia UI.
+A clean, cross-platform .NET 8 / Avalonia desktop timer widget with dependency injection, event-driven architecture, and Windows-specific integrations (hotkeys, notifications, idle detection).
 
+## Quick Start
 
-### Solution Structure
+### Prerequisites
+- **.NET 8 SDK**: [Download](https://dotnet.microsoft.com/download/dotnet/8.0)
+- **Windows 10+** (for compiled executable)
+- **Visual Studio 2022** (optional, for IDE development)
 
-- `FocusTimer.App` — Avalonia UI entry point (Windows & Linux)
-- `FocusTimer.Core` — Core logic, models, interfaces (framework-agnostic)
-- `FocusTimer.Platform.Windows` — Windows-specific integrations (active window, notifications, hotkeys)
-- `FocusTimer.Persistence` — Logging and settings persistence
+### Clone & Build
 
-### Key Features (Milestone 1)
+```powershell
+git clone <repo-url>
+cd FocusTimer
+dotnet build
+```
 
-- Clean, extensible .NET 8 solution
-- MVVM-ready Avalonia UI shell
-- Core models: `TimeEntry`, `Session`, `Settings`
-- Interfaces: `IActiveWindowService`, `ILogWriter`, `ISettingsProvider`, `INotificationService`, `IHotkeyService`
-- Dependency injection with stub implementations
-- Minimal MainWindow UI to validate plumbing
+### Run the Application
 
-### Build & Run
+```powershell
+dotnet run --project src/FocusTimer.Host
+```
 
-#### Prerequisites
+Alternatively, run the compiled executable directly:
+```powershell
+./src/FocusTimer.Host/bin/Debug/net8.0-windows/FocusTimer.Host.exe
+```
 
-- [.NET 8 SDK](https://dotnet.microsoft.com/download)
-- [Avalonia Templates](https://docs.avaloniaui.net/docs/getting-started/installation)
+### Build for Release
 
-#### CLI Commands
-#### Linux Notes
+```powershell
+dotnet build --configuration Release
+```
 
-- Avalonia supports Linux (X11/XWayland). No extra steps for basic UI.
-- Platform-specific features (active window, notifications, hotkeys) are Windows-only for now; Linux stubs included.
+The release executable is at:
+```
+src/FocusTimer.Host/bin/Release/net8.0-windows/FocusTimer.Host.exe
+```
 
 ---
 
-See `FocusTimer.Core` for models/interfaces, and `FocusTimer.App` for the Avalonia shell and DI setup.
+## Solution Structure
 
+| Project | Framework | Type | Purpose |
+|---------|-----------|------|---------|
+| **FocusTimer.Host** | net8.0-windows | WinExe | Entry point; DI & Avalonia setup |
+| **FocusTimer.App** | net8.0 | Library | UI (XAML, ViewModels, Windows) |
+| **FocusTimer.Core** | net8.0 | Library | Domain models, interfaces, EventBus |
+| **FocusTimer.Persistence** | net8.0 | Library | JSON settings, CSV session logs |
+| **FocusTimer.Platform.Windows** | net8.0-windows | Library | OS integrations (hotkeys, notifications, idle) |
 
+**Only FocusTimer.Host produces an executable. All other projects are libraries.**
 
-### Further improvements:
-- more customisability for users (mabey add theme file):
-  - changeable color of background
-  - changeable color of clock
-  - change transparency of clock, background, & all other elements combined seperatly
-- add the compact mode
-- improve action buttons with icons
+Dependency graph: Host → App, Core, Persistence, Platform.Windows. No circular dependencies.
 
-- add working system tray icon and make it clearly reflect state play/pause
-* Optional tiny **“Today: 3h 12m”** in tray tooltip so you get instant feedback without opening anything.
+See [ARCHITECTURE.md](ARCHITECTURE.md) for detailed architecture, design patterns, and extension guide.
 
-- 
-* **Pomodoro mode**: optional mode with work/break cycles and auto-advance.
-* **Sound cues**: soft chime on break time or when resuming after long pause which can be disabled in settings.
+---
 
-* Persist **window position** per monitor:
-  * On move/resize, store position in Settings.
-  * On startup, restore to that position (and validate it’s still on a visible screen).
+## Features
 
-* Improve the log schema a bit
-    Right now: `Date, Start, End, Duration, App, WindowTitle, Project`.
-    consider adding:
-    * `IdleFlag` (bool) – if we later auto-pause or detect idle periods.
-    * `SessionId` – so you can reconstruct which segments belong to the same “intentional session”.
-    * `SourcePlatform` – “Windows” vs “Linux” if you’ll run it on both.
+- **Compact Timer Widget**: Minimal, distraction-free UI for time tracking
+- **System Tray Integration**: Hide/show and control timer from tray menu
+- **Global Hotkeys**: Configurable keyboard shortcuts (Windows)
+- **Automatic Time Entry Logging**: CSV file per date with session details
+- **JSON Settings**: Persist user preferences (theme, hotkeys, start minimized, etc.)
+- **Idle Detection**: Detect OS idle state and optionally auto-pause
+- **Responsive Design**: Avalonia reactive MVVM bindings
+- **Clean Dependency Injection**: All services registered and wired in Host
+- **Event-Driven Architecture**: Decoupled messaging via EventBus
 
-* Lightweight in-app “Today” view
-    Without building a full analytics dashboard, add a simple **“Today” panel**:
-    * Group today’s CSV by:
-      * App
-      * Project (if set)
-    * Show:
-      * “Today total: 5h 40m”
-      * Top 5 apps/projects with durations.
-    Even a simple `ListBox` in a “Stats” tab in Settings would already make it feel much more useful.
+---
 
-* Idle detection & auto-pause
-    * Use OS APIs to detect idle (e.g., `GetLastInputInfo` on Windows).
-    * If idle > X minutes (configurable):
-        * Auto-pause the timer, and optionally pop a small notification:
-        “You’ve been idle for 8 min, timer paused.”
-    * On user returning, show:
-        * “Resume timer?” as a small dialog or notification.
+## Publishing & Distribution
 
-* Rules-based project tagging (later)
-    Add a simple rules engine:
-    * Rule examples:
-      * If `WindowTitle` contains “HSH-xxxx” → project “HSH-xxxx”.
-    * Store as a list of rules (order matters).
-    * Apply on each new segment.
+### Self-Contained Executable (Single .exe)
 
-* Centralized logging / diagnostics
-  * Introduce a simple `ILogger` abstraction or just use `Microsoft.Extensions.Logging`.
-    * Log:
-      * Exceptions from platform services.
-      * CSV write failures.
-      * Registry write issues for autostart.
-    * Provide an “Open logs folder” action so you can inspect issues later.
+Creates a standalone executable that includes the .NET runtime (no runtime pre-install required on target machines).
 
-* Clear versioning & changelog
-  * Embed version into the app (e.g., “FocusTimer v0.3.0” in Settings/About).
-  * Keep a small `CHANGELOG.md` – super helpful when you start iterating on features.
+```powershell
+dotnet publish src/FocusTimer.Host/FocusTimer.Host.csproj -c Release -f net8.0-windows -r win-x64 --self-contained true -p:PublishSingleFile=true -p:PublishTrimmed=false -o ./artifacts/publish/win-x64-selfcontained
+```
 
+Output: `artifacts/publish/win-x64-selfcontained/FocusTimer.Host.exe`
 
-#### suggested improvements:
-Make everything testable
-Clean cross-platform boundaries
+**Pros**: One file to distribute  
+**Cons**: Larger file size due to included runtime
 
-If you want to further improve stability, you can:
-•	Add more try/catch blocks around file I/O in JsonSettingsProvider.
-•	Add user notifications for errors (future UX).
-•	Validate settings before saving (e.g., check if log directory is writable).
+### Framework-Dependent Executable
+
+Smaller executable that requires .NET 8 runtime on target machines.
+
+```powershell
+dotnet publish src/FocusTimer.Host/FocusTimer.Host.csproj -c Release -f net8.0-windows -o ./publish
+```
+
+Output: `publish/` directory with FocusTimer.Host.exe and supporting .dll files
+
+**Pros**: Smaller size  
+**Cons**: Requires .NET 8 runtime on target machine
+
+### Windows Installer (MSI) via WiX Toolset
+
+This repository now includes a WiX installer project:
+- `installer/FocusTimer.Installer/FocusTimer.Installer.wixproj`
+- `installer/FocusTimer.Installer/Product.wxs`
+
+Build both self-contained EXE + MSI in one command:
+
+```powershell
+./scripts/build-installer.ps1 -Runtime win-x64
+```
+
+Version resolution order for MSI/exe metadata:
+- `-Version` parameter (if provided)
+- CI tag variables (`FOCUSTIMER_VERSION`, `GITHUB_REF_NAME`, `GITHUB_REF`, `BUILD_SOURCEBRANCHNAME`, `BUILD_SOURCEBRANCH`, `CI_COMMIT_TAG`)
+- Latest git tag (`git describe --tags --abbrev=0`)
+- Fallback: `1.0.0`
+
+Outputs:
+- Self-contained EXE: `artifacts/publish/win-x64-selfcontained/FocusTimer.Host.exe`
+- MSI (WiX output): `artifacts/installer/`
+
+Manual WiX build (after publishing):
+
+```powershell
+dotnet build installer/FocusTimer.Installer/FocusTimer.Installer.wixproj -c Release -p:ProductVersion=1.0.0 -p:PublishDir=artifacts/publish/win-x64-selfcontained -o artifacts/installer
+```
+
+### WiX UI Feature Options
+
+Installer UI uses `WixUI_FeatureTree` and exposes optional features:
+- Desktop shortcut
+- Start Menu uninstall shortcut
+
+Users can toggle these during install in the feature selection step.
+
+### Code-Signing Placeholders (EXE + MSI)
+
+The installer script supports optional signing:
+
+```powershell
+./scripts/build-installer.ps1 -Runtime win-x64 -Sign
+```
+
+Configure signing through parameters or environment variables:
+- `SIGNTOOL_PATH`
+- `SIGNING_CERT_PATH`
+- `SIGNING_CERT_PASSWORD`
+- `SIGNING_CERT_THUMBPRINT`
+
+These are placeholders and safe defaults for CI/CD release hardening.
+
+WiX reference: [wixtoolset.org](https://wixtoolset.org/)
+
+---
+
+## Development
+
+### Code Analysis
+
+StyleCop and Microsoft.CodeAnalysis.NetAnalyzers are enabled by default. Format code:
+
+```powershell
+dotnet format
+```
+
+### Logging
+
+Logs are written to:
+- **Console**: During development
+- **File**: `%APPDATA%\Roaming\FocusTimer\logs\`
+
+Control log level via `SERILOG_MINIMUM_LEVEL` environment variable.
+
+### Running Tests
+
+```powershell
+dotnet test
+```
+
+### SonarQube Analysis (Optional)
+
+```powershell
+./scripts/run-sonar-dotnet.ps1 -token <your-sonarqube-token>
+```
+
+---
+
+## Architecture Overview
+
+### Startup Sequence
+
+1. **Host.Program.Main()** - Sets up DI container with all services
+2. **Avalonia Framework Initialization** - Creates App instance
+3. **App.OnFrameworkInitializationCompleted()** - Calls IAppInitializer.InitializeAsync()
+4. **App.InitializeAsync()** - Loads settings, configures tray, registers hotkeys, shows UI
+
+### Dependency Injection
+
+All services registered in `FocusTimer.Host/Program.cs`:
+
+```csharp
+var services = new ServiceCollection()
+    .AddLogging(...)                       // Serilog
+    .AddPersistenceServices()              // Settings, SessionRepository
+    .AddWindowsPlatform()                  // Hotkeys, idle, notifications
+    .AddSingleton<AppController>()
+    .AddSingleton<IEventBus<EntriesLoggedEvent>, EventBus<EntriesLoggedEvent>>();
+```
+
+### Event Bus Pattern
+
+ViewModels publish events; controllers subscribe and react:
+
+```csharp
+// Publisher (TimerWidgetViewModel)
+await _eventBus.Publish(new EntriesLoggedEvent { Entries = entries });
+
+// Subscriber (AppController constructor)
+_eventBus.Subscribe<EntriesLoggedEvent>(e => LogSessions(e.Entries));
+```
+
+See [ARCHITECTURE.md](ARCHITECTURE.md) for complete details, project descriptions, and extension guide.
+
+---
+
+## Troubleshooting
+
+| Issue | Cause | Fix |
+|-------|-------|-----|
+| App crashes on startup | Service not registered | Check FocusTimer.Host/Program.cs BuildServices() |
+| Hotkeys not working | Registered before window shown | Ensure RegisterHotkeys() called after UI visible |
+| Tray icon missing | Not in visual tree | Verify TrayIcon element in CompactModeView.axaml |
+| Timer freezes | Long task on UI thread | Use Dispatcher.UIThread.InvokeAsync() |
+
+---
+
+## Future Enhancements
+
+- **Pomodoro Mode**: Auto work/break cycles
+- **Sound Cues**: Chimes for breaks or pause resume
+- **Analytics Dashboard**: In-app "Today" view by app/project
+- **Window Position Memory**: Restore widget to last-used monitor
+- **Multi-Platform**: Linux support (net8.0-linux + FocusTimer.Platform.Linux)
+- **Advanced Idle**: Auto-pause with user notifications
+
+---
+
+## Contributing
+
+1. Create a feature branch: `git checkout -b feature/my-feature`
+2. Build and test: `dotnet build && dotnet test`
+3. Format: `dotnet format`
+4. Commit and push: `git push origin feature/my-feature`
+5. Open a pull request
+
+---
+
+## License
+
+[Specify your license here, e.g., MIT, GPL-3.0, etc.]

@@ -182,26 +182,33 @@ namespace FocusTimer.App.Services
         {
             Dispatcher.UIThread.Post(() =>
             {
-                if (this._timerWindow == null)
+                try
                 {
-                    var viewModel = this._timerViewModelFactory();
-                    this._timerWindow = new TimerWidgetWindow
+                    if (this._timerWindow == null)
                     {
-                        DataContext = viewModel,
-                    };
+                        var viewModel = this._timerViewModelFactory();
+                        this._timerWindow = new TimerWidgetWindow
+                        {
+                            DataContext = viewModel,
+                        };
 
-                    // If tray icon is available, set it in the controller
-                    if (this._trayIcon != null && this._trayIconController != null)
-                    {
-                        (this._trayIconController as TrayStateController)?.SetTrayIcon(this._trayIcon);
+                        // If tray icon is available, set it in the controller
+                        if (this._trayIcon != null && this._trayIconController != null)
+                        {
+                            (this._trayIconController as TrayStateController)?.SetTrayIcon(this._trayIcon);
+                        }
+
+                        // Initialize settings async
+                        _ = viewModel.InitializeSettingsAsync();
                     }
 
-                    // Initialize settings async
-                    _ = viewModel.InitializeSettingsAsync();
+                    this._timerWindow.Show();
+                    this._timerWindow.Activate();
                 }
-
-                this._timerWindow.Show();
-                this._timerWindow.Activate();
+                catch (Exception ex)
+                {
+                    this._logWriter.LogError("Failed to show timer widget window.", ex);
+                }
             });
         }
 

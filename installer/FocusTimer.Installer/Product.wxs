@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
+  <Package
+    Name="FocusTimer"
+    Manufacturer="FocusTimer"
+    Version="$(var.ProductVersion)"
+    UpgradeCode="2f33f370-76f7-4db0-a6fd-f6698e5de8b3"
+    Scope="perMachine"
+    InstallerVersion="500">
+    <Icon Id="FocusTimer.ico" SourceFile="FocusTimer.ico" />
+    <Property Id="ARPPRODUCTICON" Value="FocusTimer.ico" />
+
+    <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
+    <MediaTemplate EmbedCab="yes" />
+    <ui:WixUI Id="WixUI_FeatureTree" />
+
+    <WixVariable Id="WixUIBannerBmp" Value="banner.png" />
+    <WixVariable Id="WixUIDialogBmp" Value="dialog.png" />
+
+    <StandardDirectory Id="ProgramFiles64Folder">
+      <Directory Id="INSTALLFOLDER" Name="FocusTimer" />
+    </StandardDirectory>
+
+    <StandardDirectory Id="ProgramMenuFolder">
+      <Directory Id="ProgramMenuDir" Name="FocusTimer" />
+    </StandardDirectory>
+
+    <StandardDirectory Id="DesktopFolder" />
+
+    <Feature Id="MainFeature" Title="FocusTimer" Description="FocusTimer application files" Level="1" Display="expand">
+      <ComponentGroupRef Id="ProductComponents" />
+      <ComponentRef Id="StartMenuShortcutComponent" />
+
+      <Feature Id="DesktopShortcutFeature" Title="Desktop Shortcut" Description="Add a desktop shortcut" Level="1">
+        <ComponentRef Id="DesktopShortcutComponent" />
+      </Feature>
+
+      <Feature Id="UninstallShortcutFeature" Title="Uninstall Shortcut" Description="Add an uninstall shortcut to the Start Menu" Level="1">
+        <ComponentRef Id="UninstallShortcutComponent" />
+      </Feature>
+    </Feature>
+  </Package>
+
+  <Fragment>
+    <DirectoryRef Id="ProgramMenuDir">
+      <Component Id="StartMenuShortcutComponent" Guid="*">
+        <Shortcut
+          Id="StartMenuShortcut"
+          Name="FocusTimer"
+          Target="[INSTALLFOLDER]FocusTimer.Host.exe"
+          WorkingDirectory="INSTALLFOLDER"
+          Advertise="no"
+          Icon="FocusTimer.ico" />
+        <RemoveFolder Id="ProgramMenuDirCleanup" On="uninstall" />
+        <RegistryValue
+          Root="HKCU"
+          Key="Software\FocusTimer"
+          Name="Installed"
+          Type="integer"
+          Value="1"
+          KeyPath="yes" />
+      </Component>
+
+      <Component Id="UninstallShortcutComponent" Guid="*">
+        <Shortcut
+          Id="UninstallStartMenuShortcut"
+          Name="Uninstall FocusTimer"
+          Target="[System64Folder]msiexec.exe"
+          Arguments="/x [ProductCode]"
+          Advertise="no" />
+        <RegistryValue
+          Root="HKCU"
+          Key="Software\FocusTimer"
+          Name="UninstallShortcutInstalled"
+          Type="integer"
+          Value="1"
+          KeyPath="yes" />
+      </Component>
+    </DirectoryRef>
+  </Fragment>
+
+  <Fragment>
+    <StandardDirectory Id="DesktopFolder">
+      <Component Id="DesktopShortcutComponent" Guid="*">
+        <Shortcut
+          Id="DesktopShortcut"
+          Name="FocusTimer"
+          Target="[INSTALLFOLDER]FocusTimer.Host.exe"
+          WorkingDirectory="INSTALLFOLDER"
+          Advertise="no" />
+        <RegistryValue
+          Root="HKCU"
+          Key="Software\FocusTimer"
+          Name="DesktopShortcutInstalled"
+          Type="integer"
+          Value="1"
+          KeyPath="yes" />
+      </Component>
+    </StandardDirectory>
+  </Fragment>
+</Wix>

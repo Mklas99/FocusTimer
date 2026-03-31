@@ -107,6 +107,11 @@ namespace FocusTimer.App
         /// <inheritdoc/>
         public override void OnFrameworkInitializationCompleted()
         {
+            if (this.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+            {
+                desktop.ShutdownMode = ShutdownMode.OnExplicitShutdown;
+            }
+
             base.OnFrameworkInitializationCompleted();
 
             // Initialize app with injected services from AppHost
@@ -116,7 +121,11 @@ namespace FocusTimer.App
                 var logger = AppHost.Services.GetService<IAppLogger>();
                 var trayController = AppHost.Services.GetService<ITrayIconController>();
 
-                ((IAppInitializer)this).InitializeAsync(appController, logger, trayController, AppHost.Services).Wait();
+                // InvokeAsync avoids blocking the UI thread (which would deadlock Avalonia's dispatcher)
+                Dispatcher.UIThread.InvokeAsync(async () =>
+                {
+                    await ((IAppInitializer)this).InitializeAsync(appController, logger, trayController, AppHost.Services);
+                });
             }
         }
 

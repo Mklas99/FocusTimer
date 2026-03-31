@@ -122,3 +122,6 @@ $RECYCLE.BIN/
 .env
 
 .sonarqube/
+
+# Generated WiX harvest fragment (produced by build-installer.ps1)
+installer/FocusTimer.Installer/ProductComponents.wxs

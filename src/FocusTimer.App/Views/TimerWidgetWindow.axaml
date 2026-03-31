@@ -1,4 +1,4 @@
-<UserControl xmlns="https://github.com/avaloniaui"
+<Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:converters="using:FocusTimer.App.Converters"
         xmlns:vm="using:FocusTimer.App.ViewModels"
@@ -23,15 +23,15 @@
         Width="300"
         Topmost="{Binding Settings.AlwaysOnTop}">
 
-    <UserControl.Resources>
+    <Window.Resources>
         <converters:PlayPauseConverter x:Key="PlayPauseConverter" />
         <converters:BooleanNegationConverter x:Key="BooleanNegationConverter" />
         <converters:BooleanToAngleConverter x:Key="BooleanToAngleConverter" />
-    </UserControl.Resources>
+    </Window.Resources>
 
-    <UserControl.RenderTransform>
+    <Window.RenderTransform>
         <ScaleTransform ScaleX="{Binding Settings.WidgetScale}" ScaleY="{Binding Settings.WidgetScale}" />
-    </UserControl.RenderTransform>
+    </Window.RenderTransform>
     
     <!-- Root container: keep window transparent, all visuals inside -->
     <Border Background="Transparent"
@@ -89,4 +89,4 @@
             </Grid>
         </Grid>
     </Border>
-</UserControl>
+</Window>
