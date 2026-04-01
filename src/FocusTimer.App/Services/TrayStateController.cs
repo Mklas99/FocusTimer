@@ -41,10 +41,10 @@ namespace FocusTimer.App.Services
             this._isInitialized = false;
         }
 
-        #pragma warning disable CS0067
+#pragma warning disable CS0067
         /// <inheritdoc/>
         public event EventHandler<MenuActionEventArgs>? MenuAction;
-        #pragma warning restore CS0067
+#pragma warning restore CS0067
 
         /// <inheritdoc/>
         public event EventHandler? OnEntriesLogged;

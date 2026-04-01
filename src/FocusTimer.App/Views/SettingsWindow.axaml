@@ -110,20 +110,20 @@
                         <!-- Theme Presets Section -->
                         <TextBlock Classes="SectionHeader" Text="Theme Presets" />
                         <Grid ColumnDefinitions="*,Auto,Auto,Auto">
-                            <ComboBox Grid.Column="0" 
+                            <ComboBox Grid.Column="0"
                                       SelectedItem="{Binding SelectedThemeName}"
                                       ItemsSource="{Binding AvailableThemes}"
                                       HorizontalAlignment="Stretch" />
-                            <Button Grid.Column="1" Content="Import..." 
+                            <Button Grid.Column="1" Content="Import..."
                                     Command="{Binding ImportThemeCommand}"
-                                    CommandParameter="{Binding $parent[Window]}" 
+                                    CommandParameter="{Binding $parent[Window]}"
                                     Width="80" Margin="10,0,0,0" />
-                            <Button Grid.Column="2" Content="Export..." 
+                            <Button Grid.Column="2" Content="Export..."
                                     Command="{Binding ExportThemeCommand}"
-                                    CommandParameter="{Binding $parent[Window]}" 
+                                    CommandParameter="{Binding $parent[Window]}"
                                     Width="80" Margin="10,0,0,0" />
-                            <Button Grid.Column="3" Content="Reset" 
-                                    Command="{Binding ResetThemeCommand}" 
+                            <Button Grid.Column="3" Content="Reset"
+                                    Command="{Binding ResetThemeCommand}"
                                     Width="80" Margin="10,0,0,0" />
                         </Grid>
 
@@ -188,7 +188,7 @@
                         </Grid>
 
                         <!-- Opacity Controls Section -->
-                        
+
                         <TextBlock Classes="SectionHeader" Text="Opacity Controls" />
                         <Grid ColumnDefinitions="140,*,Auto" RowDefinitions="Auto,Auto,Auto,Auto">
                             <TextBlock Grid.Row="0" Grid.Column="0" Classes="SettingLabel" Text="Background:" />
@@ -257,7 +257,7 @@
                         </Grid>
 
                         <CheckBox IsChecked="{Binding Settings.UseCompactMode}" Content="Use compact mode" ToolTip.Tip="Switches the timer widget into a minimal mode" />
-                        <TextBlock TextWrapping="Wrap" FontSize="12" Foreground="{DynamicResource SettingsLabelTextBrush}" 
+                        <TextBlock TextWrapping="Wrap" FontSize="12" Foreground="{DynamicResource SettingsLabelTextBrush}"
                                    Text="Note: Color changes apply immediately. Use hex format (#RRGGBBAA or #RRGGBB). Import/export .fttheme files to share themes." />
                     </StackPanel>
                 </ScrollViewer>

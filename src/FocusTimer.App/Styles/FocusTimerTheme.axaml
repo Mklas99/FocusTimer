@@ -33,8 +33,8 @@
         <Setter Property="Height" Value="20"/>
         <Setter Property="HorizontalAlignment" Value="Center"/>
         <Setter Property="VerticalAlignment" Value="Center"/>
-        <Setter Property="Padding" Value="4"/>
-        <Setter Property="Margin" Value="4"/>
+        <Setter Property="Padding" Value="3"/>
+        <Setter Property="Margin" Value="3"/>
         <Setter Property="Cursor" Value="Hand"/>
         <Setter Property="Focusable" Value="False"/>
 
@@ -43,6 +43,10 @@
     <!-- Pseudo-class tweaks for icon buttons -->
     <Style Selector="Button.icon-button:pointerover">
         <Setter Property="Background" Value="#1A000000"/>
+    </Style>
+    <!-- Pseudo-class tweaks for icon buttons -->
+    <Style Selector="Button.icon-button:hover">
+        <Setter Property="Background" Value="#1AFFFFFF"/>
     </Style>
 
     <Style Selector="Button.icon-button:pressed">

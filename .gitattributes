@@ -1,0 +1,45 @@
+# Recommended .gitattributes for FocusTimer (C#/.NET, scripts, docs)
+
+# C# source files (force CRLF for Windows compatibility)
+*.cs text eol=crlf
+*.csproj text eol=crlf
+*.sln text eol=crlf
+*.props text eol=crlf
+*.targets text eol=crlf
+*.config text eol=crlf
+*.resx text eol=crlf
+
+# Shell scripts (force LF for Unix compatibility)
+*.sh text eol=lf
+
+# PowerShell scripts (force CRLF for Windows)
+*.ps1 text eol=crlf
+
+# Batch files (force CRLF)
+*.bat text eol=crlf
+
+# Markdown and documentation (use LF)
+*.md text eol=lf
+
+# JSON files (use LF)
+*.json text eol=lf
+
+# YAML files (use LF)
+*.yml text eol=lf
+*.yaml text eol=lf
+
+# Images and binaries (never modify)
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.zip binary
+*.exe binary
+*.dll binary
+*.pdb binary
+*.wixpdb binary
+
+# Catch-all: auto-detect text files
+* text=auto

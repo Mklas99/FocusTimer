@@ -467,10 +467,6 @@ namespace FocusTimer.App.Services
                 {
                     this._timerWindow.Opacity = 1.0;
                     this._timerWindow.Topmost = this._currentSettings.AlwaysOnTop;
-
-                    // Apply scale via RenderTransform
-                    var scale = this._currentSettings.WidgetScale;
-                    this._timerWindow.RenderTransform = new Avalonia.Media.ScaleTransform(scale, scale);
                 }
 
                 // Re-register hotkeys with new settings

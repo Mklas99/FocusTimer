@@ -1,10 +1,10 @@
 <UserControl xmlns="https://github.com/avaloniaui"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:converters="using:FocusTimer.App.Converters"
-             xmlns:materialIcons="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
-             xmlns:vm="using:FocusTimer.App.ViewModels" 
-             x:DataType="vm:TimerWidgetViewModel"
-             x:Class="FocusTimer.App.Views.FullModeView">
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:converters="using:FocusTimer.App.Converters"
+    xmlns:materialIcons="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
+    xmlns:vm="using:FocusTimer.App.ViewModels"
+    x:DataType="vm:TimerWidgetViewModel"
+    x:Class="FocusTimer.App.Views.FullModeView">
     <UserControl.Resources>
         <converters:PlayPauseConverter x:Key="PlayPauseConverter" />
         <converters:BooleanNegationConverter x:Key="BooleanNegationConverter" />
@@ -12,84 +12,100 @@
     </UserControl.Resources>
 
     <Grid RowDefinitions="Auto,Auto"
-          ColumnDefinitions="Auto">
+        ColumnDefinitions="Auto"
+        VerticalAlignment="Center"
+        HorizontalAlignment="Center">
         <!-- Row 0: main controls -->
         <Grid Grid.Row="0"
-              ColumnDefinitions="Auto,*,Auto,Auto,Auto,Auto"
-              VerticalAlignment="Center">
+            ColumnDefinitions="Auto,Auto,Auto,Auto,Auto"
+            VerticalAlignment="Center">
             <!-- Timer -->
             <TextBlock Grid.Column="0"
-                       Text="{Binding ElapsedFormatted}"
-                       Classes="timer-text"
-                       Opacity="{Binding EffectiveClockOpacity}" />
+                Text="{Binding ElapsedFormatted}"
+                Classes="timer-text"
+                FontSize="{Binding MainTimerFontSize}"
+                Width="{Binding MainTimerTextWidth}"
+                TextAlignment="Center"
+                VerticalAlignment="Center"
+                Opacity="{Binding EffectiveClockOpacity}" />
 
             <!-- Play/Pause Button -->
-            <Button Grid.Column="2"
-                    Command="{Binding ToggleCommand}"
-                    Classes="icon-button"
-                    ToolTip.Tip="Start/Pause"
-                    Opacity="{Binding EffectiveControlsOpacity}">
-                <materialIcons:MaterialIcon Kind="{Binding IsRunning, Converter={StaticResource PlayPauseConverter}}"
-                                            Foreground="{DynamicResource SecondaryTextBrush}"
-                                            Width="16"
-                                            Height="16" />
+            <Button Grid.Column="1"
+                Command="{Binding ToggleCommand}"
+                Classes="icon-button"
+                ToolTip.Tip="Start/Pause"
+                Width="{Binding ButtonSize}"
+                Height="{Binding ButtonSize}"
+                Opacity="{Binding EffectiveControlsOpacity}">
+                <materialIcons:MaterialIcon
+                    Kind="{Binding IsRunning, Converter={StaticResource PlayPauseConverter}}"
+                    Foreground="{DynamicResource SecondaryTextBrush}"
+                    Width="{Binding IconSize}"
+                    Height="{Binding IconSize}" />
             </Button>
 
             <!-- Reset Button -->
-            <Button Grid.Column="3"
-                    Command="{Binding ResetCommand}"
-                    Classes="icon-button"
-                    ToolTip.Tip="Reset"
-                    Opacity="{Binding EffectiveControlsOpacity}">
+            <Button Grid.Column="2"
+                Command="{Binding ResetCommand}"
+                Classes="icon-button"
+                ToolTip.Tip="Reset"
+                Width="{Binding ButtonSize}"
+                Height="{Binding ButtonSize}"
+                Opacity="{Binding EffectiveControlsOpacity}">
                 <materialIcons:MaterialIcon Kind="Refresh"
-                                            Foreground="{DynamicResource ButtonNormalBrush}"
-                                            Width="16"
-                                            Height="16" />
+                    Foreground="{DynamicResource ButtonNormalBrush}"
+                    Width="{Binding IconSize}"
+                    Height="{Binding IconSize}" />
             </Button>
 
             <!-- Project Input Toggle Button -->
-            <Button Grid.Column="4"
-                    Command="{Binding ToggleProjectInputCommand}"
-                    Classes="icon-button"
-                    ToolTip.Tip="Project Tag"
-                    Opacity="{Binding EffectiveControlsOpacity}">
+            <Button Grid.Column="3"
+                Command="{Binding ToggleProjectInputCommand}"
+                Classes="icon-button"
+                ToolTip.Tip="Project Tag"
+                Width="{Binding ButtonSize}"
+                Height="{Binding ButtonSize}"
+                Opacity="{Binding EffectiveControlsOpacity}">
                 <materialIcons:MaterialIcon Kind="ChevronDown"
-                                            Foreground="{DynamicResource ButtonNormalBrush}"
-                                            Width="16"
-                                            Height="16">
+                    Foreground="{DynamicResource ButtonNormalBrush}"
+                    Width="{Binding IconSize}"
+                    Height="{Binding IconSize}">
                     <materialIcons:MaterialIcon.RenderTransform>
-                        <RotateTransform Angle="{Binding IsProjectInputVisible, Converter={StaticResource BooleanToAngleConverter}}" />
+                        <RotateTransform
+                            Angle="{Binding IsProjectInputVisible, Converter={StaticResource BooleanToAngleConverter}}" />
                     </materialIcons:MaterialIcon.RenderTransform>
                 </materialIcons:MaterialIcon>
             </Button>
 
             <!-- Compact Mode Toggle Button -->
-            <Button Grid.Column="5"
-                    Command="{Binding ToggleCompactModeCommand}"
-                    Classes="icon-button"
-                    ToolTip.Tip="Toggle Compact Mode"
-                    Opacity="{Binding EffectiveControlsOpacity}">
+            <Button Grid.Column="4"
+                Command="{Binding ToggleCompactModeCommand}"
+                Classes="icon-button"
+                ToolTip.Tip="Toggle Compact Mode"
+                Width="{Binding ButtonSize}"
+                Height="{Binding ButtonSize}"
+                Opacity="{Binding EffectiveControlsOpacity}">
                 <materialIcons:MaterialIcon Kind="Menu"
-                                            Foreground="{DynamicResource ButtonNormalBrush}"
-                                            Width="15"
-                                            Height="15" />
+                    Foreground="{DynamicResource ButtonNormalBrush}"
+                    Width="{Binding IconSize}"
+                    Height="{Binding IconSize}" />
             </Button>
         </Grid>
 
         <!-- Row 1: project label & box -->
         <Grid Grid.Row="1"
-              ColumnDefinitions="Auto,*,Auto"
-              Margin="0,6,0,0"
-              IsVisible="{Binding IsProjectInputVisible}">
+            ColumnDefinitions="Auto,*,Auto"
+            Margin="0,6,0,0"
+            IsVisible="{Binding IsProjectInputVisible}">
             <TextBlock Grid.Column="0"
-                       Text="Project:"
-                       FontSize="14"
-                       Foreground="{DynamicResource SecondaryTextBrush}"
-                       VerticalAlignment="Center" />
+                Text="Project:"
+                FontSize="{Binding ProjectFontSize}"
+                Foreground="{DynamicResource SecondaryTextBrush}"
+                VerticalAlignment="Center" />
             <TextBox Grid.Column="1"
-                     Classes="project-tag"
-                     Text="{Binding ProjectTag}"
-                     Watermark="optional" />
+                Classes="project-tag"
+                Text="{Binding ProjectTag}"
+                Watermark="optional" />
         </Grid>
     </Grid>
 </UserControl>

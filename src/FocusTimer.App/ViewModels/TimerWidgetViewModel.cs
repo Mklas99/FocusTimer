@@ -6,6 +6,7 @@ namespace FocusTimer.App.ViewModels
     using System.Threading;
     using System.Threading.Tasks;
     using System.Windows.Input;
+    using Avalonia.Layout;
     using Avalonia.ReactiveUI;
     using Avalonia.Threading;
     using FocusTimer.App.Services;
@@ -40,6 +41,18 @@ namespace FocusTimer.App.ViewModels
         private Settings _settings;
         private bool _isProjectInputVisible = false;
 
+        // Responsive layout fields
+        private Orientation _buttonPanelOrientation = Orientation.Horizontal;
+        private double _mainTimerFontSize = 36;
+        private double _compactTimerFontSize = 25;
+        private double _mainTimerTextWidth = 182;
+        private double _compactTimerTextWidth = 126;
+        private double _projectFontSize = 14;
+        private double _buttonSize = 20;
+        private double _iconSize = 16;
+        private double _compactButtonSize = 16;
+        private double _compactIconSize = 13;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="TimerWidgetViewModel"/> class.
         /// </summary>
@@ -62,11 +75,6 @@ namespace FocusTimer.App.ViewModels
             Core.Interfaces.IEventBus eventBus)
         {
             // Defensive: Ensure ViewModel is constructed on the UI thread
-            if (!Dispatcher.UIThread.CheckAccess())
-            {
-                var appController = AppHost.Services.GetService(typeof(AppController)) as AppController;
-            }
-
             this._settingsProvider = settingsProvider;
             this._logWriter = logWriter;
             this._sessionRepository = sessionRepository;
@@ -113,6 +121,96 @@ namespace FocusTimer.App.ViewModels
                     }
                 },
                 outputScheduler: RxApp.MainThreadScheduler);
+        }
+
+        /// <summary>
+        /// Gets or sets the orientation of the button panel for responsive layout.
+        /// </summary>
+        public Orientation ButtonPanelOrientation
+        {
+            get => this._buttonPanelOrientation;
+            set => this.RaiseAndSetIfChanged(ref this._buttonPanelOrientation, value);
+        }
+
+        /// <summary>
+        /// Gets or sets the main timer font size for responsive layout.
+        /// </summary>
+        public double MainTimerFontSize
+        {
+            get => this._mainTimerFontSize;
+            set => this.RaiseAndSetIfChanged(ref this._mainTimerFontSize, value);
+        }
+
+        /// <summary>
+        /// Gets or sets the compact timer font size for responsive layout.
+        /// </summary>
+        public double CompactTimerFontSize
+        {
+            get => this._compactTimerFontSize;
+            set => this.RaiseAndSetIfChanged(ref this._compactTimerFontSize, value);
+        }
+
+        /// <summary>
+        /// Gets or sets a fixed width for the main timer text to avoid window jitter while ticking.
+        /// </summary>
+        public double MainTimerTextWidth
+        {
+            get => this._mainTimerTextWidth;
+            set => this.RaiseAndSetIfChanged(ref this._mainTimerTextWidth, value);
+        }
+
+        /// <summary>
+        /// Gets or sets a fixed width for the compact timer text to avoid window jitter while ticking.
+        /// </summary>
+        public double CompactTimerTextWidth
+        {
+            get => this._compactTimerTextWidth;
+            set => this.RaiseAndSetIfChanged(ref this._compactTimerTextWidth, value);
+        }
+
+        /// <summary>
+        /// Gets or sets the button size for responsive layout.
+        /// </summary>
+        public double ButtonSize
+        {
+            get => this._buttonSize;
+            set => this.RaiseAndSetIfChanged(ref this._buttonSize, value);
+        }
+
+        /// <summary>
+        /// Gets or sets the icon size for responsive layout.
+        /// </summary>
+        public double IconSize
+        {
+            get => this._iconSize;
+            set => this.RaiseAndSetIfChanged(ref this._iconSize, value);
+        }
+
+        /// <summary>
+        /// Gets or sets the compact-mode button size for responsive layout.
+        /// </summary>
+        public double CompactButtonSize
+        {
+            get => this._compactButtonSize;
+            set => this.RaiseAndSetIfChanged(ref this._compactButtonSize, value);
+        }
+
+        /// <summary>
+        /// Gets or sets the compact-mode icon size for responsive layout.
+        /// </summary>
+        public double CompactIconSize
+        {
+            get => this._compactIconSize;
+            set => this.RaiseAndSetIfChanged(ref this._compactIconSize, value);
+        }
+
+        /// <summary>
+        /// Gets or sets the secondary font size used by smaller labels.
+        /// </summary>
+        public double ProjectFontSize
+        {
+            get => this._projectFontSize;
+            set => this.RaiseAndSetIfChanged(ref this._projectFontSize, value);
         }
 
         /// <summary>
@@ -461,6 +559,22 @@ namespace FocusTimer.App.ViewModels
             }
         }
 
+        // Call this method whenever WidgetScale changes
+        private void UpdateResponsiveLayout()
+        {
+            var scale = this.Settings?.WidgetScale ?? 1.0;
+            this.MainTimerFontSize = 36 * scale;
+            this.CompactTimerFontSize = 25 * scale;
+            this.MainTimerTextWidth = 175 * scale;
+            this.CompactTimerTextWidth = 115 * scale;
+            this.ProjectFontSize = 14 * scale;
+            this.ButtonSize = 25 * (scale / 2);
+            this.IconSize = 28 * (scale / 2);
+            this.CompactButtonSize = this.ButtonSize * 0.7;
+            this.CompactIconSize = this.IconSize * 0.7;
+            this.ButtonPanelOrientation = scale >= 1.25 ? Orientation.Vertical : Orientation.Horizontal;
+        }
+
         private void Toggle()
         {
             if (this._timerService.CurrentState == TimerState.Running)
@@ -641,8 +755,19 @@ namespace FocusTimer.App.ViewModels
             if (newSettings is System.ComponentModel.INotifyPropertyChanged notifier)
             {
                 this._settingsNotifier = notifier;
-                this._settingsNotifier.PropertyChanged += this.Settings_PropertyChanged;
+                this._settingsNotifier.PropertyChanged += (s, e) =>
+                {
+                    if (e.PropertyName == nameof(this.Settings.WidgetScale))
+                    {
+                        this.UpdateResponsiveLayout();
+                    }
+
+                    this.Settings_PropertyChanged(s, e);
+                };
             }
+
+            // Initial call
+            this.UpdateResponsiveLayout();
         }
 
         private void Settings_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
