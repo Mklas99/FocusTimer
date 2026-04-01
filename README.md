@@ -181,6 +181,18 @@ Control log level via `SERILOG_MINIMUM_LEVEL` environment variable.
 dotnet test
 ```
 
+Run per-project unit-coverage with 60% minimum thresholds:
+
+```powershell
+./scripts/run-unit-coverage.ps1
+```
+
+Override the threshold value when needed:
+
+```powershell
+./scripts/run-unit-coverage.ps1 -Threshold 70
+```
+
 ### SonarQube Analysis (Optional)
 
 ```powershell
