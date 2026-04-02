@@ -302,12 +302,12 @@ namespace FocusTimer.App.ViewModels
         {
             return new LinearGradientBrush
             {
-                StartPoint = new RelativePoint(0, 0.5, RelativeUnit.Relative),
-                EndPoint = new RelativePoint(1, 0.5, RelativeUnit.Relative),
+                StartPoint = new RelativePoint(0.5, 0, RelativeUnit.Relative),
+                EndPoint = new RelativePoint(0.5, 1, RelativeUnit.Relative),
                 GradientStops = new GradientStops
                 {
-                    new GradientStop(Color.FromArgb(0, color.R, color.G, color.B), 0),
-                    new GradientStop(Color.FromArgb(byte.MaxValue, color.R, color.G, color.B), 1),
+                    new GradientStop(Color.FromArgb(byte.MaxValue, color.R, color.G, color.B), 0),
+                    new GradientStop(Color.FromArgb(0, color.R, color.G, color.B), 1),
                 },
             };
         }

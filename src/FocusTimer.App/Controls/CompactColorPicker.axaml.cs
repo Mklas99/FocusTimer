@@ -13,6 +13,7 @@ namespace FocusTimer.App.Controls
     {
         private bool _isDraggingSurface;
         private bool _isDraggingHue;
+        private bool _isDraggingAlpha;
         private ColorPickerWindowViewModel? _viewModel;
 
         /// <summary>
@@ -25,6 +26,7 @@ namespace FocusTimer.App.Controls
             this.DataContextChanged += this.OnDataContextChanged;
             this.SaturationValueSurface.SizeChanged += this.OnPickerSizeChanged;
             this.HueStrip.SizeChanged += this.OnPickerSizeChanged;
+            this.AlphaStrip.SizeChanged += this.OnPickerSizeChanged;
 
             this.AttachViewModel(this.DataContext as ColorPickerWindowViewModel);
             this.UpdateThumbPositions();
@@ -86,6 +88,34 @@ namespace FocusTimer.App.Controls
             this._isDraggingHue = false;
         }
 
+        private void OnAlphaPointerPressed(object? sender, PointerPressedEventArgs e)
+        {
+            this._isDraggingAlpha = true;
+            e.Pointer.Capture(this.AlphaStrip);
+            this.UpdateAlpha(e.GetPosition(this.AlphaStrip));
+        }
+
+        private void OnAlphaPointerMoved(object? sender, PointerEventArgs e)
+        {
+            if (!this._isDraggingAlpha)
+            {
+                return;
+            }
+
+            this.UpdateAlpha(e.GetPosition(this.AlphaStrip));
+        }
+
+        private void OnAlphaPointerReleased(object? sender, PointerReleasedEventArgs e)
+        {
+            this._isDraggingAlpha = false;
+            e.Pointer.Capture(null);
+        }
+
+        private void OnAlphaPointerCaptureLost(object? sender, PointerCaptureLostEventArgs e)
+        {
+            this._isDraggingAlpha = false;
+        }
+
         private void OnDataContextChanged(object? sender, EventArgs e)
         {
             this.AttachViewModel(this.DataContext as ColorPickerWindowViewModel);
@@ -97,6 +127,7 @@ namespace FocusTimer.App.Controls
             if (e.PropertyName is nameof(ColorPickerWindowViewModel.Hue)
                 or nameof(ColorPickerWindowViewModel.Saturation)
                 or nameof(ColorPickerWindowViewModel.Value)
+                or nameof(ColorPickerWindowViewModel.Alpha)
                 or null)
             {
                 this.UpdateThumbPositions();
@@ -153,6 +184,17 @@ namespace FocusTimer.App.Controls
             this._viewModel.Hue = Math.Clamp(point.Y / height, 0, 1) * 360;
         }
 
+        private void UpdateAlpha(Avalonia.Point point)
+        {
+            if (this._viewModel is null)
+            {
+                return;
+            }
+
+            var height = Math.Max(this.AlphaStrip.Bounds.Height, 1);
+            this._viewModel.Alpha = Math.Clamp(point.Y / height, 0, 1) * 255;
+        }
+
         private void UpdateThumbPositions()
         {
             if (this._viewModel is null)
@@ -168,6 +210,10 @@ namespace FocusTimer.App.Controls
             var hueHeight = Math.Max(this.HueStrip.Bounds.Height, 1);
             Canvas.SetLeft(this.HueThumb, 0);
             Canvas.SetTop(this.HueThumb, Math.Clamp((this._viewModel.Hue / 360) * hueHeight, 0, hueHeight));
+
+            var alphaHeight = Math.Max(this.AlphaStrip.Bounds.Height, 1);
+            Canvas.SetLeft(this.AlphaThumb, 0);
+            Canvas.SetTop(this.AlphaThumb, Math.Clamp((this._viewModel.Alpha / 255) * alphaHeight, 0, alphaHeight));
         }
     }
 }

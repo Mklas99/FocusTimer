@@ -7,10 +7,11 @@
              x:Class="FocusTimer.App.Controls.CompactColorPicker"
              x:DataType="vm:ColorPickerWindowViewModel">
 
-    <Grid ColumnDefinitions="190,18,96" RowDefinitions="190">
+    <Grid ColumnDefinitions="*,18,18,110" RowDefinitions="Auto">
         <Border Grid.Column="0"
                 x:Name="SaturationValueSurface"
                 Classes="color-picker-surface"
+                Height="220"
                 Margin="0,0,10,0"
                 PointerPressed="OnSaturationValuePointerPressed"
                 PointerMoved="OnSaturationValuePointerMoved"
@@ -37,7 +38,7 @@
         <Border Grid.Column="1"
                 x:Name="HueStrip"
                 Classes="color-picker-hue-strip"
-            Margin="0,0,10,0"
+                Margin="0,0,4,0"
                 PointerPressed="OnHuePointerPressed"
                 PointerMoved="OnHuePointerMoved"
                 PointerReleased="OnHuePointerReleased"
@@ -58,8 +59,33 @@
             </Grid>
         </Border>
 
-        <StackPanel Grid.Column="2" Spacing="8">
-            <Border Classes="color-picker-preview" Height="56">
+        <Border Grid.Column="2"
+                x:Name="AlphaStrip"
+                Classes="color-picker-hue-strip"
+                Margin="0,0,10,0"
+                PointerPressed="OnAlphaPointerPressed"
+                PointerMoved="OnAlphaPointerMoved"
+                PointerReleased="OnAlphaPointerReleased"
+                PointerCaptureLost="OnAlphaPointerCaptureLost">
+            <Grid ClipToBounds="True">
+                <Border Background="{DynamicResource ColorPickerTransparencyBrush}" />
+                <Border Background="{Binding AlphaGradientBrush}" />
+                <Canvas>
+                    <Border x:Name="AlphaThumb"
+                            Classes="color-picker-strip-thumb"
+                            Width="26"
+                            Height="4"
+                            RenderTransformOrigin="0.5,0.5">
+                        <Border.RenderTransform>
+                            <TranslateTransform X="-4" Y="-2" />
+                        </Border.RenderTransform>
+                    </Border>
+                </Canvas>
+            </Grid>
+        </Border>
+
+        <StackPanel Grid.Column="3" Spacing="6">
+            <Border Classes="color-picker-preview" Height="64">
                 <Grid>
                     <Border Background="{DynamicResource ColorPickerTransparencyBrush}" />
                     <Border Background="{Binding PreviewBrush}" />
@@ -72,29 +98,35 @@
                 </Grid>
             </Border>
 
-            <Border Classes="color-picker-chip">
-                <TextBlock HorizontalAlignment="Center"
-                           TextAlignment="Center"
-                           Text="{Binding Hue, StringFormat='H {0:F0}'}" />
-            </Border>
+            <StackPanel Spacing="2">
+                <TextBlock Classes="settings-label" Text="H" />
+                <NumericUpDown Classes="small-spinners"
+                               Minimum="0"
+                               Maximum="360"
+                               Increment="1"
+                               FormatString="0"
+                               Value="{Binding Hue}" />
+            </StackPanel>
 
-            <Border Classes="color-picker-chip">
-                <TextBlock HorizontalAlignment="Center"
-                           TextAlignment="Center"
-                           Text="{Binding SaturationPercent, StringFormat='S {0:F0}%'}" />
-            </Border>
+            <StackPanel Spacing="2">
+                <TextBlock Classes="settings-label" Text="S %" />
+                <NumericUpDown Classes="small-spinners"
+                               Minimum="0"
+                               Maximum="100"
+                               Increment="1"
+                               FormatString="0"
+                               Value="{Binding SaturationPercent}" />
+            </StackPanel>
 
-            <Border Classes="color-picker-chip">
-                <TextBlock HorizontalAlignment="Center"
-                           TextAlignment="Center"
-                           Text="{Binding ValuePercent, StringFormat='V {0:F0}%'}" />
-            </Border>
-
-            <Border Classes="color-picker-chip">
-                <TextBlock HorizontalAlignment="Center"
-                           TextAlignment="Center"
-                           Text="{Binding Alpha, StringFormat='A {0:F0}'}" />
-            </Border>
+            <StackPanel Spacing="2">
+                <TextBlock Classes="settings-label" Text="V %" />
+                <NumericUpDown Classes="small-spinners"
+                               Minimum="0"
+                               Maximum="100"
+                               Increment="1"
+                               FormatString="0"
+                               Value="{Binding ValuePercent}" />
+            </StackPanel>
         </StackPanel>
     </Grid>
 </UserControl>
