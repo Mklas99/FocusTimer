@@ -1,0 +1,7 @@
+<Project>
+  <PropertyGroup>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <NoWarn>$(NoWarn);1591;SA1101;SA1502;SA1600</NoWarn>
+  </PropertyGroup>
+</Project>
