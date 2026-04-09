@@ -10,13 +10,15 @@
     WindowStartupLocation="Manual"
     SystemDecorations="None"
     ShowInTaskbar="False"
-    TransparencyLevelHint="Transparent"
-    CanResize="True"
+    TransparencyLevelHint="Transparent, Blur, AcrylicBlur, Mica"
+    CanResize="False"
     Background="Transparent"
-    TransparencyBackgroundFallback="Pink"
-    ExtendClientAreaToDecorationsHint="False"
+    TransparencyBackgroundFallback="Transparent"
+    ExtendClientAreaToDecorationsHint="True"
     ExtendClientAreaChromeHints="NoChrome"
     ExtendClientAreaTitleBarHeightHint="-1"
+    CornerRadius="{DynamicResource WidgetCornerRadius}"
+    Opacity="{Binding OverallOpacity}"
     BorderBrush="Transparent"
     BorderThickness="0"
     SizeToContent="WidthAndHeight"
@@ -28,35 +30,49 @@
         <converters:BooleanToAngleConverter x:Key="BooleanToAngleConverter" />
     </Window.Resources>
 
-    <!-- Root container: keep window transparent, all visuals inside -->
-    <Border Background="Transparent"
+    <Grid x:Name="WidgetRoot"
+        Background="Transparent"
+        ClipToBounds="False">
+        <!-- Single glass surface: no nested translucent layers -->
+        <Border x:Name="WidgetSurface"
+        Background="Transparent"
+        BorderBrush="Transparent"
+        BorderThickness="0"
         CornerRadius="{DynamicResource WidgetCornerRadius}"
-        Padding="{DynamicResource WidgetPadding}"
+        ClipToBounds="True"
+        Padding="0"
+        PointerPressed="WindowDragArea_PointerPressed"
+        PointerEntered="DragArea_PointerEnter"
+        PointerExited="DragArea_PointerLeave"
         VerticalAlignment="Center"
         HorizontalAlignment="Center">
 
-        <Grid RowDefinitions="Auto,Auto"
+            <Grid x:Name="ContentLayer"
+            RowDefinitions="Auto,Auto"
+            Background="Transparent"
+            ClipToBounds="True"
             VerticalAlignment="Center"
             HorizontalAlignment="Center">
-            <!-- Background layer -->
-            <Border Grid.RowSpan="2"
-                CornerRadius="{DynamicResource WidgetCornerRadius}"
-                Background="{Binding BackgroundBrush}"
-                Opacity="{Binding EffectiveBackgroundOpacity}" />
+                <Border x:Name="WidgetBaseLayer"
+                    Grid.RowSpan="2"
+                    Background="{DynamicResource WidgetBaseLayerBrush}"
+                    CornerRadius="{DynamicResource WidgetCornerRadius}"
+                    Opacity="{Binding EffectiveWidgetBaseOpacity}"
+                    IsHitTestVisible="False"
+                    BorderBrush="Transparent"
+                    BorderThickness="0" />
 
+                <Border x:Name="PanelMaterialLayer"
+                    Grid.RowSpan="2"
+                    Background="{DynamicResource WindowBackgroundBrush}"
+                    BorderBrush="{DynamicResource WindowBorderBrush}"
+                    BorderThickness="0"
+                    CornerRadius="{DynamicResource WidgetCornerRadius}"
+                    Opacity="{Binding EffectiveBackgroundOpacity}"
+                    IsHitTestVisible="False" />
 
-            <!-- Drag area fills available space -->
-            <Border Grid.RowSpan="2"
-                x:Name="DragArea"
-                Background="Transparent"
-                BorderBrush="Transparent"
-                BorderThickness="0"
-                PointerPressed="WindowDragArea_PointerPressed"
-                PointerEntered="DragArea_PointerEnter"
-                PointerExited="DragArea_PointerLeave"
-                Cursor="SizeAll" />
-            <!-- Minimize button (top right) -->
-            <Button Grid.Row="0"
+                <!-- Minimize button (top right) -->
+                <Button Grid.Row="0"
                 HorizontalAlignment="Right"
                 VerticalAlignment="Top"
                 Background="Transparent"
@@ -68,27 +84,30 @@
                 Margin="0"
                 Click="MinimizeButton_Click"
                 ToolTip.Tip="Minimize"
-                Opacity="{Binding EffectiveControlsOpacity}">
-                <materialIcons:MaterialIcon Kind="WindowMinimize"
+                Opacity="{Binding EffectiveControlsOpacity}"
+                IsHitTestVisible="{Binding AreControlsInteractable}">
+                    <materialIcons:MaterialIcon Kind="WindowMinimize"
                     Foreground="{DynamicResource SecondaryTextBrush}"
                     Width="16"
                     Height="10" />
-            </Button>
-            <!-- Content area: switch between full and compact modes -->
-            <Grid Grid.Row="1"
+                </Button>
+                <!-- Content area: switch between full and compact modes -->
+                <Grid Grid.Row="1"
+                Background="Transparent"
                 VerticalAlignment="Center"
                 HorizontalAlignment="Center">
-                <views:FullModeView
+                    <views:FullModeView
                     Margin="10,-10,10,5"
                     VerticalAlignment="Center"
                     HorizontalAlignment="Center"
                     IsVisible="{Binding Settings.UseCompactMode, Converter={StaticResource BooleanNegationConverter}}" />
-                <views:CompactModeView
+                    <views:CompactModeView
                     Margin="10,-10,10,5"
                     VerticalAlignment="Center"
                     HorizontalAlignment="Center"
                     IsVisible="{Binding Settings.UseCompactMode}" />
+                </Grid>
             </Grid>
-        </Grid>
-    </Border>
+        </Border>
+    </Grid>
 </Window>

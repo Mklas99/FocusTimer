@@ -346,6 +346,16 @@ namespace FocusTimer.App.ViewModels
         public double EffectiveBackgroundOpacity => this.BackgroundOpacity * this.OverallOpacity;
 
         /// <summary>
+        /// Gets the effective opacity for the rear widget shell (base layer) with the overall multiplier applied.
+        /// </summary>
+        public double EffectiveWidgetBaseOpacity => (this.Settings?.Theme?.WidgetBaseOpacity ?? 1.0) * this.OverallOpacity;
+
+        /// <summary>
+        /// Gets a value indicating whether the controls layer accepts pointer input.
+        /// </summary>
+        public bool AreControlsInteractable => true;
+
+        /// <summary>
         /// Gets the effective opacity for the clock with the overall multiplier applied.
         /// </summary>
         public double EffectiveClockOpacity => this.ClockOpacity * this.OverallOpacity;
@@ -482,6 +492,12 @@ namespace FocusTimer.App.ViewModels
                 {
                     this.Settings = loadedSettings;
                 });
+
+                this._sessionTracker.SetTrackingEnabled(this.Settings.WorkLoggingEnabled);
+                if (this.IsRunning && this.Settings.WorkLoggingEnabled)
+                {
+                    await this._sessionTracker.StartAsync(this.ProjectTag);
+                }
             }
             catch (Exception ex)
             {
@@ -698,6 +714,12 @@ namespace FocusTimer.App.ViewModels
                 currentSettings = this._settings;
             }
 
+            if (!currentSettings.WorkLoggingEnabled)
+            {
+                this._logWriter.LogDebug($"Skipping persistence because work logging is disabled during {reason}.");
+                return;
+            }
+
             this._logWriter.LogInformation($"Persisting {entries.Count} time entries due to {reason}.");
             await this._sessionRepository.SaveSessionAsync(entries);
             this._logWriter.LogInformation($"Successfully logged {entries.Count} time entries to {currentSettings.WorklogDirectory}");
@@ -778,6 +800,15 @@ namespace FocusTimer.App.ViewModels
                 this.RaisePropertyChanged(nameof(this.EffectiveBackgroundOpacity));
                 this.RaisePropertyChanged(nameof(this.EffectiveClockOpacity));
                 this.RaisePropertyChanged(nameof(this.EffectiveControlsOpacity));
+            }
+            else if (e.PropertyName == nameof(this.Settings.WorkLoggingEnabled))
+            {
+                this._sessionTracker.SetTrackingEnabled(this.Settings.WorkLoggingEnabled);
+
+                if (this.Settings.WorkLoggingEnabled && this.IsRunning)
+                {
+                    _ = this._sessionTracker.StartAsync(this.ProjectTag);
+                }
             }
         }
 

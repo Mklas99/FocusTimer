@@ -9,8 +9,9 @@ namespace FocusTimer.Core.Interfaces
         /// Shows a break reminder notification.
         /// </summary>
         /// <param name="message">The notification message to display.</param>
+        /// <param name="requireAcknowledgement">Whether the reminder should remain visible until acknowledged by the user.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        Task ShowBreakReminderAsync(string message);
+        Task ShowBreakReminderAsync(string message, bool requireAcknowledgement);
 
         /// <summary>
         /// Shows a general notification.

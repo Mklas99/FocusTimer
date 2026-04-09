@@ -92,11 +92,12 @@ namespace FocusTimer.App.Services
             this.UpdateColorResource(resources, "DangerColor", theme.DangerColor);
             this.UpdateColorResource(resources, "SuccessColor", theme.SuccessColor);
             this.UpdateColorResource(resources, "WarningColor", theme.WarningColor);
+            this.UpdateFluentAccentResources(resources, theme.AccentPrimary);
 
             // Input Controls
             this.UpdateColorResource(resources, "InputBackgroundColor", theme.InputBackground);
             this.UpdateColorResource(resources, "InputBorderColor", theme.InputBorder);
-            this.UpdateColorResource(resources, "InputFocusBorderColor", theme.InputFocusBorder);
+            this.UpdateColorResource(resources, "InputFocusBorderColor", theme.AccentPrimary);
             this.UpdateColorResource(resources, "InputTextColor", theme.InputText);
 
             // Project Tag
@@ -117,10 +118,58 @@ namespace FocusTimer.App.Services
 
             // Tab Control
             this.UpdateColorResource(resources, "TabBackgroundColor", theme.TabBackground);
-            this.UpdateColorResource(resources, "TabSelectedBackgroundColor", theme.TabSelectedBackground);
+            this.UpdateColorResource(resources, "TabSelectedBackgroundColor", theme.AccentPrimary);
             this.UpdateColorResource(resources, "TabHoverBackgroundColor", theme.TabHoverBackground);
             this.UpdateColorResource(resources, "TabTextColor", theme.TabText);
             this.UpdateColorResource(resources, "TabSelectedTextColor", theme.TabSelectedText);
+
+            // Settings shell chrome
+            resources["SettingsAccordionHeaderBrush"] = new SolidColorBrush(Color.Parse(theme.SettingsBackground), 0.7);
+            resources["SettingsAccordionBorderBrush"] = new SolidColorBrush(Color.Parse(theme.AccentPrimary), 0.4);
+            resources["SettingsAccordionHeaderHoverBrush"] = new SolidColorBrush(Colors.White, 0.06);
+        }
+
+        private void UpdateFluentAccentResources(Avalonia.Controls.IResourceDictionary resources, string accentHex)
+        {
+            try
+            {
+                var accent = Color.Parse(accentHex);
+
+                // Fluent theme controls (CheckBox, Slider, TabControl indicators) consume these keys.
+                this.SetColorAndBrush(resources, "SystemAccentColor", accent);
+                this.SetColorAndBrush(resources, "SystemAccentColorLight1", this.Mix(accent, Colors.White, 0.2));
+                this.SetColorAndBrush(resources, "SystemAccentColorLight2", this.Mix(accent, Colors.White, 0.35));
+                this.SetColorAndBrush(resources, "SystemAccentColorLight3", this.Mix(accent, Colors.White, 0.5));
+                this.SetColorAndBrush(resources, "SystemAccentColorDark1", this.Mix(accent, Colors.Black, 0.18));
+                this.SetColorAndBrush(resources, "SystemAccentColorDark2", this.Mix(accent, Colors.Black, 0.33));
+                this.SetColorAndBrush(resources, "SystemAccentColorDark3", this.Mix(accent, Colors.Black, 0.5));
+
+                // Fluent v2 naming used by some control templates.
+                this.SetColorAndBrush(resources, "AccentFillColorDefault", accent);
+                this.SetColorAndBrush(resources, "AccentFillColorSecondary", this.Mix(accent, Colors.White, 0.12));
+                this.SetColorAndBrush(resources, "AccentFillColorTertiary", this.Mix(accent, Colors.Black, 0.12));
+            }
+            catch (Exception ex)
+            {
+                this._logWriter?.LogError($"Failed to apply Fluent accent resources for '{accentHex}': {ex.Message}", ex);
+            }
+        }
+
+        private void SetColorAndBrush(Avalonia.Controls.IResourceDictionary resources, string key, Color color)
+        {
+            resources[key] = color;
+            resources[$"{key}Brush"] = new SolidColorBrush(color);
+        }
+
+        private Color Mix(Color source, Color target, double amount)
+        {
+            var clamped = Math.Clamp(amount, 0.0, 1.0);
+            byte Blend(byte a, byte b) => (byte)(a + ((b - a) * clamped));
+            return Color.FromArgb(
+                255,
+                Blend(source.R, target.R),
+                Blend(source.G, target.G),
+                Blend(source.B, target.B));
         }
 
         private void UpdateColorResource(Avalonia.Controls.IResourceDictionary resources, string key, string colorHex, double opacity = 1.0)

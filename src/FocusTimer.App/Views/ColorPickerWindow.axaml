@@ -1,0 +1,52 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:controls="using:FocusTimer.App.Controls"
+        xmlns:vm="using:FocusTimer.App.ViewModels"
+        mc:Ignorable="d"
+        x:Class="FocusTimer.App.Views.ColorPickerWindow"
+        x:DataType="vm:ColorPickerWindowViewModel"
+        Title="Select Color"
+    Width="396"
+    SizeToContent="Height"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False"
+        Background="{DynamicResource SettingsBackgroundBrush}"
+        Foreground="{DynamicResource PrimaryTextBrush}">
+
+    <Design.DataContext>
+        <vm:ColorPickerWindowViewModel>#0078D7</vm:ColorPickerWindowViewModel>
+    </Design.DataContext>
+
+    <Grid RowDefinitions="Auto,Auto,Auto" Margin="18">
+        <controls:CompactColorPicker Grid.Row="0" />
+
+        <Grid Grid.Row="1" RowDefinitions="Auto,Auto" ColumnDefinitions="*,*" Margin="0,14,0,0">
+            <!-- Row 0: Labels -->
+            <TextBlock Grid.Row="0" Grid.Column="0" Classes="settings-label" Text="Hex" />
+            <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" Spacing="5">
+                <TextBlock Classes="settings-label" Text="R" />
+                <TextBlock Classes="settings-label" Text="G" />
+                <TextBlock Classes="settings-label" Text="B" />
+            </StackPanel>
+
+            <!-- Row 1: Inputs -->
+            <TextBox Grid.Row="1" Grid.Column="0"
+                     Text="{Binding ColorHex}"
+                     Watermark="#RRGGBB or #AARRGGBB"
+                     Height="32"
+                     Margin="0,0,5,0" />
+            <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Spacing="5" Margin="5,0,0,0">
+                <NumericUpDown Classes="no-spinners" Minimum="0" Maximum="255" Increment="1" FormatString="0" Value="{Binding Red}" />
+                <NumericUpDown Classes="no-spinners" Minimum="0" Maximum="255" Increment="1" FormatString="0" Value="{Binding Green}" />
+                <NumericUpDown Classes="no-spinners" Minimum="0" Maximum="255" Increment="1" FormatString="0" Value="{Binding Blue}" />
+            </StackPanel>
+        </Grid>
+
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="10" Margin="0,16,0,0">
+            <Button Content="OK" Width="80" Click="OnOkClicked" IsDefault="True" />
+            <Button Content="Cancel" Width="80" Click="OnCancelClicked" IsCancel="True" />
+        </StackPanel>
+    </Grid>
+</Window>

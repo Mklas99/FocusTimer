@@ -11,7 +11,8 @@
         <converters:BooleanToAngleConverter x:Key="BooleanToAngleConverter" />
     </UserControl.Resources>
 
-    <Grid RowDefinitions="Auto,Auto"
+    <Grid x:Name="WidgetContentRoot"
+        RowDefinitions="Auto,Auto"
         ColumnDefinitions="Auto"
         VerticalAlignment="Center"
         HorizontalAlignment="Center">
@@ -20,82 +21,91 @@
             ColumnDefinitions="Auto,Auto,Auto,Auto,Auto"
             VerticalAlignment="Center">
             <!-- Timer -->
-            <TextBlock Grid.Column="0"
-                Text="{Binding ElapsedFormatted}"
-                Classes="timer-text"
-                FontSize="{Binding MainTimerFontSize}"
-                Width="{Binding MainTimerTextWidth}"
-                TextAlignment="Center"
+            <Grid x:Name="ClockLayer"
+                Grid.Column="0"
                 VerticalAlignment="Center"
-                Opacity="{Binding EffectiveClockOpacity}" />
+                HorizontalAlignment="Center"
+                Opacity="{Binding EffectiveClockOpacity}">
+                <TextBlock Text="{Binding ElapsedFormatted}"
+                    Classes="timer-text"
+                    FontSize="{Binding MainTimerFontSize}"
+                    Width="{Binding MainTimerTextWidth}"
+                    TextAlignment="Center"
+                    VerticalAlignment="Center" />
+            </Grid>
 
-            <!-- Play/Pause Button -->
-            <Button Grid.Column="1"
+            <Grid x:Name="ControlsLayer"
+                Grid.Column="1"
+                Grid.ColumnSpan="4"
+                ColumnDefinitions="Auto,Auto,Auto,Auto"
+                Opacity="{Binding EffectiveControlsOpacity}"
+                IsHitTestVisible="{Binding AreControlsInteractable}">
+                <!-- Play/Pause Button -->
+                <Button Grid.Column="0"
                 Command="{Binding ToggleCommand}"
                 Classes="icon-button"
                 ToolTip.Tip="Start/Pause"
                 Width="{Binding ButtonSize}"
-                Height="{Binding ButtonSize}"
-                Opacity="{Binding EffectiveControlsOpacity}">
-                <materialIcons:MaterialIcon
+                Height="{Binding ButtonSize}">
+                    <materialIcons:MaterialIcon
                     Kind="{Binding IsRunning, Converter={StaticResource PlayPauseConverter}}"
                     Foreground="{DynamicResource SecondaryTextBrush}"
                     Width="{Binding IconSize}"
                     Height="{Binding IconSize}" />
-            </Button>
+                </Button>
 
-            <!-- Reset Button -->
-            <Button Grid.Column="2"
+                <!-- Reset Button -->
+                <Button Grid.Column="1"
                 Command="{Binding ResetCommand}"
                 Classes="icon-button"
                 ToolTip.Tip="Reset"
                 Width="{Binding ButtonSize}"
-                Height="{Binding ButtonSize}"
-                Opacity="{Binding EffectiveControlsOpacity}">
-                <materialIcons:MaterialIcon Kind="Refresh"
+                Height="{Binding ButtonSize}">
+                    <materialIcons:MaterialIcon Kind="Refresh"
                     Foreground="{DynamicResource ButtonNormalBrush}"
                     Width="{Binding IconSize}"
                     Height="{Binding IconSize}" />
-            </Button>
+                </Button>
 
-            <!-- Project Input Toggle Button -->
-            <Button Grid.Column="3"
+                <!-- Project Input Toggle Button -->
+                <Button Grid.Column="2"
                 Command="{Binding ToggleProjectInputCommand}"
                 Classes="icon-button"
                 ToolTip.Tip="Project Tag"
                 Width="{Binding ButtonSize}"
-                Height="{Binding ButtonSize}"
-                Opacity="{Binding EffectiveControlsOpacity}">
-                <materialIcons:MaterialIcon Kind="ChevronDown"
+                Height="{Binding ButtonSize}">
+                    <materialIcons:MaterialIcon Kind="ChevronDown"
                     Foreground="{DynamicResource ButtonNormalBrush}"
                     Width="{Binding IconSize}"
                     Height="{Binding IconSize}">
-                    <materialIcons:MaterialIcon.RenderTransform>
-                        <RotateTransform
+                        <materialIcons:MaterialIcon.RenderTransform>
+                            <RotateTransform
                             Angle="{Binding IsProjectInputVisible, Converter={StaticResource BooleanToAngleConverter}}" />
-                    </materialIcons:MaterialIcon.RenderTransform>
-                </materialIcons:MaterialIcon>
-            </Button>
+                        </materialIcons:MaterialIcon.RenderTransform>
+                    </materialIcons:MaterialIcon>
+                </Button>
 
-            <!-- Compact Mode Toggle Button -->
-            <Button Grid.Column="4"
+                <!-- Compact Mode Toggle Button -->
+                <Button Grid.Column="3"
                 Command="{Binding ToggleCompactModeCommand}"
                 Classes="icon-button"
                 ToolTip.Tip="Toggle Compact Mode"
                 Width="{Binding ButtonSize}"
-                Height="{Binding ButtonSize}"
-                Opacity="{Binding EffectiveControlsOpacity}">
-                <materialIcons:MaterialIcon Kind="Menu"
+                Height="{Binding ButtonSize}">
+                    <materialIcons:MaterialIcon Kind="Menu"
                     Foreground="{DynamicResource ButtonNormalBrush}"
                     Width="{Binding IconSize}"
                     Height="{Binding IconSize}" />
-            </Button>
+                </Button>
+            </Grid>
         </Grid>
 
         <!-- Row 1: project label & box -->
         <Grid Grid.Row="1"
             ColumnDefinitions="Auto,*,Auto"
             Margin="0,6,0,0"
+            Opacity="{Binding EffectiveControlsOpacity}"
+            IsHitTestVisible="{Binding AreControlsInteractable}"
             IsVisible="{Binding IsProjectInputVisible}">
             <TextBlock Grid.Column="0"
                 Text="Project:"

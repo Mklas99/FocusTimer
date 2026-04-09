@@ -11,29 +11,36 @@
         <converters:BooleanToAngleConverter x:Key="BooleanToAngleConverter" />
     </UserControl.Resources>
 
-    <Grid ColumnDefinitions="Auto,Auto"
+    <Grid x:Name="WidgetContentRoot"
+        ColumnDefinitions="Auto,Auto"
         VerticalAlignment="Center"
         HorizontalAlignment="Center">
-        <TextBlock Grid.Column="0"
-            Text="{Binding ElapsedFormatted}"
-            Classes="timer-text"
-            FontSize="{Binding CompactTimerFontSize}"
-            Width="{Binding CompactTimerTextWidth}"
-            TextAlignment="Center"
-            Opacity="{Binding EffectiveClockOpacity}"
+        <Grid x:Name="ClockLayer"
+            Grid.Column="0"
             VerticalAlignment="Center"
             HorizontalAlignment="Center"
-            Margin="2,0,6,0" />
+            Opacity="{Binding EffectiveClockOpacity}">
+            <TextBlock Text="{Binding ElapsedFormatted}"
+                Classes="timer-text"
+                FontSize="{Binding CompactTimerFontSize}"
+                Width="{Binding CompactTimerTextWidth}"
+                TextAlignment="Center"
+                VerticalAlignment="Center"
+                HorizontalAlignment="Center"
+                Margin="2,0,6,0" />
+        </Grid>
 
-        <StackPanel Grid.Column="1"
+        <StackPanel x:Name="ControlsLayer"
+            Grid.Column="1"
             Orientation="{Binding ButtonPanelOrientation}"
             VerticalAlignment="Center"
             HorizontalAlignment="Center"
-            Spacing="2">
+            Spacing="2"
+            Opacity="{Binding EffectiveControlsOpacity}"
+            IsHitTestVisible="{Binding AreControlsInteractable}">
             <Button Command="{Binding ToggleCommand}"
                 Classes="icon-button"
                 ToolTip.Tip="Start/Pause"
-                Opacity="{Binding EffectiveControlsOpacity}"
                 Width="{Binding CompactButtonSize}"
                 Height="{Binding CompactButtonSize}"
                 HorizontalAlignment="Center"
@@ -49,7 +56,6 @@
             <Button Command="{Binding ToggleCompactModeCommand}"
                 Classes="icon-button"
                 ToolTip.Tip="Expand"
-                Opacity="{Binding EffectiveControlsOpacity}"
                 Width="{Binding CompactButtonSize}"
                 Height="{Binding CompactButtonSize}"
                 HorizontalAlignment="Center"

@@ -79,9 +79,7 @@ namespace FocusTimer.Core.Services
                     return;
                 }
 
-                this._reminderTimer?.Stop();
-                this._reminderTimer?.Dispose();
-                this._reminderTimer = null;
+                this.ResetReminderTimer();
 
                 var intervalMs = settings.BreakIntervalMinutes * 60 * 1000;
                 this._reminderTimer = new Timer(intervalMs) { AutoReset = false };
@@ -99,25 +97,50 @@ namespace FocusTimer.Core.Services
         {
             try
             {
-                await this._notificationService.ShowBreakReminderAsync(
-                    $"You've been working for {breakInterval} minutes. Time to take a break!");
-
-                // Auto-snooze: schedule another reminder in 10 minutes if still enabled
                 var settings = await this._settingsProvider.LoadAsync();
+                if (!settings.BreakRemindersEnabled)
+                {
+                    return;
+                }
+
+                await this._notificationService.ShowBreakReminderAsync(
+                    $"You've been working for {breakInterval} minutes. Time to take a break!",
+                    settings.RequireBreakReminderAcknowledgement);
+
                 if (settings.BreakRemindersEnabled)
                 {
-                    this._logger?.LogDebug("Scheduling auto-snooze break reminder in 10 minutes.");
+                    var nextReminderMinutes = settings.RequireBreakReminderAcknowledgement
+                        ? settings.BreakIntervalMinutes
+                        : 10;
 
-                    this._reminderTimer?.Dispose();
-                    this._reminderTimer = new Timer(10 * 60 * 1000) { AutoReset = false };
-                    this._reminderTimer.Elapsed += async (s, e) => await this.OnReminderElapsedAsync(settings.BreakIntervalMinutes);
-                    this._reminderTimer.Start();
+                    this._logger?.LogDebug($"Scheduling next break reminder in {nextReminderMinutes} minutes.");
+                    this.ScheduleNextReminder(nextReminderMinutes);
                 }
             }
             catch (Exception ex)
             {
                 this._logger?.LogError("Break reminder failed.", ex);
             }
+        }
+
+        private void ResetReminderTimer()
+        {
+            this._reminderTimer?.Stop();
+            this._reminderTimer?.Dispose();
+            this._reminderTimer = null;
+        }
+
+        private void ScheduleNextReminder(int minutes)
+        {
+            if (minutes <= 0)
+            {
+                return;
+            }
+
+            this.ResetReminderTimer();
+            this._reminderTimer = new Timer(minutes * 60 * 1000) { AutoReset = false };
+            this._reminderTimer.Elapsed += async (s, e) => await this.OnReminderElapsedAsync(minutes);
+            this._reminderTimer.Start();
         }
     }
 }
