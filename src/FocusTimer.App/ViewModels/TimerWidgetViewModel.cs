@@ -346,6 +346,16 @@ namespace FocusTimer.App.ViewModels
         public double EffectiveBackgroundOpacity => this.BackgroundOpacity * this.OverallOpacity;
 
         /// <summary>
+        /// Gets the effective opacity for the rear widget shell (base layer) with the overall multiplier applied.
+        /// </summary>
+        public double EffectiveWidgetBaseOpacity => (this.Settings?.Theme?.WidgetBaseOpacity ?? 1.0) * this.OverallOpacity;
+
+        /// <summary>
+        /// Gets a value indicating whether the controls layer accepts pointer input.
+        /// </summary>
+        public bool AreControlsInteractable => true;
+
+        /// <summary>
         /// Gets the effective opacity for the clock with the overall multiplier applied.
         /// </summary>
         public double EffectiveClockOpacity => this.ClockOpacity * this.OverallOpacity;

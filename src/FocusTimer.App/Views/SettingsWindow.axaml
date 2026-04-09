@@ -148,9 +148,7 @@
                                     <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Settings.Theme.WindowBackground}" Watermark="#1E1E1E" Margin="0,0,8,0" />
                                     <Button Grid.Row="0" Grid.Column="2" Classes="color-swatch" Background="{Binding Settings.Theme.WindowBackground}" Tag="WindowBackground" Click="OnColorPreviewClicked" ToolTip.Tip="Open color picker" />
 
-                                    <TextBlock Grid.Row="1" Grid.Column="0" Classes="SettingLabel" Text="Border:" Margin="0,6,0,0" />
-                                    <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Settings.Theme.WindowBorder}" Watermark="#3F3F46" Margin="0,6,8,0" />
-                                    <Button Grid.Row="1" Grid.Column="2" Classes="color-swatch" Background="{Binding Settings.Theme.WindowBorder}" Tag="WindowBorder" Click="OnColorPreviewClicked" ToolTip.Tip="Open color picker" Margin="0,6,0,0" />
+                                    <!-- Border color removed temporarily -->
 
                                     <TextBlock Grid.Row="2" Grid.Column="0" Classes="SettingLabel" Text="Timer Text:" Margin="0,6,0,0" />
                                     <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding Settings.Theme.TimerText}" Watermark="#FFFFFF" Margin="0,6,8,0" />
@@ -222,69 +220,98 @@
                         <!-- Opacity Controls Section -->
 
                         <TextBlock Classes="SectionHeader" Text="Opacity Controls" />
-                        <Grid ColumnDefinitions="140,*,Auto" RowDefinitions="Auto,Auto,Auto,Auto">
-                            <TextBlock Grid.Row="0" Grid.Column="0" Classes="SettingLabel" Text="Background:" />
-                            <Slider Grid.Row="0" Grid.Column="1"
-                                    Value="{Binding Settings.Theme.BackgroundOpacity}"
-                                    Minimum="0.0" Maximum="1.0"
-                                    TickFrequency="0.05"
+                        <Grid ColumnDefinitions="140,*,Auto" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto">
+                            <!-- Widget Base opacity slider removed temporarily -->
+
+                            <TextBlock Grid.Row="1" Grid.Column="0" Classes="SettingLabel" Text="Background:" />
+                            <Slider Grid.Row="1" Grid.Column="1"
+                                    Classes="minimal-slider"
+                                Value="{Binding BackgroundOpacityPercent}"
+                                Minimum="0" Maximum="100"
+                                TickFrequency="1"
                                     IsSnapToTickEnabled="True" />
-                            <TextBlock Grid.Row="0" Grid.Column="2"
-                                       Text="{Binding Settings.Theme.BackgroundOpacity, StringFormat='{}{0:P0}'}"
+                            <TextBlock Grid.Row="1" Grid.Column="2"
+                                   Text="{Binding BackgroundOpacityPercent, StringFormat='{}{0:F0}%'}"
                                        Width="50"
                                        TextAlignment="Right"
                                        VerticalAlignment="Center"
                                        Margin="10,0,0,0" />
 
-                            <TextBlock Grid.Row="1" Grid.Column="0" Classes="SettingLabel" Text="Clock:" Margin="0,4,0,0" />
-                            <Slider Grid.Row="1" Grid.Column="1"
-                                    Value="{Binding Settings.Theme.TimerOpacity}"
-                                    Minimum="0.0" Maximum="1.0"
-                                    TickFrequency="0.05"
-                                    IsSnapToTickEnabled="True"
-                                    Margin="0,4,0,0" />
-                            <TextBlock Grid.Row="1" Grid.Column="2"
-                                       Text="{Binding Settings.Theme.TimerOpacity, StringFormat='{}{0:P0}'}"
-                                       Width="50"
-                                       TextAlignment="Right"
-                                       VerticalAlignment="Center"
-                                       Margin="10,4,0,0" />
-
-                            <TextBlock Grid.Row="2" Grid.Column="0" Classes="SettingLabel" Text="Buttons:" Margin="0,4,0,0" />
+                            <TextBlock Grid.Row="2" Grid.Column="0" Classes="SettingLabel" Text="Clock:" Margin="0,4,0,0" />
                             <Slider Grid.Row="2" Grid.Column="1"
-                                    Value="{Binding Settings.Theme.ButtonOpacity}"
-                                    Minimum="0.0" Maximum="1.0"
-                                    TickFrequency="0.05"
+                                    Classes="minimal-slider"
+                                    Value="{Binding ClockOpacityPercent}"
+                                    Minimum="0" Maximum="100"
+                                    TickFrequency="1"
                                     IsSnapToTickEnabled="True"
                                     Margin="0,4,0,0" />
                             <TextBlock Grid.Row="2" Grid.Column="2"
-                                       Text="{Binding Settings.Theme.ButtonOpacity, StringFormat='{}{0:P0}'}"
+                                       Text="{Binding ClockOpacityPercent, StringFormat='{}{0:F0}%'}"
                                        Width="50"
                                        TextAlignment="Right"
                                        VerticalAlignment="Center"
                                        Margin="10,4,0,0" />
 
-                            <TextBlock Grid.Row="3" Grid.Column="0" Classes="SettingLabel" Text="Overall Fade:" Margin="0,4,0,0" />
+                            <TextBlock Grid.Row="3" Grid.Column="0" Classes="SettingLabel" Text="Buttons:" Margin="0,4,0,0" />
                             <Slider Grid.Row="3" Grid.Column="1"
-                                    Value="{Binding Settings.WidgetOpacity}"
-                                    Minimum="0.2" Maximum="1.0"
-                                    TickFrequency="0.05"
+                                    Classes="minimal-slider"
+                                    Value="{Binding ButtonsOpacityPercent}"
+                                    Minimum="0" Maximum="100"
+                                    TickFrequency="1"
                                     IsSnapToTickEnabled="True"
                                     Margin="0,4,0,0" />
                             <TextBlock Grid.Row="3" Grid.Column="2"
-                                       Text="{Binding Settings.WidgetOpacity, StringFormat='{}{0:P0}'}"
+                                       Text="{Binding ButtonsOpacityPercent, StringFormat='{}{0:F0}%'}"
                                        Width="50"
                                        TextAlignment="Right"
                                        VerticalAlignment="Center"
                                        Margin="10,4,0,0" />
+
+                            <TextBlock Grid.Row="4" Grid.Column="0" Classes="SettingLabel" Text="Overall Fade:" Margin="0,4,0,0" />
+                            <Slider Grid.Row="4" Grid.Column="1"
+                                    Classes="minimal-slider"
+                                    Value="{Binding OverallFadePercent}"
+                                    Minimum="0" Maximum="100"
+                                    TickFrequency="1"
+                                    IsSnapToTickEnabled="True"
+                                    Margin="0,4,0,0" />
+                            <TextBlock Grid.Row="4" Grid.Column="2"
+                                       Text="{Binding OverallFadePercent, StringFormat='{}{0:F0}%'}"
+                                       Width="50"
+                                       TextAlignment="Right"
+                                       VerticalAlignment="Center"
+                                       Margin="10,4,0,0" />
+
+                            <!-- Border opacity slider removed temporarily -->
                         </Grid>
+
+                        <Border CornerRadius="10"
+                                BorderThickness="1"
+                                BorderBrush="#30FFFFFF"
+                                Background="#12000000"
+                                Padding="10"
+                                Margin="0,6,0,0">
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Opacity Diagnostics"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource SettingsSectionHeaderBrush}" />
+                                <TextBlock Text="{Binding TransparencyDiagnostics}"
+                                           TextWrapping="Wrap"
+                                           Foreground="{DynamicResource SecondaryTextBrush}" />
+                                <TextBlock Text="{Binding AcrylicDiagnostics}"
+                                           TextWrapping="Wrap"
+                                           Foreground="{DynamicResource SecondaryTextBrush}" />
+                                <TextBlock Text="{Binding OpacityDiagnosticsSummary}"
+                                           Foreground="{DynamicResource SettingsLabelTextBrush}" />
+                            </StackPanel>
+                        </Border>
 
 <!-- Widget Options Section -->
                         <TextBlock Classes="SectionHeader" Text="Widget Options" />
                         <Grid ColumnDefinitions="140,*,Auto" RowDefinitions="Auto,Auto">
 
                             <TextBlock Grid.Row="1" Grid.Column="0" Classes="SettingLabel" Text="Scale:" Margin="0,8,0,0" />
-                            <Slider Grid.Row="1" Grid.Column="1" Value="{Binding Settings.WidgetScale}" Minimum="0.5" Maximum="3.0" TickFrequency="0.1" IsSnapToTickEnabled="True" Margin="0,8,0,0" />
+                            <Slider Grid.Row="1" Grid.Column="1" Classes="minimal-slider" Value="{Binding Settings.WidgetScale}" Minimum="0.5" Maximum="3.0" TickFrequency="0.1" IsSnapToTickEnabled="True" Margin="0,8,0,0" />
                             <TextBlock Grid.Row="1" Grid.Column="2" Text="{Binding Settings.WidgetScale, StringFormat='{}{0:F1}×'}" Width="50" TextAlignment="Right" VerticalAlignment="Center" Margin="10,8,0,0" />
                         </Grid>
 

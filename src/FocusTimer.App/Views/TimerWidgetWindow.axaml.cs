@@ -3,9 +3,11 @@ namespace FocusTimer.App.Views
     using System;
     using System.Runtime.InteropServices;
     using Avalonia.Controls;
+    using Avalonia.Controls.Primitives;
     using Avalonia.Input;
     using Avalonia.Interactivity;
     using Avalonia.Markup.Xaml;
+    using Avalonia.VisualTree;
     using FocusTimer.App.ViewModels;
     using FocusTimer.Core;
     using FocusTimer.Core.Interfaces;
@@ -63,7 +65,7 @@ namespace FocusTimer.App.Views
         {
             base.OnPointerReleased(e);
             this._isDragging = false;
-            var dragArea = this.FindControl<Border>("DragArea");
+            var dragArea = this.FindControl<Border>("WidgetSurface");
             if (dragArea != null)
             {
                 dragArea.Cursor = new Cursor(StandardCursorType.DragMove);
@@ -138,16 +140,46 @@ namespace FocusTimer.App.Views
         // Handler for draggable area
         private void WindowDragArea_PointerPressed(object? sender, PointerPressedEventArgs e)
         {
-            if (e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
+            if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
             {
-                this._isDragging = true;
-                if (sender is Border dragArea)
+                return;
+            }
+
+            // Keep controls clickable while allowing drag from most of the surface.
+            if (this.IsInteractiveElement(e.Source))
+            {
+                return;
+            }
+
+            this._isDragging = true;
+            if (sender is InputElement dragSurface)
+            {
+                dragSurface.Cursor = new Cursor(StandardCursorType.SizeAll);
+            }
+
+            this.BeginMoveDrag(e);
+        }
+
+        private bool IsInteractiveElement(object? source)
+        {
+            var current = source as Avalonia.Visual;
+            while (current != null)
+            {
+                if (current is Button
+                    or ToggleButton
+                    or TextBox
+                    or Slider
+                    or ComboBox
+                    or CheckBox
+                    or NumericUpDown)
                 {
-                    dragArea.Cursor = new Cursor(StandardCursorType.SizeAll);
+                    return true;
                 }
 
-                this.BeginMoveDrag(e);
+                current = current.GetVisualParent();
             }
+
+            return false;
         }
 
         // Handler for minimize button

@@ -230,6 +230,118 @@ namespace FocusTimer.App.ViewModels
         }
 
         /// <summary>
+        /// Gets or sets the background material opacity in percent (0..100).
+        /// </summary>
+        public double BackgroundOpacityPercent
+        {
+            get => this.ToPercent(this.Settings.Theme.BackgroundOpacity);
+            set
+            {
+                var normalized = this.ToNormalized(value);
+                if (!normalized.Equals(this.Settings.Theme.BackgroundOpacity))
+                {
+                    this.Settings.Theme.BackgroundOpacity = normalized;
+                    this.RaisePropertyChanged(nameof(this.BackgroundOpacityPercent));
+                    this.RaisePropertyChanged(nameof(this.NormalizedBackgroundOpacity));
+                    this.RaisePropertyChanged(nameof(this.OpacityDiagnosticsSummary));
+                }
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the clock text opacity in percent (0..100).
+        /// </summary>
+        public double ClockOpacityPercent
+        {
+            get => this.ToPercent(this.Settings.Theme.TimerOpacity);
+            set
+            {
+                var normalized = this.ToNormalized(value);
+                if (!normalized.Equals(this.Settings.Theme.TimerOpacity))
+                {
+                    this.Settings.Theme.TimerOpacity = normalized;
+                    this.RaisePropertyChanged(nameof(this.ClockOpacityPercent));
+                    this.RaisePropertyChanged(nameof(this.NormalizedClockOpacity));
+                    this.RaisePropertyChanged(nameof(this.OpacityDiagnosticsSummary));
+                }
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the controls opacity in percent (0..100).
+        /// </summary>
+        public double ButtonsOpacityPercent
+        {
+            get => this.ToPercent(this.Settings.Theme.ButtonOpacity);
+            set
+            {
+                var normalized = this.ToNormalized(value);
+                if (!normalized.Equals(this.Settings.Theme.ButtonOpacity))
+                {
+                    this.Settings.Theme.ButtonOpacity = normalized;
+                    this.RaisePropertyChanged(nameof(this.ButtonsOpacityPercent));
+                    this.RaisePropertyChanged(nameof(this.NormalizedButtonsOpacity));
+                    this.RaisePropertyChanged(nameof(this.OpacityDiagnosticsSummary));
+                }
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the overall widget fade in percent (0..100).
+        /// </summary>
+        public double OverallFadePercent
+        {
+            get => this.ToPercent(this.Settings.WidgetOpacity);
+            set
+            {
+                var normalized = this.ToNormalized(value);
+                if (!normalized.Equals(this.Settings.WidgetOpacity))
+                {
+                    this.Settings.WidgetOpacity = normalized;
+                    this.RaisePropertyChanged(nameof(this.OverallFadePercent));
+                    this.RaisePropertyChanged(nameof(this.NormalizedOverallFade));
+                    this.RaisePropertyChanged(nameof(this.OpacityDiagnosticsSummary));
+                }
+            }
+        }
+
+        /// <summary>
+        /// Gets normalized background opacity (0..1).
+        /// </summary>
+        public double NormalizedBackgroundOpacity => this.Settings.Theme.BackgroundOpacity;
+
+        /// <summary>
+        /// Gets normalized clock opacity (0..1).
+        /// </summary>
+        public double NormalizedClockOpacity => this.Settings.Theme.TimerOpacity;
+
+        /// <summary>
+        /// Gets normalized controls opacity (0..1).
+        /// </summary>
+        public double NormalizedButtonsOpacity => this.Settings.Theme.ButtonOpacity;
+
+        /// <summary>
+        /// Gets normalized overall fade (0..1).
+        /// </summary>
+        public double NormalizedOverallFade => this.Settings.WidgetOpacity;
+
+        /// <summary>
+        /// Gets transparency mode diagnostics shown in Appearance tab.
+        /// </summary>
+        public string TransparencyDiagnostics => "Window: Transparent | Hint: Transparent > Blur > AcrylicBlur > Mica | Fallback: Transparent";
+
+        /// <summary>
+        /// Gets acrylic diagnostics shown in Appearance tab.
+        /// </summary>
+        public string AcrylicDiagnostics => OperatingSystem.IsWindows() ? "Acrylic/Mica availability depends on compositor and OS policies." : "Mica/Acrylic not expected; blur fallback path will be used.";
+
+        /// <summary>
+        /// Gets a single-line summary of effective normalized opacities.
+        /// </summary>
+        public string OpacityDiagnosticsSummary =>
+            $"BG={this.NormalizedBackgroundOpacity:F2} | Clock={this.NormalizedClockOpacity:F2} | Controls={this.NormalizedButtonsOpacity:F2} | Overall={this.NormalizedOverallFade:F2}";
+
+        /// <summary>
         /// Gets the current value of a theme color property.
         /// </summary>
         /// <param name="propertyName">The theme property name.</param>
@@ -334,6 +446,8 @@ namespace FocusTimer.App.ViewModels
                 {
                     this.Settings.AutoStartOnLogin = isAutoStartEnabled;
                 }
+
+                this.RaiseOpacityDiagnostics();
             }
             catch (Exception ex)
             {
@@ -483,18 +597,43 @@ namespace FocusTimer.App.ViewModels
 
         private void OnSettingsPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
-            if (e.PropertyName != nameof(this.Settings.Theme))
+            if (e.PropertyName == nameof(this.Settings.Theme))
             {
+                this.AttachTheme(this.Settings.Theme);
+                this.ApplyThemeChanges();
+                this.RaiseOpacityDiagnostics();
                 return;
             }
 
-            this.AttachTheme(this.Settings.Theme);
-            this.ApplyThemeChanges();
+            if (e.PropertyName == nameof(this.Settings.WidgetOpacity))
+            {
+                this.RaisePropertyChanged(nameof(this.OverallFadePercent));
+                this.RaisePropertyChanged(nameof(this.NormalizedOverallFade));
+                this.RaisePropertyChanged(nameof(this.OpacityDiagnosticsSummary));
+                return;
+            }
         }
 
         private void OnThemePropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
             this.ApplyThemeChanges();
+            if (e.PropertyName == nameof(Theme.BackgroundOpacity))
+            {
+                this.RaisePropertyChanged(nameof(this.BackgroundOpacityPercent));
+                this.RaisePropertyChanged(nameof(this.NormalizedBackgroundOpacity));
+            }
+            else if (e.PropertyName == nameof(Theme.TimerOpacity))
+            {
+                this.RaisePropertyChanged(nameof(this.ClockOpacityPercent));
+                this.RaisePropertyChanged(nameof(this.NormalizedClockOpacity));
+            }
+            else if (e.PropertyName == nameof(Theme.ButtonOpacity))
+            {
+                this.RaisePropertyChanged(nameof(this.ButtonsOpacityPercent));
+                this.RaisePropertyChanged(nameof(this.NormalizedButtonsOpacity));
+            }
+
+            this.RaisePropertyChanged(nameof(this.OpacityDiagnosticsSummary));
         }
 
         private void ApplyThemeChanges()
@@ -561,6 +700,33 @@ namespace FocusTimer.App.ViewModels
             }
 
             return "No changelog file found. Add docs/CHANGELOG.md to populate this section.";
+        }
+
+        private void RaiseOpacityDiagnostics()
+        {
+            this.RaisePropertyChanged(nameof(this.BackgroundOpacityPercent));
+            this.RaisePropertyChanged(nameof(this.ClockOpacityPercent));
+            this.RaisePropertyChanged(nameof(this.ButtonsOpacityPercent));
+            this.RaisePropertyChanged(nameof(this.OverallFadePercent));
+
+            this.RaisePropertyChanged(nameof(this.NormalizedBackgroundOpacity));
+            this.RaisePropertyChanged(nameof(this.NormalizedClockOpacity));
+            this.RaisePropertyChanged(nameof(this.NormalizedButtonsOpacity));
+
+            this.RaisePropertyChanged(nameof(this.NormalizedOverallFade));
+            this.RaisePropertyChanged(nameof(this.TransparencyDiagnostics));
+            this.RaisePropertyChanged(nameof(this.AcrylicDiagnostics));
+            this.RaisePropertyChanged(nameof(this.OpacityDiagnosticsSummary));
+        }
+
+        private double ToPercent(double normalized)
+        {
+            return Math.Clamp(normalized, 0.0, 1.0) * 100.0;
+        }
+
+        private double ToNormalized(double percent)
+        {
+            return Math.Clamp(percent / 100.0, 0.0, 1.0);
         }
     }
 }

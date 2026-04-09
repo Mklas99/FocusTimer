@@ -35,6 +35,7 @@ namespace FocusTimer.Core.Models
         private string _buttonDisabled = "#40FFFFFF";
 
         // Opacity Controls
+        private double _widgetBaseOpacity = 1.0;
         private double _backgroundOpacity = 1.0;
         private double _timerOpacity = 1.0;
         private double _buttonOpacity = 1.0;
@@ -491,6 +492,20 @@ namespace FocusTimer.Core.Models
         }
 
         // Opacity Controls
+
+        /// <summary>
+        /// Gets or sets the rear widget shell (base layer) opacity.
+        /// </summary>
+        [JsonPropertyName("widgetBaseOpacity")]
+        public double WidgetBaseOpacity
+        {
+            get => this._widgetBaseOpacity;
+            set
+            {
+                var clamped = Math.Clamp(value, 0.0, 1.0);
+                this.SetField(ref this._widgetBaseOpacity, clamped);
+            }
+        }
 
         /// <summary>
         /// Gets or sets the background opacity.
