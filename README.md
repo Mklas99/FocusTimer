@@ -1,5 +1,12 @@
 ﻿# FocusTimer
 
+[![SonarQube Cloud](https://sonarcloud.io/images/project_badges/sonarcloud-light.svg)](https://sonarcloud.io/summary/new_code?id=Mklas99_FocusTimer)
+
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=Mklas99_FocusTimer&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=Mklas99_FocusTimer)
+
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=Mklas99_FocusTimer&metric=coverage)](https://sonarcloud.io/summary/new_code?id=Mklas99_FocusTimer)
+
+
 A clean, cross-platform .NET 8 / Avalonia desktop timer widget with dependency injection, event-driven architecture, and Windows-specific integrations (hotkeys, notifications, idle detection).
 
 ## Quick Start

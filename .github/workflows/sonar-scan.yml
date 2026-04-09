@@ -1,43 +1,55 @@
-name: SonarQube Scan
+name: SonarQube Cloud
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [main, master]
   pull_request:
 
 jobs:
   sonar:
-    name: Sonar Scanner
+    name: Build, test, coverage, analyze
     runs-on: ubuntu-latest
+    env:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - name: Setup .NET
-        uses: actions/setup-dotnet@v3
+        uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
+
+      - name: Install SonarScanner for .NET
+        run: dotnet tool install --global dotnet-sonarscanner
+
+      - name: Add .NET tools to PATH
+        run: echo "$HOME/.dotnet/tools" >> "$GITHUB_PATH"
+
       - name: Restore
         run: dotnet restore FocusTimer.sln
-      - name: Build
-        run: dotnet build FocusTimer.sln -c Release --no-restore
-      - name: Install SonarScanner for .NET
-        run: |
-          dotnet tool install --global dotnet-sonarscanner || true
-          export PATH="$PATH:$HOME/.dotnet/tools"
 
-      - name: Run SonarScanner (MSBuild) begin
-        env:
-          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: |
-          echo "Starting dotnet sonarscanner (begin) with verbose output"
-          dotnet sonarscanner begin /k:"focustimer" /d:sonar.host.url=$SONAR_HOST_URL /d:sonar.login=$SONAR_TOKEN /d:sonar.verbose=true
+      - name: Begin Sonar analysis
+        run: >
+          dotnet sonarscanner begin
+          /k:"Mklas99_FocusTimer"
+          /o:"mklas99"
+          /d:sonar.token="${SONAR_TOKEN}"
+          /d:sonar.cs.opencover.reportsPaths="**/coverage.opencover.xml"
 
       - name: Build
         run: dotnet build FocusTimer.sln -c Release --no-restore
 
-      - name: Run SonarScanner (MSBuild) end
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: |
-          echo "Ending dotnet sonarscanner (end)"
-          dotnet sonarscanner end /d:sonar.login=$SONAR_TOKEN
+      - name: Test with coverage
+        run: >
+          dotnet test FocusTimer.sln
+          -c Release
+          --no-build
+          /p:CollectCoverage=true
+          /p:CoverletOutputFormat=opencover
+          /p:CoverletOutput=./TestResults/coverage.opencover.xml
+
+      - name: End Sonar analysis
+        run: dotnet sonarscanner end /d:sonar.token="${SONAR_TOKEN}"

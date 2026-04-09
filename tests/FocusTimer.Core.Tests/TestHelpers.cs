@@ -44,7 +44,7 @@ internal sealed class RecordingNotificationService : INotificationService
         return Task.CompletedTask;
     }
 
-    public Task ShowBreakReminderAsync(string message, bool requireAcknowledgement = false)
+    public Task ShowBreakReminderAsync(string message, bool requireAcknowledgement)
     {
         BreakReminderCount++;
         return Task.CompletedTask;
