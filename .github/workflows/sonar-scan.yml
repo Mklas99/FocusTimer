@@ -37,19 +37,23 @@ jobs:
           /k:"Mklas99_FocusTimer"
           /o:"mklas99"
           /d:sonar.token="${SONAR_TOKEN}"
-          /d:sonar.cs.opencover.reportsPaths="**/coverage.opencover.xml"
+          /d:sonar.cs.opencover.reportsPaths="**/TestResults/*.coverage.opencover.xml"
 
       - name: Build
         run: dotnet build FocusTimer.sln -c Release --no-restore
 
-      - name: Test with coverage
-        run: >
-          dotnet test FocusTimer.sln
-          -c Release
-          --no-build
-          /p:CollectCoverage=true
-          /p:CoverletOutputFormat=opencover
-          /p:CoverletOutput=./TestResults/coverage.opencover.xml
+      - name: Test with coverage (per-project)
+        run: |
+          mkdir -p TestResults
+          set -e
+          for proj in $(find tests -name "*.csproj"); do
+            name=$(basename "$proj" .csproj)
+            echo "Running tests for $name"
+            dotnet test "$proj" -c Release --no-build \
+              /p:CollectCoverage=true \
+              /p:CoverletOutputFormat=opencover \
+              /p:CoverletOutput=./TestResults/${name}.coverage.opencover.xml
+          done
 
       - name: End Sonar analysis
         run: dotnet sonarscanner end /d:sonar.token="${SONAR_TOKEN}"
