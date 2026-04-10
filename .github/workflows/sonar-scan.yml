@@ -11,6 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      MANUAL_SONAR_ANALYSIS: ${{ secrets.MANUAL_SONAR_ANALYSIS }}
 
     steps:
       - uses: actions/checkout@v4
@@ -32,12 +33,18 @@ jobs:
         run: dotnet restore FocusTimer.sln
 
       - name: Begin Sonar analysis
+        if: env.MANUAL_SONAR_ANALYSIS == 'true'
         run: >
           dotnet sonarscanner begin
           /k:"Mklas99_FocusTimer"
           /o:"mklas99"
           /d:sonar.token="${SONAR_TOKEN}"
           /d:sonar.cs.opencover.reportsPaths="**/TestResults/*.coverage.opencover.xml"
+
+      - name: Skip manual Sonar analysis (Automatic Analysis likely enabled)
+        if: env.MANUAL_SONAR_ANALYSIS != 'true'
+        run: |
+          echo "MANUAL_SONAR_ANALYSIS is not 'true' — skipping dotnet sonarscanner begin/end to avoid duplicate analysis with SonarCloud Automatic Analysis."
 
       - name: Build
         run: dotnet build FocusTimer.sln -c Release --no-restore
@@ -56,4 +63,5 @@ jobs:
           done
 
       - name: End Sonar analysis
+        if: env.MANUAL_SONAR_ANALYSIS == 'true'
         run: dotnet sonarscanner end /d:sonar.token="${SONAR_TOKEN}"
