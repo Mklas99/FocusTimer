@@ -17,11 +17,17 @@ COPY ./src/FocusTimer.App/FocusTimer.App.csproj ./src/FocusTimer.App/
 # ...existing code...
 RUN dotnet restore "./src/FocusTimer.App/FocusTimer.App.csproj"
 
-# Copy the rest of the source code
+# Copy the rest of the source code.
+# .dockerignore excludes VCS metadata, build output, and common secret/credential
+# file patterns (.env, *.pem, *.key, appsettings.*.json, .ssh, .aws, etc.) so this
+# recursive copy does not leak sensitive data into the image.
 COPY . .
 
-# (Optional) Install any additional tools or dependencies here
-# RUN apt-get update && apt-get install -y <your-tools>
+# Install Node.js (LTS) and npm, then install openspec globally
+RUN curl -fsSL https://deb.nodesource.com/setup_lts.x | bash - \
+    && apt-get install -y --no-install-recommends nodejs \
+    && rm -rf /var/lib/apt/lists/* \
+    && npm install -g @fission-ai/openspec@latest
 
 # Expose the port your app runs on (adjust if needed)
 EXPOSE 5000
