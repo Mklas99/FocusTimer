@@ -26,9 +26,9 @@ jobs:
         shell: pwsh
         run: ./scripts/build-installer.ps1 -Version "${{ github.ref_name }}"
 
-      - name: Zip portable (no-install) build
+      - name: Rename portable EXE for release
         shell: pwsh
-        run: Compress-Archive -Path "artifacts/publish/win-x64-selfcontained/*" -DestinationPath "artifacts/FocusTimer-${{ github.ref_name }}-win-x64-portable.zip"
+        run: Copy-Item "artifacts/publish/win-x64-selfcontained/FocusTimer.Host.exe" "artifacts/FocusTimer-${{ github.ref_name }}-win-x64.exe"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -37,5 +37,5 @@ jobs:
         with:
           files: |
             artifacts/installer/FocusTimer.Installer.msi
-            artifacts/FocusTimer-${{ github.ref_name }}-win-x64-portable.zip
+            artifacts/FocusTimer-${{ github.ref_name }}-win-x64.exe
           generate_release_notes: true

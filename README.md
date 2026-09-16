@@ -138,7 +138,7 @@ dotnet build installer/FocusTimer.Installer/FocusTimer.Installer.wixproj -c Rele
 
 ### Downloadable Releases (GitHub)
 
-Pushing a tag matching `v*.*.*` (e.g. `v0.1.0`) triggers `.github/workflows/release.yml`, which runs `build-installer.ps1` and publishes a GitHub Release with the MSI and a portable (no-install) zip attached:
+Pushing a tag matching `v*.*.*` (e.g. `v0.1.0`) triggers `.github/workflows/release.yml`, which runs `build-installer.ps1` and publishes a GitHub Release with the MSI installer and the standalone single-file EXE attached:
 
 ```powershell
 git tag v0.1.0
@@ -281,4 +281,4 @@ See `docs/versions/current/OpenIssues.md` for the full, tracked list of gaps.
 
 ## License
 
-[Specify your license here, e.g., MIT, GPL-3.0, etc.]
+GNU General Public License v3.0 — see [LICENSE](LICENSE).
