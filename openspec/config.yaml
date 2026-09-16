@@ -1,0 +1,41 @@
+schema: spec-driven
+
+# Project context (optional)
+# This is shown to AI when creating artifacts.
+context: |
+  FocusTimer is a .NET 8 / Avalonia cross-platform desktop timer widget.
+
+  Solution structure (dependency direction: Host -> App, Core, Persistence, Platform.Windows):
+    - FocusTimer.Host (net8.0-windows, WinExe): composition root, DI wiring, Avalonia bootstrap. Only project that produces an executable.
+    - FocusTimer.App (net8.0): Avalonia UI - XAML views, ReactiveUI ViewModels, converters, AppController/ThemeManager/TrayStateController.
+    - FocusTimer.Core (net8.0): domain models, interfaces, EventBus<T>. Self-contained aside from Serilog. No circular dependencies.
+    - FocusTimer.Persistence (net8.0): JSON settings, CSV worklogs (worklogs/yyyy/MM/yyyy-MM-dd-worklog.csv).
+    - FocusTimer.Platform.Windows (net8.0-windows): OS integrations (global hotkeys, notifications, idle detection, active-window polling). Linux equivalents are stubs in FocusTimer.Core/Stubs.
+
+  Conventions:
+    - Dependency Injection: all services registered/wired in Host.Program, resolved via IServiceProvider (no service locator).
+    - MVVM + ReactiveUI: Views bind to ViewModel properties/commands; domain models are immutable POCOs (TimeEntry, Session, Settings).
+    - Event-driven: cross-component communication goes through IEventBus<T>, not direct references.
+    - Naming: PascalCase for classes/interfaces/methods/properties, camelCase with leading underscore for private fields, UPPER_SNAKE_CASE for constants.
+    - StyleCop enforced via Directory.Build.props: sorted usings (System first), explicit access modifiers, ~120 char lines, XML docs on at least all public members.
+    - Tests use NUnit ([TestFixture]/[Test]); quality gate via SonarQube (scripts/run-sonar-dotnet.ps1), pre-commit hooks, `dotnet format`.
+    - Docs live under docs/versions/: docs/versions/current/ holds the live baseline for the in-progress version (Features.md = implemented, OpenIssues.md = known gaps as OI-##, Summary.md = dev-step recap). On a version bump, docs/versions/current/ is archived to docs/versions/<version>/ (e.g. docs/versions/v0.1/) and a fresh current/ starts. Never hardcode a version number (e.g. "v0.1") in this config or in artifact rules - reference docs/versions/current/ instead so nothing breaks on the next bump.
+    - Prior planning history (milestone prompts, epics, reviews): docs/archived/.
+
+# Per-artifact rules (optional)
+# Add custom rules for specific artifacts.
+rules:
+  proposal:
+    - Reference the relevant docs/versions/current/OpenIssues.md OI-## item(s) when a change closes or touches a known gap.
+    - Keep proposals scoped to one project/layer where possible, given the Host/App/Core/Persistence/Platform.Windows split.
+  tasks:
+    - Focus on the windows implemntation! Linux will be implemented seperatly but should have the same stubs! #Call out when a task requires touching FocusTimer.Platform.Windows and has no Linux-stub equivalent yet (see OI-06).
+
+# Per-operation guidance (optional)
+# Add advisory guidance for how apply and archive work should be conducted.
+operations:
+  archive:
+    guidance:
+      - Summarize what changed as a short, chronological list of concrete steps (what was built/fixed, in the order it happened), not a restatement of the proposal - mirror the style of the most recently archived docs/versions/<version>/Summary.md (e.g. docs/versions/v0.1/Summary.md).
+      - Keep the summary terse: a numbered list of steps plus a one sentence outcome is enough; skip prose padding.
+      - Update docs/versions/current/Features.md and docs/versions/current/OpenIssues.md when the change adds a feature or closes an OI-## gap.
