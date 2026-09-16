@@ -38,7 +38,7 @@ FocusTimer.Host (entry point, DI setup)
 
 1. **Dependency Injection**: All services are wired in Host.Program and resolved via IServiceProvider
 2. **Interface-Based Contracts**: All external integrations (logging, persistence, OS features) are defined as interfaces in Core
-3. **Event Bus**: Decouples publishers (ViewModels) from subscribers (AppController) via IEventBus<T>
+3. **Event Bus**: Decouples publishers (ViewModels) from subscribers (AppController) via a single, non-generic `IEventBus`
 4. **MVVM Pattern**: Avalonia ViewModels expose properties and commands; Views bind to them
 5. **Immutable Models**: Domain entities (TimeEntry, Session, Settings) are immutable POCO classes
 
@@ -48,46 +48,39 @@ FocusTimer.Host (entry point, DI setup)
 
 ### Registration (Host/Program.cs)
 
-All services are registered in a single location for visibility and maintainability:
+All services are registered in `Program`'s static constructor (there is no separate `BuildServices()` method — it runs once, before `Main()`):
 
 ```csharp
-public static IServiceCollection BuildServices()
+var services = new ServiceCollection();
+
+// Logging: a Serilog logger is built directly (not via Microsoft.Extensions.Logging)
+// and wrapped in SerilogAppLogger, which implements IAppLogger.
+services.AddSingleton<IAppLogger>(appLogger);
+
+// Platform-specific: real Windows implementations, or Linux no-op stubs otherwise
+if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
 {
-    var services = new ServiceCollection();
-
-    // Logging
-    services.AddLogging(configure =>
-        configure.AddSerilog(new LoggerConfiguration()
-            .MinimumLevel.Debug()
-            .WriteTo.Console()
-            .WriteTo.File(...)
-            .CreateLogger()));
-
-    // Core services
-    services.AddSingleton<IAppLogger>(sp =>
-        new SerilogAdapter(sp.GetRequiredService<ILogger<IAppLogger>>()));
-    services.AddSingleton<IAppInitializer, App>();
-
-    // Persistence
-    services.AddPersistenceServices();
-
-    // Platform-specific
-    if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-    {
-        services.AddWindowsPlatform();
-    }
-
-    // App services
-    services.AddSingleton<AppController>();
-    services.AddSingleton<ThemeManager>();
-    services.AddSingleton<ITrayIconController>(sp =>
-        sp.GetRequiredService<AppController>());
-
-    // Event bus
-    services.AddSingleton(typeof(IEventBus<>), typeof(EventBus<>));
-
-    return services;
+    services.AddSingleton<IGlobalHotkeyService, Platform.Windows.WindowsHotkeyService>();
+    services.AddSingleton<ITrayIconController, TrayStateController>();
+    // ...and the other Windows service registrations
 }
+else
+{
+    services.AddSingleton<IGlobalHotkeyService, LinuxHotkeyServiceStub>();
+    // ...and the other Linux*Stub registrations
+}
+
+// Persistence
+FocusTimer.Persistence.ServiceCollectionExtensions.AddPersistenceServices(services);
+
+// App/Core services
+services.AddSingleton<AppController>();
+services.AddSingleton<ThemeManager>();
+
+// Event bus: single, non-generic instance for the whole app
+services.AddSingleton<IEventBus, EventBus>();
+
+var provider = services.BuildServiceProvider();
 ```
 
 ### Resolving Services
@@ -98,13 +91,13 @@ public static IServiceCollection BuildServices()
 public class TimerWidgetViewModel : ViewModelBase
 {
     private readonly IAppLogger _logger;
-    private readonly IEventBus<EntriesLoggedEvent> _eventBus;
-    private readonly IGlobalHotkeyService _hotkeyService;
+    private readonly IEventBus _eventBus;
+    private readonly IGlobalHotkeyService? _hotkeyService;
 
     public TimerWidgetViewModel(
         IAppLogger logger,
-        IEventBus<EntriesLoggedEvent> eventBus,
-        IGlobalHotkeyService hotkeyService)
+        IEventBus eventBus,
+        IGlobalHotkeyService? hotkeyService)
     {
         _logger = logger;
         _eventBus = eventBus;
@@ -112,6 +105,8 @@ public class TimerWidgetViewModel : ViewModelBase
     }
 }
 ```
+
+(The real `TimerWidgetViewModel` constructor takes several more dependencies — `ISettingsProvider`, `ISessionRepository`, `SessionTracker`, `BreakReminderService`, `ITimerService` — trimmed here for clarity.)
 
 #### Method Injection (Startup Only)
 
@@ -152,7 +147,7 @@ _appController.LogSession(entries);  // Direct dependency
 
 ```csharp
 // ViewModel (publisher)
-await _eventBus.Publish(new EntriesLoggedEvent { Entries = entries });
+_eventBus.Publish(new EntriesLoggedEvent { Entries = entries });
 
 // AppController (subscriber)
 _eventBus.Subscribe<EntriesLoggedEvent>(e =>
@@ -162,46 +157,40 @@ _eventBus.Subscribe<EntriesLoggedEvent>(e =>
 });
 ```
 
-### Implementing the Event Bus
+### The Event Bus (actual implementation)
+
+`IEventBus` is a single, non-generic interface — one bus instance for the whole app, keyed internally by event type, not one bus per `T`. `Publish` is synchronous (`void`, not `Task`).
 
 ```csharp
-public interface IEventBus<T>
+// FocusTimer.Core/Interfaces/IEventBus.cs
+public interface IEventBus
 {
-    Task Publish(T message);
-    IDisposable Subscribe(Action<T> handler);
+    void Publish<T>(T message);
+    IDisposable Subscribe<T>(Action<T> handler);
 }
 
-public class EventBus<T> : IEventBus<T>
+// FocusTimer.Core/Services/EventBus.cs
+public class EventBus : IEventBus
 {
-    private readonly ConcurrentDictionary<Guid, Action<T>> _subscribers = new();
+    private readonly ConcurrentDictionary<Type, List<Delegate>> _handlers = new();
 
-    public Task Publish(T message)
+    public void Publish<T>(T message)
     {
-        foreach (var handler in _subscribers.Values)
+        if (_handlers.TryGetValue(typeof(T), out var list))
         {
-            try
+            foreach (var d in list.ToArray()) // copy to avoid mutation during iteration
             {
-                handler(message);
-            }
-            catch (Exception ex)
-            {
-                // Log but don't throw
-                Debug.WriteLine($"EventBus error: {ex}");
+                try { ((Action<T>)d)?.Invoke(message); }
+                catch { /* swallow to avoid breaking the publisher */ }
             }
         }
-        return Task.CompletedTask;
     }
 
-    public IDisposable Subscribe(Action<T> handler)
+    public IDisposable Subscribe<T>(Action<T> handler)
     {
-        var id = Guid.NewGuid();
-        _subscribers.TryAdd(id, handler);
-        return new Unsubscriber(id, _subscribers);
-    }
-
-    private class Unsubscriber : IDisposable
-    {
-        public void Dispose() => _subscribers.TryRemove(_id, out _);
+        var list = _handlers.GetOrAdd(typeof(T), _ => new List<Delegate>());
+        lock (list) { list.Add(handler); }
+        return new Subscription<T>(_handlers, handler); // removes handler on Dispose
     }
 }
 ```
@@ -219,12 +208,11 @@ public class MyDomainEvent
 
 ### Registering Event Handlers
 
-```csharp
-// In Host/Program.cs
-services.AddSingleton<IEventBus<MyDomainEvent>, EventBus<MyDomainEvent>>();
+No per-event registration is needed — `IEventBus` is registered once (`services.AddSingleton<IEventBus, EventBus>();`) and handles every event type. Just inject `IEventBus` and subscribe:
 
+```csharp
 // In AppController constructor
-public AppController(IEventBus<MyDomainEvent> eventBus, ...)
+public AppController(IEventBus eventBus, ...)
 {
     _eventBus = eventBus;
     _eventBus.Subscribe<MyDomainEvent>(e => HandleEvent(e));
@@ -395,7 +383,7 @@ public class SettingsChangedEvent
 ```csharp
 public class JsonSettingsProvider : ISettingsProvider
 {
-    private readonly IEventBus<SettingsChangedEvent> _eventBus;
+    private readonly IEventBus _eventBus;
 
     public async Task SaveAsync(Settings settings)
     {
@@ -403,7 +391,7 @@ public class JsonSettingsProvider : ISettingsProvider
         // ... save to JSON ...
         _currentSettings = settings;
 
-        await _eventBus.Publish(new SettingsChangedEvent
+        _eventBus.Publish(new SettingsChangedEvent
         {
             OldSettings = old,
             NewSettings = settings
@@ -433,26 +421,24 @@ public class TimerWidgetViewModelTests
 {
     private TimerWidgetViewModel _viewModel;
     private Mock<IAppLogger> _mockLogger;
-    private Mock<IEventBus<EntriesLoggedEvent>> _mockEventBus;
+    private Mock<IEventBus> _mockEventBus;
 
     [SetUp]
     public void Setup()
     {
         _mockLogger = new Mock<IAppLogger>();
-        _mockEventBus = new Mock<IEventBus<EntriesLoggedEvent>>();
+        _mockEventBus = new Mock<IEventBus>();
 
         _viewModel = new TimerWidgetViewModel(
             _mockLogger.Object,
             _mockEventBus.Object,
             new Mock<IGlobalHotkeyService>().Object);
+            // (plus the other constructor dependencies - see above)
     }
 
     [Test]
     public async Task StartTimer_PublishesStartedEvent()
     {
-        // Arrange
-        var expectedEvent = new TimerStartedEvent();
-
         // Act
         await _viewModel.StartTimer();
 
@@ -469,21 +455,21 @@ public class TimerWidgetViewModelTests
 [TestFixture]
 public class EventBusTests
 {
-    private EventBus<TestEvent> _eventBus;
+    private EventBus _eventBus;
 
     [SetUp]
-    public void Setup() => _eventBus = new EventBus<TestEvent>();
+    public void Setup() => _eventBus = new EventBus();
 
     [Test]
-    public async Task Subscribe_HandlerReceivesPublishedMessage()
+    public void Subscribe_HandlerReceivesPublishedMessage()
     {
         // Arrange
         TestEvent? receivedEvent = null;
-        _eventBus.Subscribe(e => receivedEvent = e);
+        _eventBus.Subscribe<TestEvent>(e => receivedEvent = e);
         var msg = new TestEvent { Data = "test" };
 
         // Act
-        await _eventBus.Publish(msg);
+        _eventBus.Publish(msg);
 
         // Assert
         Assert.That(receivedEvent?.Data, Is.EqualTo("test"));
@@ -600,9 +586,13 @@ public class MyService
 
 ### Enable Verbose Logging
 
-Set environment variable before running:
+There's no environment variable for log level today. Two options:
+- Change `.MinimumLevel.Debug()` in `Program.cs`'s Serilog setup directly.
+- Unlock the hidden developer mode (click the version label 7x in Settings → About) to access an in-app log-level picker.
+
+Log output location can be redirected via `FOCUSTIMER_LOG_DIR`:
 ```powershell
-$env:SERILOG_MINIMUM_LEVEL = "Verbose"
+$env:FOCUSTIMER_LOG_DIR = "C:\temp\focustimer-logs"
 dotnet run --project src/FocusTimer.Host
 ```
 
@@ -610,7 +600,7 @@ dotnet run --project src/FocusTimer.Host
 
 Add debug logging to EventBus.cs:
 ```csharp
-public async Task Publish(T message)
+public void Publish<T>(T message)
 {
     System.Diagnostics.Debug.WriteLine($"[EventBus] Publishing {typeof(T).Name}");
     // ... rest of implementation
@@ -623,7 +613,7 @@ In Visual Studio: Debug → Windows → Exception Settings → Tick "CLR Excepti
 
 ### Watch Service Registrations
 
-Add in Host.Program.Main():
+Add at the end of `Program`'s static constructor, right after `services.BuildServiceProvider()`:
 ```csharp
 var provider = services.BuildServiceProvider();
 // Use reflection to inspect registrations
@@ -650,7 +640,7 @@ _logger.LogInformation($"Startup took {sw.ElapsedMilliseconds}ms");
 ### "Service not registered" Exception
 
 **Problem**: `InvalidOperationException` when resolving a service
-**Solution**: Verify service is registered in Host.Program.BuildServices()
+**Solution**: Verify service is registered in `Program`'s static constructor (`FocusTimer.Host/Program.cs`)
 
 ### ViewModel Properties Not Updating
 
@@ -698,4 +688,4 @@ When contributing new features:
 
 ---
 
-**Last Updated**: March 2026
+See [ARCHITECTURE.md](ARCHITECTURE.md) for the current project structure and service inventory — this guide's line-by-line examples can drift from it faster than that reference does.

@@ -19,8 +19,8 @@ FocusTimer is a .NET 8 / Avalonia cross-platform desktop timer widget with clean
 
 **Key Components**:
 ```csharp
+Program (static ctor) - registers all DI services, runs once before Main()
 Program.Main(string[] args)
-  ├─ BuildServices() - registers all DI services
   ├─ BuildAvaloniaApp() - configures Avalonia framework
   └─ Runs the app with .StartWithClassicDesktopLifetime()
 ```
@@ -89,32 +89,43 @@ View (XAML)
 **Key Responsibilities**:
 - Domain models (TimeEntry, Session, Settings)
 - Service interfaces (contracts for all external integrations)
-- Event infrastructure (IEventBus<T>, EventBus, domain events)
+- Concrete, platform-agnostic business logic services (see below) that App/Host wire up via DI
+- Event infrastructure (IEventBus, EventBus, domain events)
 - Logging interfaces (IAppLogger)
 - AppHost static accessor (for legacy global service access—being phased out)
 - IAppInitializer interface (DI-based app initialization contract)
 
 **Core Service Interfaces**:
 ```csharp
-IAppLogger           // Structured logging
-ISettingsProvider    // Load/save settings
-ISessionRepository   // Log time entries to persistent storage
-IGlobalHotkeyService // Register OS hotkeys
-IActiveWindowService // Detect window/app in focus
-INotificationService // Show Toast notifications
-ITrayIconController  // Manage system tray
-IIdleDetectionService // Poll OS idle state
-IAutoStartService    // Register app in startup mechanisms
+IAppLogger           // Structured logging (implemented in Core: SerilogAppLogger)
+ISettingsProvider    // Load/save settings (implemented in Persistence)
+ISessionRepository   // Log time entries to persistent storage (implemented in Persistence)
+IGlobalHotkeyService // Register OS hotkeys (Platform.Windows / Linux stub)
+IActiveWindowService // Detect window/app in focus (Platform.Windows / Linux stub)
+INotificationService // Show Toast notifications (Platform.Windows / Linux stub)
+ITrayIconController  // Manage system tray (implemented in App: TrayStateController)
+IIdleDetectionService // Poll OS idle state (Platform.Windows / Linux stub)
+IAutoStartService    // Register app in startup mechanisms (Platform.Windows / Linux stub)
+IThemeService        // Load/apply/import/export themes (implemented in Core: ThemeService)
+ITimerService        // Timer state and elapsed-time tracking (implemented in Core: TimerService)
 ```
 
+**Core.Services (concrete, no interface — used directly by App/Host)**:
+- `SessionTracker` — tracks active-window changes, builds TimeEntry segments for the current session
+- `BreakReminderService` — fires break reminders on an interval, tracks acknowledgement
+- `TodayStatsService` — aggregates today's tracked time for the tray tooltip/UI
+- `EventBus` — implements `IEventBus`
+
 **Event Bus Pattern**:
+
+`IEventBus` is a single, non-generic bus (there is one instance for the whole app, not one per event type); `Publish` is synchronous.
 ```csharp
-IEventBus<T>
-  ├─ Task Publish<T>(message) - notify all subscribers
+IEventBus
+  ├─ void Publish<T>(message) - notify all subscribers of type T
   └─ IDisposable Subscribe<T>(Action<T> handler) - register handler
 
 // Usage in publisher (ViewModel):
-await eventBus.Publish(new EntriesLoggedEvent { Entries = ... });
+eventBus.Publish(new EntriesLoggedEvent { Entries = ... });
 
 // Usage in subscriber (AppController):
 eventBus.Subscribe<EntriesLoggedEvent>(e => HandleEntriesLogged(e.Entries));
@@ -185,8 +196,9 @@ Date,Start,End,Duration,App,WindowTitle,Project
 - Active window detection (GetForegroundWindow, GetWindowText)
 - Toast notifications (WinRT)
 - Idle state detection (GetLastInputInfo)
-- System tray integration
 - Auto-start registry management
+
+System tray integration (`ITrayIconController`) is implemented in FocusTimer.App (`TrayStateController`), not here — it drives Avalonia's own tray APIs rather than a Win32 call, so it isn't platform-specific.
 
 **Key Components**:
 
@@ -213,7 +225,7 @@ Date,Start,End,Duration,App,WindowTitle,Project
 
 **Dependencies**: Core (interfaces only)
 
-**Linux Equivalent**: Would be `FocusTimer.Platform.Linux` with stubs (X11/DBus for hotkeys, idle detection, notifications).
+**Linux today**: there is no separate `FocusTimer.Platform.Linux` project yet. `Program.cs` registers no-op stub implementations from `FocusTimer.Core/Stubs` (`LinuxHotkeyServiceStub`, `LinuxActiveWindowServiceStub`, `LinuxNotificationServiceStub`, `LinuxIdleDetectionServiceStub`, `LinuxAutoStartServiceStub`) when not running on Windows, so the app builds and runs on Linux with these features inert. Real X11/DBus-backed implementations (likely in their own `FocusTimer.Platform.Linux` project) are tracked as `OI-06`.
 
 ---
 
@@ -242,38 +254,59 @@ FocusTimer.Host (exe, Windows-only)
 
 ### Registration (FocusTimer.Host/Program.cs)
 
+All wiring happens in `Program`'s static constructor (there is no separate `BuildServices()` method):
+
 ```csharp
 var services = new ServiceCollection();
 
-// Core services
-services.AddSingleton<IAppLogger>(sp => new Serilog.SerilogAdapter(...));
-services.AddSingleton<IAppInitializer, App>();
+// Logger (Serilog), built first so early startup can log
+services.AddSingleton<IAppLogger>(appLogger); // pre-built SerilogAppLogger instance
 
-// Persistence
-services.AddPersistenceServices(); // Extension method
-
-// Platform-specific (Windows only)
+// Platform services: real Windows implementations, or Linux no-op stubs
 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
 {
-    services.AddWindowsPlatform();
+    services.AddSingleton<IActiveWindowService, Platform.Windows.WindowsActiveWindowService>();
+    services.AddSingleton<INotificationService, Platform.Windows.WindowsNotificationService>();
+    services.AddSingleton<IAutoStartService, Platform.Windows.WindowsAutoStartService>();
+    services.AddSingleton<IGlobalHotkeyService, Platform.Windows.WindowsHotkeyService>();
+    services.AddSingleton<ITrayIconController, TrayStateController>();
+    services.AddSingleton<IIdleDetectionService, Platform.Windows.WindowsIdleDetectionService>();
+}
+else
+{
+    services.AddSingleton<IActiveWindowService, LinuxActiveWindowServiceStub>();
+    // ...and the other Linux*Stub registrations (see FocusTimer.Core/Stubs)
 }
 
-// App services
-services.AddSingleton<AppController>();
-services.AddSingleton<ThemeManager>();
-services.AddSingleton<ITrayIconController, AppController>();
+// Persistence (falls back to manual registration if the extension method isn't found via reflection)
+FocusTimer.Persistence.ServiceCollectionExtensions.AddPersistenceServices(services);
 
-// Event bus for decoupled messaging
-services.AddSingleton<IEventBus<EntriesLoggedEvent>, EventBus<EntriesLoggedEvent>>();
+// Core business services
+services.AddSingleton<IThemeService, Core.Services.ThemeService>();
+services.AddSingleton<ThemeManager>();
+services.AddSingleton<Core.Interfaces.IEventBus, Core.Services.EventBus>();
+services.AddSingleton<SessionTracker>();
+services.AddSingleton<ITimerService, TimerService>();
+services.AddSingleton<BreakReminderService>();
+services.AddSingleton<TodayStatsService>();
+services.AddSingleton<AppController>();
+
+// ViewModels (transient, plus factory delegates for windows created after startup)
+services.AddTransient<MainWindowViewModel>();
+services.AddTransient<TimerWidgetViewModel>();
+services.AddTransient<SettingsWindowViewModel>();
+services.AddTransient<Func<TimerWidgetViewModel>>(sp => () => sp.GetRequiredService<TimerWidgetViewModel>());
+services.AddTransient<Func<SettingsWindowViewModel>>(sp => () => sp.GetRequiredService<SettingsWindowViewModel>());
 
 var provider = services.BuildServiceProvider();
+Program.Services = provider;
 AppHost.Services = provider; // For legacy fallback access
 ```
 
 ### Resolution (Startup)
 
 ```csharp
-// Avalonia initializes App (from DI container or framework instantiation)
+// Avalonia initializes App (instantiated by the framework, not resolved from DI)
 app.OnFrameworkInitializationCompleted()
   ├─ Resolves AppController, IAppLogger, ITrayIconController from AppHost.Services
   └─ Calls ((IAppInitializer)app).InitializeAsync(...) with injected services
@@ -282,9 +315,9 @@ app.OnFrameworkInitializationCompleted()
 
 ### Injection Points
 
-- **ViewModels**: Constructor injection of IAppLogger, IGlobalHotkeyService, IEventBus<T>
+- **ViewModels**: Constructor injection of IAppLogger, IGlobalHotkeyService, IEventBus
   - ViewModel exposes Logger and HotkeyService properties for view code-behind
-- **AppController**: Constructor injection of 11+ services + IEventBus<EntriesLoggedEvent>
+- **AppController**: Constructor injection of ~11 services + IEventBus
   - Subscribes to EntriesLoggedEvent in constructor
 - **App (IAppInitializer)**: Receives injected services in InitializeAsync() method
 
@@ -305,14 +338,10 @@ Publishers (ViewModels) emit domain events; subscribers (AppController) react:
 
 ```csharp
 // In TimerWidgetViewModel (publisher)
-await _eventBus.Publish(new EntriesLoggedEvent { Entries = entries });
+_eventBus?.Publish(new EntriesLoggedEvent { Entries = entries });
 
 // In AppController (subscriber)
-_eventBus.Subscribe<EntriesLoggedEvent>(e =>
-{
-    foreach (var entry in e.Entries)
-        _sessionRepository.AddSessionEntry(entry);
-});
+_eventBus.Subscribe<EntriesLoggedEvent>(e => OnEntriesLogged(e.Entries));
 ```
 
 **Benefits**:
@@ -327,7 +356,7 @@ _eventBus.Subscribe<EntriesLoggedEvent>(e =>
 
 ```
 Main() [Host]
-  ├─ BuildServices() - DI container setup
+  ├─ (static ctor already ran) - DI container setup
   ├─ BuildAvaloniaApp() - Avalonia configuration
   └─ .StartWithClassicDesktopLifetime()
        │
@@ -359,21 +388,18 @@ Main() [Host]
 
 ## Extending the Architecture
 
-### Add a New Platform (e.g., Linux)
+### Add a New Platform (e.g., real Linux support)
 
-1. Create `FocusTimer.Platform.Linux` project (net8.0-linux)
-2. Implement IGlobalHotkeyService, IActiveWindowService, etc. using X11/DBus
-3. In Host.Program, register conditionally:
-   ```csharp
-   else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-       services.AddLinuxPlatform();
-   ```
-4. Multi-target Host: `<TargetFrameworks>net8.0-windows;net8.0-linux</TargetFrameworks>`
+The `else` branch in `Program.cs`'s static constructor already registers Linux no-op stubs (`FocusTimer.Core/Stubs`) for every platform interface, so the app runs (inertly) on Linux today. To give it real functionality (`OI-06`):
+
+1. Create a `FocusTimer.Platform.Linux` project (or extend the stubs in place, if staying in Core) implementing IGlobalHotkeyService, IActiveWindowService, etc. using X11/DBus
+2. In `Program.cs`, replace the `Linux*Stub` registrations in the `else` branch with the real implementations
+3. If distributing a Linux build, multi-target Host: `<TargetFrameworks>net8.0-windows;net8.0-linux</TargetFrameworks>` (Host is currently `net8.0-windows` only)
 
 ### Add a New ViewModel
 
 1. Create in `FocusTimer.App/ViewModels/`
-2. Inject IAppLogger, IEventBus<T>, other dependencies into constructor
+2. Inject IAppLogger, IEventBus, other dependencies into constructor
 3. Create corresponding View (.axaml) in `FocusTimer.App/Views/`
 4. Register in DI if needed (singleton or factory)
 
@@ -381,7 +407,7 @@ Main() [Host]
 
 1. Create in `FocusTimer.Core/Models/`
 2. Inherit no base class (plain DTO with properties)
-3. Publish: `await _eventBus.Publish(new MyEvent { ... })`
+3. Publish: `_eventBus.Publish(new MyEvent { ... })`
 4. Subscribe: `_eventBus.Subscribe<MyEvent>(e => ...)`
 
 ---
@@ -393,7 +419,7 @@ Main() [Host]
 | **Dependency Injection** | Host.Program | Manage service lifetimes and wiring |
 | **Service Locator** (legacy) | AppHost.Services | Fallback for framework initialization |
 | **Repository** | Persistence, Core.Interfaces | Persist TimeEntry and Settings |
-| **Event Bus** | Core.Services | Decoupled async pub/sub messaging |
+| **Event Bus** | Core.Services | Decoupled synchronous pub/sub messaging |
 | **MVVM** | App.ViewModels, Views | Reactive UI state management |
 | **Converter** | App.Converters | XAML value transformation |
 | **Adapter** | Platform.Windows | Bridge OS APIs to Core interfaces |
@@ -402,8 +428,9 @@ Main() [Host]
 
 ## Next Steps
 
-1. **Remove AppHost.Services**: Once more code is DI-aware, eliminate the static service locator
-2. **Add View Factory**: Use DI to create windows instead of `new TimerWidgetWindow()`
-3. **Unit Tests**: Add Core and Persistence test projects
-4. **Multi-Platform Host**: Target net8.0;net8.0-windows and create FocusTimer.Platform.Linux
-5. **Installer**: Wrap Host.exe in WiX, Inno Setup, or MSIX for distribution
+1. **Remove AppHost.Services**: Once more code is DI-aware, eliminate the static service locator (still used in `App.axaml.cs`, `TimerWidgetWindow.axaml.cs`, `Program.cs`)
+2. **Add View Factory**: `AppController` still does `new TimerWidgetWindow(...)` directly; ViewModels are already DI-created via `Func<T>` factories, windows aren't yet
+3. **Real Linux platform implementations**: stubs exist and are wired up (see `FocusTimer.Core/Stubs`), but hotkeys/notifications/idle/auto-start are inert on Linux — tracked as `OI-06`
+4. **Multi-Platform Host**: Host is still `net8.0-windows`-only (`WinExe`); multi-targeting is required to ship a Linux build once (3) lands
+
+See `docs/versions/current/OpenIssues.md` for the full, current backlog of known gaps.

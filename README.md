@@ -124,7 +124,7 @@ Version resolution order for MSI/exe metadata:
 - `-Version` parameter (if provided)
 - CI tag variables (`FOCUSTIMER_VERSION`, `GITHUB_REF_NAME`, `GITHUB_REF`, `BUILD_SOURCEBRANCHNAME`, `BUILD_SOURCEBRANCH`, `CI_COMMIT_TAG`)
 - Latest git tag (`git describe --tags --abbrev=0`)
-- Fallback: `1.0.0`
+- Fallback: `0.1.1`
 
 Outputs:
 - Self-contained EXE: `artifacts/publish/win-x64-selfcontained/FocusTimer.Host.exe`
@@ -134,6 +134,15 @@ Manual WiX build (after publishing):
 
 ```powershell
 dotnet build installer/FocusTimer.Installer/FocusTimer.Installer.wixproj -c Release -p:ProductVersion=1.0.0 -p:PublishDir=artifacts/publish/win-x64-selfcontained -o artifacts/installer
+```
+
+### Downloadable Releases (GitHub)
+
+Pushing a tag matching `v*.*.*` (e.g. `v0.1.0`) triggers `.github/workflows/release.yml`, which runs `build-installer.ps1` and publishes a GitHub Release with the MSI and a portable (no-install) zip attached:
+
+```powershell
+git tag v0.1.0
+git push origin v0.1.0
 ```
 
 ### WiX UI Feature Options
@@ -178,9 +187,9 @@ dotnet format
 
 Logs are written to:
 - **Console**: During development
-- **File**: `%APPDATA%\Roaming\FocusTimer\logs\`
+- **File**: `Documents\FocusTimer\logs\` (override the root with the `FOCUSTIMER_LOG_DIR` environment variable)
 
-Control log level via `SERILOG_MINIMUM_LEVEL` environment variable.
+Settings are stored separately, in `%APPDATA%\Roaming\FocusTimer\settings.json`.
 
 ### Running Tests
 
@@ -219,24 +228,15 @@ Override the threshold value when needed:
 
 ### Dependency Injection
 
-All services registered in `FocusTimer.Host/Program.cs`:
-
-```csharp
-var services = new ServiceCollection()
-    .AddLogging(...)                       // Serilog
-    .AddPersistenceServices()              // Settings, SessionRepository
-    .AddWindowsPlatform()                  // Hotkeys, idle, notifications
-    .AddSingleton<AppController>()
-    .AddSingleton<IEventBus<EntriesLoggedEvent>, EventBus<EntriesLoggedEvent>>();
-```
+All services are registered in `FocusTimer.Host/Program.cs`'s static constructor: Serilog logger, platform services (Windows implementations or Linux stubs, chosen via `RuntimeInformation.IsOSPlatform`), persistence, `IEventBus`, `AppController`, and the app's ViewModels.
 
 ### Event Bus Pattern
 
-ViewModels publish events; controllers subscribe and react:
+`IEventBus` is a single, non-generic bus (not one instance per event type). ViewModels publish events; controllers subscribe and react:
 
 ```csharp
 // Publisher (TimerWidgetViewModel)
-await _eventBus.Publish(new EntriesLoggedEvent { Entries = entries });
+_eventBus.Publish(new EntriesLoggedEvent { Entries = entries });
 
 // Subscriber (AppController constructor)
 _eventBus.Subscribe<EntriesLoggedEvent>(e => LogSessions(e.Entries));
@@ -250,7 +250,7 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for complete details, project description
 
 | Issue | Cause | Fix |
 |-------|-------|-----|
-| App crashes on startup | Service not registered | Check FocusTimer.Host/Program.cs BuildServices() |
+| App crashes on startup | Service not registered | Check FocusTimer.Host/Program.cs static constructor |
 | Hotkeys not working | Registered before window shown | Ensure RegisterHotkeys() called after UI visible |
 | Tray icon missing | Not in visual tree | Verify TrayIcon element in CompactModeView.axaml |
 | Timer freezes | Long task on UI thread | Use Dispatcher.UIThread.InvokeAsync() |
@@ -263,8 +263,9 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for complete details, project description
 - **Sound Cues**: Chimes for breaks or pause resume
 - **Analytics Dashboard**: In-app "Today" view by app/project
 - **Window Position Memory**: Restore widget to last-used monitor
-- **Multi-Platform**: Linux support (net8.0-linux + FocusTimer.Platform.Linux)
-- **Advanced Idle**: Auto-pause with user notifications
+- **Multi-Platform**: Full Linux feature parity (the app already builds and runs on Linux; hotkeys/notifications/idle/auto-start are currently stubs)
+
+See `docs/versions/current/OpenIssues.md` for the full, tracked list of gaps.
 
 ---
 

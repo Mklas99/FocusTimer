@@ -1,0 +1,41 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+jobs:
+  release:
+    name: Build installer and publish release
+    runs-on: windows-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Build self-contained EXE + MSI
+        shell: pwsh
+        run: ./scripts/build-installer.ps1 -Version "${{ github.ref_name }}"
+
+      - name: Zip portable (no-install) build
+        shell: pwsh
+        run: Compress-Archive -Path "artifacts/publish/win-x64-selfcontained/*" -DestinationPath "artifacts/FocusTimer-${{ github.ref_name }}-win-x64-portable.zip"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          files: |
+            artifacts/installer/FocusTimer.Installer.msi
+            artifacts/FocusTimer-${{ github.ref_name }}-win-x64-portable.zip
+          generate_release_notes: true
