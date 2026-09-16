@@ -2,7 +2,7 @@
 
 # Use the .NET 8.0 SDK image as the base for development
 #FROM mcr.microsoft.com/dotnet/sdk:8.0-alpine AS runtime
-FROM mcr.microsoft.com/dotnet/sdk:8.0 as runtime
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS runtime
 
 # Set environment variables for the devcontainer
 ENV DOTNET_USE_POLLING_FILE_WATCHER=1 \
