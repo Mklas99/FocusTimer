@@ -9,6 +9,8 @@
 *.sln.docstates
 .devcontainer/devcontainer-lock.json
 docs/*
+!docs/versions/
+!docs/CHANGELOG.md
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
