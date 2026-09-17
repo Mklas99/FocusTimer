@@ -36,12 +36,12 @@
 
 ## 5. Revision-Checked Atomic Mutation
 
-- [ ] 5.1 Add a same-directory temporary-file and atomic-replacement abstraction suitable for Windows, with platform-neutral failure injection; verify the Windows-targeted persistence tests prove readers never observe a partial target.
-- [ ] 5.2 Implement same-day patch by entry ID and expected revision, deriving duration and incrementing revision/last-modified exactly once; verify success, not-found, stale-revision, validation, and cross-day rejection cases.
-- [ ] 5.3 Implement delete by entry ID and expected revision through the same atomic rewrite path; verify success, not-found, and stale-revision cases leave all unrelated rows unchanged.
-- [ ] 5.4 Serialize append, update, and delete operations per daily file while reading the latest content after the lock is acquired; verify concurrency tests produce no lost successful change, duplicate row, or invalid CSV.
-- [ ] 5.5 Flush, re-read, and validate each complete replacement before activation, preserving the original on write, validation, or activation failure; verify injected failures leave the original bytes readable and unchanged.
-- [ ] 5.6 Clean successful temporary artifacts and safely remove recognized stale artifacts without touching unrelated files; verify cleanup tests cover completed and interrupted rewrite attempts.
+- [x] 5.1 Add a same-directory temporary-file and atomic-replacement abstraction suitable for Windows, with platform-neutral failure injection; verify the Windows-targeted persistence tests prove readers never observe a partial target.
+- [x] 5.2 Implement same-day patch by entry ID and expected revision, deriving duration and incrementing revision/last-modified exactly once; verify success, not-found, stale-revision, validation, and cross-day rejection cases.
+- [x] 5.3 Implement delete by entry ID and expected revision through the same atomic rewrite path; verify success, not-found, and stale-revision cases leave all unrelated rows unchanged.
+- [x] 5.4 Serialize append, update, and delete operations per daily file while reading the latest content after the lock is acquired; verify concurrency tests produce no lost successful change, duplicate row, or invalid CSV.
+- [x] 5.5 Flush, re-read, and validate each complete replacement before activation, preserving the original on write, validation, or activation failure; verify injected failures leave the original bytes readable and unchanged.
+- [x] 5.6 Clean successful temporary artifacts and safely remove recognized stale artifacts without touching unrelated files; verify cleanup tests cover completed and interrupted rewrite attempts.
 
 ## 6. Application Integration
 

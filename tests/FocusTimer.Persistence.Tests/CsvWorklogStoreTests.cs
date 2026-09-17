@@ -349,6 +349,254 @@ public class CsvWorklogStoreTests
         finally { Directory.Delete(root, true); }
     }
 
+    [Fact]
+    public async Task PatchAsync_GivenMatchingRevision_RewritesOnlyTargetAndIncrementsRevision()
+    {
+        var root = TestHelpers.CreateTempDirectory();
+        try
+        {
+            var store = CreateStore(root);
+            var entry = CreateEntry("patch", new DateTimeOffset(2026, 3, 31, 9, 0, 0, TimeSpan.Zero));
+            var unaffected = CreateEntry("other", entry.StartedAt.AddMinutes(10));
+            Assert.True((await store.AppendAsync([entry, unaffected])).IsSuccess);
+            var patch = new WorklogPatch(entry.StartedAt.AddMinutes(1), entry.EndedAt.AddMinutes(3), "Changed", "New title",
+                "Project", ProjectAssignmentSource.Session, null, ActivityKind.Active, EndReason.ManualPause, CaptureSource.ActiveWindow);
+
+            var outcome = await store.PatchAsync(entry.EntryId, entry.Revision, patch);
+            var result = await store.QueryAsync(new WorklogQuery(entry.StartedAt, unaffected.EndedAt.AddMinutes(1)));
+
+            Assert.True(outcome.IsSuccess);
+            Assert.Equal(2, result.Entries.Count);
+            var changed = Assert.Single(result.Entries, item => item.EntryId == entry.EntryId);
+            Assert.Equal(2, changed.Revision);
+            Assert.Equal(TimeSpan.FromMinutes(7), changed.Duration);
+            Assert.Equal("Changed", changed.AppName);
+            Assert.Equal(unaffected, Assert.Single(result.Entries, item => item.EntryId == unaffected.EntryId));
+        }
+        finally { Directory.Delete(root, true); }
+    }
+
+    [Fact]
+    public async Task DeleteAsync_GivenStaleRevision_LeavesOriginalBytesUnchanged()
+    {
+        var root = TestHelpers.CreateTempDirectory();
+        try
+        {
+            var store = CreateStore(root);
+            var entry = CreateEntry("delete", new DateTimeOffset(2026, 3, 31, 9, 0, 0, TimeSpan.Zero));
+            Assert.True((await store.AppendAsync([entry])).IsSuccess);
+            var path = Path.Combine(root, "2026", "03", "2026-03-31-worklog.csv");
+            var before = await File.ReadAllBytesAsync(path);
+
+            var outcome = await store.DeleteAsync(entry.EntryId, entry.Revision + 1);
+
+            Assert.Equal(WorklogOutcomeKind.Conflict, outcome.Kind);
+            Assert.Equal(before, await File.ReadAllBytesAsync(path));
+        }
+        finally { Directory.Delete(root, true); }
+    }
+
+    [Fact]
+    public async Task PatchAsync_GivenDateMove_RejectsWithoutChangingTheDailyWorklog()
+    {
+        var root = TestHelpers.CreateTempDirectory();
+        try
+        {
+            var store = CreateStore(root);
+            var entry = CreateEntry("date-move", new DateTimeOffset(2026, 3, 31, 9, 0, 0, TimeSpan.Zero));
+            Assert.True((await store.AppendAsync([entry])).IsSuccess);
+            var path = Path.Combine(root, "2026", "03", "2026-03-31-worklog.csv");
+            var before = await File.ReadAllBytesAsync(path);
+            var patch = new WorklogPatch(entry.StartedAt.AddDays(1), entry.EndedAt.AddDays(1), entry.AppName, entry.WindowTitle,
+                entry.ProjectTag, entry.ProjectAssignmentSource, entry.ProjectRuleId, entry.ActivityKind, entry.EndReason, entry.CaptureSource);
+
+            var outcome = await store.PatchAsync(entry.EntryId, entry.Revision, patch);
+
+            Assert.Equal(WorklogOutcomeKind.ValidationFailure, outcome.Kind);
+            Assert.Equal(before, await File.ReadAllBytesAsync(path));
+        }
+        finally { Directory.Delete(root, true); }
+    }
+
+    [Fact]
+    public async Task PatchAsync_GivenEndDateMove_RejectsWithoutChangingTheDailyWorklog()
+    {
+        var root = TestHelpers.CreateTempDirectory();
+        try
+        {
+            var store = CreateStore(root);
+            var entry = CreateEntry("end-date-move", new DateTimeOffset(2026, 3, 31, 23, 50, 0, TimeSpan.Zero));
+            Assert.True((await store.AppendAsync([entry])).IsSuccess);
+            var path = Path.Combine(root, "2026", "03", "2026-03-31-worklog.csv");
+            var before = await File.ReadAllBytesAsync(path);
+            var patch = new WorklogPatch(entry.StartedAt, entry.EndedAt.AddDays(1), entry.AppName, entry.WindowTitle,
+                entry.ProjectTag, entry.ProjectAssignmentSource, entry.ProjectRuleId, entry.ActivityKind, entry.EndReason, entry.CaptureSource);
+
+            var outcome = await store.PatchAsync(entry.EntryId, entry.Revision, patch);
+
+            Assert.Equal(WorklogOutcomeKind.ValidationFailure, outcome.Kind);
+            Assert.Equal(before, await File.ReadAllBytesAsync(path));
+        }
+        finally { Directory.Delete(root, true); }
+    }
+
+    [Fact]
+    public async Task DeleteAsync_GivenMatchingRevision_RemovesOnlyTheRequestedEntry()
+    {
+        var root = TestHelpers.CreateTempDirectory();
+        try
+        {
+            var store = CreateStore(root);
+            var deleted = CreateEntry("deleted", new DateTimeOffset(2026, 3, 31, 9, 0, 0, TimeSpan.Zero));
+            var retained = CreateEntry("retained", deleted.StartedAt.AddMinutes(10));
+            Assert.True((await store.AppendAsync([deleted, retained])).IsSuccess);
+
+            var outcome = await store.DeleteAsync(deleted.EntryId, deleted.Revision);
+            var result = await store.QueryAsync(new WorklogQuery(deleted.StartedAt, retained.EndedAt.AddMinutes(1)));
+
+            Assert.True(outcome.IsSuccess);
+            Assert.Equal(retained, Assert.Single(result.Entries));
+        }
+        finally { Directory.Delete(root, true); }
+    }
+
+    [Fact]
+    public async Task MutationAsync_GivenMissingEntryOrInvalidRevision_ReturnsTypedOutcomeWithoutCreatingFiles()
+    {
+        var root = TestHelpers.CreateTempDirectory();
+        try
+        {
+            var store = CreateStore(root);
+            var patch = new WorklogPatch(DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddMinutes(1), "Code", "Window", null,
+                ProjectAssignmentSource.Unassigned, null, ActivityKind.Active, EndReason.Unknown, CaptureSource.ActiveWindow);
+
+            var notFound = await store.PatchAsync("missing", 1, patch);
+            var invalid = await store.DeleteAsync("missing", 0);
+
+            Assert.Equal(WorklogOutcomeKind.NotFound, notFound.Kind);
+            Assert.Equal(WorklogOutcomeKind.ValidationFailure, invalid.Kind);
+            Assert.Empty(Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories));
+        }
+        finally { Directory.Delete(root, true); }
+    }
+
+    [Fact]
+    public async Task AppendAndPatchAsync_GivenConcurrentSameDayChanges_PreservesBothChanges()
+    {
+        var root = TestHelpers.CreateTempDirectory();
+        try
+        {
+            var store = CreateStore(root);
+            var existing = CreateEntry("existing", new DateTimeOffset(2026, 3, 31, 9, 0, 0, TimeSpan.Zero));
+            var appended = CreateEntry("appended", existing.StartedAt.AddMinutes(10));
+            Assert.True((await store.AppendAsync([existing])).IsSuccess);
+            var patch = new WorklogPatch(existing.StartedAt, existing.EndedAt, "Changed", existing.WindowTitle,
+                existing.ProjectTag, existing.ProjectAssignmentSource, existing.ProjectRuleId, existing.ActivityKind,
+                existing.EndReason, existing.CaptureSource);
+
+            var outcomes = await Task.WhenAll(store.AppendAsync([appended]), store.PatchAsync(existing.EntryId, 1, patch));
+            var result = await store.QueryAsync(new WorklogQuery(existing.StartedAt, appended.EndedAt.AddMinutes(1)));
+
+            Assert.All(outcomes, outcome => Assert.True(outcome.IsSuccess));
+            Assert.Equal(2, result.Entries.Count);
+            Assert.Equal(2, Assert.Single(result.Entries, item => item.EntryId == existing.EntryId).Revision);
+            Assert.Single(result.Entries, item => item.EntryId == appended.EntryId);
+        }
+        finally { Directory.Delete(root, true); }
+    }
+
+    [Fact]
+    public async Task PatchAsync_GivenActivationFailure_PreservesOriginalAndCleansTemporaryArtifact()
+    {
+        var root = TestHelpers.CreateTempDirectory();
+        try
+        {
+            var operations = new FailingActivationOperations();
+            var store = new CsvSessionRepository(new StubSettingsProvider(new Settings { WorklogDirectory = root }), NullLogger.Instance, operations);
+            var entry = CreateEntry("activation", new DateTimeOffset(2026, 3, 31, 9, 0, 0, TimeSpan.Zero));
+            Assert.True((await store.AppendAsync([entry])).IsSuccess);
+            var path = Path.Combine(root, "2026", "03", "2026-03-31-worklog.csv");
+            var before = await File.ReadAllBytesAsync(path);
+            operations.FailActivation = true;
+            var patch = new WorklogPatch(entry.StartedAt, entry.EndedAt, "Changed", entry.WindowTitle, entry.ProjectTag,
+                entry.ProjectAssignmentSource, entry.ProjectRuleId, entry.ActivityKind, entry.EndReason, entry.CaptureSource);
+
+            var outcome = await store.PatchAsync(entry.EntryId, entry.Revision, patch);
+
+            Assert.Equal(WorklogOutcomeKind.IoFailure, outcome.Kind);
+            Assert.Equal(before, await File.ReadAllBytesAsync(path));
+            Assert.Empty(Directory.EnumerateFiles(Path.GetDirectoryName(path)!, "*.worklog-rewrite-*.tmp"));
+        }
+        finally { Directory.Delete(root, true); }
+    }
+
+    [Fact]
+    public async Task PatchAsync_GivenTemporaryWriteFailure_PreservesOriginalAndCleansTemporaryArtifact()
+    {
+        var root = TestHelpers.CreateTempDirectory();
+        try
+        {
+            var operations = new FailingActivationOperations();
+            var store = new CsvSessionRepository(new StubSettingsProvider(new Settings { WorklogDirectory = root }), NullLogger.Instance, operations);
+            var entry = CreateEntry("write-failure", new DateTimeOffset(2026, 3, 31, 9, 0, 0, TimeSpan.Zero));
+            Assert.True((await store.AppendAsync([entry])).IsSuccess);
+            var path = Path.Combine(root, "2026", "03", "2026-03-31-worklog.csv");
+            var before = await File.ReadAllBytesAsync(path);
+            operations.FailTemporaryCreation = true;
+            var patch = new WorklogPatch(entry.StartedAt, entry.EndedAt, "Changed", entry.WindowTitle, entry.ProjectTag,
+                entry.ProjectAssignmentSource, entry.ProjectRuleId, entry.ActivityKind, entry.EndReason, entry.CaptureSource);
+
+            var outcome = await store.PatchAsync(entry.EntryId, entry.Revision, patch);
+
+            Assert.Equal(WorklogOutcomeKind.IoFailure, outcome.Kind);
+            Assert.Equal(before, await File.ReadAllBytesAsync(path));
+            Assert.Empty(Directory.EnumerateFiles(Path.GetDirectoryName(path)!, "*.worklog-rewrite-*.tmp"));
+        }
+        finally { Directory.Delete(root, true); }
+    }
+
+    [Fact]
+    public async Task DeleteAsync_CleansRecognizedStaleArtifactsWithoutTouchingOtherFiles()
+    {
+        var root = TestHelpers.CreateTempDirectory();
+        try
+        {
+            var store = CreateStore(root);
+            var entry = CreateEntry("cleanup", new DateTimeOffset(2026, 3, 31, 9, 0, 0, TimeSpan.Zero));
+            Assert.True((await store.AppendAsync([entry])).IsSuccess);
+            var directory = Path.Combine(root, "2026", "03");
+            var stale = Path.Combine(directory, "2026-03-31-worklog.csv.worklog-rewrite-interrupted.tmp");
+            var unrelated = Path.Combine(directory, "notes.tmp");
+            await File.WriteAllTextAsync(stale, "partial");
+            File.SetLastWriteTimeUtc(stale, DateTime.UtcNow.AddMinutes(-6));
+            await File.WriteAllTextAsync(unrelated, "keep");
+
+            Assert.True((await store.DeleteAsync(entry.EntryId, entry.Revision)).IsSuccess);
+
+            Assert.False(File.Exists(stale));
+            Assert.True(File.Exists(unrelated));
+        }
+        finally { Directory.Delete(root, true); }
+    }
+
+    [Fact]
+    public void CleanupStaleTemporaryFiles_GivenRecentRecognizedArtifact_LeavesItUntouched()
+    {
+        var root = TestHelpers.CreateTempDirectory();
+        try
+        {
+            var path = Path.Combine(root, "2026", "03", "2026-03-31-worklog.csv");
+            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+            var recent = path + ".worklog-rewrite-in-progress.tmp";
+            File.WriteAllText(recent, "in progress");
+
+            new AtomicWorklogFileOperations().CleanupStaleTemporaryFiles(path);
+
+            Assert.True(File.Exists(recent));
+        }
+        finally { Directory.Delete(root, true); }
+    }
+
     private sealed class StubSettingsProvider : FocusTimer.Core.Interfaces.ISettingsProvider
     {
         private readonly Settings _settings;
@@ -377,4 +625,38 @@ public class CsvWorklogStoreTests
         "device",
         1,
         DateTimeOffset.UtcNow);
+
+    private sealed class FailingActivationOperations : IAtomicWorklogFileOperations
+    {
+        private readonly AtomicWorklogFileOperations _inner = new();
+
+        public bool FailActivation { get; set; }
+
+        public bool FailTemporaryCreation { get; set; }
+
+        public FileStream CreateTemporaryFile(string targetPath, out string temporaryPath)
+        {
+            if (this.FailTemporaryCreation)
+            {
+                temporaryPath = string.Empty;
+                throw new IOException("Injected temporary-file creation failure.");
+            }
+
+            return this._inner.CreateTemporaryFile(targetPath, out temporaryPath);
+        }
+
+        public void ActivateReplacement(string temporaryPath, string targetPath)
+        {
+            if (this.FailActivation)
+            {
+                throw new IOException("Injected activation failure.");
+            }
+
+            this._inner.ActivateReplacement(temporaryPath, targetPath);
+        }
+
+        public void DeleteTemporaryFile(string temporaryPath) => this._inner.DeleteTemporaryFile(temporaryPath);
+
+        public void CleanupStaleTemporaryFiles(string targetPath) => this._inner.CleanupStaleTemporaryFiles(targetPath);
+    }
 }
