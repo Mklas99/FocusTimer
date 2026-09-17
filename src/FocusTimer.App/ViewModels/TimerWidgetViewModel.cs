@@ -24,7 +24,7 @@ namespace FocusTimer.App.ViewModels
     {
         private readonly ISettingsProvider _settingsProvider;
         private readonly IAppLogger _logWriter;
-        private readonly ISessionRepository _sessionRepository;
+        private readonly IWorklogStore _worklogStore;
         private readonly SessionTracker _sessionTracker;
         private readonly BreakReminderService _breakReminderService;
         private readonly ITimerService _timerService;
@@ -58,7 +58,7 @@ namespace FocusTimer.App.ViewModels
         /// </summary>
         /// <param name="settingsProvider">The settings provider for loading and managing application settings.</param>
         /// <param name="logWriter">The logger for writing diagnostic and error messages.</param>
-        /// <param name="sessionRepository">The repository for persisting and retrieving session data.</param>
+        /// <param name="worklogStore">The store for persisting durable worklog entries.</param>
         /// <param name="sessionTracker">The service for tracking the current session state.</param>
         /// <param name="breakReminderService">The service for managing break reminders.</param>
         /// <param name="timerService">The timer service for managing timer events and state.</param>
@@ -67,7 +67,7 @@ namespace FocusTimer.App.ViewModels
         public TimerWidgetViewModel(
             ISettingsProvider settingsProvider,
             IAppLogger logWriter,
-            ISessionRepository sessionRepository,
+            IWorklogStore worklogStore,
             SessionTracker sessionTracker,
             BreakReminderService breakReminderService,
             ITimerService timerService,
@@ -77,7 +77,7 @@ namespace FocusTimer.App.ViewModels
             // Defensive: Ensure ViewModel is constructed on the UI thread
             this._settingsProvider = settingsProvider;
             this._logWriter = logWriter;
-            this._sessionRepository = sessionRepository;
+            this._worklogStore = worklogStore;
             this._sessionTracker = sessionTracker;
             this._breakReminderService = breakReminderService;
             this._timerService = timerService;
@@ -519,6 +519,14 @@ namespace FocusTimer.App.ViewModels
             // Settings property change will trigger UI bindings
         }
 
+        /// <summary>
+        /// Pauses the timer because idle detection ended the preceding active-work segment.
+        /// </summary>
+        public void PauseForIdle()
+        {
+            this._timerService.Pause(EndReason.IdlePause);
+        }
+
         /// <inheritdoc/>
         public void Dispose()
         {
@@ -542,7 +550,8 @@ namespace FocusTimer.App.ViewModels
             try
             {
                 // Stop timer
-                this._timerService.Stop();
+                var wasRunning = this._timerService.CurrentState == TimerState.Running;
+                this._timerService.Stop(EndReason.ApplicationExit);
 
                 // No need to unsubscribe from Tick here, as we use lambda subscriptions in the constructor
 
@@ -550,17 +559,29 @@ namespace FocusTimer.App.ViewModels
                 this._breakReminderService.OnTimerPaused();
 
                 // If timer was running, try to flush entries
-                if (this.IsRunning)
+                if (wasRunning)
                 {
                     try
                     {
                         // Synchronously collect and attempt to save entries
-                        var entries = this._sessionTracker.CollectAndResetSegments();
+                        var entries = this._sessionTracker.DrainCompletedSegments();
                         if (entries.Count > 0)
                         {
                             // We can't await here, so we'll do our best effort
-                            this._sessionRepository.SaveSessionAsync(entries).Wait(TimeSpan.FromSeconds(2));
-                            this._logWriter.LogInformation($"Flushed {entries.Count} entries on dispose");
+                            var append = this._worklogStore.AppendAsync(entries);
+                            if (!append.Wait(TimeSpan.FromSeconds(2)))
+                            {
+                                this._logWriter.LogWarning("Timed out while flushing worklog entries on dispose.");
+                            }
+                            else if (!append.GetAwaiter().GetResult().IsSuccess)
+                            {
+                                var outcome = append.GetAwaiter().GetResult();
+                                this._logWriter.LogWarning($"Unable to flush worklog entries on dispose: {outcome.Kind} {outcome.Message}");
+                            }
+                            else
+                            {
+                                this._logWriter.LogInformation($"Flushed {entries.Count} entries on dispose");
+                            }
                         }
                     }
                     catch (Exception ex)
@@ -658,7 +679,7 @@ namespace FocusTimer.App.ViewModels
             {
                 this._logWriter.LogDebug($"Attempting full session flush due to {reason}.");
 
-                var entries = this._sessionTracker.CollectAndResetSegments();
+                var entries = this._sessionTracker.DrainCompletedSegments();
                 await this.PersistEntriesAsync(entries, reason);
             }
             catch (Exception ex)
@@ -721,7 +742,18 @@ namespace FocusTimer.App.ViewModels
             }
 
             this._logWriter.LogInformation($"Persisting {entries.Count} time entries due to {reason}.");
-            await this._sessionRepository.SaveSessionAsync(entries);
+            var outcome = await this._worklogStore.AppendAsync(entries);
+            if (!outcome.IsSuccess)
+            {
+                this._logWriter.LogWarning($"Unable to persist worklog entries: {outcome.Kind} {outcome.Message}");
+                return;
+            }
+
+            if (outcome.Warnings?.Count > 0)
+            {
+                this._logWriter.LogWarning($"Persisted worklog entries with {outcome.Warnings.Count} warning(s): {outcome.Message}");
+            }
+
             this._logWriter.LogInformation($"Successfully logged {entries.Count} time entries to {currentSettings.WorklogDirectory}");
 
             // Publish an EntriesLoggedEvent so the AppController (or other listeners) can react.

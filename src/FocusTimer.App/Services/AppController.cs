@@ -425,7 +425,11 @@ namespace FocusTimer.App.Services
                 }
 
                 this._pausedByIdle = true;
-                this.ToggleTimer();
+                if (this._timerWindow?.DataContext is TimerWidgetViewModel viewModel)
+                {
+                    viewModel.PauseForIdle();
+                }
+
                 _ = this._notificationService.ShowNotificationAsync("Focus Timer", "Timer paused because no activity was detected.");
                 this._logWriter.LogInformation($"Timer paused due to user idle at {e.Timestamp:O}");
             });

@@ -25,6 +25,8 @@
     <Product>FocusTimer</Product>
     <Description>FocusTimer is a desktop focus timer with break reminders, work logging, and customizable appearance.</Description>
     <RepositoryUrl>https://github.com/Mklas99/FocusTimer</RepositoryUrl>
+    <!-- Current RFC 4180 streaming codec, pinned once for every consumer. -->
+    <CsvHelperVersion>33.1.0</CsvHelperVersion>
   </PropertyGroup>
 
   <!-- Code Analysis Rules -->

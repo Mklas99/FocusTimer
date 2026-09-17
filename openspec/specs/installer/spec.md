@@ -35,8 +35,8 @@ The system SHALL offer, as selectable install features, a desktop shortcut and a
 - **THEN** that shortcut is not created
 
 ### Requirement: GitHub Release Publishing
-The system SHALL publish a downloadable GitHub Release, containing the MSI and a portable (no-install) zip of the self-contained build, whenever a tag matching `v*.*.*` is pushed.
+The system SHALL publish a downloadable GitHub Release, containing the MSI and a portable (no-install) self-contained EXE, whenever a tag matching `v*.*.*` is pushed.
 
 #### Scenario: A version tag is pushed
 - **WHEN** a tag matching `v*.*.*` (e.g. `v0.1.0`) is pushed to the repository
-- **THEN** `.github/workflows/release.yml` builds the installer via `scripts/build-installer.ps1` and creates a GitHub Release for that tag with the MSI and portable zip attached
+- **THEN** `.github/workflows/release.yml` builds the installer via `scripts/build-installer.ps1` and creates a GitHub Release for that tag with the MSI and portable self-contained EXE attached

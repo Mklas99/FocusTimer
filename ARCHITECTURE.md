@@ -87,7 +87,7 @@ View (XAML)
 **Purpose**: Domain models, service interfaces, and business logic (framework-agnostic).
 
 **Key Responsibilities**:
-- Domain models (TimeEntry, Session, Settings)
+- Domain models (immutable TimeEntry and Settings)
 - Service interfaces (contracts for all external integrations)
 - Concrete, platform-agnostic business logic services (see below) that App/Host wire up via DI
 - Event infrastructure (IEventBus, EventBus, domain events)
@@ -99,7 +99,7 @@ View (XAML)
 ```csharp
 IAppLogger           // Structured logging (implemented in Core: SerilogAppLogger)
 ISettingsProvider    // Load/save settings (implemented in Persistence)
-ISessionRepository   // Log time entries to persistent storage (implemented in Persistence)
+IWorklogStore        // Append, query, patch, and delete worklog entries (implemented in Persistence)
 IGlobalHotkeyService // Register OS hotkeys (Platform.Windows / Linux stub)
 IActiveWindowService // Detect window/app in focus (Platform.Windows / Linux stub)
 INotificationService // Show Toast notifications (Platform.Windows / Linux stub)
@@ -147,11 +147,11 @@ This allows late-binding access to services from non-DI-aware contexts. It is cu
 
 ### 4. **FocusTimer.Persistence** (`net8.0`, Class Library)
 
-**Purpose**: Data persistence implementations (settings and session logs).
+**Purpose**: Data persistence implementations (settings and versioned worklogs).
 
 **Key Responsibilities**:
 - JSON settings provider (load/save application settings)
-- CSV session repository (append time entries to dated logs)
+- Current-schema CSV worklog store (idempotent append, query, same-day patch, and delete)
 - ServiceCollectionExtensions for DI registration
 
 **Key Components**:
@@ -162,25 +162,25 @@ This allows late-binding access to services from non-DI-aware contexts. It is cu
   - Automatic JSON serialization/deserialization with sane defaults
 
 - **CsvSessionRepository.cs**
-  - Implements ISessionRepository
-  - Appends TimeEntry records to CSV files (one per date: `2026-03-29.csv`)
-  - Retention policy: keeps last N days of logs (configurable)
-  - Thread-safe concurrent writes
+  - Implements `IWorklogStore`
+  - Stores current-schema entries at `worklogs/yyyy/MM/yyyy-MM-dd-worklog.csv`
+  - Uses header-driven RFC 4180 CSV, durable entry/session IDs, and typed outcomes
+  - Serializes per-file mutations and uses same-directory atomic replacement for patch/delete
+  - Retains eligible finalized current-schema daily files only
 
 - **ServiceCollectionExtensions.cs**
   - AddPersistenceServices() extension method
   - Registers JsonSettingsProvider and CsvSessionRepository as singletons
   - Called from Host.Program during DI setup
 
-**Data Format**:
-```csv
-Date,Start,End,Duration,App,WindowTitle,Project
-2026-03-29,09:15:00,09:45:30,00:30:30,Visual Studio Code,README.md - FocusTimer,Work
-2026-03-29,09:46:00,10:30:15,00:44:15,Slack,Slack (1) - Notifications,Communication
-```
+**Data Format**: Schema version `1` has a stable header containing `EntryId`, `SessionId`, offset-aware
+`StartedAt`/`EndedAt`, derived duration, app/window/project data, provenance, revision, and UTC modification
+time. Text fields use RFC 4180 escaping and may contain commas, quotes, Unicode, and line breaks. The store
+rejects an existing unsupported header without changing the file; it does not read or migrate prior development
+formats.
 
 **Extensibility**:
-- Swap CSV implementation for SQLite, PostgreSQL, or cloud storage by providing an alternate ISessionRepository
+- Swap CSV implementation for SQLite, PostgreSQL, or cloud storage by providing an alternate `IWorklogStore`
 - Settings can be extended in Core.Models.Settings
 
 **Dependencies**: Core

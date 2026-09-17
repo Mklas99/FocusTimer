@@ -35,14 +35,16 @@ namespace FocusTimer.Core.Interfaces
         void Start(string? projectTag = null);
 
         /// <summary>
-        /// Pauses the timer.
+        /// Pauses the timer and closes the active worklog segment with the specified reason.
         /// </summary>
-        void Pause();
+        /// <param name="reason">The reason the active segment ended.</param>
+        void Pause(EndReason reason = EndReason.ManualPause);
 
         /// <summary>
-        /// Stops the timer.
+        /// Stops the timer and closes the active worklog segment with the specified reason.
         /// </summary>
-        void Stop();
+        /// <param name="reason">The reason the active segment ended.</param>
+        void Stop(EndReason reason = EndReason.ManualPause);
 
         /// <summary>
         /// Resets the timer.
