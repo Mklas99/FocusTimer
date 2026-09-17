@@ -4,15 +4,12 @@ namespace FocusTimer.Persistence;
 
 using System.Collections.Concurrent;
 using System.Globalization;
-using System.Text;
 using FocusTimer.Core.Interfaces;
 using FocusTimer.Core.Models;
 
 /// <summary>Current-schema RFC 4180 CSV implementation of <see cref="IWorklogStore"/>.</summary>
 public sealed class CsvSessionRepository : IWorklogStore
 {
-    private const string SchemaVersion = "1";
-    private static readonly string[] Header = ["SchemaVersion", "EntryId", "SessionId", "StartedAt", "EndedAt", "DurationSeconds", "AppName", "WindowTitle", "ProjectTag", "ProjectAssignmentSource", "ProjectRuleId", "ActivityKind", "EndReason", "CaptureSource", "SourcePlatform", "SourceDeviceId", "Revision", "LastModifiedAtUtc"];
     private static readonly ConcurrentDictionary<string, SemaphoreSlim> Locks = new(StringComparer.OrdinalIgnoreCase);
     private readonly ISettingsProvider _settingsProvider;
     private readonly IAppLogger? _logger;
@@ -154,8 +151,9 @@ public sealed class CsvSessionRepository : IWorklogStore
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         var temp = path + ".worklog.tmp";
         await using (var stream = new FileStream(temp, FileMode.Create, FileAccess.Write, FileShare.None, 4096, FileOptions.WriteThrough))
-        await using (var writer = new StreamWriter(stream, new UTF8Encoding(false)))
-        { await writer.WriteLineAsync(string.Join(',', Header)); foreach (var entry in entries.OrderBy(e => e.StartedAt)) { ct.ThrowIfCancellationRequested(); await writer.WriteLineAsync(Format(entry)); } await writer.FlushAsync(ct); }
+        {
+            await new CsvWorklogCodec().WriteAsync(stream, entries.OrderBy(entry => entry.StartedAt), ct);
+        }
         var validate = await ReadFileAsync(temp, ct);
         if (!validate.Outcome.IsSuccess || validate.Entries.Count != entries.Count)
             throw new InvalidDataException("Replacement validation failed.");
@@ -167,26 +165,12 @@ public sealed class CsvSessionRepository : IWorklogStore
             return new(new(WorklogOutcomeKind.NotFound), []);
         try
         {
-            var text = await File.ReadAllTextAsync(path, ct);
-            var rows = Parse(text);
-            if (rows.Count == 0 || !rows[0].SequenceEqual(Header))
-                return new(new(WorklogOutcomeKind.UnsupportedSchema, "The file does not use the current worklog schema."), []);
-            var entries = new List<TimeEntry>();
-            var warnings = new List<WorklogWarning>();
-            for (var i = 1; i < rows.Count; i++)
-            { try { entries.Add(ParseEntry(rows[i])); } catch (Exception ex) { warnings.Add(new(path, i + 1, ex.Message)); } }
-            return new(WorklogOutcome.Success(warnings), entries);
+            await using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+            var read = await new CsvWorklogCodec().ReadAsync(stream, path, ct);
+            return new(read.Outcome, read.Entries.ToList());
         }
         catch (IOException ex) { return new(new(WorklogOutcomeKind.FileInUse, ex.Message), []); }
         catch (Exception ex) { return new(new(WorklogOutcomeKind.MalformedData, ex.Message), []); }
     }
-    private static TimeEntry ParseEntry(IReadOnlyList<string> v) => new(v[1], v[2], DateTimeOffset.Parse(v[3], CultureInfo.InvariantCulture), DateTimeOffset.Parse(v[4], CultureInfo.InvariantCulture), v[6], v[7], Empty(v[8]), ParseProject(v[9]), Empty(v[10]), ActivityKind.Active, ParseEnd(v[12]), CaptureSource.ActiveWindow, ParsePlatform(v[14]), Empty(v[15]), int.Parse(v[16], CultureInfo.InvariantCulture), DateTimeOffset.Parse(v[17], CultureInfo.InvariantCulture));
-    private static string? Empty(string value) => value.Length == 0 ? null : value;
-    private static ProjectAssignmentSource ParseProject(string value) => value switch { "session" => ProjectAssignmentSource.Session, "rule" => ProjectAssignmentSource.Rule, "editor" => ProjectAssignmentSource.Editor, "imported" => ProjectAssignmentSource.Imported, _ => ProjectAssignmentSource.Unassigned };
-    private static EndReason ParseEnd(string value) => value switch { "application-change" => EndReason.ApplicationChange, "manual-pause" => EndReason.ManualPause, "idle-pause" => EndReason.IdlePause, "day-boundary" => EndReason.DayBoundary, "application-exit" => EndReason.ApplicationExit, _ => EndReason.Unknown };
-    private static SourcePlatform ParsePlatform(string value) => value switch { "windows" => SourcePlatform.Windows, "linux" => SourcePlatform.Linux, "macos" => SourcePlatform.MacOS, _ => SourcePlatform.Unknown };
-    private static string Format(TimeEntry e) => string.Join(',', new[] { SchemaVersion, e.EntryId, e.SessionId, e.StartedAt.ToString("O"), e.EndedAt.ToString("O"), e.Duration.TotalSeconds.ToString(CultureInfo.InvariantCulture), e.AppName, e.WindowTitle, e.ProjectTag ?? string.Empty, WorklogValueCodec.ToStoredValue(e.ProjectAssignmentSource), e.ProjectRuleId ?? string.Empty, WorklogValueCodec.ToStoredValue(e.ActivityKind), WorklogValueCodec.ToStoredValue(e.EndReason), WorklogValueCodec.ToStoredValue(e.CaptureSource), WorklogValueCodec.ToStoredValue(e.SourcePlatform), e.SourceDeviceId ?? string.Empty, e.Revision.ToString(CultureInfo.InvariantCulture), e.LastModifiedAtUtc.ToString("O") }.Select(Escape));
-    private static string Escape(string value) => value.IndexOfAny(new[] { ',', '"', '\r', '\n' }) >= 0 ? '"' + value.Replace("\"", "\"\"") + '"' : value;
-    private static List<List<string>> Parse(string text) { var rows = new List<List<string>>(); var row = new List<string>(); var value = new StringBuilder(); var quote = false; for (var i = 0; i < text.Length; i++) { var c = text[i]; if (quote) { if (c == '"' && i + 1 < text.Length && text[i + 1] == '"') { value.Append(c); i++; } else if (c == '"') quote = false; else value.Append(c); } else if (c == '"') quote = true; else if (c == ',') { row.Add(value.ToString()); value.Clear(); } else if (c == '\r' || c == '\n') { if (c == '\r' && i + 1 < text.Length && text[i + 1] == '\n') i++; row.Add(value.ToString()); value.Clear(); rows.Add(row); row = new(); } else value.Append(c); } if (quote) throw new InvalidDataException("Unterminated quoted CSV field."); if (value.Length > 0 || row.Count > 0) { row.Add(value.ToString()); rows.Add(row); } return rows; }
     private sealed record FileRead(WorklogOutcome Outcome, List<TimeEntry> Entries);
 }

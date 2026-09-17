@@ -19,11 +19,11 @@
 
 ## 3. Current-Schema CSV Codec
 
-- [ ] 3.1 Select and centrally pin a maintained streaming RFC 4180 CSV dependency, recording the choice in dependency documentation; verify restore and license/package checks used by the repository succeed.
-- [ ] 3.2 Implement a header-driven current-schema codec with a stable writer column order and explicit schema version; verify every worklog field round-trips independently of input header order.
-- [ ] 3.3 Support commas, escaped quotes, Unicode, empty optional values, and record-spanning line breaks in text fields; verify codec round-trip tests reproduce the exact original values without extra records.
-- [ ] 3.4 Return structured record warnings when malformed current-schema rows can be isolated, and a typed failure when record boundaries or schema cannot be trusted; verify tests distinguish partial safe reads from failed reads.
-- [ ] 3.5 Detect unsupported or legacy headers before any append or rewrite and leave the target byte-for-byte unchanged; verify tests use a development-format fixture and confirm no migration, backup, or mixed-format output is produced.
+- [x] 3.1 Select and centrally pin a maintained streaming RFC 4180 CSV dependency, recording the choice in dependency documentation; verify restore and license/package checks used by the repository succeed.
+- [x] 3.2 Implement a header-driven current-schema codec with a stable writer column order and explicit schema version; verify every worklog field round-trips independently of input header order.
+- [x] 3.3 Support commas, escaped quotes, Unicode, empty optional values, and record-spanning line breaks in text fields; verify codec round-trip tests reproduce the exact original values without extra records.
+- [x] 3.4 Return structured record warnings when malformed current-schema rows can be isolated, and a typed failure when record boundaries or schema cannot be trusted; verify tests distinguish partial safe reads from failed reads.
+- [x] 3.5 Detect unsupported or legacy headers before any append or rewrite and leave the target byte-for-byte unchanged; verify tests use a development-format fixture and confirm no migration, backup, or mixed-format output is produced.
 
 ## 4. CSV Store Reads and Idempotent Appends
 

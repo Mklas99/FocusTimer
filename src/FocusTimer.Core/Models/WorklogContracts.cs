@@ -17,6 +17,8 @@ public static class WorklogEntryValidator
             errors.Add("End time must be later than start time.");
         if (entry.Revision < 1)
             errors.Add("Revision must be at least one.");
+        if (entry.LastModifiedAtUtc.Offset != TimeSpan.Zero)
+            errors.Add("Last modified time must be UTC.");
         if (entry.StartedAt.Date != entry.EndedAt.Date &&
             !(entry.EndedAt.TimeOfDay == TimeSpan.Zero && entry.EndedAt.Date == entry.StartedAt.Date.AddDays(1)))
             errors.Add("Entries must not span local calendar days.");

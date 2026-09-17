@@ -48,6 +48,14 @@ public class WorklogEntryTests
     }
 
     [Fact]
+    public void Validator_GivenNonUtcLastModifiedTime_ReturnsFailure()
+    {
+        var entry = CreateEntry() with { LastModifiedAtUtc = new DateTimeOffset(2026, 3, 31, 9, 5, 0, TimeSpan.FromHours(1)) };
+
+        Assert.NotEmpty(WorklogEntryValidator.Validate(entry));
+    }
+
+    [Fact]
     public void Validator_GivenCrossDayInterval_ReturnsFailure()
     {
         var entry = CreateEntry() with { EndedAt = CreateEntry().EndedAt.AddDays(1) };

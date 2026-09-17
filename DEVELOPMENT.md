@@ -42,6 +42,13 @@ FocusTimer.Host (entry point, DI setup)
 4. **MVVM Pattern**: Avalonia ViewModels expose properties and commands; Views bind to them
 5. **Immutable Models**: Domain entities (TimeEntry, Session, Settings) are immutable POCO classes
 
+### Persistence dependency
+
+The current worklog CSV schema uses [CsvHelper](https://joshclose.github.io/CsvHelper/) `33.1.0`, pinned by
+`CsvHelperVersion` in `Directory.Build.props`. It is the streaming RFC 4180 codec used only by
+`FocusTimer.Persistence`; Core stays storage-library independent. CsvHelper is dual-licensed under MS-PL and
+Apache-2.0; this project uses the Apache-2.0 option and retains its required notices in distributed packages.
+
 ---
 
 ## Dependency Injection (DI)
