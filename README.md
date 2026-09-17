@@ -271,10 +271,10 @@ See `docs/versions/current/OpenIssues.md` for the full, tracked list of gaps.
 
 ## Contributing
 
-1. Create a feature branch: `git checkout -b feature/my-feature`
+1. Add or find the feature's stable `F-##` ID in `docs/versions/current/Features.md`, then create its branch: `git checkout -b feature/F-01_short-kebab-case-description`
 2. Build and test: `dotnet build && dotnet test`
 3. Format: `dotnet format`
-4. Commit and push: `git push origin feature/my-feature`
+4. Commit and push: `git push origin feature/F-01_short-kebab-case-description`
 5. Open a pull request
 
 ---
