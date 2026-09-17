@@ -35,3 +35,7 @@ add delete loggs functinality
 add edit log functionality
 
 
+## improvements
+
+improve installer size
+improve performants

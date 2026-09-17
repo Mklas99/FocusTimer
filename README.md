@@ -138,7 +138,7 @@ dotnet build installer/FocusTimer.Installer/FocusTimer.Installer.wixproj -c Rele
 
 ### Downloadable Releases (GitHub)
 
-Pushing a tag matching `v*.*.*` (e.g. `v0.1.0`) triggers `.github/workflows/release.yml`, which runs `build-installer.ps1` and publishes a GitHub Release with the MSI installer and the standalone single-file EXE attached:
+Pushing a tag matching `v*.*.*` (e.g. `v0.1.0`) triggers `.github/workflows/release.yml`, which runs `build-installer.ps1` and publishes a GitHub Release with the MSI installer and the portable self-contained single-file EXE:
 
 ```powershell
 git tag v0.1.0
