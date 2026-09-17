@@ -24,7 +24,7 @@ namespace FocusTimer.App.ViewModels
     {
         private readonly ISettingsProvider _settingsProvider;
         private readonly IAppLogger _logWriter;
-        private readonly ISessionRepository _sessionRepository;
+        private readonly IWorklogStore _worklogStore;
         private readonly SessionTracker _sessionTracker;
         private readonly BreakReminderService _breakReminderService;
         private readonly ITimerService _timerService;
@@ -58,7 +58,7 @@ namespace FocusTimer.App.ViewModels
         /// </summary>
         /// <param name="settingsProvider">The settings provider for loading and managing application settings.</param>
         /// <param name="logWriter">The logger for writing diagnostic and error messages.</param>
-        /// <param name="sessionRepository">The repository for persisting and retrieving session data.</param>
+        /// <param name="worklogStore">The store for persisting durable worklog entries.</param>
         /// <param name="sessionTracker">The service for tracking the current session state.</param>
         /// <param name="breakReminderService">The service for managing break reminders.</param>
         /// <param name="timerService">The timer service for managing timer events and state.</param>
@@ -67,7 +67,7 @@ namespace FocusTimer.App.ViewModels
         public TimerWidgetViewModel(
             ISettingsProvider settingsProvider,
             IAppLogger logWriter,
-            ISessionRepository sessionRepository,
+            IWorklogStore worklogStore,
             SessionTracker sessionTracker,
             BreakReminderService breakReminderService,
             ITimerService timerService,
@@ -77,7 +77,7 @@ namespace FocusTimer.App.ViewModels
             // Defensive: Ensure ViewModel is constructed on the UI thread
             this._settingsProvider = settingsProvider;
             this._logWriter = logWriter;
-            this._sessionRepository = sessionRepository;
+            this._worklogStore = worklogStore;
             this._sessionTracker = sessionTracker;
             this._breakReminderService = breakReminderService;
             this._timerService = timerService;
@@ -559,7 +559,7 @@ namespace FocusTimer.App.ViewModels
                         if (entries.Count > 0)
                         {
                             // We can't await here, so we'll do our best effort
-                            this._sessionRepository.SaveSessionAsync(entries).Wait(TimeSpan.FromSeconds(2));
+                            this._worklogStore.AppendAsync(entries).Wait(TimeSpan.FromSeconds(2));
                             this._logWriter.LogInformation($"Flushed {entries.Count} entries on dispose");
                         }
                     }
@@ -721,7 +721,13 @@ namespace FocusTimer.App.ViewModels
             }
 
             this._logWriter.LogInformation($"Persisting {entries.Count} time entries due to {reason}.");
-            await this._sessionRepository.SaveSessionAsync(entries);
+            var outcome = await this._worklogStore.AppendAsync(entries);
+            if (!outcome.IsSuccess)
+            {
+                this._logWriter.LogWarning($"Unable to persist worklog entries: {outcome.Kind} {outcome.Message}");
+                return;
+            }
+
             this._logWriter.LogInformation($"Successfully logged {entries.Count} time entries to {currentSettings.WorklogDirectory}");
 
             // Publish an EntriesLoggedEvent so the AppController (or other listeners) can react.

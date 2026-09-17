@@ -88,7 +88,7 @@ namespace FocusTimer.Host
                 else
                 {
                     services.AddSingleton<ISettingsProvider, Persistence.JsonSettingsProvider>();
-                    services.AddSingleton<ISessionRepository>(sp =>
+                    services.AddSingleton<IWorklogStore>(sp =>
                     {
                         var settingsProvider = sp.GetRequiredService<ISettingsProvider>();
                         var logger = sp.GetRequiredService<IAppLogger>();
@@ -99,7 +99,7 @@ namespace FocusTimer.Host
             catch
             {
                 services.AddSingleton<ISettingsProvider, Persistence.JsonSettingsProvider>();
-                services.AddSingleton<ISessionRepository>(sp =>
+                services.AddSingleton<IWorklogStore>(sp =>
                 {
                     var settingsProvider = sp.GetRequiredService<ISettingsProvider>();
                     var logger = sp.GetRequiredService<IAppLogger>();

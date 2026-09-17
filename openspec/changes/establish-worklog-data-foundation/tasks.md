@@ -2,11 +2,11 @@
 
 ## 1. Core Worklog Model and Contracts
 
-- [ ] 1.1 Replace the mutable `TimeEntry` shape with an immutable or init-only current worklog record containing the specified identity, timestamp, project, provenance, revision, and modification fields; verify focused Core tests cover construction and round-trip equality.
-- [ ] 1.2 Add centralized validation for non-empty entry/session IDs, positive intervals, revision values, derived duration, and same-local-day timestamps; verify valid entries pass and each invalid invariant returns a validation failure without persistence access.
-- [ ] 1.3 Add string-stable controlled values for activity kind, end reason, capture source, platform, and project-assignment source; verify serialization tests prove stored values do not depend on enum ordinals.
-- [ ] 1.4 Define `IWorklogStore` plus append, lookup, query, patch, delete, warning, and typed outcome contracts with cancellation support; verify the Core project builds without persistence-specific types or `IQueryable` in its public API.
-- [ ] 1.5 Add the stable installation/device ID to settings with generate-once behavior and a Core-friendly source-platform provider; verify settings round-trip preserves the ID and Windows reports the expected platform while existing non-Windows stubs still compile.
+- [x] 1.1 Replace the mutable `TimeEntry` shape with an immutable or init-only current worklog record containing the specified identity, timestamp, project, provenance, revision, and modification fields; verify focused Core tests cover construction and round-trip equality.
+- [x] 1.2 Add centralized validation for non-empty entry/session IDs, positive intervals, revision values, derived duration, and same-local-day timestamps; verify valid entries pass and each invalid invariant returns a validation failure without persistence access.
+- [x] 1.3 Add string-stable controlled values for activity kind, end reason, capture source, platform, and project-assignment source; verify serialization tests prove stored values do not depend on enum ordinals.
+- [x] 1.4 Define `IWorklogStore` plus append, lookup, query, patch, delete, warning, and typed outcome contracts with cancellation support; verify the Core project builds without persistence-specific types or `IQueryable` in its public API.
+- [x] 1.5 Add the stable installation/device ID to settings with generate-once behavior and a Core-friendly source-platform provider; verify settings round-trip preserves the ID and Windows reports the expected platform while existing non-Windows stubs still compile.
 
 ## 2. Tracking Identity and Time Semantics
 
