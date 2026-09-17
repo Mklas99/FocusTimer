@@ -53,7 +53,7 @@
 
 ## 7. Quality, Documentation, and Acceptance
 
-- [ ] 7.1 Add representative large-day append/query benchmarks or performance tests for ID-cache invalidation and multi-day queries; verify recorded results establish a repeatable CSV baseline without introducing SQLite.
-- [ ] 7.2 Update architecture, development, README, and `docs/versions/current/` documentation where affected, explicitly documenting the current schema, manual handling of unsupported development files, and OI-20 ownership of future migration strategy; verify the documents and OpenSpec artifacts do not contradict one another.
-- [ ] 7.3 Run `dotnet format --verify-no-changes`, the full NUnit suite, and the repository's normal Windows quality checks; verify all commands pass or document any pre-existing unrelated failure with evidence.
-- [ ] 7.4 Run strict OpenSpec validation for `establish-worklog-data-foundation` and manually trace each proposal outcome to a specification scenario and implementation task; verify the change is ready for `openspec-apply-change` with no migration implementation in scope.
+- [x] 7.1 Add representative large-day append/query benchmarks or performance tests for ID-cache invalidation and multi-day queries; verify recorded results establish a repeatable CSV baseline without introducing SQLite.
+- [x] 7.2 Update architecture, development, README, and `docs/versions/current/` documentation where affected, explicitly documenting the current schema, manual handling of unsupported development files, and OI-20 ownership of future migration strategy; verify the documents and OpenSpec artifacts do not contradict one another.
+- [x] 7.3 Run `dotnet format --verify-no-changes`, the full NUnit suite, and the repository's normal Windows quality checks; verify all commands pass or document any pre-existing unrelated failure with evidence.
+- [x] 7.4 Run strict OpenSpec validation for `establish-worklog-data-foundation` and manually trace each proposal outcome to a specification scenario and implementation task; verify the change is ready for `openspec-apply-change` with no migration implementation in scope.

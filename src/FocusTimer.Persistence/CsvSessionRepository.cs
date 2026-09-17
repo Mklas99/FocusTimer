@@ -4,6 +4,7 @@ namespace FocusTimer.Persistence;
 
 using System.Collections.Concurrent;
 using System.Globalization;
+using System.Security.Cryptography;
 using FocusTimer.Core.Interfaces;
 using FocusTimer.Core.Models;
 
@@ -15,6 +16,7 @@ public sealed class CsvSessionRepository : IWorklogStore
     private readonly IAppLogger? _logger;
     private readonly IAtomicWorklogFileOperations _fileOperations;
     private readonly TimeProvider _timeProvider;
+    private readonly ConcurrentDictionary<string, FileCache> _fileCache = new(StringComparer.OrdinalIgnoreCase);
     private DateTime _lastRetentionCleanupDate = DateTime.MinValue;
 
     /// <summary>Initializes the store.</summary>
@@ -155,7 +157,7 @@ public sealed class CsvSessionRepository : IWorklogStore
             foreach (var path in Directory.EnumerateFiles(root, "*-worklog.csv", SearchOption.AllDirectories))
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                var read = await ReadFileAsync(path, cancellationToken);
+                var read = await this.ReadCachedFileAsync(path, cancellationToken);
                 if (!read.Outcome.IsSuccess)
                     return new(read.Outcome, matches);
                 matches.AddRange(read.Entries.Where(entry => entry.EntryId == entryId));
@@ -193,7 +195,7 @@ public sealed class CsvSessionRepository : IWorklogStore
             : query.EndExclusive.Date;
         for (var day = query.StartInclusive.Date; day <= finalDate; day = day.AddDays(1))
         {
-            var read = await ReadFileAsync(GetPath(root, day), cancellationToken);
+            var read = await this.ReadCachedFileAsync(GetPath(root, day), cancellationToken);
             if (!read.Outcome.IsSuccess)
             {
                 if (read.Outcome.Kind == WorklogOutcomeKind.NotFound)
@@ -313,6 +315,7 @@ public sealed class CsvSessionRepository : IWorklogStore
                 if (read.Outcome.IsSuccess)
                 {
                     File.Delete(path);
+                    this._fileCache.TryRemove(path, out _);
                     this._logger?.LogInformation($"Removed expired worklog file: {path}");
                 }
                 else
@@ -348,6 +351,7 @@ public sealed class CsvSessionRepository : IWorklogStore
                 throw new InvalidDataException("Replacement validation failed.");
             this._fileOperations.ActivateReplacement(temp, path);
             temp = null;
+            this.Cache(path, new FileRead(WorklogOutcome.Success(), entries));
         }
         finally
         {
@@ -373,9 +377,82 @@ public sealed class CsvSessionRepository : IWorklogStore
         catch (Exception ex) { return new(new(WorklogOutcomeKind.MalformedData, ex.Message), []); }
     }
 
+    private async Task<FileRead> ReadCachedFileAsync(string path, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        if (!File.Exists(path))
+        {
+            this._fileCache.TryRemove(path, out _);
+            return new(new(WorklogOutcomeKind.NotFound), []);
+        }
+
+        FileFingerprint fingerprint;
+        try
+        {
+            fingerprint = FileFingerprint.From(path);
+        }
+        catch (IOException)
+        {
+            return await ReadFileAsync(path, cancellationToken);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return await ReadFileAsync(path, cancellationToken);
+        }
+
+        if (this._fileCache.TryGetValue(path, out var cached) && cached.Fingerprint == fingerprint)
+        {
+            return cached.Read.Copy();
+        }
+
+        var read = await ReadFileAsync(path, cancellationToken);
+        if (read.Outcome.IsSuccess)
+        {
+            this.Cache(path, read);
+        }
+        else
+        {
+            this._fileCache.TryRemove(path, out _);
+        }
+
+        return read;
+    }
+
+    private void Cache(string path, FileRead read)
+    {
+        try
+        {
+            this._fileCache[path] = new(FileFingerprint.From(path), read.Copy());
+        }
+        catch (IOException)
+        {
+            this._fileCache.TryRemove(path, out _);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            this._fileCache.TryRemove(path, out _);
+        }
+    }
+
     private static bool IsFileInUse(IOException exception) => exception.HResult is unchecked((int)0x80070020) or unchecked((int)0x80070021);
 
-    private sealed record FileRead(WorklogOutcome Outcome, List<TimeEntry> Entries);
+    private sealed record FileRead(WorklogOutcome Outcome, List<TimeEntry> Entries)
+    {
+        public FileRead Copy() => new(this.Outcome, this.Entries.ToList());
+    }
+
+    private sealed record FileCache(FileFingerprint Fingerprint, FileRead Read);
+
+    private sealed record FileFingerprint(long Length, DateTime LastWriteTimeUtc, string ContentHash)
+    {
+        public static FileFingerprint From(string path)
+        {
+            var info = new FileInfo(path);
+            using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+            var hash = Convert.ToHexString(SHA256.HashData(stream));
+            return new(info.Length, info.LastWriteTimeUtc, hash);
+        }
+    }
 
     private sealed record AppendPlan(string Path, List<TimeEntry> ExistingEntries, List<TimeEntry> EntriesToAppend);
 }

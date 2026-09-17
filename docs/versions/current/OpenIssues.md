@@ -10,7 +10,7 @@
 | OI-04 | Settings / Reporting | There is no breakdown or user-facing report by app or project. | Open | Today statistics currently provide only a total. |
 | OI-05 | Diagnostics | Settings has no action to open the logs folder. | Open | Logging itself is already available. |
 | OI-06 | Cross-platform | Linux implementations remain incomplete. | Open | Linux parity needs a platform target and real implementations for platform services. |
-| OI-07 | Data features | `TimeEntry` lacks idle, session, and source-platform metadata. | Open | This blocks richer analysis; consider adding a stable entry ID at the same time. |
+| OI-07 | Data features | Versioned worklog foundation with durable identity and provenance. | Completed | Delivered by F-01: `TimeEntry` has durable entry/session IDs, capture/activity/platform metadata, revision, and safe CSV storage. |
 | OI-08 | Data features | Project tagging is manual only. | Open | Rules-based application/window pattern mapping is proposed. |
 | OI-09 | Persistence | CSV is the only storage backend. | Open - investigate | Evaluate actual reporting and editing needs before committing to a storage migration. |
 | OI-10 | Focus modes | Pomodoro work/break automation is absent. | Open | Separate product decision from existing break reminders. |

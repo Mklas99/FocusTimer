@@ -625,6 +625,69 @@ public class CsvWorklogStoreTests
         finally { Directory.Delete(root, true); }
     }
 
+    [Fact]
+    public async Task QueryAsync_GivenExternalReplacementWithPreservedMetadata_InvalidatesItsContentValidatedCache()
+    {
+        var root = TestHelpers.CreateTempDirectory();
+        try
+        {
+            var store = CreateStore(root);
+            var start = new DateTimeOffset(2026, 4, 3, 9, 0, 0, TimeSpan.Zero);
+            var cached = CreateEntry("cached", start);
+            Assert.True((await store.AppendAsync([cached])).IsSuccess);
+            Assert.Equal(cached, Assert.Single((await store.QueryAsync(new WorklogQuery(start, start.AddHours(1)))).Entries));
+
+            var replacement = cached with { EntryId = "other!", WindowTitle = "Other!" };
+            var path = Path.Combine(root, "2026", "04", "2026-04-03-worklog.csv");
+            var originalLength = new FileInfo(path).Length;
+            var originalWriteTime = File.GetLastWriteTimeUtc(path);
+            await using (var stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None))
+            {
+                await new CsvWorklogCodec().WriteAsync(stream, [replacement]);
+            }
+            Assert.Equal(originalLength, new FileInfo(path).Length);
+            File.SetLastWriteTimeUtc(path, originalWriteTime);
+
+            var result = await store.QueryAsync(new WorklogQuery(start, start.AddHours(1)));
+
+            Assert.True(result.Outcome.IsSuccess);
+            Assert.Equal(replacement, Assert.Single(result.Entries));
+        }
+        finally { Directory.Delete(root, true); }
+    }
+
+    [Fact]
+    [Trait("Category", "Performance")]
+    public async Task WorklogPerformanceBaseline_LargeDailyAppendAndMultiDayQuery_ReturnsEveryEntry()
+    {
+        const int days = 7;
+        const int entriesPerDay = 500;
+        var root = TestHelpers.CreateTempDirectory();
+        try
+        {
+            var store = CreateStore(root);
+            var start = new DateTimeOffset(2026, 4, 6, 8, 0, 0, TimeSpan.Zero);
+            var entries = Enumerable.Range(0, days)
+                .SelectMany(day => Enumerable.Range(0, entriesPerDay)
+                    .Select(index => CreateEntry($"{day}-{index}", start.AddDays(day).AddMinutes(index))))
+                .ToArray();
+
+            var appendTimer = System.Diagnostics.Stopwatch.StartNew();
+            var append = await store.AppendAsync(entries);
+            appendTimer.Stop();
+            var queryTimer = System.Diagnostics.Stopwatch.StartNew();
+            var result = await store.QueryAsync(new WorklogQuery(start, start.AddDays(days)));
+            queryTimer.Stop();
+
+            Assert.True(append.IsSuccess);
+            Assert.True(result.Outcome.IsSuccess);
+            Assert.Equal(entries.Length, result.Entries.Count);
+            Assert.True(appendTimer.Elapsed > TimeSpan.Zero);
+            Assert.True(queryTimer.Elapsed > TimeSpan.Zero);
+        }
+        finally { Directory.Delete(root, true); }
+    }
+
     private sealed class StubSettingsProvider : FocusTimer.Core.Interfaces.ISettingsProvider
     {
         private readonly Settings _settings;

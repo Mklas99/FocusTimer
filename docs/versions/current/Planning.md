@@ -1,9 +1,12 @@
-# Thoughts from dev
-this is a collection of the devs thouhgs and might nod be accurat or not explored further dont treat the notes as definate future changes/plans.
+# Historical planning notes
+
+This document captures the analysis that led to F-01. Its pre-implementation observations are retained for
+decision history, not as a description of the current system. The current backlog is `OpenIssues.md`, while the
+implemented foundation is described by the OpenSpec change and the root architecture/development documentation.
 
 ## Current decision: defer migration strategy
 
-The `establish-worklog-data-foundation` OpenSpec change targets development data and intentionally excludes legacy worklog migration, backup orchestration, installer integration, and rollback. Existing development worklogs may be moved or removed manually, but the new persistence implementation must detect an unsupported existing schema and refuse to append mixed-format rows. A general release-to-release migration strategy is tracked separately as `OI-20`; earlier migration exploration is not part of the current proposal.
+The completed `establish-worklog-data-foundation` OpenSpec change targets development data and intentionally excludes legacy worklog migration, backup orchestration, installer integration, and rollback. Existing development worklogs may be moved or removed manually, but the new persistence implementation detects an unsupported existing schema and refuses to append mixed-format rows. A general release-to-release migration strategy is tracked separately as `OI-20`; earlier migration exploration is not part of the completed change.
 
 ## Open issues from previous version
 
@@ -50,9 +53,9 @@ The ideal foundation is not merely “add four CSV columns.” It is a versioned
 
 I recommend one focused OpenSpec change: `establish-worklog-data-foundation`. It should close `OI-07`, partially enable `OI-15`, and explicitly prepare—but not implement—`OI-04`, `OI-08`, and `OI-12`. `OI-09` should remain an investigation.
 
-The resulting `establish-worklog-data-foundation` OpenSpec proposal is now captured and validated. Migration strategy remains a separate investigation under `OI-20`.
+The resulting `establish-worklog-data-foundation` OpenSpec change is implemented and strictly validated. Migration strategy remains a separate investigation under `OI-20`.
 
-## Current weaknesses that matter
+## Historical weaknesses addressed by F-01
 
 The current implementation has several hidden blockers:
 

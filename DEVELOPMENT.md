@@ -40,7 +40,7 @@ FocusTimer.Host (entry point, DI setup)
 2. **Interface-Based Contracts**: All external integrations (logging, persistence, OS features) are defined as interfaces in Core
 3. **Event Bus**: Decouples publishers (ViewModels) from subscribers (AppController) via a single, non-generic `IEventBus`
 4. **MVVM Pattern**: Avalonia ViewModels expose properties and commands; Views bind to them
-5. **Immutable Models**: Domain entities (TimeEntry, Session, Settings) are immutable POCO classes
+5. **Immutable Models**: Domain entities such as `TimeEntry` and `Settings` are immutable or init-only POCOs
 
 ### Persistence dependency
 
@@ -48,6 +48,18 @@ The current worklog CSV schema uses [CsvHelper](https://joshclose.github.io/CsvH
 `CsvHelperVersion` in `Directory.Build.props`. It is the streaming RFC 4180 codec used only by
 `FocusTimer.Persistence`; Core stays storage-library independent. CsvHelper is dual-licensed under MS-PL and
 Apache-2.0; this project uses the Apache-2.0 option and retains its required notices in distributed packages.
+
+### Current worklog behavior
+
+`IWorklogStore` is the only Core boundary for worklogs. Its CSV implementation writes schema version `1` daily
+files at `worklogs/yyyy/MM/yyyy-MM-dd-worklog.csv`, with header-driven RFC 4180 parsing and stable column order.
+Entries have durable entry/session identities, offset-aware timestamps, derived duration, provenance, revision,
+and UTC last-modified metadata. Use the store's typed outcomes and warnings rather than parsing files directly.
+
+This is a development-only format change. If a daily file has an unsupported/older header, the store refuses to
+append or rewrite it and leaves its bytes unchanged. Move or remove that development file manually before using
+the new build. Do not add migration, backup, installer, or rollback behavior here: the release-grade strategy is
+owned by `OI-20` in `docs/versions/current/OpenIssues.md`.
 
 ---
 
@@ -113,7 +125,7 @@ public class TimerWidgetViewModel : ViewModelBase
 }
 ```
 
-(The real `TimerWidgetViewModel` constructor takes several more dependencies — `ISettingsProvider`, `ISessionRepository`, `SessionTracker`, `BreakReminderService`, `ITimerService` — trimmed here for clarity.)
+(The real `TimerWidgetViewModel` constructor takes several more dependencies — `ISettingsProvider`, `IWorklogStore`, `SessionTracker`, `BreakReminderService`, `ITimerService` — trimmed here for clarity.)
 
 #### Method Injection (Startup Only)
 
@@ -159,9 +171,15 @@ _eventBus.Publish(new EntriesLoggedEvent { Entries = entries });
 // AppController (subscriber)
 _eventBus.Subscribe<EntriesLoggedEvent>(e =>
 {
-    foreach (var entry in e.Entries)
-        _sessionRepository.AddSessionEntry(entry);
+    _ = PersistEntriesAsync(e.Entries);
 });
+
+private async Task PersistEntriesAsync(IReadOnlyCollection<TimeEntry> entries)
+{
+    var outcome = await _worklogStore.AppendAsync(entries);
+    if (!outcome.IsSuccess)
+        _logger.LogWarning(outcome.Message ?? $"Worklog persistence failed: {outcome.Kind}");
+}
 ```
 
 ### The Event Bus (actual implementation)
@@ -318,10 +336,11 @@ using ReactiveUI;
 
 namespace FocusTimer.App.ViewModels;
 
-public class StatsViewModel : ViewModelBase
+public sealed class StatsViewModel : ViewModelBase
 {
-    private readonly ISessionRepository _repository;
+    private readonly IWorklogStore _worklogStore;
     private readonly IAppLogger _logger;
+    private readonly TimeProvider _timeProvider;
 
     private int _todayTotal;
     public int TodayTotal
@@ -330,19 +349,27 @@ public class StatsViewModel : ViewModelBase
         set => this.RaiseAndSetIfChanged(ref _todayTotal, value);
     }
 
-    public StatsViewModel(ISessionRepository repository, IAppLogger logger)
+    public StatsViewModel(IWorklogStore worklogStore, IAppLogger logger, TimeProvider timeProvider)
     {
-        _repository = repository;
+        _worklogStore = worklogStore;
         _logger = logger;
-        LoadStats();
+        _timeProvider = timeProvider;
     }
 
-    private void LoadStats()
+    public async Task RefreshAsync()
     {
         try
         {
-            var entries = _repository.GetEntriesForDate(DateTime.Today);
-            TodayTotal = entries.Sum(e => (int)e.Duration.TotalMinutes);
+            var date = _timeProvider.GetLocalNow().Date;
+            var zone = _timeProvider.LocalTimeZone;
+            var start = new DateTimeOffset(date, zone.GetUtcOffset(date));
+            var endDate = date.AddDays(1);
+            var end = new DateTimeOffset(endDate, zone.GetUtcOffset(endDate));
+            var result = await _worklogStore.QueryAsync(new WorklogQuery(start, end));
+            if (!result.Outcome.IsSuccess)
+                return; // Log/surface the typed outcome in the real ViewModel.
+
+            TodayTotal = (int)result.Entries.Aggregate(TimeSpan.Zero, (sum, entry) => sum + entry.Duration).TotalMinutes;
         }
         catch (Exception ex)
         {
@@ -423,15 +450,13 @@ _eventBus.Subscribe<SettingsChangedEvent>(e =>
 ### Unit Testing ViewModels
 
 ```csharp
-[TestFixture]
 public class TimerWidgetViewModelTests
 {
     private TimerWidgetViewModel _viewModel;
     private Mock<IAppLogger> _mockLogger;
     private Mock<IEventBus> _mockEventBus;
 
-    [SetUp]
-    public void Setup()
+    public TimerWidgetViewModelTests()
     {
         _mockLogger = new Mock<IAppLogger>();
         _mockEventBus = new Mock<IEventBus>();
@@ -443,7 +468,7 @@ public class TimerWidgetViewModelTests
             // (plus the other constructor dependencies - see above)
     }
 
-    [Test]
+    [Fact]
     public async Task StartTimer_PublishesStartedEvent()
     {
         // Act
@@ -459,15 +484,13 @@ public class TimerWidgetViewModelTests
 ### Testing Services
 
 ```csharp
-[TestFixture]
 public class EventBusTests
 {
     private EventBus _eventBus;
 
-    [SetUp]
-    public void Setup() => _eventBus = new EventBus();
+    public EventBusTests() => _eventBus = new EventBus();
 
-    [Test]
+    [Fact]
     public void Subscribe_HandlerReceivesPublishedMessage()
     {
         // Arrange
@@ -479,7 +502,7 @@ public class EventBusTests
         _eventBus.Publish(msg);
 
         // Assert
-        Assert.That(receivedEvent?.Data, Is.EqualTo("test"));
+        Assert.Equal("test", receivedEvent?.Data);
     }
 
     private class TestEvent
@@ -516,7 +539,7 @@ dotnet format
 
 ### Naming Conventions
 
-- **Classes/Interfaces**: PascalCase (e.g., `AppController`, `ISessionRepository`)
+- **Classes/Interfaces**: PascalCase (e.g., `AppController`, `IWorklogStore`)
 - **Methods**: PascalCase (e.g., `RegisterHotkeys()`)
 - **Properties**: PascalCase (e.g., `IsRunning`)
 - **Private fields**: camelCase with underscore (e.g., `_logger`)

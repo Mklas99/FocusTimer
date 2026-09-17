@@ -8,7 +8,7 @@
 
 | ID | Feature | Outcome | Related issues | Status | Branch / change |
 |---|---|---|---|---|---|
-| F-01 | Worklog data foundation | Establishes a versioned, safe, storage-neutral worklog foundation with durable entry and running-session identities, schema-safe CSV handling, querying, and same-day mutation support. | OI-07; enables OI-04, OI-08, OI-12, OI-15 | Active | `feature/F-01_worklog-data-foundation` / `establish-worklog-data-foundation` |
+| F-01 | Worklog data foundation | Establishes a versioned, safe, storage-neutral worklog foundation with durable entry and running-session identities, schema-safe CSV handling, querying, and same-day mutation support. Unsupported development files require manual move/removal; OI-20 owns any future migration strategy. | OI-07; enables OI-04, OI-08, OI-12, OI-15 | Completed | `feature/F-01_worklog-data-foundation` / `establish-worklog-data-foundation` |
 
 ## Feature candidates
 
