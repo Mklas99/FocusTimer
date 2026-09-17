@@ -27,12 +27,12 @@
 
 ## 4. CSV Store Reads and Idempotent Appends
 
-- [ ] 4.1 Implement daily path selection for `worklogs/yyyy/MM/yyyy-MM-dd-worklog.csv` and create new files with the current header; verify entries on adjacent local dates are written to their respective paths.
-- [ ] 4.2 Implement validated batch append with per-file serialization and all-or-nothing preflight checks; verify one invalid batch member leaves every targeted file unchanged.
-- [ ] 4.3 Make append idempotent by entry ID, accepting identical retries and rejecting reused IDs with different content; verify repeated and conflicting append tests assert row counts and typed outcomes.
-- [ ] 4.4 Implement entry lookup and half-open overlap queries across required daily partitions with chronological ordering; verify missing daily files contribute empty success rather than warnings.
-- [ ] 4.5 Apply exact case-insensitive application/project filters and session, activity-kind, and capture-source filters; verify combined-filter tests return only entries satisfying every supplied condition.
-- [ ] 4.6 Return valid entries together with structured file/record warnings without converting I/O, file-in-use, malformed, or unsupported-schema failures into empty success; verify each outcome is covered by persistence tests.
+- [x] 4.1 Implement daily path selection for `worklogs/yyyy/MM/yyyy-MM-dd-worklog.csv` and create new files with the current header; verify entries on adjacent local dates are written to their respective paths.
+- [x] 4.2 Implement validated batch append with per-file serialization and all-or-nothing preflight checks; verify one invalid batch member leaves every targeted file unchanged.
+- [x] 4.3 Make append idempotent by entry ID, accepting identical retries and rejecting reused IDs with different content; verify repeated and conflicting append tests assert row counts and typed outcomes.
+- [x] 4.4 Implement entry lookup and half-open overlap queries across required daily partitions with chronological ordering; verify missing daily files contribute empty success rather than warnings.
+- [x] 4.5 Apply exact case-insensitive application/project filters and session, activity-kind, and capture-source filters; verify combined-filter tests return only entries satisfying every supplied condition.
+- [x] 4.6 Return valid entries together with structured file/record warnings without converting I/O, file-in-use, malformed, or unsupported-schema failures into empty success; verify each outcome is covered by persistence tests.
 
 ## 5. Revision-Checked Atomic Mutation
 

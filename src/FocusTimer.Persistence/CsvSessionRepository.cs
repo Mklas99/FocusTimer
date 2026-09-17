@@ -20,75 +20,161 @@ public sealed class CsvSessionRepository : IWorklogStore
     /// <inheritdoc/>
     public async Task<WorklogOutcome> AppendAsync(IReadOnlyCollection<TimeEntry> entries, CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         if (entries is null || entries.Count == 0)
+        {
             return WorklogOutcome.Success();
+        }
+
         var errors = entries.SelectMany(WorklogEntryValidator.Validate).ToList();
         if (errors.Count > 0)
+        {
             return new(WorklogOutcomeKind.ValidationFailure, string.Join(" ", errors));
+        }
+
         var settings = await this._settingsProvider.LoadAsync();
         var root = ResolveRoot(settings);
-        foreach (var group in entries.GroupBy(e => e.StartedAt.Date))
+        var groups = entries
+            .GroupBy(entry => GetPath(root, entry.StartedAt.Date), StringComparer.OrdinalIgnoreCase)
+            .OrderBy(group => group.Key, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+        var acquiredLocks = new List<SemaphoreSlim>(groups.Length);
+        try
         {
-            var path = GetPath(root, group.Key);
-            var gate = Locks.GetOrAdd(path, _ => new SemaphoreSlim(1, 1));
-            await gate.WaitAsync(cancellationToken);
-            try
+            foreach (var group in groups)
             {
-                var read = await ReadFileAsync(path, cancellationToken);
+                var gate = Locks.GetOrAdd(group.Key, _ => new SemaphoreSlim(1, 1));
+                await gate.WaitAsync(cancellationToken);
+                acquiredLocks.Add(gate);
+            }
+
+            var plans = new List<AppendPlan>(groups.Length);
+            foreach (var group in groups)
+            {
+                var read = await ReadFileAsync(group.Key, cancellationToken);
                 if (read.Outcome.Kind == WorklogOutcomeKind.NotFound)
                 {
                     read = new FileRead(WorklogOutcome.Success(), []);
                 }
 
                 if (!read.Outcome.IsSuccess)
+                {
                     return read.Outcome;
-                var existing = read.Entries.ToDictionary(e => e.EntryId, StringComparer.Ordinal);
+                }
+
+                if (read.Outcome.Warnings?.Count > 0)
+                {
+                    return new(WorklogOutcomeKind.MalformedData, "Cannot append to a worklog with malformed records.", read.Outcome.Warnings);
+                }
+
+                var existing = new Dictionary<string, TimeEntry>(StringComparer.Ordinal);
+                foreach (var stored in read.Entries)
+                {
+                    if (!existing.TryAdd(stored.EntryId, stored))
+                    {
+                        return new(WorklogOutcomeKind.Conflict, "The worklog contains duplicate entry IDs.");
+                    }
+                }
+
+                var entriesToAppend = new List<TimeEntry>();
                 foreach (var entry in group)
                 {
                     if (existing.TryGetValue(entry.EntryId, out var prior))
-                    { if (prior != entry) return new(WorklogOutcomeKind.Conflict, "Entry ID already exists with different content."); }
-                    else
-                    { existing.Add(entry.EntryId, entry); read.Entries.Add(entry); }
+                    {
+                        if (prior != entry)
+                        {
+                            return new(WorklogOutcomeKind.Conflict, "Entry ID already exists with different content.");
+                        }
+
+                        continue;
+                    }
+
+                    existing.Add(entry.EntryId, entry);
+                    entriesToAppend.Add(entry);
                 }
-                await WriteAtomicallyAsync(path, read.Entries, cancellationToken);
+
+                plans.Add(new AppendPlan(group.Key, read.Entries, entriesToAppend));
             }
-            catch (IOException ex) { return new(WorklogOutcomeKind.FileInUse, ex.Message); }
-            catch (Exception ex) { return new(WorklogOutcomeKind.IoFailure, ex.Message); }
-            finally { gate.Release(); }
+
+            foreach (var plan in plans.Where(plan => plan.EntriesToAppend.Count > 0))
+            {
+                plan.ExistingEntries.AddRange(plan.EntriesToAppend);
+                await WriteAtomicallyAsync(plan.Path, plan.ExistingEntries, cancellationToken);
+            }
+
+            return WorklogOutcome.Success();
         }
-        return WorklogOutcome.Success();
+        catch (IOException exception)
+        {
+            return new(IsFileInUse(exception) ? WorklogOutcomeKind.FileInUse : WorklogOutcomeKind.IoFailure, exception.Message);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            return new(WorklogOutcomeKind.IoFailure, exception.Message);
+        }
+        finally
+        {
+            foreach (var gate in acquiredLocks.AsEnumerable().Reverse())
+            {
+                gate.Release();
+            }
+        }
     }
 
     /// <inheritdoc/>
     public async Task<WorklogReadResult> GetAsync(string entryId, CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         if (string.IsNullOrWhiteSpace(entryId))
             return new(new(WorklogOutcomeKind.ValidationFailure, "Entry ID is required."), []);
         var root = ResolveRoot(await this._settingsProvider.LoadAsync());
+        if (File.Exists(root))
+            return new(new(WorklogOutcomeKind.IoFailure, "The configured worklog root is a file."), []);
         if (!Directory.Exists(root))
             return new(WorklogOutcome.Success(), []);
 
         var matches = new List<TimeEntry>();
-        foreach (var path in Directory.EnumerateFiles(root, "*-worklog.csv", SearchOption.AllDirectories))
+        var warnings = new List<WorklogWarning>();
+        try
         {
-            cancellationToken.ThrowIfCancellationRequested();
-            var read = await ReadFileAsync(path, cancellationToken);
-            if (!read.Outcome.IsSuccess)
-                return new(read.Outcome, matches);
-            matches.AddRange(read.Entries.Where(entry => entry.EntryId == entryId));
+            foreach (var path in Directory.EnumerateFiles(root, "*-worklog.csv", SearchOption.AllDirectories))
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                var read = await ReadFileAsync(path, cancellationToken);
+                if (!read.Outcome.IsSuccess)
+                    return new(read.Outcome, matches);
+                matches.AddRange(read.Entries.Where(entry => entry.EntryId == entryId));
+                if (read.Outcome.Warnings is not null)
+                    warnings.AddRange(read.Outcome.Warnings);
+            }
+        }
+        catch (IOException exception)
+        {
+            return new(new(IsFileInUse(exception) ? WorklogOutcomeKind.FileInUse : WorklogOutcomeKind.IoFailure, exception.Message), matches);
+        }
+        catch (UnauthorizedAccessException exception)
+        {
+            return new(new(WorklogOutcomeKind.IoFailure, exception.Message), matches);
         }
 
         return matches.Count > 1
             ? new(new(WorklogOutcomeKind.Conflict, "Entry ID exists in more than one worklog file."), matches)
-            : new(WorklogOutcome.Success(), matches);
+            : new(WorklogOutcome.Success(warnings), matches);
     }
 
     /// <inheritdoc/>
     public async Task<WorklogReadResult> QueryAsync(WorklogQuery query, CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         if (!query.IsValid)
             return new(new(WorklogOutcomeKind.ValidationFailure, "Query end must be later than start."), []);
         var root = ResolveRoot(await this._settingsProvider.LoadAsync());
+        if (File.Exists(root))
+            return new(new(WorklogOutcomeKind.IoFailure, "The configured worklog root is a file."), []);
         var entries = new List<TimeEntry>();
         var warnings = new List<WorklogWarning>();
         var finalDate = query.EndExclusive.TimeOfDay == TimeSpan.Zero
@@ -161,6 +247,7 @@ public sealed class CsvSessionRepository : IWorklogStore
     }
     private static async Task<FileRead> ReadFileAsync(string path, CancellationToken ct)
     {
+        ct.ThrowIfCancellationRequested();
         if (!File.Exists(path))
             return new(new(WorklogOutcomeKind.NotFound), []);
         try
@@ -169,8 +256,15 @@ public sealed class CsvSessionRepository : IWorklogStore
             var read = await new CsvWorklogCodec().ReadAsync(stream, path, ct);
             return new(read.Outcome, read.Entries.ToList());
         }
-        catch (IOException ex) { return new(new(WorklogOutcomeKind.FileInUse, ex.Message), []); }
+        catch (IOException ex) { return new(new(IsFileInUse(ex) ? WorklogOutcomeKind.FileInUse : WorklogOutcomeKind.IoFailure, ex.Message), []); }
+        catch (UnauthorizedAccessException ex) { return new(new(WorklogOutcomeKind.IoFailure, ex.Message), []); }
+        catch (OperationCanceledException) { throw; }
         catch (Exception ex) { return new(new(WorklogOutcomeKind.MalformedData, ex.Message), []); }
     }
+
+    private static bool IsFileInUse(IOException exception) => exception.HResult is unchecked((int)0x80070020) or unchecked((int)0x80070021);
+
     private sealed record FileRead(WorklogOutcome Outcome, List<TimeEntry> Entries);
+
+    private sealed record AppendPlan(string Path, List<TimeEntry> ExistingEntries, List<TimeEntry> EntriesToAppend);
 }
