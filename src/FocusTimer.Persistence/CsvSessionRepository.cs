@@ -15,6 +15,7 @@ public sealed class CsvSessionRepository : IWorklogStore
     private readonly IAppLogger? _logger;
     private readonly IAtomicWorklogFileOperations _fileOperations;
     private readonly TimeProvider _timeProvider;
+    private DateTime _lastRetentionCleanupDate = DateTime.MinValue;
 
     /// <summary>Initializes the store.</summary>
     public CsvSessionRepository(ISettingsProvider settingsProvider, IAppLogger? logger = null,
@@ -43,6 +44,7 @@ public sealed class CsvSessionRepository : IWorklogStore
 
         var settings = await this._settingsProvider.LoadAsync();
         var root = ResolveRoot(settings);
+        await this.EnforceRetentionPolicyAsync(settings, root, cancellationToken);
         var groups = entries
             .GroupBy(entry => GetPath(root, entry.StartedAt.Date), StringComparer.OrdinalIgnoreCase)
             .OrderBy(group => group.Key, StringComparer.OrdinalIgnoreCase)
@@ -278,6 +280,55 @@ public sealed class CsvSessionRepository : IWorklogStore
     }
 
     private static string ResolveRoot(Settings settings) => string.IsNullOrWhiteSpace(settings.WorklogDirectory) ? Settings.DefaultWorklogDirectory : settings.WorklogDirectory;
+
+    private async Task EnforceRetentionPolicyAsync(Settings settings, string root, CancellationToken cancellationToken)
+    {
+        if (settings.DataRetentionDays <= 0 || !Directory.Exists(root))
+        {
+            return;
+        }
+
+        var today = this._timeProvider.GetLocalNow().Date;
+        if (this._lastRetentionCleanupDate == today)
+        {
+            return;
+        }
+
+        var cutoff = today.AddDays(-settings.DataRetentionDays);
+        foreach (var path in Directory.EnumerateFiles(root, "*-worklog.csv", SearchOption.AllDirectories))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var fileName = Path.GetFileNameWithoutExtension(path);
+            if (fileName.Length < 10 || !DateTime.TryParseExact(fileName[..10], "yyyy-MM-dd",
+                CultureInfo.InvariantCulture, DateTimeStyles.None, out var date) || date >= cutoff)
+            {
+                continue;
+            }
+
+            var gate = Locks.GetOrAdd(path, _ => new SemaphoreSlim(1, 1));
+            await gate.WaitAsync(cancellationToken);
+            try
+            {
+                var read = await ReadFileAsync(path, cancellationToken);
+                if (read.Outcome.IsSuccess)
+                {
+                    File.Delete(path);
+                    this._logger?.LogInformation($"Removed expired worklog file: {path}");
+                }
+                else
+                {
+                    this._logger?.LogWarning($"Skipped retention cleanup for {path}: {read.Outcome.Kind} {read.Outcome.Message}");
+                }
+            }
+            finally
+            {
+                gate.Release();
+            }
+        }
+
+        this._lastRetentionCleanupDate = today;
+    }
+
     private static string GetPath(string root, DateTime date) => Path.Combine(root, date.ToString("yyyy", CultureInfo.InvariantCulture), date.ToString("MM", CultureInfo.InvariantCulture), $"{date:yyyy-MM-dd}-worklog.csv");
     private async Task WriteAtomicallyAsync(string path, List<TimeEntry> entries, CancellationToken ct)
     {

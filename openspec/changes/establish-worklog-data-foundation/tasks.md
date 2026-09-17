@@ -45,11 +45,11 @@
 
 ## 6. Application Integration
 
-- [ ] 6.1 Replace `ISessionRepository` registrations and call sites with `IWorklogStore`, removing the old contract and unused `Session` model only after reference checks; verify the full solution builds with no remaining production references.
-- [ ] 6.2 Adapt `TodayStatsService` to query the local-day half-open interval and aggregate derived durations without parsing or locating CSV files; verify existing Today totals remain correct at interval boundaries.
-- [ ] 6.3 Adapt persistence event handling and shutdown/flush paths to typed store outcomes, logging or surfacing actionable failures and warnings; verify integration tests cover successful flush, unsupported schema, and file-in-use behavior.
-- [ ] 6.4 Wire the clock, settings-backed device identity, source-platform provider, codec, and worklog store in the Windows host composition root; verify the Windows host starts from DI and Linux-compatible Core stubs continue to compile without adding Linux implementation work.
-- [ ] 6.5 Preserve existing retention behavior for current-schema daily files without treating rewrite temporary files as worklogs; verify retention tests keep in-range data and remove only eligible finalized daily files.
+- [x] 6.1 Replace `ISessionRepository` registrations and call sites with `IWorklogStore`, removing the old contract and unused `Session` model only after reference checks; verify the full solution builds with no remaining production references.
+- [x] 6.2 Adapt `TodayStatsService` to query the local-day half-open interval and aggregate derived durations without parsing or locating CSV files; verify existing Today totals remain correct at interval boundaries.
+- [x] 6.3 Adapt persistence event handling and shutdown/flush paths to typed store outcomes, logging or surfacing actionable failures and warnings; verify integration tests cover successful flush, unsupported schema, and file-in-use behavior.
+- [x] 6.4 Wire the clock, settings-backed device identity, source-platform provider, codec, and worklog store in the Windows host composition root; verify the Windows host starts from DI and Linux-compatible Core stubs continue to compile without adding Linux implementation work.
+- [x] 6.5 Preserve existing retention behavior for current-schema daily files without treating rewrite temporary files as worklogs; verify retention tests keep in-range data and remove only eligible finalized daily files.
 
 ## 7. Quality, Documentation, and Acceptance
 

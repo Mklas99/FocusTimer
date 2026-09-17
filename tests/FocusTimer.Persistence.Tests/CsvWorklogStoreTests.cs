@@ -597,6 +597,34 @@ public class CsvWorklogStoreTests
         finally { Directory.Delete(root, true); }
     }
 
+    [Fact]
+    public async Task AppendAsync_AppliesRetentionOnlyToEligibleFinalizedCurrentSchemaFiles()
+    {
+        var root = TestHelpers.CreateTempDirectory();
+        try
+        {
+            var settings = new Settings { WorklogDirectory = root, DataRetentionDays = 0 };
+            var store = new CsvSessionRepository(new StubSettingsProvider(settings), NullLogger.Instance);
+            var oldStart = DateTimeOffset.Now.Date.AddDays(-2);
+            var expired = CreateEntry("expired", new DateTimeOffset(oldStart, DateTimeOffset.Now.Offset));
+            Assert.True((await store.AppendAsync([expired])).IsSuccess);
+            var expiredPath = Path.Combine(root, expired.StartedAt.ToString("yyyy"), expired.StartedAt.ToString("MM"),
+                expired.StartedAt.ToString("yyyy-MM-dd") + "-worklog.csv");
+            var temporaryPath = expiredPath + ".worklog-rewrite-interrupted.tmp";
+            await File.WriteAllTextAsync(temporaryPath, "temporary");
+            settings.DataRetentionDays = 1;
+
+            var current = CreateEntry("current", new DateTimeOffset(DateTimeOffset.Now.Date, DateTimeOffset.Now.Offset));
+            Assert.True((await store.AppendAsync([current])).IsSuccess);
+
+            Assert.False(File.Exists(expiredPath));
+            Assert.True(File.Exists(temporaryPath));
+            Assert.True(File.Exists(Path.Combine(root, current.StartedAt.ToString("yyyy"), current.StartedAt.ToString("MM"),
+                current.StartedAt.ToString("yyyy-MM-dd") + "-worklog.csv")));
+        }
+        finally { Directory.Delete(root, true); }
+    }
+
     private sealed class StubSettingsProvider : FocusTimer.Core.Interfaces.ISettingsProvider
     {
         private readonly Settings _settings;

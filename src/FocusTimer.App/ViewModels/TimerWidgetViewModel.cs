@@ -568,8 +568,20 @@ namespace FocusTimer.App.ViewModels
                         if (entries.Count > 0)
                         {
                             // We can't await here, so we'll do our best effort
-                            this._worklogStore.AppendAsync(entries).Wait(TimeSpan.FromSeconds(2));
-                            this._logWriter.LogInformation($"Flushed {entries.Count} entries on dispose");
+                            var append = this._worklogStore.AppendAsync(entries);
+                            if (!append.Wait(TimeSpan.FromSeconds(2)))
+                            {
+                                this._logWriter.LogWarning("Timed out while flushing worklog entries on dispose.");
+                            }
+                            else if (!append.GetAwaiter().GetResult().IsSuccess)
+                            {
+                                var outcome = append.GetAwaiter().GetResult();
+                                this._logWriter.LogWarning($"Unable to flush worklog entries on dispose: {outcome.Kind} {outcome.Message}");
+                            }
+                            else
+                            {
+                                this._logWriter.LogInformation($"Flushed {entries.Count} entries on dispose");
+                            }
                         }
                     }
                     catch (Exception ex)
@@ -735,6 +747,11 @@ namespace FocusTimer.App.ViewModels
             {
                 this._logWriter.LogWarning($"Unable to persist worklog entries: {outcome.Kind} {outcome.Message}");
                 return;
+            }
+
+            if (outcome.Warnings?.Count > 0)
+            {
+                this._logWriter.LogWarning($"Persisted worklog entries with {outcome.Warnings.Count} warning(s): {outcome.Message}");
             }
 
             this._logWriter.LogInformation($"Successfully logged {entries.Count} time entries to {currentSettings.WorklogDirectory}");

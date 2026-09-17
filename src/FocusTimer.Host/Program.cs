@@ -76,43 +76,21 @@ namespace FocusTimer.Host
                 services.AddSingleton<IIdleDetectionService, LinuxIdleDetectionServiceStub>();
             }
 
-            // Persistence registrations (consolidated helper) - use extension if available
-            try
-            {
-                // Prefer extension if project provides it
-                var addPersistence = typeof(FocusTimer.Persistence.ServiceCollectionExtensions).GetMethod("AddPersistenceServices");
-                if (addPersistence != null)
-                {
-                    FocusTimer.Persistence.ServiceCollectionExtensions.AddPersistenceServices(services);
-                }
-                else
-                {
-                    services.AddSingleton<ISettingsProvider, Persistence.JsonSettingsProvider>();
-                    services.AddSingleton<IWorklogStore>(sp =>
-                    {
-                        var settingsProvider = sp.GetRequiredService<ISettingsProvider>();
-                        var logger = sp.GetRequiredService<IAppLogger>();
-                        return new Persistence.CsvSessionRepository(settingsProvider, logger);
-                    });
-                }
-            }
-            catch
-            {
-                services.AddSingleton<ISettingsProvider, Persistence.JsonSettingsProvider>();
-                services.AddSingleton<IWorklogStore>(sp =>
-                {
-                    var settingsProvider = sp.GetRequiredService<ISettingsProvider>();
-                    var logger = sp.GetRequiredService<IAppLogger>();
-                    return new Persistence.CsvSessionRepository(settingsProvider, logger);
-                });
-            }
+            FocusTimer.Persistence.ServiceCollectionExtensions.AddPersistenceServices(services);
 
             services.AddSingleton<IThemeService, Core.Services.ThemeService>();
             services.AddSingleton<ThemeManager>();
 
             // Event bus for decoupled UI <> controller messaging
             services.AddSingleton<Core.Interfaces.IEventBus, Core.Services.EventBus>();
-            services.AddSingleton<SessionTracker>();
+            services.AddSingleton<TimeProvider>(TimeProvider.System);
+            services.AddSingleton<ISourcePlatformProvider, SourcePlatformProvider>();
+            services.AddSingleton<SessionTracker>(sp => new SessionTracker(
+                sp.GetRequiredService<IActiveWindowService>(),
+                sp.GetRequiredService<IAppLogger>(),
+                sp.GetRequiredService<TimeProvider>(),
+                sp.GetRequiredService<ISourcePlatformProvider>(),
+                () => sp.GetRequiredService<ISettingsProvider>().LoadAsync().GetAwaiter().GetResult().DeviceId));
             services.AddSingleton<ITimerService, TimerService>();
             services.AddSingleton<BreakReminderService>();
             services.AddSingleton<TodayStatsService>();
