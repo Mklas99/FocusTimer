@@ -52,6 +52,19 @@ public class TimerServiceTests
     }
 
     [Fact]
+    public async Task Pause_GivenRunning_ClosesTrackerSegmentWithManualPauseReason()
+    {
+        var tracker = new SessionTracker(new StaticWindowService(), NullLogger.Instance);
+        using var service = new TimerService(tracker);
+        service.Start();
+        await Task.Delay(1100);
+
+        service.Pause();
+
+        Assert.Equal(EndReason.ManualPause, Assert.Single(tracker.DrainCompletedSegments()).EndReason);
+    }
+
+    [Fact]
     public void Stop_GivenAnyState_SetsIdle()
     {
         using var service = new TimerService(new SessionTracker(new StaticWindowService(), NullLogger.Instance));

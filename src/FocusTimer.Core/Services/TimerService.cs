@@ -69,7 +69,7 @@ namespace FocusTimer.Core.Services
         }
 
         /// <inheritdoc/>
-        public void Pause()
+        public void Pause(EndReason reason = EndReason.ManualPause)
         {
             if (this._currentState != TimerState.Running)
             {
@@ -77,20 +77,22 @@ namespace FocusTimer.Core.Services
             }
 
             this._timer.Stop();
+            this._sessionTracker.StopTracking(reason);
             this.CurrentState = TimerState.Paused;
         }
 
         /// <inheritdoc/>
-        public void Stop()
+        public void Stop(EndReason reason = EndReason.ManualPause)
         {
             this._timer.Stop();
+            this._sessionTracker.StopTracking(reason);
             this.CurrentState = TimerState.Idle;
         }
 
         /// <inheritdoc/>
         public void Reset()
         {
-            this.Stop();
+            this.Stop(EndReason.ManualPause);
             lock (this._lock)
             {
                 this._elapsed = TimeSpan.Zero;
@@ -102,6 +104,7 @@ namespace FocusTimer.Core.Services
         /// <inheritdoc/>
         public void Dispose()
         {
+            this._sessionTracker.StopTracking(EndReason.ApplicationExit);
             this._timer.Dispose();
         }
 

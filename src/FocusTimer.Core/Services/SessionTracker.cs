@@ -11,6 +11,7 @@ public sealed class SessionTracker
     private readonly IActiveWindowService _activeWindowService;
     private readonly IAppLogger _logger;
     private readonly TimeProvider _clock;
+    private readonly TimeZoneInfo _timeZone;
     private readonly ISourcePlatformProvider _platformProvider;
     private readonly Func<string?> _deviceIdProvider;
     private readonly List<TimeEntry> _completedEntries = new();
@@ -32,6 +33,7 @@ public sealed class SessionTracker
         this._activeWindowService = activeWindowService ?? throw new ArgumentNullException(nameof(activeWindowService));
         this._logger = logger ?? throw new ArgumentNullException(nameof(logger));
         this._clock = clock ?? throw new ArgumentNullException(nameof(clock));
+        this._timeZone = this._clock.LocalTimeZone;
         this._platformProvider = platformProvider ?? throw new ArgumentNullException(nameof(platformProvider));
         this._deviceIdProvider = deviceIdProvider ?? throw new ArgumentNullException(nameof(deviceIdProvider));
     }
@@ -57,9 +59,23 @@ public sealed class SessionTracker
         this._projectTag = projectTag;
         this._tracking = true;
         this._sessionId = Guid.NewGuid().ToString("D");
+        var sessionId = this._sessionId;
         try
-        { this.CreateNewEntry(await this._activeWindowService.GetForegroundWindowAsync(), this._clock.GetLocalNow()); }
-        catch (Exception ex) { this._logger.LogError("Failed to start session tracking.", ex); this.CreateNewEntry(null, this._clock.GetLocalNow()); }
+        {
+            var window = await this._activeWindowService.GetForegroundWindowAsync();
+            if (this._tracking && this._sessionId == sessionId)
+            {
+                this.CreateNewEntry(window, this._clock.GetLocalNow());
+            }
+        }
+        catch (Exception ex)
+        {
+            this._logger.LogError("Failed to start session tracking.", ex);
+            if (this._tracking && this._sessionId == sessionId)
+            {
+                this.CreateNewEntry(null, this._clock.GetLocalNow());
+            }
+        }
     }
 
     /// <summary>Polls for window or local-day boundary changes.</summary>
@@ -84,12 +100,19 @@ public sealed class SessionTracker
     /// <summary>Stops tracking and returns closed segments.</summary>
     public IReadOnlyList<TimeEntry> CollectAndResetSegments(EndReason reason = EndReason.ManualPause)
     {
+        this.StopTracking(reason);
+        var entries = this.DrainCompletedSegments();
+        return entries;
+    }
+
+    /// <summary>Closes the active segment while leaving completed segments available for a later flush.</summary>
+    /// <param name="reason">The reason the active segment ended.</param>
+    public void StopTracking(EndReason reason)
+    {
         this._tracking = false;
         this.CloseCurrentEntry(this._clock.GetLocalNow(), reason);
-        var entries = this.DrainCompletedSegments();
         this._currentWindow = null;
         this._sessionId = null;
-        return entries;
     }
 
     /// <summary>Returns completed segments while tracking continues.</summary>
@@ -100,7 +123,8 @@ public sealed class SessionTracker
     {
         while (this._current is not null && this._current.StartedAt.Date < now.Date)
         {
-            var boundary = new DateTimeOffset(this._current.StartedAt.Date.AddDays(1), this._current.StartedAt.Offset);
+            var boundaryLocal = DateTime.SpecifyKind(this._current.StartedAt.Date.AddDays(1), DateTimeKind.Unspecified);
+            var boundary = new DateTimeOffset(boundaryLocal, this._timeZone.GetUtcOffset(boundaryLocal));
             this.CloseCurrentEntry(boundary, EndReason.DayBoundary);
             this.CreateNewEntry(this._currentWindow, boundary);
         }
@@ -112,11 +136,11 @@ public sealed class SessionTracker
         this._current = null;
         if (endedAt <= current.StartedAt)
             return;
-        this._completedEntries.Add(new TimeEntry(Guid.NewGuid().ToString("D"), this._sessionId!, current.StartedAt, endedAt,
+        this._completedEntries.Add(new TimeEntry(current.EntryId, this._sessionId!, current.StartedAt, endedAt,
             current.AppName, current.WindowTitle, current.ProjectTag, string.IsNullOrWhiteSpace(current.ProjectTag) ? ProjectAssignmentSource.Unassigned : ProjectAssignmentSource.Session,
             null, ActivityKind.Active, reason, CaptureSource.ActiveWindow, this._platformProvider.GetCurrentPlatform(), this._deviceIdProvider(), 1, this._clock.GetUtcNow()));
     }
     private void CreateNewEntry(ActiveWindowInfo? window, DateTimeOffset startedAt)
-    { this._currentWindow = window; this._current = new OpenSegment(startedAt, window?.ProcessName ?? "Unknown", window?.WindowTitle ?? "No active window", this._projectTag); }
-    private sealed class OpenSegment { public OpenSegment(DateTimeOffset startedAt, string appName, string windowTitle, string? projectTag) { this.StartedAt = startedAt; this.AppName = appName; this.WindowTitle = windowTitle; this.ProjectTag = projectTag; } public DateTimeOffset StartedAt { get; } public string AppName { get; } public string WindowTitle { get; } public string? ProjectTag { get; set; } }
+    { this._currentWindow = window; this._current = new OpenSegment(Guid.NewGuid().ToString("D"), startedAt, window?.ProcessName ?? "Unknown", window?.WindowTitle ?? "No active window", this._projectTag); }
+    private sealed class OpenSegment { public OpenSegment(string entryId, DateTimeOffset startedAt, string appName, string windowTitle, string? projectTag) { this.EntryId = entryId; this.StartedAt = startedAt; this.AppName = appName; this.WindowTitle = windowTitle; this.ProjectTag = projectTag; } public string EntryId { get; } public DateTimeOffset StartedAt { get; } public string AppName { get; } public string WindowTitle { get; } public string? ProjectTag { get; set; } }
 }

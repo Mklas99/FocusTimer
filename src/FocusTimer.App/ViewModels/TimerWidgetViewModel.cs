@@ -519,6 +519,14 @@ namespace FocusTimer.App.ViewModels
             // Settings property change will trigger UI bindings
         }
 
+        /// <summary>
+        /// Pauses the timer because idle detection ended the preceding active-work segment.
+        /// </summary>
+        public void PauseForIdle()
+        {
+            this._timerService.Pause(EndReason.IdlePause);
+        }
+
         /// <inheritdoc/>
         public void Dispose()
         {
@@ -542,7 +550,8 @@ namespace FocusTimer.App.ViewModels
             try
             {
                 // Stop timer
-                this._timerService.Stop();
+                var wasRunning = this._timerService.CurrentState == TimerState.Running;
+                this._timerService.Stop(EndReason.ApplicationExit);
 
                 // No need to unsubscribe from Tick here, as we use lambda subscriptions in the constructor
 
@@ -550,12 +559,12 @@ namespace FocusTimer.App.ViewModels
                 this._breakReminderService.OnTimerPaused();
 
                 // If timer was running, try to flush entries
-                if (this.IsRunning)
+                if (wasRunning)
                 {
                     try
                     {
                         // Synchronously collect and attempt to save entries
-                        var entries = this._sessionTracker.CollectAndResetSegments();
+                        var entries = this._sessionTracker.DrainCompletedSegments();
                         if (entries.Count > 0)
                         {
                             // We can't await here, so we'll do our best effort
@@ -658,7 +667,7 @@ namespace FocusTimer.App.ViewModels
             {
                 this._logWriter.LogDebug($"Attempting full session flush due to {reason}.");
 
-                var entries = this._sessionTracker.CollectAndResetSegments();
+                var entries = this._sessionTracker.DrainCompletedSegments();
                 await this.PersistEntriesAsync(entries, reason);
             }
             catch (Exception ex)

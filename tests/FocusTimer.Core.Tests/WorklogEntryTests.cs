@@ -56,6 +56,18 @@ public class WorklogEntryTests
     }
 
     [Fact]
+    public void Validator_GivenEntryEndingAtNextMidnight_AcceptsHalfOpenDayBoundary()
+    {
+        var entry = CreateEntry() with
+        {
+            StartedAt = new DateTimeOffset(2026, 3, 31, 23, 0, 0, TimeSpan.Zero),
+            EndedAt = new DateTimeOffset(2026, 4, 1, 0, 0, 0, TimeSpan.Zero),
+        };
+
+        Assert.Empty(WorklogEntryValidator.Validate(entry));
+    }
+
+    [Fact]
     public void ControlledValues_HaveStableStorageNames()
     {
         Assert.Equal("application-change", WorklogValueCodec.ToStoredValue(EndReason.ApplicationChange));

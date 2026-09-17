@@ -10,12 +10,12 @@
 
 ## 2. Tracking Identity and Time Semantics
 
-- [ ] 2.1 Inject `TimeProvider` and the metadata providers needed by `SessionTracker`, removing direct current-time reads; verify tracker tests control all generated timestamps deterministically.
-- [ ] 2.2 Generate one session ID for each transition into an uninterrupted Running interval and a new entry ID for each segment; verify pause/resume changes the session ID while application/window changes retain it.
-- [ ] 2.3 Populate completed active-window entries with capture, activity, platform, device, project-assignment, initial revision, and last-modified metadata; verify a normal completed segment contains every required field.
-- [ ] 2.4 Propagate explicit application-change, manual-pause, idle-pause, day-boundary, application-exit, and unknown end reasons through timer and tracking events; verify focused tests assert the correct reason for each available stop path.
-- [ ] 2.5 Split a running segment at the exact local midnight boundary, retaining its session ID and starting a new entry ID in the next day; verify tests cover an ordinary midnight plus ambiguous and invalid local-time transitions without cross-day records.
-- [ ] 2.6 Preserve periodic and pause/stop flush behavior through idempotent batch appends; verify retrying the same completed segment cannot create duplicate tracked time.
+- [x] 2.1 Inject `TimeProvider` and the metadata providers needed by `SessionTracker`, removing direct current-time reads; verify tracker tests control all generated timestamps deterministically.
+- [x] 2.2 Generate one session ID for each transition into an uninterrupted Running interval and a new entry ID for each segment; verify pause/resume changes the session ID while application/window changes retain it.
+- [x] 2.3 Populate completed active-window entries with capture, activity, platform, device, project-assignment, initial revision, and last-modified metadata; verify a normal completed segment contains every required field.
+- [x] 2.4 Propagate explicit application-change, manual-pause, idle-pause, day-boundary, application-exit, and unknown end reasons through timer and tracking events; verify focused tests assert the correct reason for each available stop path.
+- [x] 2.5 Split a running segment at the exact local midnight boundary, retaining its session ID and starting a new entry ID in the next day; verify tests cover an ordinary midnight plus ambiguous and invalid local-time transitions without cross-day records.
+- [x] 2.6 Preserve periodic and pause/stop flush behavior through idempotent batch appends; verify retrying the same completed segment cannot create duplicate tracked time.
 
 ## 3. Current-Schema CSV Codec
 
