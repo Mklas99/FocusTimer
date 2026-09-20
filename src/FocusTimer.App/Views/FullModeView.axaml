@@ -45,11 +45,13 @@
                 Command="{Binding ToggleCommand}"
                 Classes="icon-button"
                 ToolTip.Tip="Start/Pause"
+                MinWidth="{DynamicResource MinHitTargetSize}"
+                MinHeight="{DynamicResource MinHitTargetSize}"
                 Width="{Binding ButtonSize}"
                 Height="{Binding ButtonSize}">
                     <materialIcons:MaterialIcon
                     Kind="{Binding IsRunning, Converter={StaticResource PlayPauseConverter}}"
-                    Foreground="{DynamicResource SecondaryTextBrush}"
+                    Foreground="{DynamicResource ButtonNormalBrush}"
                     Width="{Binding IconSize}"
                     Height="{Binding IconSize}" />
                 </Button>
@@ -59,6 +61,8 @@
                 Command="{Binding ResetCommand}"
                 Classes="icon-button"
                 ToolTip.Tip="Reset"
+                MinWidth="{DynamicResource MinHitTargetSize}"
+                MinHeight="{DynamicResource MinHitTargetSize}"
                 Width="{Binding ButtonSize}"
                 Height="{Binding ButtonSize}">
                     <materialIcons:MaterialIcon Kind="Refresh"
@@ -72,6 +76,8 @@
                 Command="{Binding ToggleProjectInputCommand}"
                 Classes="icon-button"
                 ToolTip.Tip="Project Tag"
+                MinWidth="{DynamicResource MinHitTargetSize}"
+                MinHeight="{DynamicResource MinHitTargetSize}"
                 Width="{Binding ButtonSize}"
                 Height="{Binding ButtonSize}">
                     <materialIcons:MaterialIcon Kind="ChevronDown"
@@ -90,6 +96,8 @@
                 Command="{Binding ToggleCompactModeCommand}"
                 Classes="icon-button"
                 ToolTip.Tip="Toggle Compact Mode"
+                MinWidth="{DynamicResource MinHitTargetSize}"
+                MinHeight="{DynamicResource MinHitTargetSize}"
                 Width="{Binding ButtonSize}"
                 Height="{Binding ButtonSize}">
                     <materialIcons:MaterialIcon Kind="Menu"
@@ -103,7 +111,7 @@
         <!-- Row 1: project label & box -->
         <Grid Grid.Row="1"
             ColumnDefinitions="Auto,*,Auto"
-            Margin="0,6,0,0"
+            Margin="0,8,0,0"
             Opacity="{Binding EffectiveControlsOpacity}"
             IsHitTestVisible="{Binding AreControlsInteractable}"
             IsVisible="{Binding IsProjectInputVisible}">

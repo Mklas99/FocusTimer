@@ -6,8 +6,10 @@
     <Application.Styles>
         <materialIcons:MaterialIconStyles />
         <FluentTheme />
-        <!-- Import the new theme resources -->
+        <!-- Import design system tokens and resources -->
+        <StyleInclude Source="avares://FocusTimer.App/Styles/Tokens.axaml" />
         <StyleInclude Source="avares://FocusTimer.App/Styles/ThemeResources.axaml" />
+        <StyleInclude Source="avares://FocusTimer.App/Styles/ControlStyles.axaml" />
     </Application.Styles>
 
     <!-- System Tray Icon

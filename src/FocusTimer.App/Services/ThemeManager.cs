@@ -1,6 +1,8 @@
 namespace FocusTimer.App.Services
 {
+    using System;
     using Avalonia;
+    using Avalonia.Controls;
     using Avalonia.Media;
     using FocusTimer.Core.Interfaces;
     using FocusTimer.Core.Models;
@@ -32,30 +34,28 @@ namespace FocusTimer.App.Services
                 return;
             }
 
-            var resources = Application.Current.Resources;
             var defaultTheme = new Theme(); // Uses default values
-
-            // Initialize all color resources
             this.ApplyTheme(defaultTheme);
         }
 
         /// <summary>
-        /// Applies a theme by updating all color resources in the application.
+        /// Applies a theme by updating all color resources in the application or provided dictionary.
         /// </summary>
         /// <param name="theme">The theme to apply.</param>
-        public void ApplyTheme(Theme theme)
+        /// <param name="targetResources">Optional target resource dictionary; uses Application.Current.Resources when null.</param>
+        public void ApplyTheme(Theme theme, IResourceDictionary? targetResources = null)
         {
-            if (Application.Current == null)
+            var resources = targetResources ?? Application.Current?.Resources;
+            if (resources == null)
             {
                 return;
             }
-
-            var resources = Application.Current.Resources;
 
             // Store opacity values as resources
             resources["BackgroundOpacity"] = theme.BackgroundOpacity;
             resources["TimerOpacity"] = theme.TimerOpacity;
             resources["ButtonOpacity"] = theme.ButtonOpacity;
+            resources["WidgetBaseOpacity"] = theme.WidgetBaseOpacity;
 
             // Window Colors (with background opacity applied to brush, but transparent if opacity is 0)
             if (theme.BackgroundOpacity <= 0)
@@ -123,45 +123,35 @@ namespace FocusTimer.App.Services
             this.UpdateColorResource(resources, "TabTextColor", theme.TabText);
             this.UpdateColorResource(resources, "TabSelectedTextColor", theme.TabSelectedText);
 
-            // Settings shell chrome
-            resources["SettingsAccordionHeaderBrush"] = new SolidColorBrush(Color.Parse(theme.SettingsBackground), 0.7);
-            resources["SettingsAccordionBorderBrush"] = new SolidColorBrush(Color.Parse(theme.AccentPrimary), 0.4);
-            resources["SettingsAccordionHeaderHoverBrush"] = new SolidColorBrush(Colors.White, 0.06);
-        }
-
-        private void UpdateFluentAccentResources(Avalonia.Controls.IResourceDictionary resources, string accentHex)
-        {
+            // Settings shell chrome and semantic tokens
             try
             {
-                var accent = Color.Parse(accentHex);
+                resources["SettingsAccordionHeaderBrush"] = new SolidColorBrush(Color.Parse(theme.SettingsBackground), 0.7);
+                resources["SettingsAccordionBorderBrush"] = new SolidColorBrush(Color.Parse(theme.AccentPrimary), 0.4);
+                resources["SettingsAccordionHeaderHoverBrush"] = new SolidColorBrush(Colors.White, 0.06);
 
-                // Fluent theme controls (CheckBox, Slider, TabControl indicators) consume these keys.
-                this.SetColorAndBrush(resources, "SystemAccentColor", accent);
-                this.SetColorAndBrush(resources, "SystemAccentColorLight1", this.Mix(accent, Colors.White, 0.2));
-                this.SetColorAndBrush(resources, "SystemAccentColorLight2", this.Mix(accent, Colors.White, 0.35));
-                this.SetColorAndBrush(resources, "SystemAccentColorLight3", this.Mix(accent, Colors.White, 0.5));
-                this.SetColorAndBrush(resources, "SystemAccentColorDark1", this.Mix(accent, Colors.Black, 0.18));
-                this.SetColorAndBrush(resources, "SystemAccentColorDark2", this.Mix(accent, Colors.Black, 0.33));
-                this.SetColorAndBrush(resources, "SystemAccentColorDark3", this.Mix(accent, Colors.Black, 0.5));
-
-                // Fluent v2 naming used by some control templates.
-                this.SetColorAndBrush(resources, "AccentFillColorDefault", accent);
-                this.SetColorAndBrush(resources, "AccentFillColorSecondary", this.Mix(accent, Colors.White, 0.12));
-                this.SetColorAndBrush(resources, "AccentFillColorTertiary", this.Mix(accent, Colors.Black, 0.12));
+                var accentColor = Color.Parse(theme.AccentPrimary);
+                resources["FocusRingBrush"] = new SolidColorBrush(accentColor);
+                resources["BorderSubtleBrush"] = new SolidColorBrush(Color.Parse(theme.InputBorder));
+                resources["SurfaceSubtleBrush"] = new SolidColorBrush(Color.Parse(theme.InputBackground));
+                resources["ActionPrimaryBrush"] = resources["ButtonNormalBrush"] ?? new SolidColorBrush(Color.Parse(theme.ButtonNormal));
+                resources["ActionPrimaryHoverBrush"] = resources["ButtonHoverBrush"] ?? new SolidColorBrush(Color.Parse(theme.ButtonHover));
+                resources["ActionPrimaryPressedBrush"] = resources["ButtonPressedBrush"] ?? new SolidColorBrush(Color.Parse(theme.ButtonPressed));
+                resources["WidgetBaseLayerBrush"] = new SolidColorBrush(Color.Parse(theme.WindowBackground), theme.WidgetBaseOpacity);
             }
             catch (Exception ex)
             {
-                this._logWriter?.LogError($"Failed to apply Fluent accent resources for '{accentHex}': {ex.Message}", ex);
+                this._logWriter?.LogError($"Failed to initialize semantic and chrome resources: {ex.Message}", ex);
             }
         }
 
-        private void SetColorAndBrush(Avalonia.Controls.IResourceDictionary resources, string key, Color color)
+        private static void SetColorAndBrush(IResourceDictionary resources, string key, Color color)
         {
             resources[key] = color;
             resources[$"{key}Brush"] = new SolidColorBrush(color);
         }
 
-        private Color Mix(Color source, Color target, double amount)
+        private static Color Mix(Color source, Color target, double amount)
         {
             var clamped = Math.Clamp(amount, 0.0, 1.0);
             byte Blend(byte a, byte b) => (byte)(a + ((b - a) * clamped));
@@ -172,7 +162,33 @@ namespace FocusTimer.App.Services
                 Blend(source.B, target.B));
         }
 
-        private void UpdateColorResource(Avalonia.Controls.IResourceDictionary resources, string key, string colorHex, double opacity = 1.0)
+        private void UpdateFluentAccentResources(IResourceDictionary resources, string accentHex)
+        {
+            try
+            {
+                var accent = Color.Parse(accentHex);
+
+                // Fluent theme controls (CheckBox, Slider, TabControl indicators) consume these keys.
+                SetColorAndBrush(resources, "SystemAccentColor", accent);
+                SetColorAndBrush(resources, "SystemAccentColorLight1", Mix(accent, Colors.White, 0.2));
+                SetColorAndBrush(resources, "SystemAccentColorLight2", Mix(accent, Colors.White, 0.35));
+                SetColorAndBrush(resources, "SystemAccentColorLight3", Mix(accent, Colors.White, 0.5));
+                SetColorAndBrush(resources, "SystemAccentColorDark1", Mix(accent, Colors.Black, 0.18));
+                SetColorAndBrush(resources, "SystemAccentColorDark2", Mix(accent, Colors.Black, 0.33));
+                SetColorAndBrush(resources, "SystemAccentColorDark3", Mix(accent, Colors.Black, 0.5));
+
+                // Fluent v2 naming used by some control templates.
+                SetColorAndBrush(resources, "AccentFillColorDefault", accent);
+                SetColorAndBrush(resources, "AccentFillColorSecondary", Mix(accent, Colors.White, 0.12));
+                SetColorAndBrush(resources, "AccentFillColorTertiary", Mix(accent, Colors.Black, 0.12));
+            }
+            catch (Exception ex)
+            {
+                this._logWriter?.LogError($"Failed to apply Fluent accent resources for '{accentHex}': {ex.Message}", ex);
+            }
+        }
+
+        private void UpdateColorResource(IResourceDictionary resources, string key, string colorHex, double opacity = 1.0)
         {
             try
             {
@@ -181,10 +197,7 @@ namespace FocusTimer.App.Services
 
                 // Also update the corresponding brush with opacity baked in
                 var brushKey = key.Replace("Color", "Brush");
-                if (resources.ContainsKey(brushKey))
-                {
-                    resources[brushKey] = new SolidColorBrush(color, opacity);
-                }
+                resources[brushKey] = new SolidColorBrush(color, opacity);
             }
             catch (Exception ex)
             {

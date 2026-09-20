@@ -1,0 +1,47 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!--
+      FocusTimer Invariant Design Tokens
+      These metrics, geometries, and typography tokens remain constant across all theme variants.
+    -->
+    <Styles.Resources>
+        <!-- Spacing Scale (8px rhythm with 4px sub-intervals) -->
+        <x:Double x:Key="SpacingXs">4</x:Double>
+        <x:Double x:Key="SpacingSm">8</x:Double>
+        <x:Double x:Key="SpacingMd">12</x:Double>
+        <x:Double x:Key="SpacingLg">16</x:Double>
+        <x:Double x:Key="SpacingXl">24</x:Double>
+        <x:Double x:Key="SpacingXxl">32</x:Double>
+
+        <!-- Thickness Spacing Tokens -->
+        <Thickness x:Key="SpacingThicknessXs">4</Thickness>
+        <Thickness x:Key="SpacingThicknessSm">8</Thickness>
+        <Thickness x:Key="SpacingThicknessMd">12</Thickness>
+        <Thickness x:Key="SpacingThicknessLg">16</Thickness>
+        <Thickness x:Key="WidgetPadding">8</Thickness>
+        <Thickness x:Key="WidgetContentMargin">8,4,8,8</Thickness>
+
+        <!-- Corner Radii Scale -->
+        <CornerRadius x:Key="RadiusXs">4</CornerRadius>
+        <CornerRadius x:Key="RadiusSm">8</CornerRadius>
+        <CornerRadius x:Key="RadiusMd">12</CornerRadius>
+        <CornerRadius x:Key="RadiusLg">16</CornerRadius>
+        <CornerRadius x:Key="WidgetCornerRadius">12</CornerRadius>
+
+        <!-- Typography Families & Base Sizes -->
+        <FontFamily x:Key="TabularTimerFontFamily">Consolas, Segoe UI Mono, monospace</FontFamily>
+        <x:Double x:Key="FontSizeDisplay">36</x:Double>
+        <x:Double x:Key="FontSizeHeadline">24</x:Double>
+        <x:Double x:Key="FontSizeTitle">18</x:Double>
+        <x:Double x:Key="FontSizeBody">14</x:Double>
+        <x:Double x:Key="FontSizeCaption">12</x:Double>
+
+        <!-- Control Dimensions & Hit Targets (WCAG 2.5.8 compliant >= 24px) -->
+        <x:Double x:Key="MinHitTargetSize">24</x:Double>
+        <x:Double x:Key="BaseIconButtonSize">28</x:Double>
+        <x:Double x:Key="BaseIconSize">18</x:Double>
+        <x:Double x:Key="CompactIconButtonSize">24</x:Double>
+        <x:Double x:Key="CompactIconSize">16</x:Double>
+    </Styles.Resources>
+</Styles>

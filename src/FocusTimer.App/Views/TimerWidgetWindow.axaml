@@ -10,10 +10,10 @@
     WindowStartupLocation="Manual"
     SystemDecorations="None"
     ShowInTaskbar="False"
-    TransparencyLevelHint="Transparent, Blur, AcrylicBlur, Mica"
+    TransparencyLevelHint="Mica, AcrylicBlur, Blur, Transparent"
     CanResize="False"
     Background="Transparent"
-    TransparencyBackgroundFallback="Transparent"
+    TransparencyBackgroundFallback="{DynamicResource WindowBackgroundBrush}"
     ExtendClientAreaToDecorationsHint="True"
     ExtendClientAreaChromeHints="NoChrome"
     ExtendClientAreaTitleBarHeightHint="-1"
@@ -66,43 +66,41 @@
                     Grid.RowSpan="2"
                     Background="{DynamicResource WindowBackgroundBrush}"
                     BorderBrush="{DynamicResource WindowBorderBrush}"
-                    BorderThickness="0"
+                    BorderThickness="1"
                     CornerRadius="{DynamicResource WidgetCornerRadius}"
                     Opacity="{Binding EffectiveBackgroundOpacity}"
                     IsHitTestVisible="False" />
 
-                <!-- Minimize button (top right) -->
+                <!-- Minimize button (top right with accessible hit target) -->
                 <Button Grid.Row="0"
+                Classes="icon-button"
                 HorizontalAlignment="Right"
                 VerticalAlignment="Top"
-                Background="Transparent"
-                BorderBrush="Transparent"
-                BorderThickness="0"
-                Padding="0"
-                Width="16"
-                Height="16"
-                Margin="0"
+                MinWidth="{DynamicResource MinHitTargetSize}"
+                MinHeight="{DynamicResource MinHitTargetSize}"
+                Margin="0,2,4,0"
                 Click="MinimizeButton_Click"
                 ToolTip.Tip="Minimize"
                 Opacity="{Binding EffectiveControlsOpacity}"
                 IsHitTestVisible="{Binding AreControlsInteractable}">
                     <materialIcons:MaterialIcon Kind="WindowMinimize"
                     Foreground="{DynamicResource SecondaryTextBrush}"
-                    Width="16"
+                    Width="14"
                     Height="10" />
                 </Button>
+
                 <!-- Content area: switch between full and compact modes -->
                 <Grid Grid.Row="1"
                 Background="Transparent"
                 VerticalAlignment="Center"
                 HorizontalAlignment="Center">
                     <views:FullModeView
-                    Margin="10,-10,10,5"
+                    Margin="{DynamicResource WidgetContentMargin}"
                     VerticalAlignment="Center"
                     HorizontalAlignment="Center"
                     IsVisible="{Binding Settings.UseCompactMode, Converter={StaticResource BooleanNegationConverter}}" />
                     <views:CompactModeView
-                    Margin="10,-10,10,5"
+                    Margin="{DynamicResource WidgetContentMargin}"
                     VerticalAlignment="Center"
                     HorizontalAlignment="Center"
                     IsVisible="{Binding Settings.UseCompactMode}" />
