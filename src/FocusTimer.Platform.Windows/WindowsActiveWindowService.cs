@@ -15,6 +15,10 @@ namespace FocusTimer.Platform.Windows
     {
         private const int MaxTitleLength = 256;
         private readonly IAppLogger? _logger;
+        private readonly Func<IntPtr> _getForegroundWindow;
+        private readonly Func<IntPtr, string> _getWindowTitle;
+        private readonly Func<IntPtr, uint> _getProcessId;
+        private readonly Func<int, string> _getProcessName;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="WindowsActiveWindowService"/> class without a logger.
@@ -29,8 +33,30 @@ namespace FocusTimer.Platform.Windows
         /// </summary>
         /// <param name="logger">An optional logger for diagnostics.</param>
         public WindowsActiveWindowService(IAppLogger? logger)
+            : this(logger, NativeMethods.GetForegroundWindow, GetNativeWindowTitle, GetNativeProcessId, GetNativeProcessName)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="WindowsActiveWindowService"/> class with replaceable Win32 lookups.
+        /// </summary>
+        /// <param name="logger">An optional logger for diagnostics.</param>
+        /// <param name="getForegroundWindow">Returns the foreground window handle.</param>
+        /// <param name="getWindowTitle">Returns the title of a window handle.</param>
+        /// <param name="getProcessId">Returns the owning process ID of a window handle.</param>
+        /// <param name="getProcessName">Returns the process name for a process ID.</param>
+        internal WindowsActiveWindowService(
+            IAppLogger? logger,
+            Func<IntPtr> getForegroundWindow,
+            Func<IntPtr, string> getWindowTitle,
+            Func<IntPtr, uint> getProcessId,
+            Func<int, string> getProcessName)
         {
             this._logger = logger;
+            this._getForegroundWindow = getForegroundWindow;
+            this._getWindowTitle = getWindowTitle;
+            this._getProcessId = getProcessId;
+            this._getProcessName = getProcessName;
         }
 
         /// <inheritdoc/>
@@ -41,36 +67,51 @@ namespace FocusTimer.Platform.Windows
             return Task.FromResult(info);
         }
 
+        private static string GetNativeWindowTitle(IntPtr hwnd)
+        {
+            var titleBuilder = new StringBuilder(MaxTitleLength);
+            int titleLength = NativeMethods.GetWindowText(hwnd, titleBuilder, MaxTitleLength);
+            return titleLength > 0 ? titleBuilder.ToString() : string.Empty;
+        }
+
+        private static uint GetNativeProcessId(IntPtr hwnd)
+        {
+            NativeMethods.GetWindowThreadProcessId(hwnd, out uint processId);
+            return processId;
+        }
+
+        private static string GetNativeProcessName(int processId)
+        {
+            using var process = Process.GetProcessById(processId);
+            return process.ProcessName;
+        }
+
         private ActiveWindowInfo? GetActiveWindow()
         {
             try
             {
                 // Get foreground window handle
-                IntPtr hwnd = NativeMethods.GetForegroundWindow();
+                IntPtr hwnd = this._getForegroundWindow();
                 if (hwnd == IntPtr.Zero)
                 {
                     return null;
                 }
 
                 // Get window title
-                var titleBuilder = new StringBuilder(MaxTitleLength);
-                int titleLength = NativeMethods.GetWindowText(hwnd, titleBuilder, MaxTitleLength);
-                string windowTitle = titleLength > 0 ? titleBuilder.ToString() : string.Empty;
+                string windowTitle = this._getWindowTitle(hwnd);
 
                 // Get process ID
-                NativeMethods.GetWindowThreadProcessId(hwnd, out uint processId);
+                uint processId = this._getProcessId(hwnd);
                 string processName = "Unknown";
 
                 if (processId != 0)
                 {
                     try
                     {
-                        using var process = Process.GetProcessById((int)processId);
-
                         // Some system processes may deny access to ProcessName
                         try
                         {
-                            processName = process.ProcessName;
+                            processName = this._getProcessName((int)processId);
                         }
                         catch (Exception ex) when (ex is System.ComponentModel.Win32Exception ||
                                                    ex is InvalidOperationException)

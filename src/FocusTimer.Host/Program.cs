@@ -26,12 +26,50 @@ namespace FocusTimer.Host
         /// </summary>
         static Program()
         {
+            var sp = BuildServiceProvider(
+                Environment.GetEnvironmentVariable("FOCUSTIMER_LOG_DIR"),
+                RuntimeInformation.IsOSPlatform(OSPlatform.Windows),
+                Settings.DefaultWorklogDirectory);
+            Services = sp;
+            FocusTimer.Core.AppHost.Services = sp;
+        }
+
+        /// <summary>
+        /// Gets the application's root <see cref="IServiceProvider"/>.
+        /// </summary>
+        public static IServiceProvider Services { get; private set; }
+
+        /// <summary>
+        /// Application entry point.
+        /// </summary>
+        /// <param name="args">Command-line arguments passed to the application.</param>
+        [STAThread]
+        public static void Main(string[] args) => BuildAvaloniaApp()
+            .StartWithClassicDesktopLifetime(args);
+
+        /// <summary>
+        /// Configures and returns an Avalonia <see cref="AppBuilder"/> for startup.
+        /// </summary>
+        /// <returns>A configured <see cref="AppBuilder"/> instance.</returns>
+        public static AppBuilder BuildAvaloniaApp()
+            => AppBuilder.Configure<App>()
+                .UsePlatformDetect()
+                .WithInterFont()
+                .UseReactiveUI();
+
+        /// <summary>
+        /// Builds the dependency injection container.
+        /// </summary>
+        /// <param name="envLogDir">Optional log directory override; blank values fall back to the default.</param>
+        /// <param name="isWindows">Whether to register the Windows platform services instead of the stubs.</param>
+        /// <param name="worklogDirectory">The directory that is created for worklogs.</param>
+        /// <returns>The configured service provider.</returns>
+        internal static IServiceProvider BuildServiceProvider(string? envLogDir, bool isWindows, string worklogDirectory)
+        {
             var services = new ServiceCollection();
 
             var logDirectory = Settings.DefaultApplicationLogDirectory;
-            var worklogDirectory = Settings.DefaultWorklogDirectory;
 
-            var envLogDir = Environment.GetEnvironmentVariable("FOCUSTIMER_LOG_DIR");
             if (!string.IsNullOrWhiteSpace(envLogDir))
             {
                 logDirectory = envLogDir;
@@ -58,7 +96,7 @@ namespace FocusTimer.Host
 
             appLogger.LogInformation($"FocusTimer started. Log directory: {logDirectory}");
 
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            if (isWindows)
             {
                 services.AddSingleton<IActiveWindowService, Platform.Windows.WindowsActiveWindowService>();
                 services.AddSingleton<INotificationService, Platform.Windows.WindowsNotificationService>();
@@ -103,32 +141,7 @@ namespace FocusTimer.Host
             services.AddTransient<Func<TimerWidgetViewModel>>(sp => () => sp.GetRequiredService<TimerWidgetViewModel>());
             services.AddTransient<Func<SettingsWindowViewModel>>(sp => () => sp.GetRequiredService<SettingsWindowViewModel>());
 
-            var sp = services.BuildServiceProvider();
-            Services = sp;
-            FocusTimer.Core.AppHost.Services = sp;
+            return services.BuildServiceProvider();
         }
-
-        /// <summary>
-        /// Gets the application's root <see cref="IServiceProvider"/>.
-        /// </summary>
-        public static IServiceProvider Services { get; private set; }
-
-        /// <summary>
-        /// Application entry point.
-        /// </summary>
-        /// <param name="args">Command-line arguments passed to the application.</param>
-        [STAThread]
-        public static void Main(string[] args) => BuildAvaloniaApp()
-            .StartWithClassicDesktopLifetime(args);
-
-        /// <summary>
-        /// Configures and returns an Avalonia <see cref="AppBuilder"/> for startup.
-        /// </summary>
-        /// <returns>A configured <see cref="AppBuilder"/> instance.</returns>
-        public static AppBuilder BuildAvaloniaApp()
-            => AppBuilder.Configure<App>()
-                .UsePlatformDetect()
-                .WithInterFont()
-                .UseReactiveUI();
     }
 }
