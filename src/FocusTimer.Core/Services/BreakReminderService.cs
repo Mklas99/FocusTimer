@@ -50,22 +50,32 @@ namespace FocusTimer.Core.Services
         /// </summary>
         public void OnTimerPaused()
         {
-            this._reminderTimer?.Stop();
-            this._reminderTimer?.Dispose();
-            this._reminderTimer = null;
+            this.ResetReminderTimer();
         }
 
         /// <inheritdoc/>
         public void Dispose()
+        {
+            this.Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        /// <summary>
+        /// Releases the resources used by the service.
+        /// </summary>
+        /// <param name="disposing">True when called from <see cref="Dispose()"/>; false when called from a finalizer.</param>
+        protected virtual void Dispose(bool disposing)
         {
             if (this._disposed)
             {
                 return;
             }
 
-            this._reminderTimer?.Stop();
-            this._reminderTimer?.Dispose();
-            this._reminderTimer = null;
+            if (disposing)
+            {
+                this.ResetReminderTimer();
+            }
+
             this._disposed = true;
         }
 

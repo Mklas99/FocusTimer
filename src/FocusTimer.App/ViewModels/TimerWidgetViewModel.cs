@@ -23,6 +23,7 @@ namespace FocusTimer.App.ViewModels
     /// </summary>
     public class TimerWidgetViewModel : ReactiveObject, IDisposable
     {
+        private const double OpacityTolerance = 0.0001;
         private readonly ISettingsProvider _settingsProvider;
         private readonly IAppLogger _logWriter;
         private readonly SessionTracker _sessionTracker;
@@ -265,7 +266,7 @@ namespace FocusTimer.App.ViewModels
                 }
 
                 var clamped = Math.Clamp(value, 0.0, 1.0);
-                if (!clamped.Equals(this.Settings.Theme.BackgroundOpacity))
+                if (Math.Abs(clamped - this.Settings.Theme.BackgroundOpacity) > OpacityTolerance)
                 {
                     this.Settings.Theme.BackgroundOpacity = clamped;
                     this.RaisePropertyChanged(nameof(this.BackgroundOpacity));
@@ -289,7 +290,7 @@ namespace FocusTimer.App.ViewModels
                 }
 
                 var clamped = Math.Clamp(value, 0.0, 1.0);
-                if (!clamped.Equals(this.Settings.Theme.TimerOpacity))
+                if (Math.Abs(clamped - this.Settings.Theme.TimerOpacity) > OpacityTolerance)
                 {
                     this.Settings.Theme.TimerOpacity = clamped;
                     this.RaisePropertyChanged(nameof(this.ClockOpacity));
@@ -312,7 +313,7 @@ namespace FocusTimer.App.ViewModels
                 }
 
                 var clamped = Math.Clamp(value, 0.0, 1.0);
-                if (!clamped.Equals(this.Settings.Theme.ButtonOpacity))
+                if (Math.Abs(clamped - this.Settings.Theme.ButtonOpacity) > OpacityTolerance)
                 {
                     this.Settings.Theme.ButtonOpacity = clamped;
                     this.RaisePropertyChanged(nameof(this.ControlsOpacity));
@@ -336,7 +337,7 @@ namespace FocusTimer.App.ViewModels
                 }
 
                 var clamped = Math.Clamp(value, 0.2, 1.0);
-                if (!clamped.Equals(this.Settings.WidgetOpacity))
+                if (Math.Abs(clamped - this.Settings.WidgetOpacity) > OpacityTolerance)
                 {
                     this.Settings.WidgetOpacity = clamped;
                     this.RaisePropertyChanged(nameof(this.OverallOpacity));
@@ -537,7 +538,17 @@ namespace FocusTimer.App.ViewModels
         /// <inheritdoc/>
         public void Dispose()
         {
-            if (this._disposed)
+            this.Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        /// <summary>
+        /// Unsubscribes from notifiers, flushes pending worklog entries and releases resources.
+        /// </summary>
+        /// <param name="disposing">True when called from <see cref="Dispose()"/>; false when called from a finalizer.</param>
+        protected virtual void Dispose(bool disposing)
+        {
+            if (this._disposed || !disposing)
             {
                 return;
             }

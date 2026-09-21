@@ -24,12 +24,8 @@ namespace FocusTimer.App.Converters
         /// <inheritdoc/>
         public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
         {
-            if (value is bool b)
-            {
-                return !b;
-            }
-
-            return Avalonia.AvaloniaProperty.UnsetValue;
+            // Negation is its own inverse.
+            return this.Convert(value, targetType, parameter, culture);
         }
     }
 }

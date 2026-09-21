@@ -25,7 +25,7 @@ namespace FocusTimer.App.Converters
         {
             if (value is double d)
             {
-                return d == 90d;
+                return Math.Abs(d - 90d) < 0.001d;
             }
 
             return false;

@@ -32,8 +32,7 @@ namespace FocusTimer.Core.Stubs
         {
             this._logger?.LogInformation($"[Linux Stub] Break reminder (requires ack: {requireAcknowledgement}): {message}");
 
-            // TODO: Implement using notify-send or DBus
-            // Example: Process.Start("notify-send", $"\"Break Reminder\" \"{message}\"");
+            // TODO: Implement using notify-send or DBus.
             return Task.CompletedTask;
         }
 

@@ -39,11 +39,6 @@ namespace FocusTimer.App
             {
                 this._trayIcon.Clicked += this.TrayIcon_Clicked;
             }
-
-            // _trayIcon.MenuShowHide += TrayMenu_ShowHide;
-            // _trayIcon.MenuToggleTimer += TrayMenu_ToggleTimer;
-            // _trayIcon.MenuSettings += TrayMenu_Settings;
-            // _trayIcon.MenuExit += TrayMenu_Exit;
         }
 
         /// <summary>

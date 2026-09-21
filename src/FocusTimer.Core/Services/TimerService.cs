@@ -15,6 +15,7 @@ namespace FocusTimer.Core.Services
 
         // Lock for thread safety
         private readonly object _lock = new object();
+        private bool _disposed;
 
         private TimerState _currentState = TimerState.Idle;
         private TimeSpan _elapsed;
@@ -104,8 +105,28 @@ namespace FocusTimer.Core.Services
         /// <inheritdoc/>
         public void Dispose()
         {
-            this._sessionTracker.StopTracking(EndReason.ApplicationExit);
-            this._timer.Dispose();
+            this.Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        /// <summary>
+        /// Stops session tracking and releases the timer.
+        /// </summary>
+        /// <param name="disposing">True when called from <see cref="Dispose()"/>; false when called from a finalizer.</param>
+        protected virtual void Dispose(bool disposing)
+        {
+            if (this._disposed)
+            {
+                return;
+            }
+
+            this._disposed = true;
+
+            if (disposing)
+            {
+                this._sessionTracker.StopTracking(EndReason.ApplicationExit);
+                this._timer.Dispose();
+            }
         }
 
         private void OnTimerElapsed(object? sender, ElapsedEventArgs e)

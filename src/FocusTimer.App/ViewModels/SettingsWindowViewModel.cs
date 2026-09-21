@@ -21,6 +21,7 @@ namespace FocusTimer.App.ViewModels
     /// </summary>
     public class SettingsWindowViewModel : ReactiveObject
     {
+        private const double OpacityTolerance = 0.0001;
         private readonly ISettingsProvider _settingsProvider;
         private readonly IAutoStartService _autoStartService;
         private readonly IThemeService _themeService;
@@ -238,7 +239,7 @@ namespace FocusTimer.App.ViewModels
             set
             {
                 var normalized = this.ToNormalized(value);
-                if (!normalized.Equals(this.Settings.Theme.BackgroundOpacity))
+                if (Math.Abs(normalized - this.Settings.Theme.BackgroundOpacity) > OpacityTolerance)
                 {
                     this.Settings.Theme.BackgroundOpacity = normalized;
                     this.RaisePropertyChanged(nameof(this.BackgroundOpacityPercent));
@@ -257,7 +258,7 @@ namespace FocusTimer.App.ViewModels
             set
             {
                 var normalized = this.ToNormalized(value);
-                if (!normalized.Equals(this.Settings.Theme.TimerOpacity))
+                if (Math.Abs(normalized - this.Settings.Theme.TimerOpacity) > OpacityTolerance)
                 {
                     this.Settings.Theme.TimerOpacity = normalized;
                     this.RaisePropertyChanged(nameof(this.ClockOpacityPercent));
@@ -276,7 +277,7 @@ namespace FocusTimer.App.ViewModels
             set
             {
                 var normalized = this.ToNormalized(value);
-                if (!normalized.Equals(this.Settings.Theme.ButtonOpacity))
+                if (Math.Abs(normalized - this.Settings.Theme.ButtonOpacity) > OpacityTolerance)
                 {
                     this.Settings.Theme.ButtonOpacity = normalized;
                     this.RaisePropertyChanged(nameof(this.ButtonsOpacityPercent));
@@ -295,7 +296,7 @@ namespace FocusTimer.App.ViewModels
             set
             {
                 var normalized = this.ToNormalized(value);
-                if (!normalized.Equals(this.Settings.WidgetOpacity))
+                if (Math.Abs(normalized - this.Settings.WidgetOpacity) > OpacityTolerance)
                 {
                     this.Settings.WidgetOpacity = normalized;
                     this.RaisePropertyChanged(nameof(this.OverallFadePercent));

@@ -27,7 +27,6 @@ namespace FocusTimer.App.Services
         private readonly ThemeManager _themeManager;
         private readonly Func<TimerWidgetViewModel> _timerViewModelFactory;
         private readonly Func<SettingsWindowViewModel> _settingsViewModelFactory;
-        private readonly TodayStatsService _todayStatsService;
         private readonly ITrayIconController? _trayIconController;
         private readonly IAppLogger _logWriter;
         private readonly IEventBus? _eventBus;
@@ -77,7 +76,6 @@ namespace FocusTimer.App.Services
             this._timerViewModelFactory = timerViewModelFactory;
             this._settingsViewModelFactory = settingsViewModelFactory;
             this._currentSettings = new Settings();
-            this._todayStatsService = todayStatsService;
             this._trayIconController = trayIconController;
             this._logWriter = logWriter;
             this._eventBus = eventBus;

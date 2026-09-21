@@ -71,12 +71,27 @@ namespace FocusTimer.Core.Services
         /// <inheritdoc/>
         public void Dispose()
         {
+            this.Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        /// <summary>
+        /// Flushes and closes the logging pipeline.
+        /// </summary>
+        /// <param name="disposing">True when called from <see cref="Dispose()"/>; false when called from a finalizer.</param>
+        protected virtual void Dispose(bool disposing)
+        {
             if (this._disposed)
             {
                 return;
             }
 
             this._disposed = true;
+
+            if (!disposing)
+            {
+                return;
+            }
 
             try
             {

@@ -19,7 +19,7 @@ NC='\033[0m' # No Color
 # Build the solution
 echo -e "${YELLOW}[1/3]${NC} Building solution..."
 dotnet build "$PROJECT_ROOT/FocusTimer.sln" -c Release
-if [ $? -ne 0 ]; then
+if [[ $? -ne 0 ]]; then
     echo -e "${RED}Build failed!${NC}"
     exit 1
 fi
@@ -29,7 +29,7 @@ echo ""
 # Run analyzers and code style checks
 echo -e "${YELLOW}[2/3]${NC} Running code analyzers..."
 dotnet build "$PROJECT_ROOT/FocusTimer.sln" -c Release -p:TreatWarningsAsErrors=true -p:EnforceCodeStyleInBuild=true
-if [ $? -ne 0 ]; then
+if [[ $? -ne 0 ]]; then
     echo -e "${RED}Code analysis found issues!${NC}"
     exit 1
 fi
