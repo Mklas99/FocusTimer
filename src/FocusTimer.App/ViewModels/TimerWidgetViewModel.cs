@@ -10,6 +10,7 @@ namespace FocusTimer.App.ViewModels
     using Avalonia.ReactiveUI;
     using Avalonia.Threading;
     using FocusTimer.App.Services;
+    using FocusTimer.App.Styles;
     using FocusTimer.Core;
     using FocusTimer.Core.Interfaces;
     using FocusTimer.Core.Models;
@@ -42,15 +43,15 @@ namespace FocusTimer.App.ViewModels
 
         // Responsive layout fields
         private Orientation _buttonPanelOrientation = Orientation.Horizontal;
-        private double _mainTimerFontSize = 36;
-        private double _compactTimerFontSize = 25;
-        private double _mainTimerTextWidth = 182;
-        private double _compactTimerTextWidth = 126;
-        private double _projectFontSize = 14;
-        private double _buttonSize = 20;
-        private double _iconSize = 16;
-        private double _compactButtonSize = 16;
-        private double _compactIconSize = 13;
+        private double _mainTimerFontSize = DesignMetrics.BaseMainTimerFontSize;
+        private double _compactTimerFontSize = DesignMetrics.BaseCompactTimerFontSize;
+        private double _mainTimerTextWidth = DesignMetrics.BaseMainTimerTextWidth;
+        private double _compactTimerTextWidth = DesignMetrics.BaseCompactTimerTextWidth;
+        private double _projectFontSize = DesignMetrics.BaseProjectFontSize;
+        private double _buttonSize = DesignMetrics.BaseButtonSize;
+        private double _iconSize = DesignMetrics.BaseIconSize;
+        private double _compactButtonSize = DesignMetrics.MinAccessibleHitTarget;
+        private double _compactIconSize = DesignMetrics.BaseIconSize * 0.85;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TimerWidgetViewModel"/> class.
@@ -582,15 +583,15 @@ namespace FocusTimer.App.ViewModels
         private void UpdateResponsiveLayout()
         {
             var scale = this.Settings?.WidgetScale ?? 1.0;
-            this.MainTimerFontSize = 36 * scale;
-            this.CompactTimerFontSize = 25 * scale;
-            this.MainTimerTextWidth = 175 * scale;
-            this.CompactTimerTextWidth = 115 * scale;
-            this.ProjectFontSize = 14 * scale;
-            this.ButtonSize = 25 * (scale / 2);
-            this.IconSize = 28 * (scale / 2);
-            this.CompactButtonSize = this.ButtonSize * 0.7;
-            this.CompactIconSize = this.IconSize * 0.7;
+            this.MainTimerFontSize = DesignMetrics.BaseMainTimerFontSize * scale;
+            this.CompactTimerFontSize = DesignMetrics.BaseCompactTimerFontSize * scale;
+            this.MainTimerTextWidth = DesignMetrics.BaseMainTimerTextWidth * scale;
+            this.CompactTimerTextWidth = DesignMetrics.BaseCompactTimerTextWidth * scale;
+            this.ProjectFontSize = DesignMetrics.BaseProjectFontSize * scale;
+            this.ButtonSize = Math.Max(DesignMetrics.MinAccessibleHitTarget, DesignMetrics.BaseButtonSize * scale);
+            this.IconSize = DesignMetrics.BaseIconSize * scale;
+            this.CompactButtonSize = Math.Max(DesignMetrics.MinAccessibleHitTarget, DesignMetrics.BaseButtonSize * 0.85 * scale);
+            this.CompactIconSize = DesignMetrics.BaseIconSize * 0.85 * scale;
             this.ButtonPanelOrientation = scale >= 1.25 ? Orientation.Vertical : Orientation.Horizontal;
         }
 

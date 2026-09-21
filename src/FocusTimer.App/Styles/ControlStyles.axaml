@@ -1,0 +1,198 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!--
+      FocusTimer Unified Component Styles
+      Consumes tokens from Tokens.axaml and dynamic semantic brushes from ThemeResources.axaml.
+    -->
+
+    <!-- Icon Buttons (accessible hit target min 24x24, focus-visible adorner) -->
+    <Style Selector="Button.icon-button">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="{DynamicResource RadiusXs}" />
+        <Setter Property="MinWidth" Value="{DynamicResource MinHitTargetSize}" />
+        <Setter Property="MinHeight" Value="{DynamicResource MinHitTargetSize}" />
+        <Setter Property="HorizontalAlignment" Value="Center" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="Padding" Value="3" />
+        <Setter Property="Margin" Value="2" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Focusable" Value="True" />
+    </Style>
+
+    <Style Selector="Button.icon-button:pointerover">
+        <Setter Property="Background" Value="{DynamicResource TitleBarButtonHoverBrush}" />
+    </Style>
+
+    <Style Selector="Button.icon-button:pressed">
+        <Setter Property="Background" Value="{DynamicResource TitleBarButtonPressedBrush}" />
+    </Style>
+
+    <Style Selector="Button.icon-button:focus-visible">
+        <Setter Property="BorderBrush" Value="{DynamicResource FocusRingBrush}" />
+        <Setter Property="BorderThickness" Value="2" />
+    </Style>
+
+    <!-- Style for the hero timer display text (tabular digits, high legibility) -->
+    <Style Selector="TextBlock.timer-text">
+        <Setter Property="FontFamily" Value="{DynamicResource TabularTimerFontFamily}" />
+        <Setter Property="FontWeight" Value="Bold" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="Foreground" Value="{DynamicResource TimerTextBrush}" />
+    </Style>
+
+    <!-- Style for the project tag TextBox -->
+    <Style Selector="TextBox.project-tag">
+        <Setter Property="Background" Value="{DynamicResource ProjectTagBackgroundBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource ProjectTagBorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Foreground" Value="{DynamicResource ProjectTagTextBrush}" />
+        <Setter Property="Padding" Value="6,3" />
+        <Setter Property="FontSize" Value="{DynamicResource FontSizeBody}" />
+        <Setter Property="CornerRadius" Value="{DynamicResource RadiusXs}" />
+    </Style>
+
+    <Style Selector="TextBox.project-tag:focus-visible">
+        <Setter Property="BorderBrush" Value="{DynamicResource FocusRingBrush}" />
+    </Style>
+
+    <!-- Section headers in settings (supporting both legacy SectionHeader and settings-section-header) -->
+    <Style Selector="TextBlock.settings-section-header, TextBlock.SectionHeader">
+        <Setter Property="FontSize" Value="{DynamicResource FontSizeTitle}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Margin" Value="0,12,0,8" />
+        <Setter Property="Foreground" Value="{DynamicResource SettingsSectionHeaderBrush}" />
+    </Style>
+
+    <!-- Labels in settings (supporting both legacy SettingLabel and settings-label) -->
+    <Style Selector="TextBlock.settings-label, TextBlock.SettingLabel">
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="Margin" Value="0,0,6,0" />
+        <Setter Property="Foreground" Value="{DynamicResource SettingsLabelTextBrush}" />
+    </Style>
+
+    <!-- Version Info Text in About tab -->
+    <Style Selector="TextBlock.VersionInfoText">
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+    </Style>
+
+    <!-- Settings scroll viewer -->
+    <Style Selector="ScrollViewer.settings-scroll">
+        <Setter Property="Padding" Value="0,0,14,0" />
+        <Setter Property="HorizontalScrollBarVisibility" Value="Disabled" />
+    </Style>
+
+    <!-- Settings accordion expander -->
+    <Style Selector="Expander.settings-accordion">
+        <Setter Property="Margin" Value="0,0,0,10" />
+        <Setter Property="BorderBrush" Value="{DynamicResource SettingsAccordionBorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Background" Value="{DynamicResource InputBackgroundBrush}" />
+        <Setter Property="CornerRadius" Value="{DynamicResource RadiusSm}" />
+    </Style>
+
+    <Style Selector="Expander.settings-accordion /template/ ToggleButton">
+        <Setter Property="Background" Value="{DynamicResource SettingsAccordionHeaderBrush}" />
+        <Setter Property="CornerRadius" Value="{DynamicResource RadiusSm}" />
+    </Style>
+
+    <Style Selector="Expander.settings-accordion /template/ ToggleButton:pointerover">
+        <Setter Property="Background" Value="{DynamicResource SettingsAccordionHeaderHoverBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource SettingsAccordionBorderBrush}" />
+    </Style>
+
+    <!-- Spinners for NumericUpDown -->
+    <Style Selector="NumericUpDown.no-spinners">
+        <Setter Property="ShowButtonSpinner" Value="False" />
+    </Style>
+
+    <Style Selector="NumericUpDown.small-spinners /template/ StackPanel#PART_ButtonSpinner Button">
+        <Setter Property="Width" Value="16" />
+        <Setter Property="MinWidth" Value="16" />
+        <Setter Property="Padding" Value="0" />
+    </Style>
+
+    <!-- Color picker controls and surfaces -->
+    <Style Selector="Button.color-swatch">
+        <Setter Property="Width" Value="28" />
+        <Setter Property="Height" Value="28" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="CornerRadius" Value="{DynamicResource RadiusSm}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource AccentPrimaryBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="HorizontalAlignment" Value="Right" />
+        <Setter Property="Focusable" Value="True" />
+    </Style>
+
+    <Style Selector="Button.color-swatch:focus-visible">
+        <Setter Property="BorderBrush" Value="{DynamicResource FocusRingBrush}" />
+        <Setter Property="BorderThickness" Value="2" />
+    </Style>
+
+    <Style Selector="Border.color-picker-surface">
+        <Setter Property="CornerRadius" Value="{DynamicResource RadiusMd}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="BorderBrush" Value="{DynamicResource InputBorderBrush}" />
+        <Setter Property="ClipToBounds" Value="True" />
+    </Style>
+
+    <Style Selector="Border.color-picker-hue-strip">
+        <Setter Property="CornerRadius" Value="{DynamicResource RadiusSm}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="BorderBrush" Value="{DynamicResource InputBorderBrush}" />
+        <Setter Property="ClipToBounds" Value="True" />
+    </Style>
+
+    <Style Selector="Border.color-picker-preview">
+        <Setter Property="CornerRadius" Value="{DynamicResource RadiusMd}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="BorderBrush" Value="{DynamicResource WindowBorderBrush}" />
+        <Setter Property="ClipToBounds" Value="True" />
+    </Style>
+
+    <Style Selector="Border.color-picker-chip">
+        <Setter Property="CornerRadius" Value="{DynamicResource RadiusSm}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="BorderBrush" Value="{DynamicResource InputBorderBrush}" />
+        <Setter Property="Background" Value="{DynamicResource InputBackgroundBrush}" />
+        <Setter Property="Padding" Value="6,5" />
+    </Style>
+
+    <Style Selector="Border.color-picker-thumb">
+        <Setter Property="CornerRadius" Value="{DynamicResource RadiusSm}" />
+        <Setter Property="BorderThickness" Value="2" />
+        <Setter Property="BorderBrush" Value="#FFFFFFFF" />
+        <Setter Property="Background" Value="#22000000" />
+    </Style>
+
+    <Style Selector="Border.color-picker-strip-thumb">
+        <Setter Property="CornerRadius" Value="{DynamicResource RadiusXs}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="BorderBrush" Value="#CCFFFFFF" />
+        <Setter Property="Background" Value="#66000000" />
+    </Style>
+
+    <!-- ToolTips on transient surfaces -->
+    <Style Selector="ToolTip">
+        <Setter Property="Background" Value="{DynamicResource SettingsBackgroundBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtleBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="{DynamicResource RadiusXs}" />
+        <Setter Property="Padding" Value="8,4" />
+        <Setter Property="FontSize" Value="{DynamicResource FontSizeCaption}" />
+    </Style>
+
+    <!-- Context Menus -->
+    <Style Selector="ContextMenu">
+        <Setter Property="Background" Value="{DynamicResource SettingsBackgroundBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtleBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="{DynamicResource RadiusSm}" />
+        <Setter Property="Padding" Value="4" />
+    </Style>
+
+</Styles>
