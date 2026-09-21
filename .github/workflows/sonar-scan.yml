@@ -8,10 +8,9 @@ on:
 jobs:
   sonar:
     name: Build, test, coverage, analyze
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     env:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      MANUAL_SONAR_ANALYSIS: ${{ secrets.MANUAL_SONAR_ANALYSIS }}
 
     steps:
       - uses: actions/checkout@v4
@@ -24,44 +23,43 @@ jobs:
           dotnet-version: '8.0.x'
 
       - name: Install SonarScanner for .NET
-        run: dotnet tool install --global dotnet-sonarscanner
-
-      - name: Add .NET tools to PATH
-        run: echo "$HOME/.dotnet/tools" >> "$GITHUB_PATH"
+        shell: pwsh
+        run: |
+          dotnet tool install --global dotnet-sonarscanner
+          echo "$env:USERPROFILE\.dotnet\tools" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
       - name: Restore
         run: dotnet restore FocusTimer.sln
 
       - name: Begin Sonar analysis
-        if: env.MANUAL_SONAR_ANALYSIS == 'true'
+        if: env.SONAR_TOKEN != ''
+        shell: pwsh
         run: >
           dotnet sonarscanner begin
           /k:"Mklas99_FocusTimer"
           /o:"mklas99"
-          /d:sonar.token="${SONAR_TOKEN}"
-          /d:sonar.cs.opencover.reportsPaths="**/TestResults/*.coverage.opencover.xml"
-
-      - name: Skip manual Sonar analysis (Automatic Analysis likely enabled)
-        if: env.MANUAL_SONAR_ANALYSIS != 'true'
-        run: |
-          echo "MANUAL_SONAR_ANALYSIS is not 'true' — skipping dotnet sonarscanner begin/end to avoid duplicate analysis with SonarCloud Automatic Analysis."
+          /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
+          /d:sonar.host.url="https://sonarcloud.io"
+          /d:sonar.cs.opencover.reportsPaths="**/TestResults/*.coverage.opencover.xml,**/TestResults/*.opencover.xml,**/coverage.opencover.xml"
 
       - name: Build
         run: dotnet build FocusTimer.sln -c Release --no-restore
 
       - name: Test with coverage (per-project)
+        shell: pwsh
         run: |
-          mkdir -p TestResults
-          set -e
-          for proj in $(find tests -name "*.csproj"); do
-            name=$(basename "$proj" .csproj)
-            echo "Running tests for $name"
-            dotnet test "$proj" -c Release --no-build \
-              /p:CollectCoverage=true \
-              /p:CoverletOutputFormat=opencover \
-              /p:CoverletOutput=./TestResults/${name}.coverage.opencover.xml
-          done
+          New-Item -ItemType Directory -Force -Path TestResults
+          $projects = Get-ChildItem -Path tests -Filter "*.csproj" -Recurse
+          foreach ($proj in $projects) {
+              $name = $proj.BaseName
+              Write-Host "Running tests with coverage for $name"
+              dotnet test $proj.FullName -c Release --no-build `
+                /p:CollectCoverage=true `
+                /p:CoverletOutputFormat=opencover `
+                /p:CoverletOutput="./TestResults/$name.coverage.opencover.xml"
+          }
 
       - name: End Sonar analysis
-        if: env.MANUAL_SONAR_ANALYSIS == 'true'
-        run: dotnet sonarscanner end /d:sonar.token="${SONAR_TOKEN}"
+        if: env.SONAR_TOKEN != ''
+        shell: pwsh
+        run: dotnet sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"

@@ -158,7 +158,7 @@ This allows late-binding access to services from non-DI-aware contexts. It is cu
 
 - **JsonSettingsProvider.cs**
   - Implements ISettingsProvider
-  - Stores settings in `%APPDATA%\Roaming\FocusTimer\settings.json`
+  - Stores settings in `%APPDATA%\Roaming\FocusTimer\settings.json` (supports custom path injection for isolated test execution)
   - Automatic JSON serialization/deserialization with sane defaults
 
 - **CsvSessionRepository.cs**

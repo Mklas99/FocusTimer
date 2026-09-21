@@ -1,5 +1,6 @@
 param(
-    [int]$Threshold = 60
+    [int]$Threshold = 60,
+    [string]$Format = "opencover,cobertura"
 )
 
 $ErrorActionPreference = "Stop"
@@ -27,12 +28,12 @@ foreach ($project in $projects)
     $outputDir = Join-Path $coverageRoot $projectName
     New-Item -Path $outputDir -ItemType Directory -Force | Out-Null
 
-    Write-Host "Running coverage for $projectName (threshold: $Threshold%)..."
+    Write-Host "Running coverage for $projectName (threshold: $Threshold%, format: $Format)..."
 
     dotnet test $testProject `
         --configuration Debug `
         /p:CollectCoverage=true `
-        /p:CoverletOutputFormat=cobertura `
+        /p:CoverletOutputFormat=\"$Format\" `
         /p:CoverletOutput="$outputDir/" `
         /p:Include="$includeFilter" `
         /p:Threshold=$Threshold `
