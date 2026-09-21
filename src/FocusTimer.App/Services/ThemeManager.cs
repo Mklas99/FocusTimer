@@ -137,7 +137,7 @@ namespace FocusTimer.App.Services
                 resources["ActionPrimaryBrush"] = resources["ButtonNormalBrush"] ?? new SolidColorBrush(Color.Parse(theme.ButtonNormal));
                 resources["ActionPrimaryHoverBrush"] = resources["ButtonHoverBrush"] ?? new SolidColorBrush(Color.Parse(theme.ButtonHover));
                 resources["ActionPrimaryPressedBrush"] = resources["ButtonPressedBrush"] ?? new SolidColorBrush(Color.Parse(theme.ButtonPressed));
-                resources["WidgetBaseLayerBrush"] = new SolidColorBrush(Color.Parse(theme.WindowBackground), theme.WidgetBaseOpacity);
+                resources["WidgetBaseLayerBrush"] = new SolidColorBrush(Color.Parse(theme.WindowBackground));
             }
             catch (Exception ex)
             {
