@@ -6,10 +6,11 @@ namespace FocusTimer.Persistence
     using System.Threading.Tasks;
     using FocusTimer.Core.Interfaces;
     using FocusTimer.Core.Models;
+    using Microsoft.Extensions.DependencyInjection;
 
     /// <summary>
     /// JSON-based implementation of ISettingsProvider.
-    /// Stores settings in user's AppData folder.
+    /// Stores settings in user's AppData folder or a custom specified file path.
     /// </summary>
     public class JsonSettingsProvider : ISettingsProvider
     {
@@ -21,7 +22,7 @@ namespace FocusTimer.Persistence
         /// Initializes a new instance of the <see cref="JsonSettingsProvider"/> class.
         /// </summary>
         public JsonSettingsProvider()
-            : this(null)
+            : this((string?)null, null)
         {
         }
 
@@ -29,17 +30,41 @@ namespace FocusTimer.Persistence
         /// Initializes a new instance of the <see cref="JsonSettingsProvider"/> class with an optional logger.
         /// </summary>
         /// <param name="logger">An optional logger for diagnostics.</param>
+        [ActivatorUtilitiesConstructor]
         public JsonSettingsProvider(IAppLogger? logger)
+            : this((string?)null, logger)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="JsonSettingsProvider"/> class with a custom settings file path and optional logger.
+        /// </summary>
+        /// <param name="settingsFilePath">The full path to the settings JSON file, or null to use the default AppData path.</param>
+        /// <param name="logger">An optional logger for diagnostics.</param>
+        public JsonSettingsProvider(string? settingsFilePath, IAppLogger? logger = null)
         {
             this._logger = logger;
 
-            // Store settings in user's AppData\Roaming\FocusTimer folder
-            var appDataFolder = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-            var settingsFolder = Path.Combine(appDataFolder, "FocusTimer");
+            if (string.IsNullOrWhiteSpace(settingsFilePath))
+            {
+                // Store settings in user's AppData\Roaming\FocusTimer folder
+                var appDataFolder = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+                var settingsFolder = Path.Combine(appDataFolder, "FocusTimer");
 
-            Directory.CreateDirectory(settingsFolder);
+                Directory.CreateDirectory(settingsFolder);
 
-            this._settingsFilePath = Path.Combine(settingsFolder, "settings.json");
+                this._settingsFilePath = Path.Combine(settingsFolder, "settings.json");
+            }
+            else
+            {
+                var directory = Path.GetDirectoryName(settingsFilePath);
+                if (!string.IsNullOrEmpty(directory))
+                {
+                    Directory.CreateDirectory(directory);
+                }
+
+                this._settingsFilePath = settingsFilePath;
+            }
 
             this._jsonOptions = new JsonSerializerOptions
             {
@@ -47,6 +72,11 @@ namespace FocusTimer.Persistence
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
             };
         }
+
+        /// <summary>
+        /// Gets the full file path used by this settings provider.
+        /// </summary>
+        public string SettingsFilePath => this._settingsFilePath;
 
         /// <summary>
         /// Load settings from JSON file. Returns defaults if file doesn't exist or is invalid.

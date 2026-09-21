@@ -536,8 +536,16 @@ dotnet format
 ### Analyze with SonarQube
 
 ```powershell
-./scripts/run-sonar-dotnet.ps1 -token <token>
+./scripts/run-sonar-dotnet.ps1 -Token <token> [-HostUrl <url>] [-ProjectKey <key>]
 ```
+This builds the solution, executes unit tests with OpenCover coverage collection, and submits the analysis and coverage reports to SonarQube / SonarCloud.
+
+### Run Code Coverage Locally
+
+```powershell
+./scripts/run-unit-coverage.ps1 -Threshold 60
+```
+Generates both OpenCover and Cobertura coverage reports in `artifacts/test-coverage/`.
 
 ### Naming Conventions
 
