@@ -17,7 +17,7 @@ namespace FocusTimer.Persistence
         {
             services.AddSingleton<ISettingsProvider, JsonSettingsProvider>();
 
-            services.AddSingleton<ISessionRepository>(sp =>
+            services.AddSingleton<IWorklogStore>(sp =>
             {
                 var settingsProvider = sp.GetRequiredService<ISettingsProvider>();
                 var logger = sp.GetService<IAppLogger>();

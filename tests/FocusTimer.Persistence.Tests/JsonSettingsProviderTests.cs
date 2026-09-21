@@ -22,6 +22,8 @@ public class JsonSettingsProviderTests
         Assert.Equal(settings.ActiveThemeName, loaded.ActiveThemeName);
         Assert.Equal(37, loaded.BreakIntervalMinutes);
         Assert.Equal(settings.WorklogDirectory, loaded.WorklogDirectory);
+        Assert.Equal(settings.DeviceId, loaded.DeviceId);
+        Assert.False(string.IsNullOrWhiteSpace(loaded.DeviceId));
     }
 
     [Fact]

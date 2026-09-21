@@ -28,6 +28,7 @@ namespace FocusTimer.Core.Models
         private Theme _theme = new Theme();
         private string _activeThemeName = "Dark";
         private string? _customThemePath;
+        private string _deviceId = Guid.NewGuid().ToString("D");
 
         /// <inheritdoc/>
         public event PropertyChangedEventHandler? PropertyChanged;
@@ -247,6 +248,15 @@ namespace FocusTimer.Core.Models
         {
             get => this._customThemePath;
             set => this.SetField(ref this._customThemePath, value);
+        }
+
+        /// <summary>
+        /// Gets or sets the stable installation identity used as worklog device provenance.
+        /// </summary>
+        public string DeviceId
+        {
+            get => this._deviceId;
+            set => this.SetField(ref this._deviceId, string.IsNullOrWhiteSpace(value) ? Guid.NewGuid().ToString("D") : value);
         }
 
         /// <summary>

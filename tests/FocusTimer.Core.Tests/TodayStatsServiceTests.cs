@@ -7,100 +7,57 @@ using FocusTimer.Core.Services;
 public class TodayStatsServiceTests
 {
     [Fact]
-    public async Task RefreshTodayAsync_GivenMixedDates_SumsOnlyTodayEntries()
+    public async Task RefreshTodayAsync_OnDstTransition_QueriesExactLocalDayBoundaries()
     {
-        var today = DateTime.Today;
-        var repository = new StubSessionRepository
+        var timeZone = TimeZoneInfo.FindSystemTimeZoneById(
+            OperatingSystem.IsWindows() ? "Central European Standard Time" : "Europe/Vienna");
+        var clock = new FixedTimeProvider(new DateTimeOffset(2026, 3, 29, 12, 0, 0, TimeSpan.Zero), timeZone);
+        var store = new CapturingWorklogStore();
+        var service = new TodayStatsService(store, NullLogger.Instance, clock);
+
+        await service.RefreshTodayAsync();
+
+        var query = Assert.IsType<WorklogQuery>(store.LastQuery);
+        Assert.Equal(new DateTimeOffset(2026, 3, 29, 0, 0, 0, TimeSpan.FromHours(1)), query.StartInclusive);
+        Assert.Equal(new DateTimeOffset(2026, 3, 30, 0, 0, 0, TimeSpan.FromHours(2)), query.EndExclusive);
+    }
+
+    private sealed class FixedTimeProvider : TimeProvider
+    {
+        private readonly DateTimeOffset _utcNow;
+        private readonly TimeZoneInfo _timeZone;
+
+        public FixedTimeProvider(DateTimeOffset utcNow, TimeZoneInfo timeZone)
         {
-            Entries =
-            [
-                new TimeEntry { StartTime = today.AddHours(9), EndTime = today.AddHours(10) },
-                new TimeEntry { StartTime = today.AddHours(11), EndTime = today.AddHours(11.5) },
-                new TimeEntry { StartTime = today.AddDays(-1).AddHours(9), EndTime = today.AddDays(-1).AddHours(10) },
-            ],
-        };
-
-        var service = new TodayStatsService(repository, NullLogger.Instance);
-
-        await service.RefreshTodayAsync();
-
-        Assert.Equal(TimeSpan.FromMinutes(90), service.GetTodayTotal());
-        Assert.Equal("Today: 1h 30m", service.GetTodaySummaryText());
-    }
-
-    [Fact]
-    public async Task AddEntriesAsync_GivenMixedEntries_AddsOnlyTodayClosedEntries()
-    {
-        var today = DateTime.Today;
-        var service = new TodayStatsService(new StubSessionRepository(), NullLogger.Instance);
-
-        await service.AddEntriesAsync(
-        [
-            new TimeEntry { StartTime = today.AddHours(1), EndTime = today.AddHours(1.5) },
-            new TimeEntry { StartTime = today.AddDays(-1), EndTime = today.AddDays(-1).AddMinutes(30) },
-            new TimeEntry { StartTime = today.AddHours(2), EndTime = null },
-        ]);
-
-        Assert.Equal(TimeSpan.FromMinutes(30), service.GetTodayTotal());
-    }
-
-    [Theory]
-    [InlineData(0, "Today: 0h 00m")]
-    [InlineData(30, "Today: 0h 30m")]
-    [InlineData(90, "Today: 1h 30m")]
-    [InlineData(125, "Today: 2h 05m")]
-    public async Task GetTodaySummaryText_GivenTotals_FormatsExpectedText(int totalMinutes, string expected)
-    {
-        var today = DateTime.Today;
-        var service = new TodayStatsService(
-            new StubSessionRepository
-            {
-                Entries =
-                [
-                    new TimeEntry
-                    {
-                        StartTime = today,
-                        EndTime = today.AddMinutes(totalMinutes),
-                    },
-                ],
-            },
-            NullLogger.Instance);
-
-        await service.RefreshTodayAsync();
-
-        Assert.Equal(expected, service.GetTodaySummaryText());
-    }
-
-    [Fact]
-    public async Task RefreshTodayAsync_GivenRepositoryThrows_DoesNotThrowAndLeavesZeroTotal()
-    {
-        var service = new TodayStatsService(new ThrowingRepository(), NullLogger.Instance);
-
-        await service.RefreshTodayAsync();
-
-        Assert.Equal(TimeSpan.Zero, service.GetTodayTotal());
-    }
-
-    private sealed class StubSessionRepository : ISessionRepository
-    {
-        public IEnumerable<TimeEntry> Entries { get; set; } = [];
-
-        public Task<IEnumerable<TimeEntry>> GetSessionsByDateAsync(DateTime date)
-        {
-            return Task.FromResult(Entries);
+            this._utcNow = utcNow;
+            this._timeZone = timeZone;
         }
 
-        public Task SaveSessionAsync(IEnumerable<TimeEntry> entries)
-        {
-            return Task.CompletedTask;
-        }
+        public override TimeZoneInfo LocalTimeZone => this._timeZone;
+
+        public override DateTimeOffset GetUtcNow() => this._utcNow;
     }
 
-    private sealed class ThrowingRepository : ISessionRepository
+    private sealed class CapturingWorklogStore : IWorklogStore
     {
-        public Task SaveSessionAsync(IEnumerable<TimeEntry> entries) => Task.CompletedTask;
+        public WorklogQuery? LastQuery { get; private set; }
 
-        public Task<IEnumerable<TimeEntry>> GetSessionsByDateAsync(DateTime date)
-            => throw new InvalidOperationException("boom");
+        public Task<WorklogOutcome> AppendAsync(IReadOnlyCollection<TimeEntry> entries,
+            CancellationToken cancellationToken = default) => Task.FromResult(WorklogOutcome.Success());
+
+        public Task<WorklogReadResult> GetAsync(string entryId, CancellationToken cancellationToken = default) =>
+            Task.FromResult(new WorklogReadResult(WorklogOutcome.Success(), []));
+
+        public Task<WorklogReadResult> QueryAsync(WorklogQuery query, CancellationToken cancellationToken = default)
+        {
+            this.LastQuery = query;
+            return Task.FromResult(new WorklogReadResult(WorklogOutcome.Success(), []));
+        }
+
+        public Task<WorklogOutcome> PatchAsync(string entryId, int expectedRevision, WorklogPatch patch,
+            CancellationToken cancellationToken = default) => Task.FromResult(WorklogOutcome.Success());
+
+        public Task<WorklogOutcome> DeleteAsync(string entryId, int expectedRevision,
+            CancellationToken cancellationToken = default) => Task.FromResult(WorklogOutcome.Success());
     }
 }

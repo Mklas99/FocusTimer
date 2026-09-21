@@ -71,7 +71,7 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for detailed architecture, design pattern
 - **Compact Timer Widget**: Minimal, distraction-free UI for time tracking
 - **System Tray Integration**: Hide/show and control timer from tray menu
 - **Global Hotkeys**: Configurable keyboard shortcuts (Windows)
-- **Automatic Time Entry Logging**: CSV file per date with session details
+- **Automatic Time Entry Logging**: Versioned daily CSV worklogs with durable entry/session identities
 - **JSON Settings**: Persist user preferences (theme, hotkeys, start minimized, etc.)
 - **Idle Detection**: Detect OS idle state and optionally auto-pause
 - **Responsive Design**: Avalonia reactive MVVM bindings
@@ -215,6 +215,22 @@ Override the threshold value when needed:
 ./scripts/run-sonar-dotnet.ps1 -token <your-sonarqube-token>
 ```
 
+### Worklog files and development-format changes
+
+FocusTimer writes schema-versioned RFC 4180 CSV files to
+`worklogs/yyyy/MM/yyyy-MM-dd-worklog.csv`. They contain durable entry/session IDs, offset-aware timestamps,
+derived duration, activity/provenance fields, revision, and last-modified time. The store queries and mutates
+these records through `IWorklogStore`; consumers must not parse the CSV directly.
+
+If a write is temporarily unavailable, FocusTimer keeps completed entries in memory and retries their stable entry
+identities while the app remains open. It shows one non-blocking warning per unresolved outage. This is not a
+crash-surviving queue: entries still pending when the process exits may be lost.
+
+This foundation deliberately does not migrate earlier development worklogs. An unsupported header is reported as
+a typed failure and remains byte-for-byte unchanged. Move or remove those development files manually before
+testing the new build. A release-to-release migration, backup, rollback, and recovery strategy remains the
+separate `OI-20` investigation.
+
 ---
 
 ## Architecture Overview
@@ -271,10 +287,10 @@ See `docs/versions/current/OpenIssues.md` for the full, tracked list of gaps.
 
 ## Contributing
 
-1. Create a feature branch: `git checkout -b feature/my-feature`
+1. Add or find the feature's stable `F-##` ID in `docs/versions/current/Features.md`, then create its branch: `git checkout -b feature/F-01_short-kebab-case-description`
 2. Build and test: `dotnet build && dotnet test`
 3. Format: `dotnet format`
-4. Commit and push: `git push origin feature/my-feature`
+4. Commit and push: `git push origin feature/F-01_short-kebab-case-description`
 5. Open a pull request
 
 ---

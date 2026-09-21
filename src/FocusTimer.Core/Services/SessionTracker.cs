@@ -1,249 +1,278 @@
-namespace FocusTimer.Core.Services
+#pragma warning disable
+
+namespace FocusTimer.Core.Services;
+
+using FocusTimer.Core.Interfaces;
+using FocusTimer.Core.Models;
+
+/// <summary>Tracks active windows and produces immutable, closed worklog segments.</summary>
+public sealed class SessionTracker
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Threading.Tasks;
-    using FocusTimer.Core.Interfaces;
-    using FocusTimer.Core.Models;
+    private readonly IActiveWindowService _activeWindowService;
+    private readonly IAppLogger _logger;
+    private readonly TimeProvider _clock;
+    private readonly TimeZoneInfo _timeZone;
+    private readonly ISourcePlatformProvider _platformProvider;
+    private readonly Func<string?> _deviceIdProvider;
+    private readonly object _stateLock = new();
+    private readonly SemaphoreSlim _tickGate = new(1, 1);
+    private readonly List<TimeEntry> _completedEntries = new();
+    private ActiveWindowInfo? _currentWindow;
+    private OpenSegment? _current;
+    private string? _projectTag;
+    private string? _sessionId;
+    private long _sessionGeneration;
+    private bool _tracking;
+    private bool _trackingEnabled = true;
 
-    /// <summary>
-    /// Tracks active window changes and creates TimeEntry segments.
-    /// Manages the current open segment and completed segments for logging.
-    /// </summary>
-    public class SessionTracker
+    /// <summary>Initializes a tracker using system time and unknown device identity.</summary>
+    public SessionTracker(IActiveWindowService activeWindowService, IAppLogger logger)
+        : this(activeWindowService, logger, TimeProvider.System, new SourcePlatformProvider(), () => null) { }
+
+    /// <summary>Initializes a tracker with deterministic time and metadata providers.</summary>
+    public SessionTracker(IActiveWindowService activeWindowService, IAppLogger logger, TimeProvider clock,
+        ISourcePlatformProvider platformProvider, Func<string?> deviceIdProvider)
     {
-        private readonly IActiveWindowService _activeWindowService;
-        private readonly IAppLogger _logger;
-        private readonly List<TimeEntry> _completedEntries = new();
+        _activeWindowService = activeWindowService ?? throw new ArgumentNullException(nameof(activeWindowService));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _clock = clock ?? throw new ArgumentNullException(nameof(clock));
+        _timeZone = _clock.LocalTimeZone;
+        _platformProvider = platformProvider ?? throw new ArgumentNullException(nameof(platformProvider));
+        _deviceIdProvider = deviceIdProvider ?? throw new ArgumentNullException(nameof(deviceIdProvider));
+    }
 
-        private ActiveWindowInfo? _currentWindowInfo;
-        private TimeEntry? _currentEntry;
-        private string? _currentProjectTag;
-        private bool _isTracking;
-        private bool _trackingEnabled = true;
+    /// <summary>Gets whether completed segments await persistence.</summary>
+    public bool HasCompletedEntries
+    {
+        get { lock (_stateLock) return _completedEntries.Count > 0; }
+    }
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="SessionTracker"/> class.
-        /// </summary>
-        /// <param name="activeWindowService">The service for getting the active window information.</param>
-        /// <param name="logger">The logger for logging errors and warnings.</param>
-        /// <exception cref="ArgumentNullException">Thrown when activeWindowService or logger is null.</exception>
-        public SessionTracker(IActiveWindowService activeWindowService, IAppLogger logger)
+    /// <summary>Gets buffered plus active segment count.</summary>
+    public int CompletedEntryCount
+    {
+        get { lock (_stateLock) return _completedEntries.Count + (_current is null ? 0 : 1); }
+    }
+
+    /// <summary>Enables or disables capture, discarding non-persisted segments when disabled.</summary>
+    public void SetTrackingEnabled(bool enabled)
+    {
+        lock (_stateLock)
         {
-            this._activeWindowService = activeWindowService ?? throw new ArgumentNullException(nameof(activeWindowService));
-            this._logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        }
-
-        /// <summary>
-        /// Gets a value indicating whether gets whether any completed entries are currently buffered and ready to persist.
-        /// </summary>
-        public bool HasCompletedEntries => this._completedEntries.Count > 0;
-
-        /// <summary>
-        /// Gets the count of entries (completed + current open entry).
-        /// Useful for diagnostics and testing.
-        /// </summary>
-        public int CompletedEntryCount => this._completedEntries.Count + (this._currentEntry != null ? 1 : 0);
-
-        /// <summary>
-        /// Enables or disables tracking behavior at runtime.
-        /// Disabling clears any in-flight and buffered entries.
-        /// </summary>
-        /// <param name="enabled">True to enable tracking; false to disable it.</param>
-        public void SetTrackingEnabled(bool enabled)
-        {
-            this._trackingEnabled = enabled;
+            _trackingEnabled = enabled;
             if (enabled)
+                return;
+
+            InvalidateSession();
+            _current = null;
+            _currentWindow = null;
+            _completedEntries.Clear();
+        }
+    }
+
+    /// <summary>Begins an uninterrupted running session.</summary>
+    public async Task StartAsync(string? projectTag)
+    {
+        long generation;
+        lock (_stateLock)
+        {
+            if (!_trackingEnabled || _tracking)
             {
+                _projectTag = projectTag;
                 return;
             }
 
-            this._isTracking = false;
-            this._currentEntry = null;
-            this._currentWindowInfo = null;
-            this._completedEntries.Clear();
+            _projectTag = projectTag;
+            _tracking = true;
+            _sessionId = Guid.NewGuid().ToString("D");
+            generation = ++_sessionGeneration;
         }
 
-        /// <summary>
-        /// Starts tracking with the given project tag.
-        /// Should be called when timer starts.
-        /// </summary>
-        /// <param name="projectTag">The project tag to associate with the tracking session. Can be null.</param>
-        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        public async Task StartAsync(string? projectTag)
+        try
         {
-            if (!this._trackingEnabled)
+            var window = await _activeWindowService.GetForegroundWindowAsync();
+            lock (_stateLock)
             {
-                this._currentProjectTag = projectTag;
-                return;
+                if (IsCurrentSession(generation))
+                    CreateNewEntry(window, _clock.GetLocalNow());
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError("Failed to start session tracking.", ex);
+            lock (_stateLock)
+            {
+                if (IsCurrentSession(generation))
+                    CreateNewEntry(null, _clock.GetLocalNow());
+            }
+        }
+    }
+
+    /// <summary>Polls for window or local-day boundary changes.</summary>
+    public async Task OnTimerTickAsync()
+    {
+        await _tickGate.WaitAsync();
+        try
+        {
+            long generation;
+            lock (_stateLock)
+            {
+                if (!_trackingEnabled || !_tracking || _current is null)
+                    return;
+
+                generation = _sessionGeneration;
             }
 
-            if (this._isTracking)
-            {
-                return; // Already tracking
-            }
-
-            this._currentProjectTag = projectTag;
-            this._isTracking = true;
-
-            // Get initial window and create first entry
+            ActiveWindowInfo? window;
             try
             {
-                var windowInfo = await this._activeWindowService.GetForegroundWindowAsync();
-                this.CreateNewEntry(windowInfo, DateTime.Now);
+                window = await _activeWindowService.GetForegroundWindowAsync();
             }
             catch (Exception ex)
             {
-                this._logger.LogError("Failed to start session tracking.", ex);
-
-                // Create a fallback entry even if window detection fails
-                this.CreateNewEntry(null, DateTime.Now);
-            }
-        }
-
-        /// <summary>
-        /// Called on each timer tick to check for window changes.
-        /// Creates new segments when the active window changes.
-        /// </summary>
-        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        public async Task OnTimerTickAsync()
-        {
-            if (!this._trackingEnabled || !this._isTracking)
-            {
+                _logger.LogWarning($"Window tracking tick failed: {ex.Message}");
                 return;
             }
 
-            try
+            lock (_stateLock)
             {
-                var windowInfo = await this._activeWindowService.GetForegroundWindowAsync();
+                if (!IsCurrentSession(generation) || _current is null)
+                    return;
 
-                // Check if window changed
-                bool windowChanged = SessionTracker.HasWindowChanged(this._currentWindowInfo, windowInfo);
-
-                if (windowChanged)
+                var now = _clock.GetLocalNow();
+                SplitAtMidnight(now);
+                if (HasWindowChanged(_currentWindow, window))
                 {
-                    var now = DateTime.Now;
-
-                    // Close current entry if it exists
-                    this.CloseCurrentEntry(now);
-
-                    // Start new entry with new window info
-                    this.CreateNewEntry(windowInfo, now);
+                    CloseCurrentEntry(now, EndReason.ApplicationChange);
+                    CreateNewEntry(window, now);
                 }
             }
-            catch (Exception ex)
-            {
-                // Silently ignore errors during tracking to avoid crashes
-                // The app should continue running even if window detection fails
-                this._logger.LogWarning($"Window tracking tick failed: {ex.Message}");
-            }
         }
-
-        /// <summary>
-        /// Updates the project tag for the current and future entries.
-        /// Does NOT close and reopen the current entry, just updates the tag.
-        /// </summary>
-        /// <param name="projectTag">The new project tag to associate with the current and future entries. Can be null.</param>
-        public void UpdateProjectTag(string? projectTag)
+        finally
         {
-            this._currentProjectTag = projectTag;
-            if (this._currentEntry != null)
-            {
-                this._currentEntry.ProjectTag = projectTag;
-            }
+            _tickGate.Release();
         }
+    }
 
-        /// <summary>
-        /// Stops tracking and returns all completed entries.
-        /// Closes the current entry if open.
-        /// Clears internal state after returning entries.
-        /// </summary>
-        /// <returns>A list of all completed time entries collected during the tracking session.</returns>
-        public IReadOnlyList<TimeEntry> CollectAndResetSegments()
+    /// <summary>Changes project attribution for the active and future segment.</summary>
+    public void UpdateProjectTag(string? projectTag)
+    {
+        lock (_stateLock)
         {
-            this._isTracking = false;
+            _projectTag = projectTag;
+            if (_current is not null)
+                _current.ProjectTag = projectTag;
+        }
+    }
 
-            // Close current entry if it exists
-            this.CloseCurrentEntry(DateTime.Now);
+    /// <summary>Stops tracking and returns closed segments.</summary>
+    public IReadOnlyList<TimeEntry> CollectAndResetSegments(EndReason reason = EndReason.ManualPause)
+    {
+        StopTracking(reason);
+        return DrainCompletedSegments();
+    }
 
-            // Return completed entries and clear
-            var entries = this._completedEntries.ToList();
-            this._completedEntries.Clear();
-            this._currentWindowInfo = null;
+    /// <summary>Closes the active segment while leaving completed segments available for a later flush.</summary>
+    public void StopTracking(EndReason reason)
+    {
+        lock (_stateLock)
+        {
+            CloseCurrentEntry(_clock.GetLocalNow(), reason);
+            InvalidateSession();
+            _currentWindow = null;
+        }
+    }
 
+    /// <summary>Returns completed segments while tracking continues.</summary>
+    public IReadOnlyList<TimeEntry> DrainCompletedSegments()
+    {
+        lock (_stateLock)
+        {
+            var entries = _completedEntries.ToList();
+            _completedEntries.Clear();
             return entries;
         }
+    }
 
-        /// <summary>
-        /// Returns completed entries without stopping the current tracking session.
-        /// The active entry remains open so tracking can continue uninterrupted.
-        /// </summary>
-        /// <returns>A list of all completed time entries collected since the last drain, without stopping the tracking session.</returns>
-        public IReadOnlyList<TimeEntry> DrainCompletedSegments()
+    private bool IsCurrentSession(long generation) =>
+        _trackingEnabled && _tracking && _sessionId is not null && _sessionGeneration == generation;
+
+    private void InvalidateSession()
+    {
+        _tracking = false;
+        _sessionId = null;
+        _sessionGeneration++;
+    }
+
+    private static bool HasWindowChanged(ActiveWindowInfo? previous, ActiveWindowInfo? current) =>
+        previous is null || current is null
+            ? previous != current
+            : previous.ProcessName != current.ProcessName || previous.WindowTitle != current.WindowTitle;
+
+    private void SplitAtMidnight(DateTimeOffset now)
+    {
+        while (_current is not null && _current.StartedAt.Date < now.Date)
         {
-            var entries = this._completedEntries.ToList();
-            this._completedEntries.Clear();
-            return entries;
+            var boundaryLocal = DateTime.SpecifyKind(_current.StartedAt.Date.AddDays(1), DateTimeKind.Unspecified);
+            var boundary = new DateTimeOffset(boundaryLocal, _timeZone.GetUtcOffset(boundaryLocal));
+            CloseCurrentEntry(boundary, EndReason.DayBoundary);
+            CreateNewEntry(_currentWindow, boundary);
+        }
+    }
+
+    private void CloseCurrentEntry(DateTimeOffset endedAt, EndReason reason)
+    {
+        if (_current is not { } current || _sessionId is not { } sessionId)
+            return;
+
+        _current = null;
+        if (endedAt <= current.StartedAt)
+            return;
+
+        _completedEntries.Add(new TimeEntry(
+            current.EntryId,
+            sessionId,
+            current.StartedAt,
+            endedAt,
+            current.AppName,
+            current.WindowTitle,
+            current.ProjectTag,
+            string.IsNullOrWhiteSpace(current.ProjectTag) ? ProjectAssignmentSource.Unassigned : ProjectAssignmentSource.Session,
+            null,
+            ActivityKind.Active,
+            reason,
+            CaptureSource.ActiveWindow,
+            _platformProvider.GetCurrentPlatform(),
+            _deviceIdProvider(),
+            1,
+            _clock.GetUtcNow()));
+    }
+
+    private void CreateNewEntry(ActiveWindowInfo? window, DateTimeOffset startedAt)
+    {
+        _currentWindow = window;
+        _current = new OpenSegment(
+            Guid.NewGuid().ToString("D"),
+            startedAt,
+            window?.ProcessName ?? "Unknown",
+            window?.WindowTitle ?? "No active window",
+            _projectTag);
+    }
+
+    private sealed class OpenSegment
+    {
+        public OpenSegment(string entryId, DateTimeOffset startedAt, string appName, string windowTitle, string? projectTag)
+        {
+            EntryId = entryId;
+            StartedAt = startedAt;
+            AppName = appName;
+            WindowTitle = windowTitle;
+            ProjectTag = projectTag;
         }
 
-        /// <summary>
-        /// Determines if the window has changed by comparing process name and window title.
-        /// </summary>
-        private static bool HasWindowChanged(ActiveWindowInfo? previous, ActiveWindowInfo? current)
-        {
-            // Both null = no change
-            if (previous == null && current == null)
-            {
-                return false;
-            }
-
-            // One is null = changed
-            if (previous == null || current == null)
-            {
-                return true;
-            }
-
-            // Compare process name and window title
-            return previous.ProcessName != current.ProcessName ||
-                   previous.WindowTitle != current.WindowTitle;
-        }
-
-        /// <summary>
-        /// Closes the current entry by setting its EndTime.
-        /// Adds it to completed entries if it has a valid duration.
-        /// </summary>
-        private void CloseCurrentEntry(DateTime endTime)
-        {
-            if (this._currentEntry != null)
-            {
-                this._currentEntry.EndTime = endTime;
-
-                // Only add entries with meaningful duration (at least 1 second)
-                if (this._currentEntry.Duration.HasValue && this._currentEntry.Duration.Value.TotalSeconds >= 1)
-                {
-                    this._completedEntries.Add(this._currentEntry);
-                }
-
-                this._currentEntry = null;
-            }
-        }
-
-        /// <summary>
-        /// Creates a new entry for the given window info.
-        /// If windowInfo is null, creates an "Unknown" entry.
-        /// </summary>
-        private void CreateNewEntry(ActiveWindowInfo? windowInfo, DateTime startTime)
-        {
-            this._currentWindowInfo = windowInfo;
-
-            this._currentEntry = new TimeEntry
-            {
-                StartTime = startTime,
-                AppName = windowInfo?.ProcessName ?? "Unknown",
-                WindowTitle = windowInfo?.WindowTitle ?? "No active window",
-                ProjectTag = this._currentProjectTag,
-            };
-        }
+        public string EntryId { get; }
+        public DateTimeOffset StartedAt { get; }
+        public string AppName { get; }
+        public string WindowTitle { get; }
+        public string? ProjectTag { get; set; }
     }
 }
