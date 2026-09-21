@@ -111,8 +111,46 @@ internal sealed class WorklogPersistenceCoordinator : IDisposable
 
             var batch = _pending.ToArray();
             _logger.LogInformation($"Persisting {batch.Length} queued worklog entries due to {reason}.");
-            var outcome = await _worklogStore.AppendAsync(batch);
-            if (outcome.IsSuccess)
+            var outcome = await AppendSafelyAsync(batch);
+            if (outcome.Kind is WorklogOutcomeKind.ValidationFailure or WorklogOutcomeKind.Conflict && batch.Length > 1)
+            {
+                // Isolate entries the store will never accept so they cannot block the rest.
+                var accepted = new List<TimeEntry>();
+                foreach (var entry in batch)
+                {
+                    var single = await AppendSafelyAsync([entry]);
+                    if (single.IsSuccess)
+                    {
+                        accepted.Add(entry);
+                    }
+                    else if (single.Kind is WorklogOutcomeKind.ValidationFailure or WorklogOutcomeKind.Conflict)
+                    {
+                        _logger.LogWarning($"Dropping unsaveable worklog entry {entry.EntryId}: {single.Kind} {single.Message}");
+                        _pending.Remove(entry);
+                    }
+                }
+
+                foreach (var entry in accepted)
+                    _pending.Remove(entry);
+                persisted = accepted.Count > 0 ? accepted : null;
+                outcome = _pending.Count == 0 ? WorklogOutcome.Success() : outcome;
+                if (_pending.Count == 0)
+                {
+                    _retryAttempt = 0;
+                    _failureNotified = false;
+                }
+                else
+                {
+                    failure = outcome;
+                }
+            }
+            else if (outcome.Kind is WorklogOutcomeKind.ValidationFailure or WorklogOutcomeKind.Conflict)
+            {
+                _logger.LogWarning($"Dropping unsaveable worklog entry {batch[0].EntryId}: {outcome.Kind} {outcome.Message}");
+                _pending.Clear();
+                _retryAttempt = 0;
+            }
+            else if (outcome.IsSuccess)
             {
                 _pending.Clear();
                 _retryAttempt = 0;
@@ -132,10 +170,35 @@ internal sealed class WorklogPersistenceCoordinator : IDisposable
         }
 
         if (persisted is not null)
-            _onPersisted(persisted);
+        {
+            try
+            {
+                _onPersisted(persisted);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("Worklog persisted callback failed.", ex);
+            }
+        }
 
         if (failure is not null)
             await ReportFailureAndScheduleRetryAsync(failure);
+    }
+
+    private async Task<WorklogOutcome> AppendSafelyAsync(IReadOnlyCollection<TimeEntry> batch)
+    {
+        try
+        {
+            return await _worklogStore.AppendAsync(batch);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            return new(WorklogOutcomeKind.IoFailure, ex.Message);
+        }
     }
 
     private async Task ReportFailureAndScheduleRetryAsync(WorklogOutcome failure)
@@ -175,6 +238,11 @@ internal sealed class WorklogPersistenceCoordinator : IDisposable
         catch (OperationCanceledException)
         {
             // Disposal intentionally stops in-memory retries.
+        }
+        catch (Exception ex)
+        {
+            _retryScheduled = false;
+            _logger.LogError("Automatic worklog retry failed.", ex);
         }
     }
 }

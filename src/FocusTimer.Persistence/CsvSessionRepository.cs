@@ -44,16 +44,16 @@ public sealed class CsvSessionRepository : IWorklogStore
             return new(WorklogOutcomeKind.ValidationFailure, string.Join(" ", errors));
         }
 
-        var settings = await this._settingsProvider.LoadAsync();
-        var root = ResolveRoot(settings);
-        await this.EnforceRetentionPolicyAsync(settings, root, cancellationToken);
-        var groups = entries
-            .GroupBy(entry => GetPath(root, entry.StartedAt.Date), StringComparer.OrdinalIgnoreCase)
-            .OrderBy(group => group.Key, StringComparer.OrdinalIgnoreCase)
-            .ToArray();
-        var acquiredLocks = new List<SemaphoreSlim>(groups.Length);
+        var acquiredLocks = new List<SemaphoreSlim>();
         try
         {
+            var settings = await this._settingsProvider.LoadAsync();
+            var root = ResolveRoot(settings);
+            await this.EnforceRetentionPolicyAsync(settings, root, cancellationToken);
+            var groups = entries
+                .GroupBy(entry => GetPath(root, entry.StartedAt.Date), StringComparer.OrdinalIgnoreCase)
+                .OrderBy(group => group.Key, StringComparer.OrdinalIgnoreCase)
+                .ToArray();
             foreach (var group in groups)
             {
                 var gate = Locks.GetOrAdd(group.Key, _ => new SemaphoreSlim(1, 1));
