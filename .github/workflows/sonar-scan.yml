@@ -40,26 +40,42 @@ jobs:
           /o:"mklas99"
           /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
           /d:sonar.host.url="https://sonarcloud.io"
-          /d:sonar.cs.opencover.reportsPaths="**/TestResults/*.coverage.opencover.xml,**/TestResults/*.opencover.xml,**/coverage.opencover.xml"
+          /d:sonar.cs.opencover.reportsPaths="artifacts/test-coverage/**/coverage.opencover.xml"
 
       - name: Build
         run: dotnet build FocusTimer.sln -c Release --no-restore
 
-      - name: Test with coverage (per-project)
+      # Enforces the line-coverage threshold (fails the job below it) and writes reports
+      # to artifacts/test-coverage/<project>/.
+      - name: Test with coverage (threshold enforced)
+        shell: pwsh
+        run: ./scripts/run-unit-coverage.ps1 -Configuration Release -NoBuild
+
+      - name: Coverage summary
+        if: always()
         shell: pwsh
         run: |
-          New-Item -ItemType Directory -Force -Path TestResults
-          $projects = Get-ChildItem -Path tests -Filter "*.csproj" -Recurse
-          foreach ($proj in $projects) {
-              $name = $proj.BaseName
-              Write-Host "Running tests with coverage for $name"
-              dotnet test $proj.FullName -c Release --no-build `
-                /p:CollectCoverage=true `
-                /p:CoverletOutputFormat=opencover `
-                /p:CoverletOutput="./TestResults/$name.coverage.opencover.xml"
+          dotnet tool install --global dotnet-reportgenerator-globaltool
+          reportgenerator `
+            "-reports:artifacts/test-coverage/**/coverage.cobertura.xml" `
+            "-targetdir:artifacts/coverage-report" `
+            "-reporttypes:MarkdownSummaryGithub;HtmlInline" | Out-Null
+          $summary = "artifacts/coverage-report/SummaryGithub.md"
+          if (Test-Path $summary) {
+              Get-Content $summary | Add-Content $env:GITHUB_STEP_SUMMARY
+          } else {
+              "No coverage report was produced." | Add-Content $env:GITHUB_STEP_SUMMARY
           }
 
+      - name: Upload coverage reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: artifacts/
+          if-no-files-found: warn
+
       - name: End Sonar analysis
-        if: env.SONAR_TOKEN != ''
+        if: ${{ !cancelled() && env.SONAR_TOKEN != '' }}
         shell: pwsh
         run: dotnet sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"

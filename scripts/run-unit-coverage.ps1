@@ -1,6 +1,8 @@
 param(
     [int]$Threshold = 60,
-    [string]$Format = "opencover,cobertura"
+    [string]$Format = "opencover,cobertura",
+    [string]$Configuration = "Debug",
+    [switch]$NoBuild
 )
 
 $ErrorActionPreference = "Stop"
@@ -19,6 +21,8 @@ $projects = @(
 $coverageRoot = Join-Path $repoRoot "artifacts/test-coverage"
 New-Item -Path $coverageRoot -ItemType Directory -Force | Out-Null
 
+$failed = @()
+
 foreach ($project in $projects)
 {
     $testProject = $project.TestProject
@@ -30,15 +34,35 @@ foreach ($project in $projects)
 
     Write-Host "Running coverage for $projectName (threshold: $Threshold%, format: $Format)..."
 
-    dotnet test $testProject `
-        --configuration Debug `
-        /p:CollectCoverage=true `
-        /p:CoverletOutputFormat=\"$Format\" `
-        /p:CoverletOutput="$outputDir/" `
-        /p:Include="$includeFilter" `
-        /p:Threshold=$Threshold `
-        /p:ThresholdType=line `
-        /p:ThresholdStat=total
+    # Build args as an array so PowerShell passes each value verbatim (no manual quote escaping).
+    $dotnetArgs = @(
+        "test", $testProject,
+        "--configuration", $Configuration,
+        "/p:CollectCoverage=true",
+        "/p:CoverletOutputFormat=$Format",
+        "/p:CoverletOutput=$outputDir/",
+        "/p:Include=$includeFilter",
+        "/p:Threshold=$Threshold",
+        "/p:ThresholdType=line",
+        "/p:ThresholdStat=total"
+    )
+
+    if ($NoBuild) { $dotnetArgs += "--no-build" }
+
+    & dotnet @dotnetArgs
+
+    # $ErrorActionPreference does not cover native exit codes; check explicitly.
+    if ($LASTEXITCODE -ne 0)
+    {
+        Write-Host "Coverage run failed for $projectName (exit code $LASTEXITCODE)."
+        $failed += $projectName
+    }
+}
+
+if ($failed.Count -gt 0)
+{
+    Write-Error "Coverage run failed for: $($failed -join ', ')"
+    exit 1
 }
 
 Write-Host "Coverage run finished for all projects. Reports are in $coverageRoot"
