@@ -20,6 +20,17 @@ The system SHALL persist completed entries through the worklog store to a per-da
 - **WHEN** persistence is retried with an entry ID that is already stored
 - **THEN** the worklog contains one copy of that entry and no duplicate duration is introduced
 
+#### Scenario: A worklog append temporarily fails
+- **WHEN** completed entries cannot be appended because the worklog is temporarily unavailable
+- **THEN** the application retains them in memory, informs the user once, and retries the same entry identities while it remains open
+
+### Requirement: Concurrency-Safe Session Tracking
+The system SHALL ignore a foreground-window lookup result that completes after its running session has stopped or been replaced, and SHALL serialize in-flight polling results for the active session.
+
+#### Scenario: Timer stops while a foreground lookup is pending
+- **WHEN** a timer tick is awaiting the foreground window and the timer pauses or stops
+- **THEN** the late lookup result does not create or modify a segment, and every completed entry retains a non-empty session ID
+
 ## ADDED Requirements
 
 ### Requirement: Running Session Identity

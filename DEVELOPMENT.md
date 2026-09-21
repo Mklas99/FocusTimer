@@ -55,6 +55,8 @@ Apache-2.0; this project uses the Apache-2.0 option and retains its required not
 files at `worklogs/yyyy/MM/yyyy-MM-dd-worklog.csv`, with header-driven RFC 4180 parsing and stable column order.
 Entries have durable entry/session identities, offset-aware timestamps, derived duration, provenance, revision,
 and UTC last-modified metadata. Use the store's typed outcomes and warnings rather than parsing files directly.
+The app retains a failed append in memory and retries it with the same entry IDs while running; this improves
+transient-failure recovery but does not provide a crash-surviving outbox.
 
 This is a development-only format change. If a daily file has an unsupported/older header, the store refuses to
 append or rewrite it and leaves its bytes unchanged. Move or remove that development file manually before using

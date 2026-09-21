@@ -77,6 +77,31 @@ public class SessionTrackerTests
     }
 
     [Fact]
+    public async Task OnTimerTickAsync_GivenStopDuringWindowLookup_DoesNotReopenStoppedSession()
+    {
+        var clock = new MutableTimeProvider(new DateTimeOffset(2026, 3, 31, 9, 0, 0, TimeSpan.Zero));
+        var windowService = new QueuedDeferredWindowService();
+        var startup = windowService.Enqueue();
+        var tickLookup = windowService.Enqueue();
+        var tracker = new SessionTracker(windowService, NullLogger.Instance, clock, new WindowsPlatformProvider(), () => "device-1");
+
+        var start = tracker.StartAsync(null);
+        startup.SetResult(new ActiveWindowInfo { ProcessName = "A", WindowTitle = "one" });
+        await start;
+        clock.Advance(TimeSpan.FromMinutes(1));
+
+        var tick = tracker.OnTimerTickAsync();
+        tracker.StopTracking(EndReason.ManualPause);
+        tickLookup.SetResult(new ActiveWindowInfo { ProcessName = "B", WindowTitle = "two" });
+        await tick;
+
+        var entry = Assert.Single(tracker.DrainCompletedSegments());
+        Assert.Equal(EndReason.ManualPause, entry.EndReason);
+        Assert.False(string.IsNullOrWhiteSpace(entry.SessionId));
+        Assert.Equal(0, tracker.CompletedEntryCount);
+    }
+
+    [Fact]
     public async Task UpdateProjectTag_GivenOpenSegment_UpdatesCompletedMetadata()
     {
         var clock = new MutableTimeProvider(new DateTimeOffset(2026, 3, 31, 9, 0, 0, TimeSpan.Zero));
@@ -198,6 +223,20 @@ public class SessionTrackerTests
         private readonly TaskCompletionSource<ActiveWindowInfo?> _completion = new(TaskCreationOptions.RunContinuationsAsynchronously);
         public Task<ActiveWindowInfo?> GetForegroundWindowAsync() => this._completion.Task;
         public void Complete(ActiveWindowInfo? window) => this._completion.SetResult(window);
+    }
+
+    private sealed class QueuedDeferredWindowService : IActiveWindowService
+    {
+        private readonly Queue<TaskCompletionSource<ActiveWindowInfo?>> _lookups = new();
+
+        public TaskCompletionSource<ActiveWindowInfo?> Enqueue()
+        {
+            var completion = new TaskCompletionSource<ActiveWindowInfo?>(TaskCreationOptions.RunContinuationsAsynchronously);
+            this._lookups.Enqueue(completion);
+            return completion;
+        }
+
+        public Task<ActiveWindowInfo?> GetForegroundWindowAsync() => this._lookups.Dequeue().Task;
     }
 
     private sealed class MutableTimeProvider : TimeProvider

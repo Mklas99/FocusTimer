@@ -57,3 +57,8 @@
 - [x] 7.2 Update architecture, development, README, and `docs/versions/current/` documentation where affected, explicitly documenting the current schema, manual handling of unsupported development files, and OI-20 ownership of future migration strategy; verify the documents and OpenSpec artifacts do not contradict one another.
 - [x] 7.3 Run `dotnet format --verify-no-changes`, the full NUnit suite, and the repository's normal Windows quality checks; verify all commands pass or document any pre-existing unrelated failure with evidence.
 - [x] 7.4 Run strict OpenSpec validation for `establish-worklog-data-foundation` and manually trace each proposal outcome to a specification scenario and implementation task; verify the change is ready for `openspec-apply-change` with no migration implementation in scope.
+
+## 8. Reliability Follow-up
+
+- [x] 8.1 Serialize foreground polling and invalidate stale session results so a late lookup cannot recreate a stopped or replaced session; verify a stop during lookup leaves one valid completed segment.
+- [x] 8.2 Retain failed app-session appends in memory, retry them idempotently with deduplicated user feedback, and attempt shutdown flushes even after pause; verify a transient failure preserves and eventually persists the same entry identity.
