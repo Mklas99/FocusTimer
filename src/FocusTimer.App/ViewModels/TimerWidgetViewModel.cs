@@ -66,6 +66,7 @@ namespace FocusTimer.App.ViewModels
         /// <param name="timerService">The timer service for managing timer events and state.</param>
         /// <param name="hotkeyService">Optional global hotkey service used to bind window handles.</param>
         /// <param name="eventBus">Event bus for publishing application-level events.</param>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Major Code Smell", "S107:Methods should not have too many parameters", Justification = "Constructor injection of dependencies.")]
         public TimerWidgetViewModel(
             ISettingsProvider settingsProvider,
             IAppLogger logWriter,
@@ -361,6 +362,7 @@ namespace FocusTimer.App.ViewModels
         /// <summary>
         /// Gets a value indicating whether the controls layer accepts pointer input.
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Major Code Smell", "S2325:Methods and properties that don't access instance data should be static", Justification = "Instance property required for XAML data binding.")]
         public bool AreControlsInteractable => true;
 
         /// <summary>

@@ -21,7 +21,6 @@ namespace FocusTimer.App.Services
     {
         private readonly ISettingsProvider _settingsProvider;
         private readonly IGlobalHotkeyService _hotkeyService;
-        private readonly IIdleDetectionService _idleDetectionService;
         private readonly INotificationService _notificationService;
         private readonly IThemeService _themeService;
         private readonly ThemeManager _themeManager;
@@ -29,7 +28,6 @@ namespace FocusTimer.App.Services
         private readonly Func<SettingsWindowViewModel> _settingsViewModelFactory;
         private readonly ITrayIconController? _trayIconController;
         private readonly IAppLogger _logWriter;
-        private readonly IEventBus? _eventBus;
         private TrayIcon? _trayIcon;
         private TimerWidgetWindow? _timerWindow;
         private SettingsWindow? _settingsWindow;
@@ -53,6 +51,7 @@ namespace FocusTimer.App.Services
         /// <param name="trayIconController">Controller for managing the system tray icon.</param>
         /// <param name="logWriter">Logger for application logging.</param>
         /// <param name="eventBus">Event bus for subscribing to application-level events.</param>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Major Code Smell", "S107:Methods should not have too many parameters", Justification = "Constructor injection of dependencies.")]
         public AppController(
             ISettingsProvider settingsProvider,
             IGlobalHotkeyService hotkeyService,
@@ -69,7 +68,6 @@ namespace FocusTimer.App.Services
         {
             this._settingsProvider = settingsProvider;
             this._hotkeyService = hotkeyService;
-            this._idleDetectionService = idleDetectionService;
             this._notificationService = notificationService;
             this._themeService = themeService;
             this._themeManager = themeManager;
@@ -78,18 +76,17 @@ namespace FocusTimer.App.Services
             this._currentSettings = new Settings();
             this._trayIconController = trayIconController;
             this._logWriter = logWriter;
-            this._eventBus = eventBus;
 
             this._showHideHotkeyDefinition = this.ParseHotkeyOrDefault(this._currentSettings.HotkeyShowHide, "Ctrl+Alt+T");
             this._toggleTimerHotkeyDefinition = this.ParseHotkeyOrDefault(this._currentSettings.HotkeyToggleTimer, "Ctrl+Alt+P");
             this._hotkeyService.HotkeyPressed += this.OnHotkeyPressed;
-            this._idleDetectionService.UserBecameIdle += this.OnUserBecameIdle;
-            this._idleDetectionService.UserReturned += this.OnUserReturned;
+            idleDetectionService.UserBecameIdle += this.OnUserBecameIdle;
+            idleDetectionService.UserReturned += this.OnUserReturned;
 
             // Subscribe to EntriesLoggedEvent via event bus
-            if (this._eventBus != null)
+            if (eventBus != null)
             {
-                this._eventBus.Subscribe<EntriesLoggedEvent>(e => this.OnEntriesLogged(e.Entries));
+                eventBus.Subscribe<EntriesLoggedEvent>(e => this.OnEntriesLogged(e.Entries));
             }
         }
 

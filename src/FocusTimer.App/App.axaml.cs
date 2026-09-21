@@ -21,6 +21,7 @@ namespace FocusTimer.App
     /// </summary>
     public partial class App : Application, IAppInitializer
     {
+        private const string IdleIconUri = "avares://FocusTimer.App/Assets/FocusTimer-idle.png";
         private AppController? _appController;
         private IAppLogger? _logger;
         private TrayIcon? _trayIcon;
@@ -65,7 +66,7 @@ namespace FocusTimer.App
                 ToolTipText = "Focus Timer: Idle",
                 Icon = new WindowIcon(
                     Avalonia.Platform.AssetLoader.Open(
-                        new Uri("avares://FocusTimer.App/Assets/FocusTimer-idle.png"))),
+                        new Uri(IdleIconUri))),
                 Menu = new NativeMenu
                 {
                     CreateMenuItem("Show/Hide Timer", this.TrayMenu_ShowHide),
