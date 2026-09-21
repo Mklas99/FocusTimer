@@ -45,15 +45,8 @@ namespace FocusTimer.Platform.Windows
         /// <inheritdoc/>
         public void Dispose()
         {
-            if (this._disposed)
-            {
-                return;
-            }
-
-            this.UnregisterAll();
-            this.RestoreWndProc();
-            this._hwnd = IntPtr.Zero;
-            this._disposed = true;
+            this.Dispose(true);
+            GC.SuppressFinalize(this);
         }
 
         /// <summary>
@@ -174,6 +167,23 @@ namespace FocusTimer.Platform.Windows
             {
                 this.HotkeyPressed?.Invoke(this, new HotkeyPressedEventArgs(definition));
             }
+        }
+
+        /// <summary>
+        /// Unregisters hotkeys and restores the original window procedure.
+        /// </summary>
+        /// <param name="disposing">True when called from <see cref="Dispose()"/>; false when called from a finalizer.</param>
+        protected virtual void Dispose(bool disposing)
+        {
+            if (this._disposed)
+            {
+                return;
+            }
+
+            this.UnregisterAll();
+            this.RestoreWndProc();
+            this._hwnd = IntPtr.Zero;
+            this._disposed = true;
         }
 
         // Win32 API imports

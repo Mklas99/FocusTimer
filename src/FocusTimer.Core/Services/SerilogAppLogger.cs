@@ -11,6 +11,7 @@ namespace FocusTimer.Core.Services
     /// </summary>
     public class SerilogAppLogger : IAppLogger, IDisposable
     {
+        private const string MessageTemplate = "{Message}";
         private readonly ILogger _logger;
         private bool _disposed;
 
@@ -27,19 +28,19 @@ namespace FocusTimer.Core.Services
         /// <inheritdoc/>
         public void LogDebug(string message)
         {
-            this._logger.Debug("{Message}", message);
+            this._logger.Debug(MessageTemplate, message);
         }
 
         /// <inheritdoc/>
         public void LogInformation(string message)
         {
-            this._logger.Information("{Message}", message);
+            this._logger.Information(MessageTemplate, message);
         }
 
         /// <inheritdoc/>
         public void LogWarning(string message)
         {
-            this._logger.Warning("{Message}", message);
+            this._logger.Warning(MessageTemplate, message);
         }
 
         /// <inheritdoc/>
@@ -47,11 +48,11 @@ namespace FocusTimer.Core.Services
         {
             if (ex == null)
             {
-                this._logger.Error("{Message}", message);
+                this._logger.Error(MessageTemplate, message);
             }
             else
             {
-                this._logger.Error(ex, "{Message}", message);
+                this._logger.Error(ex, MessageTemplate, message);
             }
         }
 
@@ -60,16 +61,26 @@ namespace FocusTimer.Core.Services
         {
             if (ex == null)
             {
-                this._logger.Fatal("{Message}", message);
+                this._logger.Fatal(MessageTemplate, message);
             }
             else
             {
-                this._logger.Fatal(ex, "{Message}", message);
+                this._logger.Fatal(ex, MessageTemplate, message);
             }
         }
 
         /// <inheritdoc/>
         public void Dispose()
+        {
+            this.Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        /// <summary>
+        /// Flushes and closes the logging pipeline.
+        /// </summary>
+        /// <param name="disposing">True when called from <see cref="Dispose()"/>; false when called from a finalizer.</param>
+        protected virtual void Dispose(bool disposing)
         {
             if (this._disposed)
             {
@@ -77,6 +88,11 @@ namespace FocusTimer.Core.Services
             }
 
             this._disposed = true;
+
+            if (!disposing)
+            {
+                return;
+            }
 
             try
             {

@@ -21,6 +21,7 @@ namespace FocusTimer.App.ViewModels
     /// </summary>
     public class SettingsWindowViewModel : ReactiveObject
     {
+        private const double OpacityTolerance = 0.0001;
         private readonly ISettingsProvider _settingsProvider;
         private readonly IAutoStartService _autoStartService;
         private readonly IThemeService _themeService;
@@ -61,7 +62,7 @@ namespace FocusTimer.App.ViewModels
             // Initialize commands
             this.ApplyCommand = ReactiveCommand.CreateFromTask(this.ApplyAsync);
             this.OkCommand = ReactiveCommand.CreateFromTask(this.OkAsync);
-            this.CancelCommand = ReactiveCommand.Create<Window>(this.Cancel);
+            this.CancelCommand = ReactiveCommand.Create<Window>(Cancel);
             this.BrowseWorklogDirectoryCommand = ReactiveCommand.CreateFromTask<Window>(this.BrowseWorklogDirectoryAsync);
             this.ImportThemeCommand = ReactiveCommand.CreateFromTask<Window>(this.ImportThemeAsync);
             this.ExportThemeCommand = ReactiveCommand.CreateFromTask<Window>(this.ExportThemeAsync);
@@ -157,6 +158,7 @@ namespace FocusTimer.App.ViewModels
         /// <summary>
         /// Gets application version shown in the About tab.
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Major Code Smell", "S2325:Methods and properties that don't access instance data should be static", Justification = "Instance property required for XAML data binding.")]
         public string AppVersion
         {
             get
@@ -175,16 +177,19 @@ namespace FocusTimer.App.ViewModels
         /// <summary>
         /// Gets application author shown in the About tab.
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Major Code Smell", "S2325:Methods and properties that don't access instance data should be static", Justification = "Instance property required for XAML data binding.")]
         public string AppAuthor => Assembly.GetEntryAssembly()?.GetCustomAttribute<AssemblyCompanyAttribute>()?.Company ?? "Mklas99";
 
         /// <summary>
         /// Gets a short application description shown in the About tab.
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Major Code Smell", "S2325:Methods and properties that don't access instance data should be static", Justification = "Instance property required for XAML data binding.")]
         public string AppInformation => Assembly.GetEntryAssembly()?.GetCustomAttribute<AssemblyDescriptionAttribute>()?.Description ?? "FocusTimer is a desktop focus timer with break reminders, work logging, and customizable appearance.";
 
         /// <summary>
         /// Gets repository URL shown in the About tab.
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Major Code Smell", "S2325:Methods and properties that don't access instance data should be static", Justification = "Instance property required for XAML data binding.")]
         public string RepositoryUrl => "https://github.com/Mklas99/FocusTimer";
 
         /// <summary>
@@ -234,11 +239,11 @@ namespace FocusTimer.App.ViewModels
         /// </summary>
         public double BackgroundOpacityPercent
         {
-            get => this.ToPercent(this.Settings.Theme.BackgroundOpacity);
+            get => ToPercent(this.Settings.Theme.BackgroundOpacity);
             set
             {
-                var normalized = this.ToNormalized(value);
-                if (!normalized.Equals(this.Settings.Theme.BackgroundOpacity))
+                var normalized = ToNormalized(value);
+                if (Math.Abs(normalized - this.Settings.Theme.BackgroundOpacity) > OpacityTolerance)
                 {
                     this.Settings.Theme.BackgroundOpacity = normalized;
                     this.RaisePropertyChanged(nameof(this.BackgroundOpacityPercent));
@@ -253,11 +258,11 @@ namespace FocusTimer.App.ViewModels
         /// </summary>
         public double ClockOpacityPercent
         {
-            get => this.ToPercent(this.Settings.Theme.TimerOpacity);
+            get => ToPercent(this.Settings.Theme.TimerOpacity);
             set
             {
-                var normalized = this.ToNormalized(value);
-                if (!normalized.Equals(this.Settings.Theme.TimerOpacity))
+                var normalized = ToNormalized(value);
+                if (Math.Abs(normalized - this.Settings.Theme.TimerOpacity) > OpacityTolerance)
                 {
                     this.Settings.Theme.TimerOpacity = normalized;
                     this.RaisePropertyChanged(nameof(this.ClockOpacityPercent));
@@ -272,11 +277,11 @@ namespace FocusTimer.App.ViewModels
         /// </summary>
         public double ButtonsOpacityPercent
         {
-            get => this.ToPercent(this.Settings.Theme.ButtonOpacity);
+            get => ToPercent(this.Settings.Theme.ButtonOpacity);
             set
             {
-                var normalized = this.ToNormalized(value);
-                if (!normalized.Equals(this.Settings.Theme.ButtonOpacity))
+                var normalized = ToNormalized(value);
+                if (Math.Abs(normalized - this.Settings.Theme.ButtonOpacity) > OpacityTolerance)
                 {
                     this.Settings.Theme.ButtonOpacity = normalized;
                     this.RaisePropertyChanged(nameof(this.ButtonsOpacityPercent));
@@ -291,11 +296,11 @@ namespace FocusTimer.App.ViewModels
         /// </summary>
         public double OverallFadePercent
         {
-            get => this.ToPercent(this.Settings.WidgetOpacity);
+            get => ToPercent(this.Settings.WidgetOpacity);
             set
             {
-                var normalized = this.ToNormalized(value);
-                if (!normalized.Equals(this.Settings.WidgetOpacity))
+                var normalized = ToNormalized(value);
+                if (Math.Abs(normalized - this.Settings.WidgetOpacity) > OpacityTolerance)
                 {
                     this.Settings.WidgetOpacity = normalized;
                     this.RaisePropertyChanged(nameof(this.OverallFadePercent));
@@ -328,11 +333,13 @@ namespace FocusTimer.App.ViewModels
         /// <summary>
         /// Gets transparency mode diagnostics shown in Appearance tab.
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Major Code Smell", "S2325:Methods and properties that don't access instance data should be static", Justification = "Instance property required for XAML data binding.")]
         public string TransparencyDiagnostics => "Window: Transparent | Hint: Transparent > Blur > AcrylicBlur > Mica | Fallback: Transparent";
 
         /// <summary>
         /// Gets acrylic diagnostics shown in Appearance tab.
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Major Code Smell", "S2325:Methods and properties that don't access instance data should be static", Justification = "Instance property required for XAML data binding.")]
         public string AcrylicDiagnostics => OperatingSystem.IsWindows() ? "Acrylic/Mica availability depends on compositor and OS policies." : "Mica/Acrylic not expected; blur fallback path will be used.";
 
         /// <summary>
@@ -383,6 +390,21 @@ namespace FocusTimer.App.ViewModels
             this.OnVersionInfoClicked();
         }
 
+        private static void Cancel(Window window)
+        {
+            window?.Close();
+        }
+
+        private static double ToPercent(double normalized)
+        {
+            return Math.Clamp(normalized, 0.0, 1.0) * 100.0;
+        }
+
+        private static double ToNormalized(double percent)
+        {
+            return Math.Clamp(percent / 100.0, 0.0, 1.0);
+        }
+
         private async Task ApplyAsync()
         {
             try
@@ -400,11 +422,6 @@ namespace FocusTimer.App.ViewModels
 
                 // TODO: Show error dialog to user
             }
-        }
-
-        private void Cancel(Window window)
-        {
-            window?.Close();
         }
 
         private async Task BrowseWorklogDirectoryAsync(Window window)
@@ -610,7 +627,6 @@ namespace FocusTimer.App.ViewModels
                 this.RaisePropertyChanged(nameof(this.OverallFadePercent));
                 this.RaisePropertyChanged(nameof(this.NormalizedOverallFade));
                 this.RaisePropertyChanged(nameof(this.OpacityDiagnosticsSummary));
-                return;
             }
         }
 
@@ -717,16 +733,6 @@ namespace FocusTimer.App.ViewModels
             this.RaisePropertyChanged(nameof(this.TransparencyDiagnostics));
             this.RaisePropertyChanged(nameof(this.AcrylicDiagnostics));
             this.RaisePropertyChanged(nameof(this.OpacityDiagnosticsSummary));
-        }
-
-        private double ToPercent(double normalized)
-        {
-            return Math.Clamp(normalized, 0.0, 1.0) * 100.0;
-        }
-
-        private double ToNormalized(double percent)
-        {
-            return Math.Clamp(percent / 100.0, 0.0, 1.0);
         }
     }
 }

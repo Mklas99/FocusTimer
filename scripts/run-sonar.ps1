@@ -12,7 +12,9 @@ for ($i=0; $i -lt $max; $i++) {
   try {
     $r = Invoke-WebRequest -UseBasicParsing -Uri http://localhost:9000 -TimeoutSec 3
     if ($r.StatusCode -eq 200) { break }
-  } catch { }
+  } catch {
+    Write-Verbose "SonarQube not ready yet: $($_.Exception.Message)"
+  }
   Start-Sleep -Seconds 2
 }
 

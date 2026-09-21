@@ -39,7 +39,8 @@ foreach ($project in $projects)
         "test", $testProject,
         "--configuration", $Configuration,
         "/p:CollectCoverage=true",
-        "/p:CoverletOutputFormat=$Format",
+        # Quote the value: an unquoted comma makes MSBuild treat "cobertura" as a separate switch (MSB1006).
+        "/p:CoverletOutputFormat=`"$Format`"",
         "/p:CoverletOutput=$outputDir/",
         "/p:Include=$includeFilter",
         "/p:Threshold=$Threshold",

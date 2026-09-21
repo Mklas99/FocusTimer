@@ -1,12 +1,12 @@
-#!/bin/sh
+#!/usr/bin/env bash
 # Run SonarScanner for .NET (MSBuild) locally.
 # Usage: ./scripts/run-sonar-dotnet.sh <SONAR_TOKEN> [SONAR_HOST_URL]
 
 TOKEN=${1:-$SONAR_TOKEN}
 HOST=${2:-${SONAR_HOST_URL:-http://localhost:9000}}
 
-if [ -z "$TOKEN" ]; then
-  echo "Error: SONAR token not provided. Pass as first arg or set SONAR_TOKEN env var."
+if [[ -z "$TOKEN" ]]; then
+  echo "Error: SONAR token not provided. Pass as first arg or set SONAR_TOKEN env var." >&2
   exit 1
 fi
 
