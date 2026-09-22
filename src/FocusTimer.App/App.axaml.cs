@@ -1,6 +1,7 @@
 namespace FocusTimer.App
 {
     using System;
+    using System.Diagnostics.CodeAnalysis;
     using System.Linq;
     using System.Threading.Tasks;
     using Avalonia;
@@ -21,6 +22,7 @@ namespace FocusTimer.App
     /// </summary>
     public partial class App : Application, IAppInitializer
     {
+        [SuppressMessage("Sonar Code Smell", "S1075", Justification = "avares:// is Avalonia's compile-time embedded-resource scheme, not a filesystem/network path.")]
         private const string IdleIconUri = "avares://FocusTimer.App/Assets/FocusTimer-idle.png";
         private AppController? _appController;
         private IAppLogger? _logger;
@@ -67,15 +69,15 @@ namespace FocusTimer.App
                 Icon = new WindowIcon(
                     Avalonia.Platform.AssetLoader.Open(
                         new Uri(IdleIconUri))),
-                Menu = new NativeMenu
-                {
+                Menu =
+                [
                     CreateMenuItem("Show/Hide Timer", this.TrayMenu_ShowHide),
                     CreateMenuItem("Start/Pause Timer", this.TrayMenu_ToggleTimer),
                     new NativeMenuItemSeparator(),
                     CreateMenuItem("Settings...", this.TrayMenu_Settings),
                     new NativeMenuItemSeparator(),
                     CreateMenuItem("Exit", this.TrayMenu_Exit),
-                },
+                ],
             };
             this._trayIcon.Clicked += this.TrayIcon_Clicked;
 
@@ -113,9 +115,9 @@ namespace FocusTimer.App
             // Initialize app with injected services from AppHost
             if (AppHost.Services != null)
             {
-                var appController = AppHost.Services.GetService<AppController>();
-                var logger = AppHost.Services.GetService<IAppLogger>();
-                var trayController = AppHost.Services.GetService<ITrayIconController>();
+                AppController? appController = AppHost.Services.GetService<AppController>();
+                IAppLogger? logger = AppHost.Services.GetService<IAppLogger>();
+                ITrayIconController? trayController = AppHost.Services.GetService<ITrayIconController>();
 
                 // InvokeAsync avoids blocking the UI thread (which would deadlock Avalonia's dispatcher)
                 Dispatcher.UIThread.InvokeAsync(async () =>

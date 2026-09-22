@@ -30,7 +30,7 @@ namespace FocusTimer.App.Views
                 DataContext = new ColorPickerWindowViewModel(viewModel.GetThemeColor(propertyName)),
             };
 
-            var selectedColor = await dialog.ShowDialog<string?>(this);
+            string? selectedColor = await dialog.ShowDialog<string?>(this);
             if (!string.IsNullOrWhiteSpace(selectedColor))
             {
                 viewModel.SetThemeColor(propertyName, selectedColor);

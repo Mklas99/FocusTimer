@@ -45,7 +45,7 @@ namespace FocusTimer.App.Services
         /// <param name="targetResources">Optional target resource dictionary; uses Application.Current.Resources when null.</param>
         public void ApplyTheme(Theme theme, IResourceDictionary? targetResources = null)
         {
-            var resources = targetResources ?? Application.Current?.Resources;
+            IResourceDictionary? resources = targetResources ?? Application.Current?.Resources;
             if (resources == null)
             {
                 return;
@@ -153,7 +153,7 @@ namespace FocusTimer.App.Services
 
         private static Color Mix(Color source, Color target, double amount)
         {
-            var clamped = Math.Clamp(amount, 0.0, 1.0);
+            double clamped = Math.Clamp(amount, 0.0, 1.0);
             byte Blend(byte a, byte b) => (byte)(a + ((b - a) * clamped));
             return Color.FromArgb(
                 255,
@@ -196,7 +196,7 @@ namespace FocusTimer.App.Services
                 resources[key] = color;
 
                 // Also update the corresponding brush with opacity baked in
-                var brushKey = key.Replace("Color", "Brush");
+                string brushKey = key.Replace("Color", "Brush");
                 resources[brushKey] = new SolidColorBrush(color, opacity);
             }
             catch (Exception ex)

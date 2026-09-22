@@ -31,7 +31,6 @@ namespace FocusTimer.App.Services
         private TrayIcon? _trayIcon;
         private TimerWidgetWindow? _timerWindow;
         private SettingsWindow? _settingsWindow;
-        private Settings _currentSettings;
         private HotkeyDefinition _showHideHotkeyDefinition;
         private HotkeyDefinition _toggleTimerHotkeyDefinition;
         private bool _pausedByIdle;
@@ -73,12 +72,12 @@ namespace FocusTimer.App.Services
             this._themeManager = themeManager;
             this._timerViewModelFactory = timerViewModelFactory;
             this._settingsViewModelFactory = settingsViewModelFactory;
-            this._currentSettings = new Settings();
+            this.CurrentSettings = new Settings();
             this._trayIconController = trayIconController;
             this._logWriter = logWriter;
 
-            this._showHideHotkeyDefinition = this.ParseHotkeyOrDefault(this._currentSettings.HotkeyShowHide, "Ctrl+Alt+T");
-            this._toggleTimerHotkeyDefinition = this.ParseHotkeyOrDefault(this._currentSettings.HotkeyToggleTimer, "Ctrl+Alt+P");
+            this._showHideHotkeyDefinition = this.ParseHotkeyOrDefault(this.CurrentSettings.HotkeyShowHide, "Ctrl+Alt+T");
+            this._toggleTimerHotkeyDefinition = this.ParseHotkeyOrDefault(this.CurrentSettings.HotkeyToggleTimer, "Ctrl+Alt+P");
             this._hotkeyService.HotkeyPressed += this.OnHotkeyPressed;
             idleDetectionService.UserBecameIdle += this.OnUserBecameIdle;
             idleDetectionService.UserReturned += this.OnUserReturned;
@@ -93,7 +92,7 @@ namespace FocusTimer.App.Services
         /// <summary>
         /// Gets get the current settings (for initialization purposes).
         /// </summary>
-        public Settings CurrentSettings => this._currentSettings;
+        public Settings CurrentSettings { get; private set; }
 
         /// <summary>
         /// Initialize the controller and load settings.
@@ -107,25 +106,25 @@ namespace FocusTimer.App.Services
                 this._themeManager.InitializeThemeResources();
 
                 // Load settings
-                this._currentSettings = await this._settingsProvider.LoadAsync();
+                this.CurrentSettings = await this._settingsProvider.LoadAsync();
 
                 // Apply saved theme
-                if (!string.IsNullOrEmpty(this._currentSettings.ActiveThemeName))
+                if (!string.IsNullOrEmpty(this.CurrentSettings.ActiveThemeName))
                 {
-                    var theme = this._themeService.GetBuiltInTheme(this._currentSettings.ActiveThemeName);
+                    Theme? theme = this._themeService.GetBuiltInTheme(this.CurrentSettings.ActiveThemeName);
                     if (theme != null)
                     {
-                        this._currentSettings.Theme = theme;
+                        this.CurrentSettings.Theme = theme;
                     }
                 }
 
                 // Apply theme to UI
-                this._themeManager.ApplyTheme(this._currentSettings.Theme);
+                this._themeManager.ApplyTheme(this.CurrentSettings.Theme);
 
                 // Setup tray icon controller after timer window is created
                 if (this._timerWindow == null)
                 {
-                    var viewModel = this._timerViewModelFactory();
+                    TimerWidgetViewModel viewModel = this._timerViewModelFactory();
                     this._timerWindow = new TimerWidgetWindow
                     {
                         DataContext = viewModel,
@@ -153,12 +152,12 @@ namespace FocusTimer.App.Services
                 this._hotkeyService.UnregisterAll();
 
                 // Register show/hide hotkey (default: Ctrl+Alt+T)
-                var showHideHotkey = this._currentSettings.HotkeyShowHide ?? "Ctrl+Alt+T";
+                string showHideHotkey = this.CurrentSettings.HotkeyShowHide ?? "Ctrl+Alt+T";
                 this._showHideHotkeyDefinition = this.ParseHotkeyOrDefault(showHideHotkey, "Ctrl+Alt+T");
                 this._hotkeyService.Register(this._showHideHotkeyDefinition);
 
                 // Register toggle timer hotkey (default: Ctrl+Alt+P)
-                var toggleTimerHotkey = this._currentSettings.HotkeyToggleTimer ?? "Ctrl+Alt+P";
+                string toggleTimerHotkey = this.CurrentSettings.HotkeyToggleTimer ?? "Ctrl+Alt+P";
                 this._toggleTimerHotkeyDefinition = this.ParseHotkeyOrDefault(toggleTimerHotkey, "Ctrl+Alt+P");
                 this._hotkeyService.Register(this._toggleTimerHotkeyDefinition);
 
@@ -181,7 +180,7 @@ namespace FocusTimer.App.Services
                 {
                     if (this._timerWindow == null)
                     {
-                        var viewModel = this._timerViewModelFactory();
+                        TimerWidgetViewModel viewModel = this._timerViewModelFactory();
                         this._timerWindow = new TimerWidgetWindow
                         {
                             DataContext = viewModel,
@@ -265,12 +264,7 @@ namespace FocusTimer.App.Services
         /// <returns>True if the timer is running; otherwise, false.</returns>
         public bool IsTimerRunning()
         {
-            if (this._timerWindow?.DataContext is TimerWidgetViewModel vm)
-            {
-                return vm.IsRunning;
-            }
-
-            return false;
+            return this._timerWindow?.DataContext is TimerWidgetViewModel vm && vm.IsRunning;
         }
 
         /// <summary>
@@ -282,7 +276,7 @@ namespace FocusTimer.App.Services
             {
                 if (this._settingsWindow == null)
                 {
-                    var viewModel = this._settingsViewModelFactory();
+                    SettingsWindowViewModel viewModel = this._settingsViewModelFactory();
                     this._settingsWindow = new SettingsWindow
                     {
                         DataContext = viewModel,
@@ -450,10 +444,10 @@ namespace FocusTimer.App.Services
             try
             {
                 // Reload settings
-                this._currentSettings = await this._settingsProvider.LoadAsync();
+                this.CurrentSettings = await this._settingsProvider.LoadAsync();
 
                 // Apply theme
-                this._themeManager.ApplyTheme(this._currentSettings.Theme);
+                this._themeManager.ApplyTheme(this.CurrentSettings.Theme);
 
                 // Apply to timer widget if it exists
                 if (this._timerWindow?.DataContext is TimerWidgetViewModel vm)
@@ -465,7 +459,7 @@ namespace FocusTimer.App.Services
                 if (this._timerWindow != null)
                 {
                     this._timerWindow.Opacity = 1.0;
-                    this._timerWindow.Topmost = this._currentSettings.AlwaysOnTop;
+                    this._timerWindow.Topmost = this.CurrentSettings.AlwaysOnTop;
                 }
 
                 // Re-register hotkeys with new settings

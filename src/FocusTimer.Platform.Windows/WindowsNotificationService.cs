@@ -7,6 +7,7 @@ namespace FocusTimer.Platform.Windows
     using Avalonia.Controls.ApplicationLifetimes;
     using Avalonia.Layout;
     using Avalonia.Media;
+    using Avalonia.Platform;
     using Avalonia.Threading;
     using FocusTimer.Core.Interfaces;
 
@@ -100,38 +101,35 @@ namespace FocusTimer.Platform.Windows
                 return;
             }
 
-            var referenceWindow = desktop.Windows.FirstOrDefault(window => window.IsVisible) ?? desktop.MainWindow;
-            var screens = referenceWindow?.Screens;
-            var workingArea = screens?.Primary?.WorkingArea;
+            Window? referenceWindow = desktop.Windows.FirstOrDefault(window => window.IsVisible) ?? desktop.MainWindow;
+            Screens? screens = referenceWindow?.Screens;
+            PixelRect? workingArea = screens?.Primary?.WorkingArea;
 
             if (workingArea == null)
             {
                 return;
             }
 
-            var x = workingArea.Value.Right - (int)toastWindow.Width - 20;
-            var y = workingArea.Value.Bottom - (int)toastWindow.Height - 20;
+            int x = workingArea.Value.Right - (int)toastWindow.Width - 20;
+            int y = workingArea.Value.Bottom - (int)toastWindow.Height - 20;
             toastWindow.Position = new PixelPoint(x, y);
         }
 
         private static IBrush GetThemeBrush(string resourceKey, string fallbackColor)
         {
-            if (Application.Current?.Resources.TryGetResource(resourceKey, null, out var resource) == true && resource is IBrush brush)
-            {
-                return brush;
-            }
-
-            return new SolidColorBrush(Color.Parse(fallbackColor));
+            return Application.Current?.Resources.TryGetResource(resourceKey, null, out object? resource) == true && resource is IBrush brush
+                ? brush
+                : new SolidColorBrush(Color.Parse(fallbackColor));
         }
 
         private Task ShowBreakReminderWindowAsync(string message, bool requireAcknowledgement)
         {
             var completion = new TaskCompletionSource<object?>(TaskCreationOptions.RunContinuationsAsynchronously);
-            var backgroundBrush = GetThemeBrush("SettingsBackgroundBrush", "#1F2937");
-            var borderBrush = GetThemeBrush("WindowBorderBrush", "#374151");
-            var titleBrush = GetThemeBrush("SettingsSectionHeaderBrush", "#FFFFFF");
-            var bodyBrush = GetThemeBrush("SettingsLabelTextBrush", "#E5E7EB");
-            var accentBrush = GetThemeBrush("AccentPrimaryBrush", "#0078D7");
+            IBrush backgroundBrush = GetThemeBrush("SettingsBackgroundBrush", "#1F2937");
+            IBrush borderBrush = GetThemeBrush("WindowBorderBrush", "#374151");
+            IBrush titleBrush = GetThemeBrush("SettingsSectionHeaderBrush", "#FFFFFF");
+            IBrush bodyBrush = GetThemeBrush("SettingsLabelTextBrush", "#E5E7EB");
+            IBrush accentBrush = GetThemeBrush("AccentPrimaryBrush", "#0078D7");
 
             var messageBlock = new TextBlock
             {
@@ -219,10 +217,10 @@ namespace FocusTimer.Platform.Windows
 
         private void ShowToastWindow(string title, string message)
         {
-            var backgroundBrush = GetThemeBrush("SettingsBackgroundBrush", "#1F2937");
-            var borderBrush = GetThemeBrush("WindowBorderBrush", "#374151");
-            var titleBrush = GetThemeBrush("SettingsSectionHeaderBrush", "#FFFFFF");
-            var bodyBrush = GetThemeBrush("SettingsLabelTextBrush", "#E5E7EB");
+            IBrush backgroundBrush = GetThemeBrush("SettingsBackgroundBrush", "#1F2937");
+            IBrush borderBrush = GetThemeBrush("WindowBorderBrush", "#374151");
+            IBrush titleBrush = GetThemeBrush("SettingsSectionHeaderBrush", "#FFFFFF");
+            IBrush bodyBrush = GetThemeBrush("SettingsLabelTextBrush", "#E5E7EB");
 
             var toastWindow = new Window
             {

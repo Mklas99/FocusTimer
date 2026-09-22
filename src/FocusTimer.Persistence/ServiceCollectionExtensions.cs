@@ -19,8 +19,8 @@ namespace FocusTimer.Persistence
 
             services.AddSingleton<IWorklogStore>(sp =>
             {
-                var settingsProvider = sp.GetRequiredService<ISettingsProvider>();
-                var logger = sp.GetService<IAppLogger>();
+                ISettingsProvider settingsProvider = sp.GetRequiredService<ISettingsProvider>();
+                IAppLogger? logger = sp.GetService<IAppLogger>();
                 return new CsvSessionRepository(settingsProvider, logger);
             });
 

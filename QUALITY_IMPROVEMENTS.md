@@ -73,19 +73,13 @@ This document outlines all the development process improvements that have been i
 
 ---
 
-### 5. **`sonarqube-properties.txt`** - SonarQube Configuration
+### 5. **`sonarqube-properties.txt`** - Legacy SonarQube Configuration (unused)
 **Location:** Project root
-**Purpose:** Configuration for cloud-based code quality analysis
-- Project metadata
-- Source/test file patterns
-- Coverage report paths
-- Code analysis rules
-
-**Benefit:**
-- Integration with SonarCloud for detailed analysis
-- Tracks code smell trends over time
-- Identifies security vulnerabilities
-- Measure technical debt
+**Purpose:** Predates the current CI setup; kept for historical reference only. The actual SonarCloud
+analysis (project key `Mklas99_FocusTimer`, org `mklas99`) is driven entirely by
+`.github/workflows/sonar-scan.yml`, which passes its own project key, org, and coverage report paths
+directly to `dotnet sonarscanner begin` — this file is not read by anything. See the
+[SonarQube Integration](#sonarqube-integration) section below for the real setup.
 
 ---
 
@@ -243,47 +237,39 @@ public void SomeMethod() { }
 
 ## SonarQube Integration
 
-### To Enable SonarQube Analysis:
+The project is registered on SonarCloud as `Mklas99_FocusTimer` (org `mklas99`) and analyzed automatically in CI
+via `.github/workflows/sonar-scan.yml` — there is nothing to set up for this to happen on every push/PR to
+`main`/`master`. `sonarqube-properties.txt` is a legacy file from before that workflow existed; it is **not**
+read by CI (the workflow passes project key, org, and coverage paths directly to `dotnet sonarscanner begin`)
+and its `sonar.projectKey=focustimer` does not match the real key, so treat it as historical only.
 
-1. **Create account on SonarCloud:**
-   - Visit https://sonarcloud.io
-   - Sign in with GitHub
+### Running the same analysis locally
 
-2. **Get your token:**
-   - Account settings → Security → Generate token
-
-3. **Update configuration:**
-   - Open `sonarqube-properties.txt`
-   - Set your token and server URL
-
-4. **Run analysis (if SonarScanner installed):**
-```bash
-sonar-scanner ^
-  -Dsonar.projectKey=focustimer ^
-  -Dsonar.sources=src ^
-  -Dsonar.host.url=https://sonarcloud.io ^
-  -Dsonar.login=YOUR_TOKEN
+```powershell
+./scripts/run-sonar-dotnet.ps1 -Token <your-sonarcloud-token> [-HostUrl <url>] [-ProjectKey <key>]
 ```
+This wraps `dotnet sonarscanner begin/end` the same way the CI workflow does: build the solution, run the unit
+tests with OpenCover coverage collection (see `scripts/run-unit-coverage.ps1`), and submit both analysis and
+coverage to SonarCloud. Generate a token under SonarCloud → Account → Security.
+
+### Running coverage only (no SonarCloud submission)
+
+```powershell
+./scripts/run-unit-coverage.ps1 -Threshold 60
+```
+Generates OpenCover and Cobertura reports per test project under `artifacts/test-coverage/`.
 
 ---
 
-## CI/CD Integration (Optional)
+## CI/CD Integration
 
-To integrate these checks into your CI/CD pipeline:
+Already wired up — no setup needed:
 
-### GitHub Actions Example
-```yaml
-- name: Setup .NET
-  uses: actions/setup-dotnet@v3
-  with:
-    dotnet-version: '8.0.x'
-
-- name: Build
-  run: dotnet build FocusTimer.sln -c Release
-
-- name: Code Analysis
-  run: dotnet build FocusTimer.sln -c Release -p:TreatWarningsAsErrors=true -p:EnforceCodeStyleInBuild=true
-```
+- **`.github/workflows/sonar-scan.yml`**: on every push to `main`/`master` and every pull request, restores,
+  builds, runs `scripts/run-unit-coverage.ps1` (coverage-threshold enforced), publishes a coverage summary to the
+  job, and submits the run to SonarCloud when `SONAR_TOKEN` is configured as a repo secret.
+- **`.github/workflows/release.yml`**: on pushing a `v*.*.*` tag, builds the self-contained EXE + MSI installer
+  and publishes a GitHub release.
 
 ---
 

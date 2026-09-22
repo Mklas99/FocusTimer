@@ -13,12 +13,7 @@ namespace FocusTimer.App.Converters
         /// <inheritdoc/>
         public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
         {
-            if (value is bool b)
-            {
-                return !b;
-            }
-
-            return Avalonia.AvaloniaProperty.UnsetValue;
+            return value is bool b ? !b : Avalonia.AvaloniaProperty.UnsetValue;
         }
 
         /// <inheritdoc/>

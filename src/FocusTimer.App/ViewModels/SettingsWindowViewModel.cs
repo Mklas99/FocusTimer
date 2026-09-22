@@ -27,7 +27,6 @@ namespace FocusTimer.App.ViewModels
         private readonly IThemeService _themeService;
         private readonly ThemeManager _themeManager;
         private readonly IAppLogger _logger;
-        private readonly string _changelogContent;
         private Settings? _attachedSettings;
         private Theme? _attachedTheme;
         private Settings _settings;
@@ -56,7 +55,7 @@ namespace FocusTimer.App.ViewModels
             this._logger = logWriter;
             this._settings = new Settings();
             this._selectedThemeName = "Dark";
-            this._changelogContent = this.LoadChangelogContent();
+            this.ChangelogContent = this.LoadChangelogContent();
             this.AttachSettings(this._settings);
 
             // Initialize commands
@@ -153,7 +152,7 @@ namespace FocusTimer.App.ViewModels
         /// <summary>
         /// Gets available developer log levels.
         /// </summary>
-        public List<string> AvailableDeveloperLogLevels { get; } = new() { "Verbose", "Debug", "Information", "Warning", "Error" };
+        public List<string> AvailableDeveloperLogLevels { get; } = ["Verbose", "Debug", "Information", "Warning", "Error"];
 
         /// <summary>
         /// Gets application version shown in the About tab.
@@ -164,13 +163,10 @@ namespace FocusTimer.App.ViewModels
             get
             {
                 var assembly = Assembly.GetEntryAssembly();
-                var informationalVersion = assembly?.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
-                if (!string.IsNullOrWhiteSpace(informationalVersion))
-                {
-                    return informationalVersion.Split('+')[0];
-                }
-
-                return assembly?.GetName().Version?.ToString() ?? "1.0.0";
+                string? informationalVersion = assembly?.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
+                return !string.IsNullOrWhiteSpace(informationalVersion)
+                    ? informationalVersion.Split('+')[0]
+                    : assembly?.GetName().Version?.ToString() ?? "1.0.0";
             }
         }
 
@@ -195,7 +191,7 @@ namespace FocusTimer.App.ViewModels
         /// <summary>
         /// Gets changelog content shown in the About tab.
         /// </summary>
-        public string ChangelogContent => this._changelogContent;
+        public string ChangelogContent { get; }
 
         /// <summary>
         /// Gets a value indicating whether developer options are visible.
@@ -242,7 +238,7 @@ namespace FocusTimer.App.ViewModels
             get => ToPercent(this.Settings.Theme.BackgroundOpacity);
             set
             {
-                var normalized = ToNormalized(value);
+                double normalized = ToNormalized(value);
                 if (Math.Abs(normalized - this.Settings.Theme.BackgroundOpacity) > OpacityTolerance)
                 {
                     this.Settings.Theme.BackgroundOpacity = normalized;
@@ -261,7 +257,7 @@ namespace FocusTimer.App.ViewModels
             get => ToPercent(this.Settings.Theme.TimerOpacity);
             set
             {
-                var normalized = ToNormalized(value);
+                double normalized = ToNormalized(value);
                 if (Math.Abs(normalized - this.Settings.Theme.TimerOpacity) > OpacityTolerance)
                 {
                     this.Settings.Theme.TimerOpacity = normalized;
@@ -280,7 +276,7 @@ namespace FocusTimer.App.ViewModels
             get => ToPercent(this.Settings.Theme.ButtonOpacity);
             set
             {
-                var normalized = ToNormalized(value);
+                double normalized = ToNormalized(value);
                 if (Math.Abs(normalized - this.Settings.Theme.ButtonOpacity) > OpacityTolerance)
                 {
                     this.Settings.Theme.ButtonOpacity = normalized;
@@ -299,7 +295,7 @@ namespace FocusTimer.App.ViewModels
             get => ToPercent(this.Settings.WidgetOpacity);
             set
             {
-                var normalized = ToNormalized(value);
+                double normalized = ToNormalized(value);
                 if (Math.Abs(normalized - this.Settings.WidgetOpacity) > OpacityTolerance)
                 {
                     this.Settings.WidgetOpacity = normalized;
@@ -355,7 +351,7 @@ namespace FocusTimer.App.ViewModels
         /// <returns>The current color value, or an empty string if the property is unknown.</returns>
         public string GetThemeColor(string propertyName)
         {
-            var property = typeof(Theme).GetProperty(propertyName);
+            PropertyInfo? property = typeof(Theme).GetProperty(propertyName);
             if (property?.PropertyType != typeof(string))
             {
                 this._logger.LogWarning($"Unknown theme color property requested: {propertyName}");
@@ -372,7 +368,7 @@ namespace FocusTimer.App.ViewModels
         /// <param name="colorValue">The updated color value.</param>
         public void SetThemeColor(string propertyName, string colorValue)
         {
-            var property = typeof(Theme).GetProperty(propertyName);
+            PropertyInfo? property = typeof(Theme).GetProperty(propertyName);
             if (property?.PropertyType != typeof(string))
             {
                 this._logger.LogWarning($"Unknown theme color property update attempted: {propertyName}");
@@ -428,7 +424,7 @@ namespace FocusTimer.App.ViewModels
         {
             try
             {
-                var storageProvider = window.StorageProvider;
+                IStorageProvider storageProvider = window.StorageProvider;
 
                 var options = new FolderPickerOpenOptions
                 {
@@ -436,7 +432,7 @@ namespace FocusTimer.App.ViewModels
                     AllowMultiple = false,
                 };
 
-                var result = await storageProvider.OpenFolderPickerAsync(options);
+                IReadOnlyList<IStorageFolder> result = await storageProvider.OpenFolderPickerAsync(options);
 
                 if (result.Count > 0)
                 {
@@ -458,7 +454,7 @@ namespace FocusTimer.App.ViewModels
                 this.RaisePropertyChanged(nameof(this.SelectedThemeName));
                 this.RaisePropertyChanged(nameof(this.IsDeveloperModeVisible));
                 this.RaisePropertyChanged(nameof(this.SelectedDeveloperLogLevel));
-                var isAutoStartEnabled = this._autoStartService.IsAutoStartEnabled();
+                bool isAutoStartEnabled = this._autoStartService.IsAutoStartEnabled();
                 if (this.Settings.AutoStartOnLogin != isAutoStartEnabled)
                 {
                     this.Settings.AutoStartOnLogin = isAutoStartEnabled;
@@ -486,7 +482,7 @@ namespace FocusTimer.App.ViewModels
         {
             try
             {
-                var storageProvider = window.StorageProvider;
+                IStorageProvider storageProvider = window.StorageProvider;
                 var options = new FilePickerOpenOptions
                 {
                     Title = "Import Theme",
@@ -500,11 +496,11 @@ namespace FocusTimer.App.ViewModels
                         FilePickerFileTypes.All,
                     },
                 };
-                var result = await storageProvider.OpenFilePickerAsync(options);
+                IReadOnlyList<IStorageFile> result = await storageProvider.OpenFilePickerAsync(options);
                 if (result.Count > 0)
                 {
-                    var filePath = result[0].Path.LocalPath;
-                    var theme = await this._themeService.LoadThemeFromFileAsync(filePath);
+                    string filePath = result[0].Path.LocalPath;
+                    Theme theme = await this._themeService.LoadThemeFromFileAsync(filePath);
                     this.Settings.Theme = theme;
                     this.Settings.CustomThemePath = filePath;
                     this.Settings.ActiveThemeName = theme.ThemeName;
@@ -525,7 +521,7 @@ namespace FocusTimer.App.ViewModels
         {
             try
             {
-                var storageProvider = window.StorageProvider;
+                IStorageProvider storageProvider = window.StorageProvider;
 
                 var options = new FilePickerSaveOptions
                 {
@@ -541,11 +537,11 @@ namespace FocusTimer.App.ViewModels
                     },
                 };
 
-                var result = await storageProvider.SaveFilePickerAsync(options);
+                IStorageFile? result = await storageProvider.SaveFilePickerAsync(options);
 
                 if (result != null)
                 {
-                    var filePath = result.Path.LocalPath;
+                    string filePath = result.Path.LocalPath;
                     await this._themeService.SaveThemeToFileAsync(this.Settings.Theme, filePath);
                     this._logger.LogInformation($"Theme exported to: {filePath}");
                 }
@@ -570,7 +566,7 @@ namespace FocusTimer.App.ViewModels
 
         private void LoadThemeByName(string themeName)
         {
-            var theme = this._themeService.GetBuiltInTheme(themeName);
+            Theme? theme = this._themeService.GetBuiltInTheme(themeName);
             if (theme != null)
             {
                 this.Settings.Theme = theme.Clone();
@@ -699,9 +695,9 @@ namespace FocusTimer.App.ViewModels
             try
             {
                 var current = new DirectoryInfo(AppContext.BaseDirectory);
-                for (var i = 0; i < 8 && current != null; i++)
+                for (int i = 0; i < 8 && current != null; i++)
                 {
-                    var candidate = Path.Combine(current.FullName, "docs", "CHANGELOG.md");
+                    string candidate = Path.Combine(current.FullName, "docs", "CHANGELOG.md");
                     if (File.Exists(candidate))
                     {
                         return File.ReadAllText(candidate);

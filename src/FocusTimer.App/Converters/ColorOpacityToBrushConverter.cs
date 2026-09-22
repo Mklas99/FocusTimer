@@ -29,7 +29,7 @@ namespace FocusTimer.App.Converters
             {
                 color = c;
             }
-            else if (values[0] is string s && TryParseColor(s, out var parsed))
+            else if (values[0] is string s && TryParseColor(s, out Avalonia.Media.Color parsed))
             {
                 color = parsed;
             }
@@ -38,13 +38,13 @@ namespace FocusTimer.App.Converters
                 return Avalonia.Data.BindingNotification.UnsetValue;
             }
 
-            if (!TryGetDouble(values[1], out var localOpacity) || !TryGetDouble(values[2], out var overallOpacity))
+            if (!TryGetDouble(values[1], out double localOpacity) || !TryGetDouble(values[2], out double overallOpacity))
             {
                 return Avalonia.Data.BindingNotification.UnsetValue;
             }
 
-            var finalOpacity = Clamp01(localOpacity) * Clamp01(overallOpacity);
-            var brush = new SolidColorBrush(color, finalOpacity);
+            double finalOpacity = Clamp01(localOpacity) * Clamp01(overallOpacity);
+            SolidColorBrush brush = new SolidColorBrush(color, finalOpacity);
             return brush;
         }
 
@@ -62,7 +62,7 @@ namespace FocusTimer.App.Converters
                 return true;
             }
 
-            if (value is string s && double.TryParse(s, out var parsed))
+            if (value is string s && double.TryParse(s, out double parsed))
             {
                 result = parsed;
                 return true;
@@ -74,17 +74,7 @@ namespace FocusTimer.App.Converters
 
         private static double Clamp01(double v)
         {
-            if (v < 0)
-            {
-                return 0;
-            }
-
-            if (v > 1)
-            {
-                return 1;
-            }
-
-            return v;
+            return Math.Clamp(v, 0, 1);
         }
 
         private static bool TryParseColor(string hex, out Avalonia.Media.Color color)

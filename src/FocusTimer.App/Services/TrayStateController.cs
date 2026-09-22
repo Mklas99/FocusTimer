@@ -126,7 +126,7 @@ namespace FocusTimer.App.Services
 
             this._trayIcon.Icon = this._trayIconAssets.GetIcon(state);
 
-            var stateText = state switch
+            string stateText = state switch
             {
                 TimerState.Running => "Running",
                 TimerState.Paused => "Paused",

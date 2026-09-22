@@ -14,7 +14,6 @@ namespace FocusTimer.Persistence
     /// </summary>
     public class JsonSettingsProvider : ISettingsProvider
     {
-        private readonly string _settingsFilePath;
         private readonly JsonSerializerOptions _jsonOptions;
         private readonly IAppLogger? _logger;
 
@@ -48,22 +47,22 @@ namespace FocusTimer.Persistence
             if (string.IsNullOrWhiteSpace(settingsFilePath))
             {
                 // Store settings in user's AppData\Roaming\FocusTimer folder
-                var appDataFolder = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-                var settingsFolder = Path.Combine(appDataFolder, "FocusTimer");
+                string appDataFolder = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+                string settingsFolder = Path.Combine(appDataFolder, "FocusTimer");
 
                 Directory.CreateDirectory(settingsFolder);
 
-                this._settingsFilePath = Path.Combine(settingsFolder, "settings.json");
+                this.SettingsFilePath = Path.Combine(settingsFolder, "settings.json");
             }
             else
             {
-                var directory = Path.GetDirectoryName(settingsFilePath);
+                string? directory = Path.GetDirectoryName(settingsFilePath);
                 if (!string.IsNullOrEmpty(directory))
                 {
                     Directory.CreateDirectory(directory);
                 }
 
-                this._settingsFilePath = settingsFilePath;
+                this.SettingsFilePath = settingsFilePath;
             }
 
             this._jsonOptions = new JsonSerializerOptions
@@ -76,7 +75,7 @@ namespace FocusTimer.Persistence
         /// <summary>
         /// Gets the full file path used by this settings provider.
         /// </summary>
-        public string SettingsFilePath => this._settingsFilePath;
+        public string SettingsFilePath { get; }
 
         /// <summary>
         /// Load settings from JSON file. Returns defaults if file doesn't exist or is invalid.
@@ -86,14 +85,14 @@ namespace FocusTimer.Persistence
         {
             try
             {
-                if (!File.Exists(this._settingsFilePath))
+                if (!File.Exists(this.SettingsFilePath))
                 {
-                    this._logger?.LogDebug($"Settings file not found at {this._settingsFilePath}, using defaults.");
+                    this._logger?.LogDebug($"Settings file not found at {this.SettingsFilePath}, using defaults.");
                     return new Settings();
                 }
 
-                var json = await File.ReadAllTextAsync(this._settingsFilePath);
-                var settings = JsonSerializer.Deserialize<Settings>(json, this._jsonOptions);
+                string json = await File.ReadAllTextAsync(this.SettingsFilePath);
+                Settings? settings = JsonSerializer.Deserialize<Settings>(json, this._jsonOptions);
 
                 if (settings == null)
                 {
@@ -101,7 +100,7 @@ namespace FocusTimer.Persistence
                     return new Settings();
                 }
 
-                this._logger?.LogDebug($"Settings loaded from {this._settingsFilePath}.");
+                this._logger?.LogDebug($"Settings loaded from {this.SettingsFilePath}.");
                 return settings;
             }
             catch (Exception ex)
@@ -122,9 +121,9 @@ namespace FocusTimer.Persistence
 
             try
             {
-                var json = JsonSerializer.Serialize(settings, this._jsonOptions);
-                await File.WriteAllTextAsync(this._settingsFilePath, json);
-                this._logger?.LogDebug($"Settings saved to {this._settingsFilePath}.");
+                string json = JsonSerializer.Serialize(settings, this._jsonOptions);
+                await File.WriteAllTextAsync(this.SettingsFilePath, json);
+                this._logger?.LogDebug($"Settings saved to {this.SettingsFilePath}.");
             }
             catch (Exception ex)
             {

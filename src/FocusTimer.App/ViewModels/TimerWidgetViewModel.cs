@@ -230,7 +230,7 @@ namespace FocusTimer.App.ViewModels
         {
             get
             {
-                var colorStr = this.Settings?.Theme?.WindowBackground ?? "#FF000000";
+                string colorStr = this.Settings?.Theme?.WindowBackground ?? "#FF000000";
                 try
                 {
                     var color = Avalonia.Media.Color.Parse(colorStr);
@@ -266,7 +266,7 @@ namespace FocusTimer.App.ViewModels
                     return;
                 }
 
-                var clamped = Math.Clamp(value, 0.0, 1.0);
+                double clamped = Math.Clamp(value, 0.0, 1.0);
                 if (Math.Abs(clamped - this.Settings.Theme.BackgroundOpacity) > OpacityTolerance)
                 {
                     this.Settings.Theme.BackgroundOpacity = clamped;
@@ -290,7 +290,7 @@ namespace FocusTimer.App.ViewModels
                     return;
                 }
 
-                var clamped = Math.Clamp(value, 0.0, 1.0);
+                double clamped = Math.Clamp(value, 0.0, 1.0);
                 if (Math.Abs(clamped - this.Settings.Theme.TimerOpacity) > OpacityTolerance)
                 {
                     this.Settings.Theme.TimerOpacity = clamped;
@@ -313,7 +313,7 @@ namespace FocusTimer.App.ViewModels
                     return;
                 }
 
-                var clamped = Math.Clamp(value, 0.0, 1.0);
+                double clamped = Math.Clamp(value, 0.0, 1.0);
                 if (Math.Abs(clamped - this.Settings.Theme.ButtonOpacity) > OpacityTolerance)
                 {
                     this.Settings.Theme.ButtonOpacity = clamped;
@@ -337,7 +337,7 @@ namespace FocusTimer.App.ViewModels
                     return;
                 }
 
-                var clamped = Math.Clamp(value, 0.2, 1.0);
+                double clamped = Math.Clamp(value, 0.2, 1.0);
                 if (Math.Abs(clamped - this.Settings.WidgetOpacity) > OpacityTolerance)
                 {
                     this.Settings.WidgetOpacity = clamped;
@@ -383,7 +383,7 @@ namespace FocusTimer.App.ViewModels
             get => this._elapsed;
             private set
             {
-                var oldValue = this._elapsed;
+                TimeSpan oldValue = this._elapsed;
                 this.RaiseAndSetIfChanged(ref this._elapsed, value);
 
                 // Update formatted string when elapsed changes
@@ -495,7 +495,7 @@ namespace FocusTimer.App.ViewModels
         {
             try
             {
-                var loadedSettings = await this._settingsProvider.LoadAsync();
+                Settings loadedSettings = await this._settingsProvider.LoadAsync();
 
                 // Ensure UI updates happen on the UI thread
                 await Dispatcher.UIThread.InvokeAsync(() =>
@@ -578,8 +578,8 @@ namespace FocusTimer.App.ViewModels
                 this._breakReminderService.OnTimerPaused();
 
                 // Flush segments closed by application exit even when the timer was already paused.
-                var entries = this._sessionTracker.DrainCompletedSegments();
-                var flush = this._worklogPersistence.FlushAsync(entries, "application shutdown");
+                IReadOnlyList<TimeEntry> entries = this._sessionTracker.DrainCompletedSegments();
+                Task flush = this._worklogPersistence.FlushAsync(entries, "application shutdown");
                 if (!flush.Wait(TimeSpan.FromSeconds(2)))
                 {
                     this._logWriter.LogWarning("Timed out while flushing worklog entries on dispose.");
@@ -595,7 +595,7 @@ namespace FocusTimer.App.ViewModels
         // Call this method whenever WidgetScale changes
         private void UpdateResponsiveLayout()
         {
-            var scale = this.Settings?.WidgetScale ?? 1.0;
+            double scale = this.Settings?.WidgetScale ?? 1.0;
             this.MainTimerFontSize = DesignMetrics.BaseMainTimerFontSize * scale;
             this.CompactTimerFontSize = DesignMetrics.BaseCompactTimerFontSize * scale;
             this.MainTimerTextWidth = DesignMetrics.BaseMainTimerTextWidth * scale;

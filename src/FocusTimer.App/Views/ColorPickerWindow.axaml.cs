@@ -19,7 +19,7 @@ namespace FocusTimer.App.Views
 
         private void OnOkClicked(object? sender, RoutedEventArgs e)
         {
-            var selectedColor = (this.DataContext as ColorPickerWindowViewModel)?.SelectedColorHex;
+            string? selectedColor = (this.DataContext as ColorPickerWindowViewModel)?.SelectedColorHex;
             this.Close(selectedColor);
         }
 

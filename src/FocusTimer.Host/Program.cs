@@ -26,7 +26,7 @@ namespace FocusTimer.Host
         /// </summary>
         static Program()
         {
-            var sp = BuildServiceProvider(
+            IServiceProvider sp = BuildServiceProvider(
                 Environment.GetEnvironmentVariable("FOCUSTIMER_LOG_DIR"),
                 RuntimeInformation.IsOSPlatform(OSPlatform.Windows),
                 Settings.DefaultWorklogDirectory);
@@ -68,7 +68,7 @@ namespace FocusTimer.Host
         {
             var services = new ServiceCollection();
 
-            var logDirectory = Settings.DefaultApplicationLogDirectory;
+            string logDirectory = Settings.DefaultApplicationLogDirectory;
 
             if (!string.IsNullOrWhiteSpace(envLogDir))
             {
@@ -78,7 +78,7 @@ namespace FocusTimer.Host
             Directory.CreateDirectory(logDirectory);
             Directory.CreateDirectory(worklogDirectory);
 
-            var serilogConfig = new Serilog.LoggerConfiguration()
+            Serilog.LoggerConfiguration serilogConfig = new Serilog.LoggerConfiguration()
                 .MinimumLevel.Debug()
                 .Enrich.FromLogContext()
                 .WriteTo.Console(restrictedToMinimumLevel: Serilog.Events.LogEventLevel.Information)
@@ -89,7 +89,7 @@ namespace FocusTimer.Host
                     shared: true,
                     flushToDiskInterval: TimeSpan.FromSeconds(1));
 
-            var serilogLogger = serilogConfig.CreateLogger();
+            Serilog.Core.Logger serilogLogger = serilogConfig.CreateLogger();
 
             var appLogger = new SerilogAppLogger(serilogLogger);
             services.AddSingleton<IAppLogger>(appLogger);

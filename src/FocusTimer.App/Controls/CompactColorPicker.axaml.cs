@@ -166,8 +166,8 @@ namespace FocusTimer.App.Controls
                 return;
             }
 
-            var width = Math.Max(this.SaturationValueSurface.Bounds.Width, 1);
-            var height = Math.Max(this.SaturationValueSurface.Bounds.Height, 1);
+            double width = Math.Max(this.SaturationValueSurface.Bounds.Width, 1);
+            double height = Math.Max(this.SaturationValueSurface.Bounds.Height, 1);
 
             this._viewModel.Saturation = Math.Clamp(point.X / width, 0, 1);
             this._viewModel.Value = 1 - Math.Clamp(point.Y / height, 0, 1);
@@ -180,7 +180,7 @@ namespace FocusTimer.App.Controls
                 return;
             }
 
-            var height = Math.Max(this.HueStrip.Bounds.Height, 1);
+            double height = Math.Max(this.HueStrip.Bounds.Height, 1);
             this._viewModel.Hue = Math.Clamp(point.Y / height, 0, 1) * 360;
         }
 
@@ -191,7 +191,7 @@ namespace FocusTimer.App.Controls
                 return;
             }
 
-            var height = Math.Max(this.AlphaStrip.Bounds.Height, 1);
+            double height = Math.Max(this.AlphaStrip.Bounds.Height, 1);
             this._viewModel.Alpha = Math.Clamp(point.Y / height, 0, 1) * 255;
         }
 
@@ -202,16 +202,16 @@ namespace FocusTimer.App.Controls
                 return;
             }
 
-            var surfaceWidth = Math.Max(this.SaturationValueSurface.Bounds.Width, 1);
-            var surfaceHeight = Math.Max(this.SaturationValueSurface.Bounds.Height, 1);
+            double surfaceWidth = Math.Max(this.SaturationValueSurface.Bounds.Width, 1);
+            double surfaceHeight = Math.Max(this.SaturationValueSurface.Bounds.Height, 1);
             Canvas.SetLeft(this.SaturationValueThumb, Math.Clamp(this._viewModel.Saturation * surfaceWidth, 0, surfaceWidth));
             Canvas.SetTop(this.SaturationValueThumb, Math.Clamp((1 - this._viewModel.Value) * surfaceHeight, 0, surfaceHeight));
 
-            var hueHeight = Math.Max(this.HueStrip.Bounds.Height, 1);
+            double hueHeight = Math.Max(this.HueStrip.Bounds.Height, 1);
             Canvas.SetLeft(this.HueThumb, 0);
             Canvas.SetTop(this.HueThumb, Math.Clamp((this._viewModel.Hue / 360) * hueHeight, 0, hueHeight));
 
-            var alphaHeight = Math.Max(this.AlphaStrip.Bounds.Height, 1);
+            double alphaHeight = Math.Max(this.AlphaStrip.Bounds.Height, 1);
             Canvas.SetLeft(this.AlphaThumb, 0);
             Canvas.SetTop(this.AlphaThumb, Math.Clamp((this._viewModel.Alpha / 255) * alphaHeight, 0, alphaHeight));
         }

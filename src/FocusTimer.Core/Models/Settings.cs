@@ -25,7 +25,7 @@ namespace FocusTimer.Core.Models
         private string _developerLogLevel = "Debug";
         private string? _hotkeyShowHide;
         private string? _hotkeyToggleTimer;
-        private Theme _theme = new Theme();
+        private Theme _theme = new();
         private string _activeThemeName = "Dark";
         private string? _customThemePath;
         private string _deviceId = Guid.NewGuid().ToString("D");
@@ -156,7 +156,7 @@ namespace FocusTimer.Core.Models
             get => this._widgetScale;
             set
             {
-                var clamped = Math.Clamp(value, 0.5, 3.0);
+                double clamped = Math.Clamp(value, 0.5, 3.0);
                 this.SetField(ref this._widgetScale, clamped);
             }
         }
@@ -169,7 +169,7 @@ namespace FocusTimer.Core.Models
             get => this._widgetOpacity;
             set
             {
-                var clamped = Math.Clamp(value, 0.0, 1.0);
+                double clamped = Math.Clamp(value, 0.0, 1.0);
                 this.SetField(ref this._widgetOpacity, clamped);
             }
         }
