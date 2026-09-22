@@ -9,9 +9,19 @@ namespace FocusTimer.Core.Services
     /// </summary>
     public class ThemeService : IThemeService
     {
-        private readonly List<Theme> _builtInThemes;
+        private static readonly JsonSerializerOptions DeserializeThemeOptions = new()
+        {
+            PropertyNameCaseInsensitive = true,
+            ReadCommentHandling = JsonCommentHandling.Skip,
+        };
 
-        private Theme _currentTheme;
+        private static readonly JsonSerializerOptions SerializeThemeOptions = new()
+        {
+            WriteIndented = true,
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        };
+
+        private readonly List<Theme> _builtInThemes;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ThemeService"/> class.
@@ -19,11 +29,11 @@ namespace FocusTimer.Core.Services
         public ThemeService()
         {
             this._builtInThemes = CreateBuiltInThemes();
-            this._currentTheme = this._builtInThemes[0].Clone(); // Default to Dark theme
+            this.CurrentTheme = this._builtInThemes[0].Clone(); // Default to Dark theme
         }
 
         /// <inheritdoc/>
-        public Theme CurrentTheme => this._currentTheme;
+        public Theme CurrentTheme { get; private set; }
 
         /// <inheritdoc/>
         public IReadOnlyList<Theme> BuiltInThemes => this._builtInThemes.AsReadOnly();
@@ -31,7 +41,7 @@ namespace FocusTimer.Core.Services
         /// <inheritdoc/>
         public void ApplyTheme(Theme theme)
         {
-            this._currentTheme = theme.Clone();
+            this.CurrentTheme = theme.Clone();
         }
 
         /// <inheritdoc/>
@@ -44,12 +54,8 @@ namespace FocusTimer.Core.Services
 
             try
             {
-                var json = await File.ReadAllTextAsync(filePath);
-                var theme = JsonSerializer.Deserialize<Theme>(json, new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true,
-                    ReadCommentHandling = JsonCommentHandling.Skip,
-                });
+                string json = await File.ReadAllTextAsync(filePath);
+                Theme? theme = JsonSerializer.Deserialize<Theme>(json, DeserializeThemeOptions);
 
                 if (theme == null)
                 {
@@ -72,17 +78,13 @@ namespace FocusTimer.Core.Services
         /// <inheritdoc/>
         public async Task SaveThemeToFileAsync(Theme theme, string filePath)
         {
-            var directory = Path.GetDirectoryName(filePath);
+            string? directory = Path.GetDirectoryName(filePath);
             if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
             {
                 Directory.CreateDirectory(directory);
             }
 
-            var json = JsonSerializer.Serialize(theme, new JsonSerializerOptions
-            {
-                WriteIndented = true,
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            });
+            string json = JsonSerializer.Serialize(theme, SerializeThemeOptions);
 
             await File.WriteAllTextAsync(filePath, json);
         }
@@ -90,14 +92,14 @@ namespace FocusTimer.Core.Services
         /// <inheritdoc/>
         public Theme? GetBuiltInTheme(string themeName)
         {
-            return this._builtInThemes.FirstOrDefault(t =>
+            return this._builtInThemes.Find(t =>
                 t.ThemeName.Equals(themeName, StringComparison.OrdinalIgnoreCase))?.Clone();
         }
 
         /// <inheritdoc/>
         public void ResetToDefault()
         {
-            this._currentTheme = this._builtInThemes[0].Clone();
+            this.CurrentTheme = this._builtInThemes[0].Clone();
         }
 
         /// <inheritdoc/>
@@ -112,7 +114,7 @@ namespace FocusTimer.Core.Services
 
         private static List<Theme> CreateBuiltInThemes()
         {
-            var themes = new List<Theme>();
+            List<Theme> themes = [];
 
             // Dark Theme (Default)
             themes.Add(new Theme

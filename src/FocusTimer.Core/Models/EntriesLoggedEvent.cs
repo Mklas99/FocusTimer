@@ -10,6 +10,6 @@ namespace FocusTimer.Core.Models
         /// <summary>
         /// Gets or sets the logged entries.
         /// </summary>
-        public IEnumerable<TimeEntry> Entries { get; set; } = new List<TimeEntry>();
+        public IEnumerable<TimeEntry> Entries { get; set; } = [];
     }
 }

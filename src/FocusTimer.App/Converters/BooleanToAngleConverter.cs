@@ -12,23 +12,18 @@ namespace FocusTimer.App.Converters
         /// <inheritdoc/>
         public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
         {
-            if (value is bool b)
+            if (value is not bool b)
             {
-                return b ? 90d : 0d;
+                return 0d;
             }
 
-            return 0d;
+            return b ? 90d : 0d;
         }
 
         /// <inheritdoc/>
         public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
         {
-            if (value is double d)
-            {
-                return Math.Abs(d - 90d) < 0.001d;
-            }
-
-            return false;
+            return value is double d && Math.Abs(d - 90d) < 0.001d;
         }
     }
 }

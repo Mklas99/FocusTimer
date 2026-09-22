@@ -11,7 +11,7 @@ namespace FocusTimer.Platform.Windows
     /// <summary>
     /// Windows implementation of IActiveWindowService using Win32 APIs.
     /// </summary>
-    public class WindowsActiveWindowService : IActiveWindowService
+    public partial class WindowsActiveWindowService : IActiveWindowService
     {
         private const int MaxTitleLength = 256;
         private readonly IAppLogger? _logger;
@@ -63,7 +63,7 @@ namespace FocusTimer.Platform.Windows
         public Task<ActiveWindowInfo?> GetForegroundWindowAsync()
         {
             // Perform synchronous Win32 call wrapped in Task for interface compatibility
-            var info = this.GetActiveWindow();
+            ActiveWindowInfo? info = this.GetActiveWindow();
             return Task.FromResult(info);
         }
 
@@ -76,7 +76,8 @@ namespace FocusTimer.Platform.Windows
 
         private static uint GetNativeProcessId(IntPtr hwnd)
         {
-            NativeMethods.GetWindowThreadProcessId(hwnd, out uint processId);
+            uint threadId = NativeMethods.GetWindowThreadProcessId(hwnd, out uint processId);
+            Debug.WriteLine($"GetWindowThreadProcessId returned thread id {threadId} for process id {processId}.");
             return processId;
         }
 
@@ -113,8 +114,7 @@ namespace FocusTimer.Platform.Windows
                         {
                             processName = this._getProcessName((int)processId);
                         }
-                        catch (Exception ex) when (ex is System.ComponentModel.Win32Exception ||
-                                                   ex is InvalidOperationException)
+                        catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException)
                         {
                             // Access denied or process exited - use fallback
                             processName = $"Process_{processId}";
@@ -133,16 +133,13 @@ namespace FocusTimer.Platform.Windows
                 }
 
                 // Only return if we have at least window title or process name
-                if (string.IsNullOrWhiteSpace(windowTitle) && processName == "Unknown")
-                {
-                    return null;
-                }
-
-                return new ActiveWindowInfo
-                {
-                    ProcessName = processName,
-                    WindowTitle = windowTitle,
-                };
+                return string.IsNullOrWhiteSpace(windowTitle) && processName == "Unknown"
+                    ? null
+                    : new ActiveWindowInfo
+                    {
+                        ProcessName = processName,
+                        WindowTitle = windowTitle,
+                    };
             }
             catch (Exception ex)
             {
@@ -152,16 +149,16 @@ namespace FocusTimer.Platform.Windows
             }
         }
 
-        private static class NativeMethods
+        private static partial class NativeMethods
         {
-            [DllImport("user32.dll")]
-            public static extern IntPtr GetForegroundWindow();
+            [LibraryImport("user32.dll")]
+            public static partial IntPtr GetForegroundWindow();
 
             [DllImport("user32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
             public static extern int GetWindowText(IntPtr hWnd, StringBuilder lpString, int nMaxCount);
 
-            [DllImport("user32.dll", SetLastError = true)]
-            public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
+            [LibraryImport("user32.dll", SetLastError = true)]
+            public static partial uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
         }
     }
 }

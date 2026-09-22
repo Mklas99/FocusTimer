@@ -13,12 +13,12 @@ namespace FocusTimer.App.Converters
         public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
         {
             // Return MaterialIcon name depending on isRunning
-            if (value is bool isRunning)
+            if (value is not bool isRunning)
             {
-                return isRunning ? "Pause" : "Play";
+                return "Play";
             }
 
-            return "Play";
+            return isRunning ? "Pause" : "Play";
         }
 
         /// <inheritdoc/>

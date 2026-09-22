@@ -32,7 +32,7 @@ public sealed class AtomicWorklogFileOperations : IAtomicWorklogFileOperations
     /// <inheritdoc/>
     public FileStream CreateTemporaryFile(string targetPath, out string temporaryPath)
     {
-        var directory = Path.GetDirectoryName(targetPath) ?? throw new ArgumentException("A target directory is required.", nameof(targetPath));
+        string directory = Path.GetDirectoryName(targetPath) ?? throw new ArgumentException("A target directory is required.", nameof(targetPath));
         Directory.CreateDirectory(directory);
         temporaryPath = Path.Combine(directory, Path.GetFileName(targetPath) + TemporarySuffix + Guid.NewGuid().ToString("N") + ".tmp");
         return new FileStream(temporaryPath, FileMode.CreateNew, FileAccess.Write, FileShare.None, 4096, FileOptions.WriteThrough);
@@ -62,14 +62,14 @@ public sealed class AtomicWorklogFileOperations : IAtomicWorklogFileOperations
     /// <inheritdoc/>
     public void CleanupStaleTemporaryFiles(string targetPath)
     {
-        var directory = Path.GetDirectoryName(targetPath);
+        string? directory = Path.GetDirectoryName(targetPath);
         if (directory is null || !Directory.Exists(directory))
         {
             return;
         }
 
-        var pattern = Path.GetFileName(targetPath) + TemporarySuffix + "*.tmp";
-        foreach (var path in Directory.EnumerateFiles(directory, pattern, SearchOption.TopDirectoryOnly))
+        string pattern = Path.GetFileName(targetPath) + TemporarySuffix + "*.tmp";
+        foreach (string path in Directory.EnumerateFiles(directory, pattern, SearchOption.TopDirectoryOnly))
         {
             if (File.GetLastWriteTimeUtc(path) <= DateTime.UtcNow - StaleTemporaryAge)
             {

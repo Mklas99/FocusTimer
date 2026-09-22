@@ -65,11 +65,33 @@ namespace FocusTimer.App.Views
         {
             base.OnPointerReleased(e);
             this._isDragging = false;
-            var dragArea = this.FindControl<Border>("WidgetSurface");
+            Border? dragArea = this.FindControl<Border>("WidgetSurface");
             if (dragArea != null)
             {
                 dragArea.Cursor = new Cursor(StandardCursorType.DragMove);
             }
+        }
+
+        private static bool IsInteractiveElement(object? source)
+        {
+            Avalonia.Visual? current = source as Avalonia.Visual;
+            while (current != null)
+            {
+                if (current is Button
+                    or ToggleButton
+                    or TextBox
+                    or Slider
+                    or ComboBox
+                    or CheckBox
+                    or NumericUpDown)
+                {
+                    return true;
+                }
+
+                current = current.GetVisualParent();
+            }
+
+            return false;
         }
 
         private void InitializeComponent()
@@ -98,12 +120,12 @@ namespace FocusTimer.App.Views
                 // Get the native window handle
                 if (this.TryGetPlatformHandle()?.Handle is IntPtr hwnd && hwnd != IntPtr.Zero)
                 {
-                    var hotkeyService = (this.DataContext as TimerWidgetViewModel)?.HotkeyService;
-                    var appController = AppHost.Services.GetService<Services.AppController>();
+                    IGlobalHotkeyService? hotkeyService = (this.DataContext as TimerWidgetViewModel)?.HotkeyService;
+                    Services.AppController? appController = AppHost.Services.GetService<Services.AppController>();
 
                     if (hotkeyService != null)
                     {
-                        var setHandle = hotkeyService.GetType().GetMethod("SetWindowHandle");
+                        System.Reflection.MethodInfo? setHandle = hotkeyService.GetType().GetMethod("SetWindowHandle");
                         if (setHandle != null)
                         {
                             setHandle.Invoke(hotkeyService, new object[] { hwnd });
@@ -146,7 +168,7 @@ namespace FocusTimer.App.Views
             }
 
             // Keep controls clickable while allowing drag from most of the surface.
-            if (this.IsInteractiveElement(e.Source))
+            if (IsInteractiveElement(e.Source))
             {
                 return;
             }
@@ -158,28 +180,6 @@ namespace FocusTimer.App.Views
             }
 
             this.BeginMoveDrag(e);
-        }
-
-        private bool IsInteractiveElement(object? source)
-        {
-            var current = source as Avalonia.Visual;
-            while (current != null)
-            {
-                if (current is Button
-                    or ToggleButton
-                    or TextBox
-                    or Slider
-                    or ComboBox
-                    or CheckBox
-                    or NumericUpDown)
-                {
-                    return true;
-                }
-
-                current = current.GetVisualParent();
-            }
-
-            return false;
         }
 
         // Handler for minimize button

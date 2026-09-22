@@ -7,7 +7,7 @@ namespace FocusTimer.Platform.Windows
     /// <summary>
     /// Provides idle detection functionality for Windows platforms.
     /// </summary>
-    public class WindowsIdleDetectionService : IIdleDetectionService, IDisposable
+    public partial class WindowsIdleDetectionService : IIdleDetectionService, IDisposable
     {
         private readonly System.Timers.Timer _pollTimer;
         private readonly TimeSpan _idleThreshold = TimeSpan.FromMinutes(5);
@@ -19,8 +19,7 @@ namespace FocusTimer.Platform.Windows
         /// </summary>
         public WindowsIdleDetectionService()
         {
-            this._pollTimer = new System.Timers.Timer(5000);
-            this._pollTimer.AutoReset = true;
+            this._pollTimer = new System.Timers.Timer(5000) { AutoReset = true };
             this._pollTimer.Elapsed += this.OnPollElapsed;
             this._pollTimer.Start();
         }
@@ -69,11 +68,12 @@ namespace FocusTimer.Platform.Windows
             this._disposed = true;
         }
 
-        [DllImport("user32.dll")]
-        private static extern bool GetLastInputInfo(ref LastInputInfo plii);
+        [LibraryImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static partial bool GetLastInputInfo(ref LastInputInfo plii);
 
-        [DllImport("kernel32.dll")]
-        private static extern uint GetTickCount();
+        [LibraryImport("kernel32.dll")]
+        private static partial uint GetTickCount();
 
         private static TimeSpan GetIdleDuration()
         {
@@ -87,14 +87,14 @@ namespace FocusTimer.Platform.Windows
                 return TimeSpan.Zero;
             }
 
-            var currentTick = GetTickCount();
-            var elapsedMilliseconds = unchecked(currentTick - lastInputInfo.DwTime);
+            uint currentTick = GetTickCount();
+            uint elapsedMilliseconds = unchecked(currentTick - lastInputInfo.DwTime);
             return TimeSpan.FromMilliseconds(elapsedMilliseconds);
         }
 
         private void OnPollElapsed(object? sender, System.Timers.ElapsedEventArgs e)
         {
-            var idleDuration = GetIdleDuration();
+            TimeSpan idleDuration = GetIdleDuration();
             if (idleDuration >= this._idleThreshold)
             {
                 if (this._isIdle)

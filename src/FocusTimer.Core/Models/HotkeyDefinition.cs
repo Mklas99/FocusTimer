@@ -71,16 +71,16 @@ namespace FocusTimer.Core.Models
                 return null;
             }
 
-            var parts = hotkeyString.Split('+', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            string[] parts = hotkeyString.Split('+', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
             if (parts.Length < 2)
             {
                 return null;
             }
 
-            var modifiers = HotkeyModifiers.None;
+            HotkeyModifiers modifiers = HotkeyModifiers.None;
             string? keyPart = null;
 
-            foreach (var part in parts)
+            foreach (string part in parts)
             {
                 switch (part.ToUpperInvariant())
                 {
@@ -123,7 +123,7 @@ namespace FocusTimer.Core.Models
                 return null;
             }
 
-            var keyCode = char.ToUpperInvariant(keyPart[0]);
+            char keyCode = char.ToUpperInvariant(keyPart[0]);
             return new HotkeyDefinition(modifiers, keyCode);
         }
 

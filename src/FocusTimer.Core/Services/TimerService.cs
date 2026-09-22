@@ -14,7 +14,7 @@ namespace FocusTimer.Core.Services
         private readonly System.Timers.Timer _timer;
 
         // Lock for thread safety
-        private readonly object _lock = new object();
+        private readonly object _lock = new();
         private bool _disposed;
 
         private TimerState _currentState = TimerState.Idle;

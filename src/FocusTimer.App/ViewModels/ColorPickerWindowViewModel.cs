@@ -30,7 +30,7 @@ namespace FocusTimer.App.ViewModels
         /// <param name="initialColor">The initial color value.</param>
         public ColorPickerWindowViewModel(string initialColor)
         {
-            var color = ParseColor(initialColor);
+            Color color = ParseColor(initialColor);
             this._colorHex = FormatColor(color);
             this._previewBrush = new SolidColorBrush(color);
             this._previewTextBrush = new SolidColorBrush(Colors.White);
@@ -53,7 +53,7 @@ namespace FocusTimer.App.ViewModels
                 }
 
                 this.RaiseAndSetIfChanged(ref this._colorHex, value);
-                if (!this._isUpdatingFromColor && TryParseColor(value, out var color))
+                if (!this._isUpdatingFromColor && TryParseColor(value, out Color color))
                 {
                     this.UpdateFromColor(color);
                 }
@@ -68,7 +68,7 @@ namespace FocusTimer.App.ViewModels
             get => this._alpha;
             set
             {
-                var clamped = ClampByteChannel(value);
+                double clamped = ClampByteChannel(value);
                 if (Math.Abs(this._alpha - clamped) > double.Epsilon)
                 {
                     this.RaiseAndSetIfChanged(ref this._alpha, clamped);
@@ -85,7 +85,7 @@ namespace FocusTimer.App.ViewModels
             get => this._red;
             set
             {
-                var clamped = ClampByteChannel(value);
+                double clamped = ClampByteChannel(value);
                 if (Math.Abs(this._red - clamped) > double.Epsilon)
                 {
                     this.RaiseAndSetIfChanged(ref this._red, clamped);
@@ -102,7 +102,7 @@ namespace FocusTimer.App.ViewModels
             get => this._green;
             set
             {
-                var clamped = ClampByteChannel(value);
+                double clamped = ClampByteChannel(value);
                 if (Math.Abs(this._green - clamped) > double.Epsilon)
                 {
                     this.RaiseAndSetIfChanged(ref this._green, clamped);
@@ -119,7 +119,7 @@ namespace FocusTimer.App.ViewModels
             get => this._blue;
             set
             {
-                var clamped = ClampByteChannel(value);
+                double clamped = ClampByteChannel(value);
                 if (Math.Abs(this._blue - clamped) > double.Epsilon)
                 {
                     this.RaiseAndSetIfChanged(ref this._blue, clamped);
@@ -136,7 +136,7 @@ namespace FocusTimer.App.ViewModels
             get => this._hue;
             set
             {
-                var normalized = NormalizeHue(value);
+                double normalized = NormalizeHue(value);
                 if (Math.Abs(this._hue - normalized) > double.Epsilon)
                 {
                     this.RaiseAndSetIfChanged(ref this._hue, normalized);
@@ -153,7 +153,7 @@ namespace FocusTimer.App.ViewModels
             get => this._saturation;
             set
             {
-                var clamped = Clamp01(value);
+                double clamped = Clamp01(value);
                 if (Math.Abs(this._saturation - clamped) > double.Epsilon)
                 {
                     this.RaiseAndSetIfChanged(ref this._saturation, clamped);
@@ -180,7 +180,7 @@ namespace FocusTimer.App.ViewModels
             get => this._value;
             set
             {
-                var clamped = Clamp01(value);
+                double clamped = Clamp01(value);
                 if (Math.Abs(this._value - clamped) > double.Epsilon)
                 {
                     this.RaiseAndSetIfChanged(ref this._value, clamped);
@@ -252,7 +252,7 @@ namespace FocusTimer.App.ViewModels
 
         private static double NormalizeHue(double value)
         {
-            var normalized = value % 360;
+            double normalized = value % 360;
             if (normalized < 0)
             {
                 normalized += 360;
@@ -263,7 +263,7 @@ namespace FocusTimer.App.ViewModels
 
         private static Color ParseColor(string value)
         {
-            return TryParseColor(value, out var color) ? color : Color.Parse("#FFFFFFFF");
+            return TryParseColor(value, out Color color) ? color : Color.Parse("#FFFFFFFF");
         }
 
         private static bool TryParseColor(string value, out Color color)
@@ -294,17 +294,17 @@ namespace FocusTimer.App.ViewModels
 
         private static Color CreateContrastColor(Color color)
         {
-            var luminance = ((0.2126 * color.R) + (0.7152 * color.G) + (0.0722 * color.B)) / 255;
+            double luminance = ((0.2126 * color.R) + (0.7152 * color.G) + (0.0722 * color.B)) / 255;
             return luminance > 0.58 ? Colors.Black : Colors.White;
         }
 
-        private static IBrush CreateAlphaGradientBrush(Color color)
+        private static LinearGradientBrush CreateAlphaGradientBrush(Color color)
         {
             return new LinearGradientBrush
             {
                 StartPoint = new RelativePoint(0.5, 0, RelativeUnit.Relative),
                 EndPoint = new RelativePoint(0.5, 1, RelativeUnit.Relative),
-                GradientStops = new GradientStops
+                GradientStops = new()
                 {
                     new GradientStop(Color.FromArgb(byte.MaxValue, color.R, color.G, color.B), 0),
                     new GradientStop(Color.FromArgb(0, color.R, color.G, color.B), 1),
@@ -320,18 +320,18 @@ namespace FocusTimer.App.ViewModels
 
             if (saturation <= double.Epsilon)
             {
-                var channel = (byte)Math.Round(value * 255, MidpointRounding.AwayFromZero);
+                byte channel = (byte)Math.Round(value * 255, MidpointRounding.AwayFromZero);
                 return Color.FromArgb(alpha, channel, channel, channel);
             }
 
-            var sector = hue / 60;
-            var sectorIndex = (int)Math.Floor(sector);
-            var fractional = sector - sectorIndex;
-            var p = value * (1 - saturation);
-            var q = value * (1 - (saturation * fractional));
-            var t = value * (1 - (saturation * (1 - fractional)));
+            double sector = hue / 60;
+            int sectorIndex = (int)Math.Floor(sector);
+            double fractional = sector - sectorIndex;
+            double p = value * (1 - saturation);
+            double q = value * (1 - (saturation * fractional));
+            double t = value * (1 - (saturation * (1 - fractional)));
 
-            var (red, green, blue) = sectorIndex switch
+            (double red, double green, double blue) = sectorIndex switch
             {
                 0 => (value, t, p),
                 1 => (q, value, p),
@@ -350,12 +350,12 @@ namespace FocusTimer.App.ViewModels
 
         private static void ToHsv(Color color, double fallbackHue, out double hue, out double saturation, out double value)
         {
-            var red = color.R / 255d;
-            var green = color.G / 255d;
-            var blue = color.B / 255d;
-            var max = Math.Max(red, Math.Max(green, blue));
-            var min = Math.Min(red, Math.Min(green, blue));
-            var delta = max - min;
+            double red = color.R / 255d;
+            double green = color.G / 255d;
+            double blue = color.B / 255d;
+            double max = Math.Max(red, Math.Max(green, blue));
+            double min = Math.Min(red, Math.Min(green, blue));
+            double delta = max - min;
 
             value = max;
             saturation = max <= double.Epsilon ? 0 : delta / max;
@@ -408,7 +408,7 @@ namespace FocusTimer.App.ViewModels
                 return;
             }
 
-            var color = ColorFromHsv(this.Hue, this.Saturation, this.Value, (byte)ClampByteChannel(this.Alpha));
+            Color color = ColorFromHsv(this.Hue, this.Saturation, this.Value, (byte)ClampByteChannel(this.Alpha));
             this.UpdateFromColor(color, this.Hue);
         }
 
@@ -418,7 +418,7 @@ namespace FocusTimer.App.ViewModels
 
             try
             {
-                ToHsv(color, preferredHue ?? this._hue, out var hue, out var saturation, out var value);
+                ToHsv(color, preferredHue ?? this._hue, out double hue, out double saturation, out double value);
 
                 this.Alpha = color.A;
                 this.Red = color.R;

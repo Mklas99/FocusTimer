@@ -15,11 +15,11 @@ namespace FocusTimer.Core.Services
         /// <inheritdoc/>
         public void Publish<T>(T message)
         {
-            if (this._handlers.TryGetValue(typeof(T), out var list))
+            if (this._handlers.TryGetValue(typeof(T), out List<Delegate>? list))
             {
                 // Make a copy to avoid modification during iteration
-                var copy = list.ToArray();
-                foreach (var d in copy)
+                Delegate[] copy = list.ToArray();
+                foreach (Delegate d in copy)
                 {
                     try
                     {
@@ -36,7 +36,7 @@ namespace FocusTimer.Core.Services
         /// <inheritdoc/>
         public IDisposable Subscribe<T>(Action<T> handler)
         {
-            var list = this._handlers.GetOrAdd(typeof(T), _ => new List<Delegate>());
+            List<Delegate> list = this._handlers.GetOrAdd(typeof(T), _ => []);
             lock (list)
             {
                 list.Add(handler);
@@ -58,7 +58,7 @@ namespace FocusTimer.Core.Services
 
             public void Dispose()
             {
-                if (this._dict.TryGetValue(typeof(T), out var list))
+                if (this._dict.TryGetValue(typeof(T), out List<Delegate>? list))
                 {
                     lock (list)
                     {

@@ -502,7 +502,7 @@ namespace FocusTimer.Core.Models
             get => this._widgetBaseOpacity;
             set
             {
-                var clamped = Math.Clamp(value, 0.0, 1.0);
+                double clamped = Math.Clamp(value, 0.0, 1.0);
                 this.SetField(ref this._widgetBaseOpacity, clamped);
             }
         }
@@ -516,7 +516,7 @@ namespace FocusTimer.Core.Models
             get => this._backgroundOpacity;
             set
             {
-                var clamped = Math.Clamp(value, 0.0, 1.0);
+                double clamped = Math.Clamp(value, 0.0, 1.0);
                 this.SetField(ref this._backgroundOpacity, clamped);
             }
         }
@@ -530,7 +530,7 @@ namespace FocusTimer.Core.Models
             get => this._timerOpacity;
             set
             {
-                var clamped = Math.Clamp(value, 0.0, 1.0);
+                double clamped = Math.Clamp(value, 0.0, 1.0);
                 this.SetField(ref this._timerOpacity, clamped);
             }
         }
@@ -544,7 +544,7 @@ namespace FocusTimer.Core.Models
             get => this._buttonOpacity;
             set
             {
-                var clamped = Math.Clamp(value, 0.0, 1.0);
+                double clamped = Math.Clamp(value, 0.0, 1.0);
                 this.SetField(ref this._buttonOpacity, clamped);
             }
         }

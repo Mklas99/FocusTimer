@@ -7,7 +7,7 @@ namespace FocusTimer.Platform.Windows
     /// <summary>
     /// Windows implementation of global hotkey service using Win32 RegisterHotKey API.
     /// </summary>
-    public class WindowsHotkeyService : IGlobalHotkeyService, IDisposable
+    public partial class WindowsHotkeyService : IGlobalHotkeyService, IDisposable
     {
         private const int WM_HOTKEY = 0x0312;
         private const int GWL_WNDPROC = -4;
@@ -90,7 +90,7 @@ namespace FocusTimer.Platform.Windows
                 return;
             }
 
-            var hotkey = HotkeyDefinition.Parse(hotkeyDefinition);
+            HotkeyDefinition? hotkey = HotkeyDefinition.Parse(hotkeyDefinition);
             if (hotkey == null)
             {
                 this._logger?.LogWarning($"Invalid hotkey definition: {hotkeyDefinition}");
@@ -113,8 +113,8 @@ namespace FocusTimer.Platform.Windows
 
             try
             {
-                var id = this._nextHotkeyId++;
-                var modifiers = ConvertModifiers(definition.Modifiers);
+                int id = this._nextHotkeyId++;
+                uint modifiers = ConvertModifiers(definition.Modifiers);
                 if (RegisterHotKey(this._hwnd, id, modifiers, (uint)definition.KeyCode))
                 {
                     this._hotkeyDefinitions[id] = definition;
@@ -122,7 +122,7 @@ namespace FocusTimer.Platform.Windows
                 }
                 else
                 {
-                    var error = Marshal.GetLastWin32Error();
+                    int error = Marshal.GetLastWin32Error();
                     this._logger?.LogWarning($"Failed to register hotkey {definition}: Win32 error {error}");
                 }
             }
@@ -140,7 +140,7 @@ namespace FocusTimer.Platform.Windows
                 return;
             }
 
-            foreach (var id in this._hotkeyDefinitions.Keys.ToList())
+            foreach (int id in this._hotkeyDefinitions.Keys.ToList())
             {
                 try
                 {
@@ -163,7 +163,7 @@ namespace FocusTimer.Platform.Windows
         /// <param name="hotkeyId">The ID of the hotkey that was pressed.</param>
         public void ProcessHotkeyMessage(int hotkeyId)
         {
-            if (this._hotkeyDefinitions.TryGetValue(hotkeyId, out var definition))
+            if (this._hotkeyDefinitions.TryGetValue(hotkeyId, out HotkeyDefinition definition))
             {
                 this.HotkeyPressed?.Invoke(this, new HotkeyPressedEventArgs(definition));
             }
@@ -187,20 +187,25 @@ namespace FocusTimer.Platform.Windows
         }
 
         // Win32 API imports
-        [DllImport("user32.dll", SetLastError = true)]
-        private static extern bool RegisterHotKey(IntPtr hWnd, int id, uint fsModifiers, uint vk);
+        [LibraryImport("user32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static partial bool RegisterHotKey(IntPtr hWnd, int id, uint fsModifiers, uint vk);
 
-        [DllImport("user32.dll", SetLastError = true)]
-        private static extern bool UnregisterHotKey(IntPtr hWnd, int id);
+        [LibraryImport("user32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static partial bool UnregisterHotKey(IntPtr hWnd, int id);
 
-        [DllImport("user32.dll", SetLastError = true)]
-        private static extern IntPtr SetWindowLongPtr(IntPtr hWnd, int nIndex, IntPtr dwNewLong);
+        // "SetWindowLongPtr"/"GetWindowLongPtr" are C-header macros, not real exports; user32.dll
+        // only exports the explicit Unicode entry points below. LibraryImport (unlike classic
+        // DllImport) does not auto-probe the A/W suffix, so the EntryPoint must be given explicitly.
+        [LibraryImport("user32.dll", EntryPoint = "SetWindowLongPtrW", SetLastError = true)]
+        private static partial IntPtr SetWindowLongPtr(IntPtr hWnd, int nIndex, IntPtr dwNewLong);
 
-        [DllImport("user32.dll", SetLastError = true)]
-        private static extern IntPtr GetWindowLongPtr(IntPtr hWnd, int nIndex);
+        [LibraryImport("user32.dll", EntryPoint = "GetWindowLongPtrW", SetLastError = true)]
+        private static partial IntPtr GetWindowLongPtr(IntPtr hWnd, int nIndex);
 
-        [DllImport("user32.dll")]
-        private static extern IntPtr CallWindowProc(IntPtr lpPrevWndFunc, IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam);
+        [LibraryImport("user32.dll")]
+        private static partial IntPtr CallWindowProc(IntPtr lpPrevWndFunc, IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam);
 
         private static uint ConvertModifiers(HotkeyModifiers modifiers)
         {
@@ -239,17 +244,17 @@ namespace FocusTimer.Platform.Windows
             this._originalWndProc = GetWindowLongPtr(this._hwnd, GWL_WNDPROC);
             if (this._originalWndProc == IntPtr.Zero)
             {
-                var error = Marshal.GetLastWin32Error();
+                int error = Marshal.GetLastWin32Error();
                 this._logger?.LogWarning($"Failed to get current WndProc. Win32 error {error}");
                 return;
             }
 
             this._subclassWndProc = this.SubclassWndProc;
-            var newWndProcPtr = Marshal.GetFunctionPointerForDelegate(this._subclassWndProc);
-            var previousWndProc = SetWindowLongPtr(this._hwnd, GWL_WNDPROC, newWndProcPtr);
+            IntPtr newWndProcPtr = Marshal.GetFunctionPointerForDelegate(this._subclassWndProc);
+            IntPtr previousWndProc = SetWindowLongPtr(this._hwnd, GWL_WNDPROC, newWndProcPtr);
             if (previousWndProc == IntPtr.Zero)
             {
-                var error = Marshal.GetLastWin32Error();
+                int error = Marshal.GetLastWin32Error();
                 this._logger?.LogWarning($"Failed to subclass WndProc. Win32 error {error}");
                 this._subclassWndProc = null;
                 this._originalWndProc = IntPtr.Zero;
@@ -268,10 +273,10 @@ namespace FocusTimer.Platform.Windows
                 return;
             }
 
-            var result = SetWindowLongPtr(this._hwnd, GWL_WNDPROC, this._originalWndProc);
+            IntPtr result = SetWindowLongPtr(this._hwnd, GWL_WNDPROC, this._originalWndProc);
             if (result == IntPtr.Zero)
             {
-                var error = Marshal.GetLastWin32Error();
+                int error = Marshal.GetLastWin32Error();
                 this._logger?.LogWarning($"Failed to restore WndProc. Win32 error {error}");
             }
 

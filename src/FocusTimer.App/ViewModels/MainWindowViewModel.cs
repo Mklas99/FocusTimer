@@ -12,7 +12,6 @@ namespace FocusTimer.App.ViewModels
     public class MainWindowViewModel : INotifyPropertyChanged
     {
         private readonly ISettingsProvider _settingsProvider;
-        private Settings? _settings;
         private string _worklogDirectory = "Loading...";
 
         /// <summary>
@@ -52,8 +51,8 @@ namespace FocusTimer.App.ViewModels
 
         private async Task LoadSettingsAsync()
         {
-            this._settings = await this._settingsProvider.LoadAsync();
-            this.WorklogDirectory = this._settings.WorklogDirectory;
+            Settings settings = await this._settingsProvider.LoadAsync();
+            this.WorklogDirectory = settings.WorklogDirectory;
         }
     }
 }

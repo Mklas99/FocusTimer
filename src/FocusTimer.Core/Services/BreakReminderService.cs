@@ -1,6 +1,7 @@
 namespace FocusTimer.Core.Services
 {
     using FocusTimer.Core.Interfaces;
+    using FocusTimer.Core.Models;
     using Timer = System.Timers.Timer;
 
     /// <summary>
@@ -83,7 +84,7 @@ namespace FocusTimer.Core.Services
         {
             try
             {
-                var settings = await this._settingsProvider.LoadAsync();
+                Settings settings = await this._settingsProvider.LoadAsync();
                 if (!settings.BreakRemindersEnabled || settings.BreakIntervalMinutes <= 0)
                 {
                     return;
@@ -91,7 +92,7 @@ namespace FocusTimer.Core.Services
 
                 this.ResetReminderTimer();
 
-                var intervalMs = settings.BreakIntervalMinutes * 60 * 1000;
+                int intervalMs = settings.BreakIntervalMinutes * 60 * 1000;
                 this._reminderTimer = new Timer(intervalMs) { AutoReset = false };
                 this._reminderTimer.Elapsed += async (s, e) => await this.OnReminderElapsedAsync(settings.BreakIntervalMinutes);
                 this._reminderTimer.Start();
@@ -107,7 +108,7 @@ namespace FocusTimer.Core.Services
         {
             try
             {
-                var settings = await this._settingsProvider.LoadAsync();
+                Settings settings = await this._settingsProvider.LoadAsync();
                 if (!settings.BreakRemindersEnabled)
                 {
                     return;
@@ -119,7 +120,7 @@ namespace FocusTimer.Core.Services
 
                 if (settings.BreakRemindersEnabled)
                 {
-                    var nextReminderMinutes = settings.RequireBreakReminderAcknowledgement
+                    int nextReminderMinutes = settings.RequireBreakReminderAcknowledgement
                         ? settings.BreakIntervalMinutes
                         : 10;
 
