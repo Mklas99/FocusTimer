@@ -29,6 +29,20 @@ public class MainWindowViewModelTests
         Assert.Equal(expected, vm.WorklogDirectory);
     }
 
+    [Fact]
+    public async Task Constructor_GivenProviderThatThrows_DoesNotThrowAndKeepsLoadingPlaceholder()
+    {
+        var exception = Record.Exception(() => new MainWindowViewModel(new FailingSettingsProvider()));
+
+        Assert.Null(exception);
+
+        var vm = new MainWindowViewModel(new FailingSettingsProvider());
+        await Task.Delay(60);
+
+        // The bad case should leave the placeholder in place rather than throwing or corrupting state.
+        Assert.Equal("Loading...", vm.WorklogDirectory);
+    }
+
     private sealed class StubSettingsProvider : ISettingsProvider
     {
         private readonly Settings _settings;
@@ -59,6 +73,13 @@ public class MainWindowViewModelTests
             await Task.Delay(_delayMs);
             return _settings;
         }
+
+        public Task SaveAsync(Settings settings) => Task.CompletedTask;
+    }
+
+    private sealed class FailingSettingsProvider : ISettingsProvider
+    {
+        public Task<Settings> LoadAsync() => throw new InvalidOperationException("Simulated settings load failure.");
 
         public Task SaveAsync(Settings settings) => Task.CompletedTask;
     }

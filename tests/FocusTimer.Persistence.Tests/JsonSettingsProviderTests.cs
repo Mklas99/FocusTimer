@@ -105,5 +105,7 @@ public class JsonSettingsProviderTests : IDisposable
         {
             // Best effort cleanup in test temp directory
         }
+
+        GC.SuppressFinalize(this);
     }
 }
