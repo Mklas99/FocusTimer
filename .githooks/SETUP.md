@@ -11,7 +11,7 @@ Git hooks are scripts that run automatically at certain points in the Git workfl
 copy .githooks\pre-commit.bat .git\hooks\pre-commit
 
 # Or run this command in PowerShell:
-Copy-Item -Path ".ghooks\pre-commit.bat" -Destination ".git\hooks\pre-commit"
+Copy-Item -Path ".githooks\pre-commit.bat" -Destination ".git\hooks\pre-commit"
 ```
 
 ### For macOS/Linux Users:
