@@ -3,6 +3,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="using:FocusTimer.App.ViewModels"
+        xmlns:views="using:FocusTimer.App.Views"
         mc:Ignorable="d"
         x:Class="FocusTimer.App.Views.SettingsWindow"
         x:DataType="vm:SettingsWindowViewModel"
@@ -20,7 +21,7 @@
 
     <Grid RowDefinitions="*,Auto" Margin="20">
         <!-- Settings Content -->
-        <TabControl Grid.Row="0">
+        <TabControl Grid.Row="0" SelectedIndex="{Binding SelectedTabIndex}">
             <!-- General Tab -->
             <TabItem Header="General">
                 <ScrollViewer Classes="settings-scroll">
@@ -94,6 +95,11 @@
                         </Grid>
                     </StackPanel>
                 </ScrollViewer>
+            </TabItem>
+
+            <!-- Summary Tab: tab order must match SettingsWindowViewModel.SummaryTabIndex -->
+            <TabItem Header="Summary">
+                <views:WorklogSummaryView Margin="0,12,0,0" DataContext="{Binding WorklogSummary}" />
             </TabItem>
 
             <!-- Appearance Tab -->

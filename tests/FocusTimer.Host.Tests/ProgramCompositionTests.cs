@@ -64,6 +64,20 @@ public sealed class ProgramCompositionTests : IDisposable
         Assert.IsType<LinuxIdleDetectionServiceStub>(sp.GetRequiredService<IIdleDetectionService>());
     }
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void BuildServiceProvider_RegistersWorklogSummaryServices(bool isWindows)
+    {
+        var sp = this.Build(Path.Combine(this._root, "logs"), isWindows);
+
+        Assert.IsType<WorklogSummaryService>(sp.GetRequiredService<IWorklogSummaryService>());
+        Assert.IsType<StoredProjectResolver>(sp.GetRequiredService<IProjectResolver>());
+        Assert.Equal(["app", "project"], sp.GetRequiredService<WorklogGroupingRegistry>().All.Select(g => g.Id));
+        Assert.NotNull(sp.GetRequiredService<FocusTimer.App.ViewModels.WorklogSummaryViewModel>());
+        Assert.NotNull(sp.GetRequiredService<FocusTimer.App.ViewModels.SettingsWindowViewModel>().WorklogSummary);
+    }
+
     [Fact]
     public void BuildServiceProvider_GivenWindows_RegistersWindowsServices()
     {
