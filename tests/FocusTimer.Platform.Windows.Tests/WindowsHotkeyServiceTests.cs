@@ -107,6 +107,19 @@ public partial class WindowsHotkeyServiceTests
     }
 
     [Fact]
+    public void SetWindowHandle_GivenOrdinaryWindowMessage_ForwardsToOriginalWndProc()
+    {
+        using var window = new NativeMessageWindow();
+        using var service = new WindowsHotkeyService();
+        service.SetWindowHandle(window.Handle);
+
+        // WM_NULL passes through SubclassWndProc to CallWindowProcW.
+        var ex = Record.Exception(() => window.SendNullMessage());
+
+        Assert.Null(ex);
+    }
+
+    [Fact]
     public void Dispose_GivenRealWindowWasHooked_RestoresOriginalWndProc()
     {
         using var window = new NativeMessageWindow();
@@ -224,6 +237,8 @@ public partial class WindowsHotkeyServiceTests
 
         public IntPtr GetCurrentWndProc() => GetWindowLongPtrW(this.Handle, GwlWndProc);
 
+        public void SendNullMessage() => SendMessageW(this.Handle, 0, IntPtr.Zero, IntPtr.Zero);
+
         public void Dispose() => DestroyWindow(this.Handle);
 
         [LibraryImport("user32.dll", EntryPoint = "CreateWindowExW", StringMarshalling = StringMarshalling.Utf16, SetLastError = true)]
@@ -243,6 +258,9 @@ public partial class WindowsHotkeyServiceTests
 
         [LibraryImport("user32.dll", EntryPoint = "GetWindowLongPtrW", SetLastError = true)]
         private static partial IntPtr GetWindowLongPtrW(IntPtr hWnd, int nIndex);
+
+        [LibraryImport("user32.dll", EntryPoint = "SendMessageW")]
+        private static partial IntPtr SendMessageW(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam);
 
         [LibraryImport("user32.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]

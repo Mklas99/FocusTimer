@@ -87,6 +87,7 @@ public class WorklogSummaryServiceTests
         Assert.True(none.IsUnassigned);
         Assert.False(named.IsUnassigned);
         Assert.NotEqual(none.Key, named.Key);
+        Assert.NotEqual(none.Label, named.Label);
     }
 
     [Fact]
@@ -144,6 +145,7 @@ public class WorklogSummaryServiceTests
         Assert.Equal(3, summary.Rows.Count);
         var unassigned = Assert.Single(summary.Rows, r => r.IsUnassigned);
         Assert.Equal(TimeSpan.FromMinutes(30), unassigned.Duration);
+        Assert.Equal("Unassigned (no project)", unassigned.Label);
         Assert.Equal(TimeSpan.FromMinutes(70), summary.Total);
         Assert.Single(summary.Rows, r => !r.IsUnassigned && r.Label == "Unassigned");
     }

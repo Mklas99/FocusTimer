@@ -4,13 +4,6 @@
              x:DataType="vm:WorklogSummaryViewModel"
              x:Class="FocusTimer.App.Views.WorklogSummaryView">
 
-    <UserControl.Styles>
-        <Style Selector="TextBlock.summary-unassigned">
-            <Setter Property="FontStyle" Value="Italic" />
-            <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}" />
-        </Style>
-    </UserControl.Styles>
-
     <Grid RowDefinitions="Auto,Auto,*">
 
         <!-- Total and refresh -->
