@@ -21,6 +21,11 @@ namespace FocusTimer.App.ViewModels
     /// </summary>
     public class SettingsWindowViewModel : ReactiveObject
     {
+        /// <summary>
+        /// The position of the Summary tab; it must match the tab order in SettingsWindow.axaml.
+        /// </summary>
+        public const int SummaryTabIndex = 2;
+
         private const double OpacityTolerance = 0.0001;
         private readonly ISettingsProvider _settingsProvider;
         private readonly IAutoStartService _autoStartService;
@@ -32,6 +37,7 @@ namespace FocusTimer.App.ViewModels
         private Settings _settings;
         private string _selectedThemeName;
         private int _versionClickCount;
+        private int _selectedTabIndex;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SettingsWindowViewModel"/> class.
@@ -41,13 +47,16 @@ namespace FocusTimer.App.ViewModels
         /// <param name="themeService">The theme service.</param>
         /// <param name="themeManager">The theme manager.</param>
         /// <param name="logWriter">The application logger.</param>
+        /// <param name="worklogSummary">The view model of the Summary tab.</param>
         public SettingsWindowViewModel(
             ISettingsProvider settingsProvider,
             IAutoStartService autoStartService,
             IThemeService themeService,
             ThemeManager themeManager,
-            IAppLogger logWriter)
+            IAppLogger logWriter,
+            WorklogSummaryViewModel worklogSummary)
         {
+            this.WorklogSummary = worklogSummary;
             this._settingsProvider = settingsProvider;
             this._autoStartService = autoStartService;
             this._themeService = themeService;
@@ -77,6 +86,32 @@ namespace FocusTimer.App.ViewModels
         /// Raised when settings have been applied/saved.
         /// </summary>
         public event EventHandler? SettingsApplied;
+
+        /// <summary>
+        /// Gets the view model of the Summary tab.
+        /// </summary>
+        public WorklogSummaryViewModel WorklogSummary { get; }
+
+        /// <summary>
+        /// Gets or sets the selected tab. Selecting the Summary tab reloads its breakdown.
+        /// </summary>
+        public int SelectedTabIndex
+        {
+            get => this._selectedTabIndex;
+            set
+            {
+                if (this._selectedTabIndex == value)
+                {
+                    return;
+                }
+
+                this.RaiseAndSetIfChanged(ref this._selectedTabIndex, value);
+                if (value == SummaryTabIndex)
+                {
+                    _ = this.WorklogSummary.RefreshAsync();
+                }
+            }
+        }
 
         /// <summary>
         /// Gets the command for applying settings.

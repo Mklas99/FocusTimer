@@ -132,10 +132,19 @@ namespace FocusTimer.Host
             services.AddSingleton<ITimerService, TimerService>();
             services.AddSingleton<BreakReminderService>();
             services.AddSingleton<TodayStatsService>();
+
+            // Worklog summary: add a grouping by registering another IWorklogGrouping, and replace
+            // IProjectResolver to change how a project is decided (for example rule-based detection).
+            services.AddSingleton<IWorklogGrouping, ApplicationGrouping>();
+            services.AddSingleton<IWorklogGrouping, ProjectGrouping>();
+            services.AddSingleton<WorklogGroupingRegistry>();
+            services.AddSingleton<IProjectResolver, StoredProjectResolver>();
+            services.AddSingleton<IWorklogSummaryService, WorklogSummaryService>();
             services.AddSingleton<AppController>();
 
             services.AddTransient<MainWindowViewModel>();
             services.AddTransient<TimerWidgetViewModel>();
+            services.AddTransient<WorklogSummaryViewModel>();
             services.AddTransient<SettingsWindowViewModel>();
 
             services.AddTransient<Func<TimerWidgetViewModel>>(sp => () => sp.GetRequiredService<TimerWidgetViewModel>());

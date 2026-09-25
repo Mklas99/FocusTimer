@@ -72,7 +72,8 @@ View (XAML)
   - Exposes Logger and HotkeyService for views (property injection pattern)
 
 - **ViewModels & Views**
-  - SettingsWindowViewModel: Settings state and validation
+  - SettingsWindowViewModel: Settings state and validation; hosts the Summary tab's view model
+  - WorklogSummaryViewModel / WorklogSummaryView: Today's time breakdown by application or project. Both are host-independent (they never reference the Settings window), so the same pair can move into a future report window opened from the tray
   - TimerWidgetWindow: Compact timer display
   - Converters: Color opacity, angle rotation, play/pause icons
 
@@ -107,13 +108,19 @@ ITrayIconController  // Manage system tray (implemented in App: TrayStateControl
 IIdleDetectionService // Poll OS idle state (Platform.Windows / Linux stub)
 IAutoStartService    // Register app in startup mechanisms (Platform.Windows / Linux stub)
 IThemeService        // Load/apply/import/export themes (implemented in Core: ThemeService)
+IWorklogSummaryService // Summarize worklog entries for a range into grouped rows (implemented in Core: WorklogSummaryService)
+IWorklogGrouping     // Decides which row an entry belongs to; ApplicationGrouping and ProjectGrouping are registered
+IProjectResolver     // Decides an entry's project when summarizing (default: StoredProjectResolver reads the stored tag)
 ITimerService        // Timer state and elapsed-time tracking (implemented in Core: TimerService)
 ```
 
 **Core.Services (concrete, no interface — used directly by App/Host)**:
 - `SessionTracker` — tracks active-window changes, builds TimeEntry segments for the current session
 - `BreakReminderService` — fires break reminders on an interval, tracks acknowledgement
-- `TodayStatsService` — aggregates today's tracked time for the tray tooltip/UI
+- `TodayStatsService` — aggregates today's tracked time for the tray tooltip
+- `WorklogGroupingRegistry` — the ordered set of `IWorklogGrouping` implementations a summary can use
+
+**Worklog summary seams** (OI-04): a `WorklogSummaryRequest` (a `SummaryRange`, a grouping id, an optional `SummaryFilter`) goes to `IWorklogSummaryService`, which queries `IWorklogStore`, clips entries to the range, resolves each entry's project through `IProjectResolver`, groups it with the chosen `IWorklogGrouping`, and returns rows with duration, share, and entry count plus read warnings. A failed read is reported as a failure, never as zero time. Adding a time range, a filter field, a grouping (register another `IWorklogGrouping`), or rule-based project detection (replace `IProjectResolver`, OI-08) does not change the service.
 - `EventBus` — implements `IEventBus`
 
 **Event Bus Pattern**:
@@ -289,11 +296,17 @@ services.AddSingleton<SessionTracker>();
 services.AddSingleton<ITimerService, TimerService>();
 services.AddSingleton<BreakReminderService>();
 services.AddSingleton<TodayStatsService>();
+services.AddSingleton<IWorklogGrouping, ApplicationGrouping>();
+services.AddSingleton<IWorklogGrouping, ProjectGrouping>();
+services.AddSingleton<WorklogGroupingRegistry>();
+services.AddSingleton<IProjectResolver, StoredProjectResolver>();
+services.AddSingleton<IWorklogSummaryService, WorklogSummaryService>();
 services.AddSingleton<AppController>();
 
 // ViewModels (transient, plus factory delegates for windows created after startup)
 services.AddTransient<MainWindowViewModel>();
 services.AddTransient<TimerWidgetViewModel>();
+services.AddTransient<WorklogSummaryViewModel>();
 services.AddTransient<SettingsWindowViewModel>();
 services.AddTransient<Func<TimerWidgetViewModel>>(sp => () => sp.GetRequiredService<TimerWidgetViewModel>());
 services.AddTransient<Func<SettingsWindowViewModel>>(sp => () => sp.GetRequiredService<SettingsWindowViewModel>());
