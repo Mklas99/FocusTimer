@@ -204,7 +204,7 @@ namespace FocusTimer.Platform.Windows
         [LibraryImport("user32.dll", EntryPoint = "GetWindowLongPtrW", SetLastError = true)]
         private static partial IntPtr GetWindowLongPtr(IntPtr hWnd, int nIndex);
 
-        [LibraryImport("user32.dll")]
+        [LibraryImport("user32.dll", EntryPoint = "CallWindowProcW")]
         private static partial IntPtr CallWindowProc(IntPtr lpPrevWndFunc, IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam);
 
         private static uint ConvertModifiers(HotkeyModifiers modifiers)

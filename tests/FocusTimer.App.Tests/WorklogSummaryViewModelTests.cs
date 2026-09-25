@@ -98,6 +98,19 @@ public class WorklogSummaryViewModelTests
     }
 
     [Fact]
+    public async Task RefreshAsync_WithOnlyUnreadableRecords_DoesNotClaimNoTimeWasTracked()
+    {
+        var warnings = new[] { new WorklogWarning("f.csv", 3, "skipped") };
+        var vm = Create(new FakeSummaryService(request => Success(request) with { Warnings = warnings }));
+
+        await vm.RefreshAsync();
+
+        Assert.Equal(SummaryViewStatus.NoData, vm.Status);
+        Assert.Equal("No readable time entries today.", vm.StatusMessage);
+        Assert.True(vm.HasWarning);
+    }
+
+    [Fact]
     public async Task SelectedGrouping_Changed_ReloadsSameDayWithNewGrouping()
     {
         var service = new FakeSummaryService(request => Success(request, ("X", 60, 1)));

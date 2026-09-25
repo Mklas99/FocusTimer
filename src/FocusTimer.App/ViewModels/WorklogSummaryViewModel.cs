@@ -194,7 +194,9 @@ namespace FocusTimer.App.ViewModels
             if (summary.Rows.Count == 0)
             {
                 this.TotalText = string.Empty;
-                this.StatusMessage = $"No time tracked {this.RangeLabel.ToLowerInvariant()}.";
+                this.StatusMessage = summary.Warnings.Count > 0
+                    ? $"No readable time entries {this.RangeLabel.ToLowerInvariant()}."
+                    : $"No time tracked {this.RangeLabel.ToLowerInvariant()}.";
                 this.Status = SummaryViewStatus.NoData;
                 return;
             }

@@ -22,7 +22,7 @@ public sealed class ProjectGrouping : IWorklogGrouping
 
         // The two prefixes keep a project literally named "Unassigned" apart from the bucket.
         return string.IsNullOrEmpty(project)
-            ? new GroupKey("none:", "Unassigned", true)
+            ? new GroupKey("none:", "Unassigned (no project)", true)
             : new GroupKey("project:" + project.ToUpperInvariant(), project);
     }
 }
