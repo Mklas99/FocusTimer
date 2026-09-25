@@ -19,10 +19,9 @@
 | Smarter automatic tracking | Projects can be inferred from activity and advanced users can tune segmentation behavior. | OI-08, OI-14 | Candidate |
 | Focus modes | Pomodoro cycles and optional sound cues support deliberate work and break routines. | OI-10, OI-11 | Candidate |
 | Linux feature parity | Linux receives real implementations for the platform integrations that currently use stubs. | OI-06 | Long-term candidate |
-| Product reliability and delivery | Test isolation, SonarQube coverage reporting, installer-size investigation, and measured performance work make releases more dependable. | OI-16, OI-17, OI-18, OI-19 | Improvement collection |
+| Product reliability and delivery | Test isolation, SonarQube coverage reporting, smaller installer choices, and measured performance work make releases more dependable. | OI-16, OI-17, OI-18, OI-19 | In progress (OI-16 install validation open; OI-18 and OI-19 closed) |
 | Data evolution and compatibility | Future compatibility-sensitive releases have an explicit backup, migration, rollback, and legacy-retirement strategy before persistent formats must be preserved. | OI-20 | Investigation |
 
 ## Feature branch and release-note convention
 
 Each actively implemented or completed feature receives a stable `F-##` identifier in the table above. Use that ID in its branch name as `feature/<F-##>_<short-kebab-case-description>`; for example, `feature/F-01_worklog-data-foundation`. Keep the ID with the feature when it is completed so release notes can refer to the same stable identifier.
-| Product reliability and delivery | Test isolation, SonarQube coverage reporting, installer-size investigation, and measured performance work make releases more dependable. | OI-16, OI-17, OI-18, OI-19 | In progress (OI-18, OI-19 closed) |

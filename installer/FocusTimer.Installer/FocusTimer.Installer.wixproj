@@ -5,10 +5,21 @@
     <InstallerPlatform>x64</InstallerPlatform>
     <ProductVersion Condition="'$(ProductVersion)' == ''">1.0.0</ProductVersion>
     <PublishDir Condition="'$(PublishDir)' == ''">$(MSBuildProjectDirectory)\..\..\artifacts\publish\win-x64-selfcontained</PublishDir>
-    <DefineConstants>PublishDir=$(PublishDir);ProductVersion=$(ProductVersion)</DefineConstants>
+    <IsFrameworkDependent Condition="'$(IsFrameworkDependent)' == ''">false</IsFrameworkDependent>
+    <DefineConstants>PublishDir=$(PublishDir);ProductVersion=$(ProductVersion);IsFrameworkDependent=$(IsFrameworkDependent)</DefineConstants>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <!-- Both installer variants use the same version and replace one another. -->
+    <SuppressIces>ICE61</SuppressIces>
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="Product.wxs" />
+    <Compile Include="$(ComponentFragment)" Condition="'$(ComponentFragment)' != ''" />
     <PackageReference Include="WixToolset.UI.wixext" Version="4.0.5" />
+    <PackageReference Include="WixToolset.Netfx.wixext" Version="4.0.5" />
   </ItemGroup>
+
+  <Target Name="RequireComponentFragment" BeforeTargets="CoreCompile" Condition="'$(ComponentFragment)' == ''">
+    <Error Text="Build the installer through scripts/build-installer.ps1 so the component list matches a fresh publish." />
+  </Target>
 </Project>

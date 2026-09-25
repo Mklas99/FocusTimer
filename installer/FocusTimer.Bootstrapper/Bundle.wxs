@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:bal="http://wixtoolset.org/schemas/v4/wxs/bal"
+     xmlns:netfx="http://wixtoolset.org/schemas/v4/wxs/netfx">
+  <Bundle Name="FocusTimer" Manufacturer="FocusTimer" Version="$(var.ProductVersion)"
+          UpgradeCode="3e88d2e2-a51b-44f8-9b3e-0d3ec214c9bb">
+    <BootstrapperApplication>
+      <bal:WixStandardBootstrapperApplication Theme="hyperlinkLicense" LicenseUrl="" />
+    </BootstrapperApplication>
+
+    <netfx:DotNetCoreSearch RuntimeType="core" Platform="x64" MajorVersion="8" Variable="DotNet8RuntimeVersion" />
+
+    <Chain>
+      <ExePackage Id="DotNet8Runtime" SourceFile="$(var.RuntimeInstaller)"
+                  DownloadUrl="$(var.RuntimeUrl)" Compressed="no"
+                  DetectCondition="DotNet8RuntimeVersion"
+                  InstallArguments="/install /quiet /norestart"
+                  RepairArguments="/repair /quiet /norestart"
+                  PerMachine="yes" Permanent="yes" Vital="yes" />
+      <MsiPackage Id="FocusTimerMsi" SourceFile="$(var.FrameworkMsi)"
+                  bal:DisplayInternalUICondition="WixBundleAction = 6" />
+    </Chain>
+  </Bundle>
+</Wix>

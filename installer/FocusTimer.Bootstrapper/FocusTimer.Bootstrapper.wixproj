@@ -1,0 +1,17 @@
+<Project Sdk="WixToolset.Sdk/4.0.5">
+  <PropertyGroup>
+    <OutputType>Bundle</OutputType>
+    <Platform>x64</Platform>
+    <ProductVersion Condition="'$(ProductVersion)' == ''">1.0.0</ProductVersion>
+    <DefineConstants>ProductVersion=$(ProductVersion);FrameworkMsi=$(FrameworkMsi);RuntimeInstaller=$(RuntimeInstaller);RuntimeUrl=$(RuntimeUrl)</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="WixToolset.Bal.wixext" Version="4.0.5" />
+    <PackageReference Include="WixToolset.Netfx.wixext" Version="4.0.5" />
+  </ItemGroup>
+
+  <Target Name="RequireBundleInputs" BeforeTargets="CoreCompile" Condition="'$(FrameworkMsi)' == '' Or '$(RuntimeInstaller)' == '' Or '$(RuntimeUrl)' == ''">
+    <Error Text="Build the bundle through scripts/build-installer.ps1 with a verified .NET runtime installer and fresh MSI." />
+  </Target>
+</Project>
