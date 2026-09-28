@@ -11,7 +11,7 @@ namespace FocusTimer.Platform.Windows
     /// <summary>
     /// Windows implementation of IActiveWindowService using Win32 APIs.
     /// </summary>
-    public partial class WindowsActiveWindowService : IActiveWindowService
+    public partial class WindowsActiveWindowService : IActiveWindowService, IDisposable
     {
         private const int MaxTitleLength = 256;
         private readonly IAppLogger? _logger;
@@ -19,6 +19,12 @@ namespace FocusTimer.Platform.Windows
         private readonly Func<IntPtr, string> _getWindowTitle;
         private readonly Func<IntPtr, uint> _getProcessId;
         private readonly Func<int, string> _getProcessName;
+        private readonly Func<int, IProcessLifetime?> _openLifetime;
+        private readonly object _cacheLock = new();
+        private IProcessLifetime? _lifetime;
+        private uint _cachedPid;
+        private string? _cachedName;
+        private bool _disposed;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="WindowsActiveWindowService"/> class without a logger.
@@ -33,7 +39,7 @@ namespace FocusTimer.Platform.Windows
         /// </summary>
         /// <param name="logger">An optional logger for diagnostics.</param>
         public WindowsActiveWindowService(IAppLogger? logger)
-            : this(logger, NativeMethods.GetForegroundWindow, GetNativeWindowTitle, GetNativeProcessId, GetNativeProcessName)
+            : this(logger, NativeMethods.GetForegroundWindow, GetNativeWindowTitle, GetNativeProcessId, GetNativeProcessName, ProcessLifetime.TryOpen)
         {
         }
 
@@ -45,26 +51,41 @@ namespace FocusTimer.Platform.Windows
         /// <param name="getWindowTitle">Returns the title of a window handle.</param>
         /// <param name="getProcessId">Returns the owning process ID of a window handle.</param>
         /// <param name="getProcessName">Returns the process name for a process ID.</param>
+        /// <param name="openLifetime">Opens an optional process lifetime for cache validation.</param>
         internal WindowsActiveWindowService(
             IAppLogger? logger,
             Func<IntPtr> getForegroundWindow,
             Func<IntPtr, string> getWindowTitle,
             Func<IntPtr, uint> getProcessId,
-            Func<int, string> getProcessName)
+            Func<int, string> getProcessName,
+            Func<int, IProcessLifetime?>? openLifetime = null)
         {
             this._logger = logger;
             this._getForegroundWindow = getForegroundWindow;
             this._getWindowTitle = getWindowTitle;
             this._getProcessId = getProcessId;
             this._getProcessName = getProcessName;
+            this._openLifetime = openLifetime ?? (_ => null);
         }
 
         /// <inheritdoc/>
         public Task<ActiveWindowInfo?> GetForegroundWindowAsync()
         {
             // Perform synchronous Win32 call wrapped in Task for interface compatibility
-            ActiveWindowInfo? info = this.GetActiveWindow();
-            return Task.FromResult(info);
+            lock (this._cacheLock)
+            {
+                return Task.FromResult(this._disposed ? null : this.GetActiveWindow());
+            }
+        }
+
+        /// <inheritdoc/>
+        public void Dispose()
+        {
+            lock (this._cacheLock)
+            {
+                this.ClearCache();
+                this._disposed = true;
+            }
         }
 
         private static string GetNativeWindowTitle(IntPtr hwnd)
@@ -87,6 +108,51 @@ namespace FocusTimer.Platform.Windows
             return process.ProcessName;
         }
 
+        private void ClearCache()
+        {
+            this._lifetime?.Dispose();
+            this._lifetime = null;
+            this._cachedName = null;
+            this._cachedPid = 0;
+        }
+
+        private string ResolveProcessName(uint pid)
+        {
+            if (pid == this._cachedPid && this._lifetime?.IsAlive == true)
+            {
+                return this._cachedName!;
+            }
+
+            this.ClearCache();
+            IProcessLifetime? lifetime;
+            try
+            {
+                lifetime = this._openLifetime((int)pid);
+            }
+            catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException or ArgumentException)
+            {
+                lifetime = null;
+            }
+
+            try
+            {
+                var name = this._getProcessName((int)pid);
+                if (lifetime?.IsAlive == true)
+                {
+                    this._lifetime = lifetime;
+                    this._cachedPid = pid;
+                    this._cachedName = name;
+                    lifetime = null;
+                }
+
+                return name;
+            }
+            finally
+            {
+                lifetime?.Dispose();
+            }
+        }
+
         private ActiveWindowInfo? GetActiveWindow()
         {
             try
@@ -95,6 +161,7 @@ namespace FocusTimer.Platform.Windows
                 IntPtr hwnd = this._getForegroundWindow();
                 if (hwnd == IntPtr.Zero)
                 {
+                    this.ClearCache();
                     return null;
                 }
 
@@ -104,6 +171,10 @@ namespace FocusTimer.Platform.Windows
                 // Get process ID
                 uint processId = this._getProcessId(hwnd);
                 string processName = "Unknown";
+                if (processId == 0)
+                {
+                    this.ClearCache();
+                }
 
                 if (processId != 0)
                 {
@@ -112,7 +183,7 @@ namespace FocusTimer.Platform.Windows
                         // Some system processes may deny access to ProcessName
                         try
                         {
-                            processName = this._getProcessName((int)processId);
+                            processName = this.ResolveProcessName(processId);
                         }
                         catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException)
                         {
@@ -143,6 +214,8 @@ namespace FocusTimer.Platform.Windows
             }
             catch (Exception ex)
             {
+                this.ClearCache();
+
                 // Don't crash on Win32 errors; just return null
                 this._logger?.LogWarning($"Error getting active window: {ex.Message}");
                 return null;

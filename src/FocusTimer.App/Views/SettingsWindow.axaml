@@ -351,6 +351,14 @@
                                               Width="180" />
                                 </Grid>
 
+                                <TextBlock Classes="SettingLabel" Text="Activity polling interval (seconds)" />
+                                <NumericUpDown Value="{Binding ActivityPollingIntervalInput}"
+                                               Increment="1" FormatString="0.##" Width="120"
+                                               HorizontalAlignment="Left" />
+                                <TextBlock Text="{Binding ActivityPollingIntervalError}"
+                                           TextWrapping="Wrap" Foreground="{DynamicResource SettingsLabelTextBrush}" />
+                                <TextBlock Text="Longer intervals reduce polling work but may miss short app visits. Default: 10 seconds. Range: 1–60."
+                                           TextWrapping="Wrap" Foreground="{DynamicResource SettingsLabelTextBrush}" />
                                 <TextBlock TextWrapping="Wrap"
                                            Foreground="{DynamicResource SettingsLabelTextBrush}"
                                            FontSize="11"
@@ -400,7 +408,7 @@
 
         <!-- Button Panel -->
         <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="10" Margin="0,15,0,0">
-            <Button Content="OK" Width="80" Command="{Binding OkCommand}" Click="OnOkClicked" />
+            <Button Content="OK" Width="80" Click="OnOkClicked" />
             <Button Content="Apply" Width="80" Command="{Binding ApplyCommand}" />
             <Button Content="Cancel" Width="80" Command="{Binding CancelCommand}" CommandParameter="{Binding $parent[Window]}" />
         </StackPanel>

@@ -729,3 +729,12 @@ When contributing new features:
 ---
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the current project structure and service inventory — this guide's line-by-line examples can drift from it faster than that reference does.
+## Activity polling
+
+In Settings → About, click the version seven times to unlock Developer Options. The activity polling interval defaults to **10 seconds** and accepts whole seconds from **1 to 60**. Apply saves and activates the value; OK saves before closing. Cancel discards edits made since the last Apply. Invalid input shows an error and cannot be saved.
+
+`ActivityPollingIntervalSeconds` is an additive integer in settings JSON. Missing, out-of-range, null, fractional, string, or structured values fall back to 10 without discarding other valid settings. The saved interval remains effective when Developer Options are hidden.
+
+Foreground capture occurs immediately when tracking starts, then at the configured interval. Longer intervals reduce polling work but can miss short app visits; changes are attributed when observed. Timer display and day-boundary maintenance still run every second. Changing the interval preserves elapsed time and does not split the active segment.
+
+Measurements and reproduction instructions: [Activity polling performance](docs/versions/current/ActivityPollingPerformance.md). The isolated Windows smoke driver is `tools/FocusTimer.PollingSmoke`; pass an absolute synthetic-data directory when launching it. It uses platform stubs and does not register global hotkeys or change autostart.

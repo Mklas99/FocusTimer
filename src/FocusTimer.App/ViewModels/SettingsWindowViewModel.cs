@@ -32,6 +32,7 @@ namespace FocusTimer.App.ViewModels
         private Settings _settings;
         private string _selectedThemeName;
         private int _versionClickCount;
+        private decimal? _activityPollingIntervalInput = 10;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SettingsWindowViewModel"/> class.
@@ -139,6 +140,7 @@ namespace FocusTimer.App.ViewModels
                 this.DetachSettings(this._settings);
                 this.RaiseAndSetIfChanged(ref this._settings, value);
                 this.AttachSettings(value);
+                this.ActivityPollingIntervalInput = value.ActivityPollingIntervalSeconds;
                 this.RaisePropertyChanged(nameof(this.IsDeveloperModeVisible));
                 this.RaisePropertyChanged(nameof(this.SelectedDeveloperLogLevel));
             }
@@ -153,6 +155,25 @@ namespace FocusTimer.App.ViewModels
         /// Gets available developer log levels.
         /// </summary>
         public List<string> AvailableDeveloperLogLevels { get; } = ["Verbose", "Debug", "Information", "Warning", "Error"];
+
+        /// <summary>Gets or sets the interval draft, validated before saving.</summary>
+        public decimal? ActivityPollingIntervalInput
+        {
+            get => this._activityPollingIntervalInput;
+            set
+            {
+                this.RaiseAndSetIfChanged(ref this._activityPollingIntervalInput, value);
+                this.RaisePropertyChanged(nameof(this.ActivityPollingIntervalError));
+            }
+        }
+
+        /// <summary>Gets validation feedback for the interval draft.</summary>
+        public string ActivityPollingIntervalError => this.ActivityPollingIntervalInput is decimal seconds &&
+            seconds >= 1 && seconds <= 60 && seconds == decimal.Truncate(seconds)
+                ? string.Empty : "Enter a whole number from 1 to 60 seconds.";
+
+        /// <summary>Gets a value indicating whether the most recent Apply/OK saved successfully.</summary>
+        public bool LastApplySucceeded { get; private set; }
 
         /// <summary>
         /// Gets application version shown in the About tab.
@@ -403,12 +424,20 @@ namespace FocusTimer.App.ViewModels
 
         private async Task ApplyAsync()
         {
+            this.LastApplySucceeded = false;
+            if (!string.IsNullOrEmpty(this.ActivityPollingIntervalError))
+            {
+                return;
+            }
+
             try
             {
                 // Apply auto-start setting to registry before saving
                 this._autoStartService.SetAutoStart(this._settings.AutoStartOnLogin);
 
+                this._settings.ActivityPollingIntervalSeconds = (int)this.ActivityPollingIntervalInput!.Value;
                 await this._settingsProvider.SaveAsync(this._settings);
+                this.LastApplySucceeded = true;
                 this.SettingsApplied?.Invoke(this, EventArgs.Empty);
                 this._logger.LogDebug("Settings saved successfully");
             }

@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <IsPublishable>false</IsPublishable>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/FocusTimer.App/FocusTimer.App.csproj" />
+    <ProjectReference Include="../../src/FocusTimer.Persistence/FocusTimer.Persistence.csproj" />
+  </ItemGroup>
+</Project>

@@ -1,11 +1,9 @@
-# Activity Tracking Specification
+# Activity tracking delta
 
-## Purpose
-Defines how FocusTimer records what the user worked on while the timer runs, persists it to disk, and cleans it up over time.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Per-Application Time Segmentation
+
 While the timer is Running and work logging is enabled, the system SHALL sample the foreground application/window at the configured activity polling interval, defaulting to ten seconds. The system SHALL close the current segment and start a new segment when a sample detects a changed application or window title. Segment boundaries SHALL use observation time; intervening time SHALL remain attributed to the last observed window. The system SHALL NOT reconstruct visits that occur entirely between samples.
 
 #### Scenario: User switches active application
@@ -24,7 +22,10 @@ While the timer is Running and work logging is enabled, the system SHALL sample 
 - **WHEN** an application becomes foreground and loses foreground status entirely between two samples
 - **THEN** no segment is invented for that unobserved visit and time remains attributed to the last observed window
 
+## ADDED Requirements
+
 ### Requirement: Bounded capture scheduling
+
 The system SHALL begin foreground capture immediately when tracking starts or resumes, or when logging is re-enabled during a running session, unless an earlier lookup is still in progress. In that case it SHALL begin capture for the latest active session at the first opportunity after that lookup finishes. The system SHALL allow at most one foreground lookup in progress and SHALL NOT accumulate periodic requests or issue catch-up bursts after delays. Lookup results from stopped, disabled, or superseded sessions SHALL NOT reopen or modify those sessions.
 
 #### Scenario: Tracking begins before the first scheduled interval
@@ -44,6 +45,7 @@ The system SHALL begin foreground capture immediately when tracking starts or re
 - **THEN** the result produces no new segments and the existing disable behavior discards non-persisted tracking entries
 
 ### Requirement: Capture interval preserves session maintenance
+
 The activity polling interval SHALL NOT change timer-display updates, break-reminder timing, or pause/stop/exit segment closure. Local-midnight splitting SHALL remain independent of foreground sampling cadence, with segments split at the exact local-day boundary on the next maintenance opportunity. Applying an interval change SHALL NOT by itself close a segment, reset elapsed time, or initiate a new session.
 
 #### Scenario: Midnight falls between foreground samples
@@ -61,24 +63,3 @@ The activity polling interval SHALL NOT change timer-display updates, break-remi
 #### Scenario: Timer remains responsive at a longer interval
 - **WHEN** activity polling is configured to 60 seconds
 - **THEN** the timer display continues updating each second and break reminders retain their current timing
-
-### Requirement: Work-Logging On/Off Switch
-The system SHALL provide a setting to disable work logging, and WHEN disabled SHALL stop tracking, discard in-flight/buffered entries, and stop growing "today" stats.
-
-#### Scenario: User disables work logging
-- **WHEN** the user turns off the work-logging setting
-- **THEN** no new segments are tracked and the "today" total stops increasing until it is re-enabled
-
-### Requirement: CSV Persistence
-The system SHALL append logged entries to a per-day CSV file at `worklogs/yyyy/MM/yyyy-MM-dd-worklog.csv`, and SHALL flush buffered entries on pause/stop and periodically while running.
-
-#### Scenario: Entry is flushed on pause
-- **WHEN** the user pauses or stops the timer
-- **THEN** any buffered entries for the current session are written to that day's CSV file
-
-### Requirement: Data Retention Cleanup
-The system SHALL delete worklog files older than the configured `DataRetentionDays` (default 90) once per day.
-
-#### Scenario: Old worklog file exceeds retention
-- **WHEN** a worklog file's date is older than `DataRetentionDays` relative to today
-- **THEN** the file is deleted during the daily retention pass

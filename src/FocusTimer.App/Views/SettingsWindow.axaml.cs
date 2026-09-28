@@ -1,9 +1,12 @@
 namespace FocusTimer.App.Views
 {
+    using System.Reactive;
+    using System.Reactive.Threading.Tasks;
     using Avalonia.Controls;
     using Avalonia.Input;
     using Avalonia.Interactivity;
     using FocusTimer.App.ViewModels;
+    using ReactiveUI;
 
     /// <summary>
     /// Represents the settings window for the FocusTimer application.
@@ -45,10 +48,16 @@ namespace FocusTimer.App.Views
             }
         }
 
-        private void OnOkClicked(object? sender, RoutedEventArgs e)
+        private async void OnOkClicked(object? sender, RoutedEventArgs e)
         {
-            // Close the window after OK command completes
-            this.Close();
+            if (this.DataContext is SettingsWindowViewModel viewModel)
+            {
+                await ((ReactiveCommand<Unit, Unit>)viewModel.OkCommand).Execute().ToTask();
+                if (viewModel.LastApplySucceeded)
+                {
+                    this.Close();
+                }
+            }
         }
     }
 }

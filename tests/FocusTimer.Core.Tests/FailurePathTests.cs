@@ -140,6 +140,23 @@ public class FailurePathTests
 
     // ---- TodayStatsService -----------------------------------------------------
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task TrackingTaskObserver_GivenSynchronousOrAsyncFailure_LogsWithoutPropagating(bool synchronous)
+    {
+        var logger = new CapturingLogger();
+        var tracker = new SessionTracker(new FailingWindowService(), logger);
+        using var timer = new TimerService(tracker, logger);
+        Func<Task> update = synchronous
+            ? () => throw new IOException("synthetic synchronous failure")
+            : () => Task.FromException(new IOException("synthetic asynchronous failure"));
+        var observed = (Task)typeof(TimerService).GetMethod("ObserveTrackingAsync", BindingFlags.NonPublic | BindingFlags.Instance)!
+            .Invoke(timer, new object[] { update })!;
+        await observed;
+        Assert.Contains("Tracking operation failed.", logger.Errors);
+    }
+
     [Fact]
     public async Task RefreshTodayAsync_GivenFailedRead_KeepsPreviousTotalAndLogsWarning()
     {
@@ -294,6 +311,7 @@ public class FailurePathTests
         await tracker.StartAsync(null);
 
         service.Throw = true;
+        clock.Now = Noon.AddSeconds(10);
         await tracker.OnTimerTickAsync();
         clock.Now = Noon.AddMinutes(1);
 
@@ -442,6 +460,8 @@ public class FailurePathTests
         public DateTimeOffset Now { get; set; }
         public override TimeZoneInfo LocalTimeZone => TimeZoneInfo.Utc;
         public override DateTimeOffset GetUtcNow() => this.Now;
+        public override long TimestampFrequency => TimeSpan.TicksPerSecond;
+        public override long GetTimestamp() => this.Now.UtcTicks;
     }
 
     private sealed class ScriptedStore : IWorklogStore

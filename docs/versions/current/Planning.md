@@ -30,7 +30,7 @@ The completed `establish-worklog-data-foundation` OpenSpec change targets develo
 
 ## Changes
 ### Requirement: Per-Application Time Segmentation
-Current: The system SHALL poll the foreground application/window once per second while the timer is Running, and SHALL start a new log segment whenever the active application/window changes.
+At the time of this planning note: The system SHALL poll the foreground application/window once per second while the timer is Running, and SHALL start a new log segment whenever the active application/window changes. The implemented cadence is now configurable; see `openspec/specs/activity-tracking/spec.md`.
 Update: -> introduce "advanced" settings to make this configuratble
 
 

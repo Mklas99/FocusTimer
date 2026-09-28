@@ -434,3 +434,12 @@ The `else` branch in `Program.cs`'s static constructor already registers Linux n
 4. **Multi-Platform Host**: Host is still `net8.0-windows`-only (`WinExe`); multi-targeting is required to ship a Linux build once (3) lands
 
 See `docs/versions/current/OpenIssues.md` for the full, current backlog of known gaps.
+## Foreground capture cadence and ownership
+
+SessionTracker uses the injected TimeProvider's monotonic timestamps for foreground deadlines. TimerService keeps its one-second tick. Local-calendar maintenance runs before capture admission and before final closure, so midnight segmentation does not wait for the sampling deadline. Foreground changes are attributed at observation time; longer intervals can miss intermediate visits.
+
+One capture reservation covers both initial and periodic lookups. Busy periodic ticks return without queueing. Stop or disable invalidates the session generation; a stale result cannot create a segment. At most the latest restart waits behind an outstanding lookup. Deadlines advance after completion, preventing catch-up bursts; applying a changed interval reschedules from application time, while reapplying the same value preserves the deadline. TimerService observes tracking tasks and logs failures.
+
+WindowsActiveWindowService owns a single cached process name and a SYNCHRONIZE process handle. Every capture still reads the foreground window, PID, and title. A non-blocking liveness check on the owned handle validates the process lifetime before reuse; PID alone is insufficient. Switching processes, absent foreground, lookup failure, or disposal releases the entry. Failed handle acquisition uses uncached lookup. A lock serializes lookup and disposal, and Host DI disposes the singleton. Linux remains a stub with the same interface (OI-06).
+
+[Activity polling measurements](docs/versions/current/ActivityPollingPerformance.md) establish reduced component lookup work. Settings reads, persistence writes, and whole-app resource use require separate measurements.
