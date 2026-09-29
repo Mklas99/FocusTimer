@@ -18,14 +18,14 @@
 | Feature / improvement collection | Outcome | Related issues | Status |
 |---|---|---|---|
 | Everyday desktop control | The widget restores safely, minimizes predictably, offers configurable hotkeys, exposes useful tray actions, and makes logs easy to find. | OI-01, OI-02, OI-03, OI-05, OI-13 | Candidate |
-| UI appearance and usability | Settings controls have a consistent modern look, readable theme colors, and one color palette accordion in Appearance. | OI-24 | Candidate |
+| UI appearance and usability | Settings controls have a consistent modern look, readable theme colors, and one color palette accordion in Appearance; widget background opacity works as configured. | OI-24, OI-25 | Candidate |
 | Better worklog management and reporting | Users can review, correct, delete, and export tracked work, with useful breakdowns by application and project. | OI-04, OI-07, OI-09, OI-12, OI-15 | Candidate |
 | Manual time log | Users can add missed work intervals to the worklog with a start, end, and work details. | OI-22 | Candidate |
 | Report timeline view | Users can inspect recorded work intervals in chronological order, including manual entries. | OI-23; complements OI-04 | Candidate |
 | Smarter automatic tracking | Projects can be inferred from activity and advanced users can tune sampling and segmentation behavior. | OI-08, OI-14 | Partial (polling configuration delivered; project detection and segmentation rules open) |
 | Focus modes | Pomodoro cycles and optional sound cues support deliberate work and break routines. | OI-10, OI-11 | Candidate |
 | Linux feature parity | Linux receives real implementations for the platform integrations that currently use stubs. | OI-06 | Long-term candidate |
-| Product reliability and delivery | Test isolation, SonarQube coverage reporting, smaller installer choices, and measured performance work make releases more dependable. Test isolation and SonarQube coverage reporting are delivered by M02.| OI-17, (OI-16, OI-18, OI-19 are closed)| Improvement collection |
+| Product reliability and delivery | Smaller installer choices, measured performance work, and a reproducible F5 launch make releases and development builds more dependable. Test isolation and SonarQube coverage reporting are delivered by M02. | OI-16, OI-17, OI-26 (OI-18, OI-19 completed by M02) | Improvement collection (partly delivered) |
 | Data evolution and compatibility | Future compatibility-sensitive releases have an explicit backup, migration, rollback, and legacy-retirement strategy before persistent formats must be preserved. | OI-20 | Investigation |
 | Settings experience and theme consistency | Settings controls, theme colors, and Save/Apply/Cancel behavior work consistently across all pages, with a documented widget and menu theme boundary. | OI-21 | Candidate |
 

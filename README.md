@@ -21,29 +21,29 @@ A clean, cross-platform .NET 8 / Avalonia desktop timer widget with dependency i
 ```powershell
 git clone <repo-url>
 cd FocusTimer
-dotnet build
+dotnet build src/FocusTimer.Host --runtime win-x64
 ```
 
 ### Run the Application
 
 ```powershell
-dotnet run --project src/FocusTimer.Host
+dotnet run --project src/FocusTimer.Host --runtime win-x64
 ```
 
 Alternatively, run the compiled executable directly:
 ```powershell
-./src/FocusTimer.Host/bin/Debug/net8.0-windows/FocusTimer.Host.exe
+./src/FocusTimer.Host/bin/Debug/net8.0-windows/win-x64/FocusTimer.Host.exe
 ```
 
 ### Build for Release
 
 ```powershell
-dotnet build --configuration Release
+dotnet build src/FocusTimer.Host --configuration Release --runtime win-x64
 ```
 
 The release executable is at:
 ```
-src/FocusTimer.Host/bin/Release/net8.0-windows/FocusTimer.Host.exe
+src/FocusTimer.Host/bin/Release/net8.0-windows/win-x64/FocusTimer.Host.exe
 ```
 
 ---

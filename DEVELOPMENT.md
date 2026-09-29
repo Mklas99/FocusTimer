@@ -633,7 +633,7 @@ There's no environment variable for log level today. Two options:
 Log output location can be redirected via `FOCUSTIMER_LOG_DIR`:
 ```powershell
 $env:FOCUSTIMER_LOG_DIR = "C:\temp\focustimer-logs"
-dotnet run --project src/FocusTimer.Host
+dotnet run --project src/FocusTimer.Host --runtime win-x64
 ```
 
 ### Inspect Event Bus Traffic
