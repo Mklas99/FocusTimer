@@ -18,6 +18,7 @@
 | Feature / improvement collection | Outcome | Related issues | Status |
 |---|---|---|---|
 | Everyday desktop control | The widget restores safely, minimizes predictably, offers configurable hotkeys, exposes useful tray actions, and makes logs easy to find. | OI-01, OI-02, OI-03, OI-05, OI-13 | Candidate |
+| UI appearance and usability | Settings controls have a consistent modern look, readable theme colors, and one color palette accordion in Appearance. | OI-24 | Candidate |
 | Better worklog management and reporting | Users can review, correct, delete, and export tracked work, with useful breakdowns by application and project. | OI-04, OI-07, OI-09, OI-12, OI-15 | Candidate |
 | Manual time log | Users can add missed work intervals to the worklog with a start, end, and work details. | OI-22 | Candidate |
 | Report timeline view | Users can inspect recorded work intervals in chronological order, including manual entries. | OI-23; complements OI-04 | Candidate |
