@@ -128,15 +128,16 @@ Version resolution order for MSI/exe metadata:
 
 Outputs:
 - Self-contained MSI: `artifacts/installer/FocusTimer.Installer.selfcontained.msi`
-- Framework-dependent setup: `artifacts/installer/FocusTimer.Setup.framework-dependent.exe`. Checks for the x64 .NET 8 runtime, downloads Microsoft's installer if needed, then installs FocusTimer. An internet connection is needed only when the runtime is missing.
-- Direct framework-dependent MSI: `artifacts/installer/FocusTimer.Installer.framework-dependent.msi`. For managed deployments with the x64 .NET 8 runtime already installed; installation stops with a clear message if it is missing.
+- Framework-dependent setup: `artifacts/installer/FocusTimer.Setup.framework-dependent.exe`. Checks for the x64 .NET 8 runtime, downloads Microsoft's installer if needed, then installs FocusTimer. An internet connection is needed only when the runtime is missing. **The .NET detection/download path is untested** — no test environment without .NET 8 preinstalled has been set up yet, so verify this manually before relying on it.
 - Portable self-contained EXE: `artifacts/publish/win-x64-portable/FocusTimer.Host.exe`
+
+The build also produces a direct framework-dependent MSI (`artifacts/installer/FocusTimer.Installer.framework-dependent.msi`), which the setup EXE embeds as its install payload. It is not published as its own release asset — it exists only to serve managed deployments where .NET 8 is already provisioned by other means, which this personal project doesn't target.
 
 The script cleans its generated output directories before publishing, reports the payload and installer sizes, and excludes PDBs from the MSIs. It verifies the SHA-512 hash of the Microsoft .NET 8.0.31 runtime installer before building the setup. The setup embeds the FocusTimer MSI and downloads the runtime only when needed. The portable EXE uses single-file compression; the MSI payloads do not, because compression increased the self-contained MSI size in a local comparison. Both MSI variants use the same upgrade identity, so installing either at the same version replaces the other.
 
 ### Downloadable Releases (GitHub)
 
-Pushing a tag matching `v*.*.*` (e.g. `v0.1.0`) triggers `.github/workflows/release.yml`, which runs `build-installer.ps1` and publishes a GitHub Release with both MSI variants, the .NET-aware setup, and the portable self-contained single-file EXE:
+Pushing a tag matching `v*.*.*` (e.g. `v0.1.0`) triggers `.github/workflows/release.yml`, which runs `build-installer.ps1` and publishes a GitHub Release with the self-contained MSI, the .NET-aware setup, and the portable self-contained single-file EXE:
 
 ```powershell
 git tag v0.1.0
