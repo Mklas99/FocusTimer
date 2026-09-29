@@ -21,6 +21,7 @@
 | Linux feature parity | Linux receives real implementations for the platform integrations that currently use stubs. | OI-06 | Long-term candidate |
 | Product reliability and delivery | Test isolation, SonarQube coverage reporting, smaller installer choices, and measured performance work make releases more dependable. | OI-16, OI-17, OI-18, OI-19 | In progress (OI-16 install validation open; OI-18 and OI-19 closed) |
 | Data evolution and compatibility | Future compatibility-sensitive releases have an explicit backup, migration, rollback, and legacy-retirement strategy before persistent formats must be preserved. | OI-20 | Investigation |
+| Settings experience and theme consistency | Settings controls, theme colors, and Save/Apply/Cancel behavior work consistently across all pages, with a documented widget and menu theme boundary. | OI-21 | Candidate |
 
 ## Feature branch and release-note convention
 
