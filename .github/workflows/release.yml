@@ -30,6 +30,13 @@ jobs:
         shell: pwsh
         run: Copy-Item "artifacts/publish/win-x64-portable/FocusTimer.Host.exe" "artifacts/FocusTimer-${{ github.ref_name }}-win-x64.exe"
 
+      # The framework-dependent MSI (artifacts/installer/FocusTimer.Installer.framework-dependent.msi)
+      # is still built above because the Setup EXE below chains it as its install payload, but it is
+      # not published as its own release asset: it only exists to serve a managed-deployment scenario
+      # (.NET 8 already provisioned by other means) that this personal project doesn't have.
+      #
+      # NOTE: the Setup EXE's .NET 8 detection/download path is untested — no test environment without
+      # .NET 8 preinstalled has been set up yet to exercise it. Verify manually before relying on it.
       - name: Create GitHub Release
         uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
         env:
@@ -37,7 +44,6 @@ jobs:
         with:
           files: |
             artifacts/installer/FocusTimer.Installer.selfcontained.msi
-            artifacts/installer/FocusTimer.Installer.framework-dependent.msi
             artifacts/installer/FocusTimer.Setup.framework-dependent.exe
             artifacts/FocusTimer-${{ github.ref_name }}-win-x64.exe
           generate_release_notes: true
