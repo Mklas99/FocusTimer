@@ -12,6 +12,7 @@ namespace FocusTimer.Core.Services
     {
         private readonly SessionTracker _sessionTracker;
         private readonly System.Timers.Timer _timer;
+        private readonly IAppLogger? _logger;
 
         // Lock for thread safety
         private readonly object _lock = new();
@@ -24,9 +25,11 @@ namespace FocusTimer.Core.Services
         /// Initializes a new instance of the <see cref="TimerService"/> class.
         /// </summary>
         /// <param name="sessionTracker">The session tracker to use for tracking timer sessions.</param>
-        public TimerService(SessionTracker sessionTracker)
+        /// <param name="logger">Optional tracking failure logger.</param>
+        public TimerService(SessionTracker sessionTracker, IAppLogger? logger = null)
         {
             this._sessionTracker = sessionTracker;
+            this._logger = logger;
             this._timer = new System.Timers.Timer(1000);
             this._timer.Elapsed += this.OnTimerElapsed;
             this._timer.AutoReset = true;
@@ -63,7 +66,7 @@ namespace FocusTimer.Core.Services
                 return;
             }
 
-            this._sessionTracker.StartAsync(projectTag).ConfigureAwait(false);
+            _ = this.ObserveTrackingAsync(() => this._sessionTracker.StartAsync(projectTag));
 
             this._timer.Start();
             this.CurrentState = TimerState.Running;
@@ -139,7 +142,19 @@ namespace FocusTimer.Core.Services
             this.Tick?.Invoke(this, this._elapsed);
 
             // Fire and forget tracking update
-            _ = this._sessionTracker.OnTimerTickAsync();
+            _ = this.ObserveTrackingAsync(this._sessionTracker.OnTimerTickAsync);
+        }
+
+        private async Task ObserveTrackingAsync(Func<Task> update)
+        {
+            try
+            {
+                await update().ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                this._logger?.LogError("Tracking operation failed.", ex);
+            }
         }
     }
 }

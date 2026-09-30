@@ -23,6 +23,7 @@ namespace FocusTimer.Core.Models
         private bool _useCompactMode;
         private bool _developerModeEnabled;
         private string _developerLogLevel = "Debug";
+        private int _activityPollingIntervalSeconds = 10;
         private string? _hotkeyShowHide;
         private string? _hotkeyToggleTimer;
         private Theme _theme = new();
@@ -199,6 +200,16 @@ namespace FocusTimer.Core.Models
         {
             get => this._developerLogLevel;
             set => this.SetField(ref this._developerLogLevel, value);
+        }
+
+        /// <summary>
+        /// Gets or sets the foreground sampling interval in seconds (1–60, default 10).
+        /// </summary>
+        [System.Text.Json.Serialization.JsonConverter(typeof(ActivityPollingIntervalConverter))]
+        public int ActivityPollingIntervalSeconds
+        {
+            get => this._activityPollingIntervalSeconds;
+            set => this.SetField(ref this._activityPollingIntervalSeconds, value is >= 1 and <= 60 ? value : 10);
         }
 
         // Future: Hotkey settings (placeholders)

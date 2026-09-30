@@ -22,13 +22,13 @@ jobs:
         with:
           dotnet-version: "8.0.x"
 
-      - name: Build self-contained EXE + MSI
+      - name: Build both installers and portable EXE
         shell: pwsh
         run: ./scripts/build-installer.ps1 -Version "${{ github.ref_name }}"
 
       - name: Rename portable EXE for release
         shell: pwsh
-        run: Copy-Item "artifacts/publish/win-x64-selfcontained/FocusTimer.Host.exe" "artifacts/FocusTimer-${{ github.ref_name }}-win-x64.exe"
+        run: Copy-Item "artifacts/publish/win-x64-portable/FocusTimer.Host.exe" "artifacts/FocusTimer-${{ github.ref_name }}-win-x64.exe"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
@@ -36,6 +36,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           files: |
-            artifacts/installer/FocusTimer.Installer.msi
+            artifacts/installer/FocusTimer.Installer.selfcontained.msi
+            artifacts/installer/FocusTimer.Installer.framework-dependent.msi
+            artifacts/installer/FocusTimer.Setup.framework-dependent.exe
             artifacts/FocusTimer-${{ github.ref_name }}-win-x64.exe
           generate_release_notes: true

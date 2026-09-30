@@ -242,6 +242,7 @@ public class SessionTrackerTests
     private sealed class MutableTimeProvider : TimeProvider
     {
         private DateTimeOffset _utcNow;
+        private long _timestamp;
         private readonly TimeZoneInfo _localTimeZone;
         public MutableTimeProvider(DateTimeOffset utcNow, TimeZoneInfo? localTimeZone = null)
         {
@@ -251,6 +252,12 @@ public class SessionTrackerTests
 
         public override TimeZoneInfo LocalTimeZone => this._localTimeZone;
         public override DateTimeOffset GetUtcNow() => this._utcNow;
-        public void Advance(TimeSpan amount) => this._utcNow = this._utcNow.Add(amount);
+        public override long TimestampFrequency => TimeSpan.TicksPerSecond;
+        public override long GetTimestamp() => this._timestamp;
+        public void Advance(TimeSpan amount)
+        {
+            this._utcNow = this._utcNow.Add(amount);
+            this._timestamp += amount.Ticks;
+        }
     }
 }

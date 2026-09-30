@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
-     xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
+     xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui"
+     xmlns:netfx="http://wixtoolset.org/schemas/v4/wxs/netfx">
   <Package
     Name="FocusTimer"
     Manufacturer="FocusTimer"
@@ -11,7 +12,11 @@
     <Icon Id="FocusTimer.ico" SourceFile="FocusTimer.ico" />
     <Property Id="ARPPRODUCTICON" Value="FocusTimer.ico" />
 
-    <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
+    <MajorUpgrade AllowSameVersionUpgrades="yes" DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
+    <?if $(var.IsFrameworkDependent) = true ?>
+    <netfx:DotNetCompatibilityCheck Property="FOCUSTIMER_DOTNET8_CHECK" RuntimeType="core" Platform="x64" Version="8.0.0" RollForward="minor" />
+    <Launch Condition="REMOVE = &quot;ALL&quot; OR FOCUSTIMER_DOTNET8_CHECK = &quot;0&quot;" Message="FocusTimer requires the x64 .NET 8 runtime. Run FocusTimer.Setup.framework-dependent.exe to download and install it automatically." />
+    <?endif ?>
     <MediaTemplate EmbedCab="yes" />
     <ui:WixUI Id="WixUI_FeatureTree" />
 

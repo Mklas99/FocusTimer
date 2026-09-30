@@ -35,8 +35,28 @@ The system SHALL offer, as selectable install features, a desktop shortcut and a
 - **THEN** that shortcut is not created
 
 ### Requirement: GitHub Release Publishing
-The system SHALL publish a downloadable GitHub Release, containing the MSI and a portable (no-install) self-contained EXE, whenever a tag matching `v*.*.*` is pushed.
+The system SHALL publish a downloadable GitHub Release containing self-contained and framework-dependent MSI variants, a framework-dependent setup EXE, and a portable (no-install) self-contained EXE whenever a tag matching `v*.*.*` is pushed. The setup EXE SHALL check for the x64 .NET 8 runtime and download and install it when missing. The direct framework-dependent MSI SHALL stop with a clear message when the runtime is missing.
 
 #### Scenario: A version tag is pushed
 - **WHEN** a tag matching `v*.*.*` (e.g. `v0.1.0`) is pushed to the repository
-- **THEN** `.github/workflows/release.yml` builds the installer via `scripts/build-installer.ps1` and creates a GitHub Release for that tag with the MSI and portable self-contained EXE attached
+- **THEN** `.github/workflows/release.yml` builds both MSIs and the setup via `scripts/build-installer.ps1` and creates a GitHub Release for that tag with both MSIs, the setup, and the portable self-contained EXE attached
+
+#### Scenario: The runtime is missing
+
+- **WHEN** the user runs the framework-dependent setup without an x64 .NET 8 runtime installed
+- **THEN** the setup downloads the verified Microsoft runtime installer, installs the runtime, and then installs FocusTimer
+
+#### Scenario: The runtime is already installed
+
+- **WHEN** the user runs the framework-dependent setup with an x64 .NET 8 runtime installed
+- **THEN** the setup skips the runtime download and installs FocusTimer
+
+#### Scenario: The direct MSI is used without the runtime
+
+- **WHEN** the user runs the direct framework-dependent MSI without an x64 .NET 8 runtime installed
+- **THEN** installation stops and directs the user to the setup EXE
+
+#### Scenario: A user switches installer variants
+
+- **WHEN** the user installs the other MSI variant at the same version
+- **THEN** the newly selected variant replaces the installed variant

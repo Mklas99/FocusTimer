@@ -95,15 +95,15 @@ Output: `artifacts/publish/win-x64-selfcontained/FocusTimer.Host.exe`
 **Pros**: One file to distribute
 **Cons**: Larger file size due to included runtime
 
-### Framework-Dependent Executable
+### Framework-dependent executable
 
-Smaller executable that requires .NET 8 runtime on target machines.
+Smaller executable that requires the x64 .NET 8 runtime on target machines.
 
 ```powershell
-dotnet publish src/FocusTimer.Host/FocusTimer.Host.csproj -c Release -f net8.0-windows -o ./publish
+dotnet publish src/FocusTimer.Host/FocusTimer.Host.csproj -c Release -f net8.0-windows -r win-x64 -p:SelfContained=false -p:PublishSelfContained=false -p:PublishSingleFile=true -p:PublishTrimmed=false -o ./artifacts/publish/win-x64-framework-dependent
 ```
 
-Output: `publish/` directory with FocusTimer.Host.exe and supporting .dll files
+Output: `artifacts/publish/win-x64-framework-dependent/FocusTimer.Host.exe`
 
 **Pros**: Smaller size
 **Cons**: Requires .NET 8 runtime on target machine
@@ -114,7 +114,7 @@ This repository now includes a WiX installer project:
 - `installer/FocusTimer.Installer/FocusTimer.Installer.wixproj`
 - `installer/FocusTimer.Installer/Product.wxs`
 
-Build both self-contained EXE + MSI in one command:
+Build the self-contained MSI, framework-dependent setup, direct MSI, and portable EXE in one command:
 
 ```powershell
 ./scripts/build-installer.ps1 -Runtime win-x64
@@ -127,18 +127,16 @@ Version resolution order for MSI/exe metadata:
 - Fallback: `0.1.1`
 
 Outputs:
-- Self-contained EXE: `artifacts/publish/win-x64-selfcontained/FocusTimer.Host.exe`
-- MSI (WiX output): `artifacts/installer/`
+- Self-contained MSI: `artifacts/installer/FocusTimer.Installer.selfcontained.msi`
+- Framework-dependent setup: `artifacts/installer/FocusTimer.Setup.framework-dependent.exe`. Checks for the x64 .NET 8 runtime, downloads Microsoft's installer if needed, then installs FocusTimer. An internet connection is needed only when the runtime is missing.
+- Direct framework-dependent MSI: `artifacts/installer/FocusTimer.Installer.framework-dependent.msi`. For managed deployments with the x64 .NET 8 runtime already installed; installation stops with a clear message if it is missing.
+- Portable self-contained EXE: `artifacts/publish/win-x64-portable/FocusTimer.Host.exe`
 
-Manual WiX build (after publishing):
-
-```powershell
-dotnet build installer/FocusTimer.Installer/FocusTimer.Installer.wixproj -c Release -p:ProductVersion=1.0.0 -p:PublishDir=artifacts/publish/win-x64-selfcontained -o artifacts/installer
-```
+The script cleans its generated output directories before publishing, reports the payload and installer sizes, and excludes PDBs from the MSIs. It verifies the SHA-512 hash of the Microsoft .NET 8.0.31 runtime installer before building the setup. The setup embeds the FocusTimer MSI and downloads the runtime only when needed. The portable EXE uses single-file compression; the MSI payloads do not, because compression increased the self-contained MSI size in a local comparison. Both MSI variants use the same upgrade identity, so installing either at the same version replaces the other.
 
 ### Downloadable Releases (GitHub)
 
-Pushing a tag matching `v*.*.*` (e.g. `v0.1.0`) triggers `.github/workflows/release.yml`, which runs `build-installer.ps1` and publishes a GitHub Release with the MSI installer and the portable self-contained single-file EXE:
+Pushing a tag matching `v*.*.*` (e.g. `v0.1.0`) triggers `.github/workflows/release.yml`, which runs `build-installer.ps1` and publishes a GitHub Release with both MSI variants, the .NET-aware setup, and the portable self-contained single-file EXE:
 
 ```powershell
 git tag v0.1.0

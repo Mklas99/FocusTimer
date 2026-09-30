@@ -503,6 +503,7 @@ namespace FocusTimer.App.ViewModels
                     this.Settings = loadedSettings;
                 });
 
+                this._sessionTracker.SetPollingInterval(this.Settings.ActivityPollingIntervalSeconds);
                 this._sessionTracker.SetTrackingEnabled(this.Settings.WorkLoggingEnabled);
                 if (this.IsRunning && this.Settings.WorkLoggingEnabled)
                 {

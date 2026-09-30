@@ -15,7 +15,11 @@ public sealed class SessionTracker
     private readonly ISourcePlatformProvider _platformProvider;
     private readonly Func<string?> _deviceIdProvider;
     private readonly object _stateLock = new();
-    private readonly SemaphoreSlim _tickGate = new(1, 1);
+    private bool _captureRunning;
+    private PendingStart? _pendingStart;
+    private int _pollingIntervalSeconds = 10;
+    private long _scheduleRevision;
+    private long _lastCaptureTimestamp;
     private readonly List<TimeEntry> _completedEntries = new();
     private ActiveWindowInfo? _currentWindow;
     private OpenSegment? _current;
@@ -70,86 +74,125 @@ public sealed class SessionTracker
     }
 
     /// <summary>Begins an uninterrupted running session.</summary>
-    public async Task StartAsync(string? projectTag)
+    public Task StartAsync(string? projectTag)
     {
-        long generation;
+        PendingStart request;
         lock (_stateLock)
         {
             if (!_trackingEnabled || _tracking)
             {
                 _projectTag = projectTag;
-                return;
+                return Task.CompletedTask;
             }
 
             _projectTag = projectTag;
             _tracking = true;
             _sessionId = Guid.NewGuid().ToString("D");
-            generation = ++_sessionGeneration;
+            var generation = ++_sessionGeneration;
+            request = new PendingStart(generation, _scheduleRevision);
+            if (_captureRunning)
+            {
+                _pendingStart?.Completion.TrySetResult();
+                _pendingStart = request;
+                return request.Completion.Task;
+            }
+
+            _captureRunning = true;
         }
 
+        _ = CaptureAsync(request.Generation, request.Revision, request);
+        return request.Completion.Task;
+    }
+
+    /// <summary>Changes foreground sampling cadence without changing session boundaries.</summary>
+    public void SetPollingInterval(int seconds)
+    {
+        seconds = seconds is >= 1 and <= 60 ? seconds : 10;
+        lock (_stateLock)
+        {
+            if (_pollingIntervalSeconds == seconds) return;
+            _pollingIntervalSeconds = seconds;
+            _scheduleRevision++;
+            _lastCaptureTimestamp = _clock.GetTimestamp();
+        }
+    }
+
+    /// <summary>Maintains day boundaries each tick and samples only when due.</summary>
+    public Task OnTimerTickAsync()
+    {
+        long generation;
+        long revision;
+        lock (_stateLock)
+        {
+            if (!_trackingEnabled || !_tracking || _current is null) return Task.CompletedTask;
+            SplitAtMidnight(_clock.GetLocalNow());
+            if (_captureRunning || _clock.GetElapsedTime(_lastCaptureTimestamp) < TimeSpan.FromSeconds(_pollingIntervalSeconds))
+                return Task.CompletedTask;
+            _captureRunning = true;
+            generation = _sessionGeneration;
+            revision = _scheduleRevision;
+        }
+
+        return CaptureAsync(generation, revision, null);
+    }
+
+    private async Task CaptureAsync(long generation, long revision, PendingStart? initial)
+    {
         try
         {
-            var window = await _activeWindowService.GetForegroundWindowAsync();
-            lock (_stateLock)
+            while (true)
             {
-                if (IsCurrentSession(generation))
-                    CreateNewEntry(window, _clock.GetLocalNow());
+                ActiveWindowInfo? window = null;
+                var succeeded = true;
+                try { window = await _activeWindowService.GetForegroundWindowAsync().ConfigureAwait(false); }
+                catch (Exception ex)
+                {
+                    succeeded = false;
+                    if (initial is not null) _logger.LogError("Failed to start session tracking.", ex);
+                    else _logger.LogWarning($"Window tracking tick failed: {ex.Message}");
+                }
+
+                lock (_stateLock)
+                {
+                    if (IsCurrentSession(generation))
+                    {
+                        var now = _clock.GetLocalNow();
+                        SplitAtMidnight(now);
+                        if (initial is not null) CreateNewEntry(window, now);
+                        else if (succeeded && _current is not null && HasWindowChanged(_currentWindow, window))
+                        {
+                            CloseCurrentEntry(now, EndReason.ApplicationChange);
+                            CreateNewEntry(window, now);
+                        }
+
+                        if (revision == _scheduleRevision) _lastCaptureTimestamp = _clock.GetTimestamp();
+                    }
+
+                    initial?.Completion.TrySetResult();
+                    initial = _pendingStart;
+                    _pendingStart = null;
+                    if (initial is null)
+                    {
+                        _captureRunning = false;
+                        return;
+                    }
+
+                    generation = initial.Generation;
+                    revision = initial.Revision;
+                }
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError("Failed to start session tracking.", ex);
             lock (_stateLock)
             {
-                if (IsCurrentSession(generation))
-                    CreateNewEntry(null, _clock.GetLocalNow());
-            }
-        }
-    }
-
-    /// <summary>Polls for window or local-day boundary changes.</summary>
-    public async Task OnTimerTickAsync()
-    {
-        await _tickGate.WaitAsync();
-        try
-        {
-            long generation;
-            lock (_stateLock)
-            {
-                if (!_trackingEnabled || !_tracking || _current is null)
-                    return;
-
-                generation = _sessionGeneration;
+                _captureRunning = false;
+                initial?.Completion.TrySetException(ex);
+                _pendingStart?.Completion.TrySetException(ex);
+                _pendingStart = null;
             }
 
-            ActiveWindowInfo? window;
-            try
-            {
-                window = await _activeWindowService.GetForegroundWindowAsync();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning($"Window tracking tick failed: {ex.Message}");
-                return;
-            }
-
-            lock (_stateLock)
-            {
-                if (!IsCurrentSession(generation) || _current is null)
-                    return;
-
-                var now = _clock.GetLocalNow();
-                SplitAtMidnight(now);
-                if (HasWindowChanged(_currentWindow, window))
-                {
-                    CloseCurrentEntry(now, EndReason.ApplicationChange);
-                    CreateNewEntry(window, now);
-                }
-            }
-        }
-        finally
-        {
-            _tickGate.Release();
+            _logger.LogError("Tracking update failed.", ex);
         }
     }
 
@@ -176,7 +219,9 @@ public sealed class SessionTracker
     {
         lock (_stateLock)
         {
-            CloseCurrentEntry(_clock.GetLocalNow(), reason);
+            var now = _clock.GetLocalNow();
+            SplitAtMidnight(now);
+            CloseCurrentEntry(now, reason);
             InvalidateSession();
             _currentWindow = null;
         }
@@ -201,6 +246,8 @@ public sealed class SessionTracker
         _tracking = false;
         _sessionId = null;
         _sessionGeneration++;
+        _pendingStart?.Completion.TrySetResult();
+        _pendingStart = null;
     }
 
     private static bool HasWindowChanged(ActiveWindowInfo? previous, ActiveWindowInfo? current) =>
@@ -256,6 +303,13 @@ public sealed class SessionTracker
             window?.ProcessName ?? "Unknown",
             window?.WindowTitle ?? "No active window",
             _projectTag);
+    }
+
+    private sealed class PendingStart(long generation, long revision)
+    {
+        public long Generation { get; } = generation;
+        public long Revision { get; } = revision;
+        public TaskCompletionSource Completion { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
     }
 
     private sealed class OpenSegment

@@ -74,6 +74,15 @@ public sealed class ProgramCompositionTests : IDisposable
         Assert.IsType<FocusTimer.Platform.Windows.WindowsHotkeyService>(sp.GetRequiredService<IGlobalHotkeyService>());
     }
 
+    [Fact]
+    public async Task DisposingHostDisposesTheActiveWindowSingleton()
+    {
+        var sp = this.Build(Path.Combine(this._root, "logs"), isWindows: true);
+        var windows = sp.GetRequiredService<IActiveWindowService>();
+        ((IDisposable)sp).Dispose();
+        Assert.Null(await windows.GetForegroundWindowAsync());
+    }
+
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
