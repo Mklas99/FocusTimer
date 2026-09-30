@@ -77,6 +77,9 @@ public class JsonSettingsProviderTests : IDisposable
 
         Assert.NotNull(loaded);
         Assert.Equal("Dark", loaded.ActiveThemeName);
+        Assert.True(File.Exists(customPath));
+        var restarted = new JsonSettingsProvider(customPath, NullLogger.Instance);
+        Assert.Equal(loaded.DeviceId, (await restarted.LoadAsync()).DeviceId);
     }
 
     [Fact]
@@ -90,6 +93,31 @@ public class JsonSettingsProviderTests : IDisposable
 
         Assert.NotNull(loaded);
         Assert.Equal("Dark", loaded.ActiveThemeName);
+        Assert.Equal(loaded.DeviceId, (await provider.LoadAsync()).DeviceId);
+        Assert.Equal("{ invalid-json }", await File.ReadAllTextAsync(customPath));
+    }
+
+    [Fact]
+    public async Task LoadAsync_GivenConcurrentFirstLoads_PersistsOneIdentity()
+    {
+        var path = Path.Combine(this._testDirectory, "parallel.json");
+        var provider = new JsonSettingsProvider(path, NullLogger.Instance);
+        var loaded = await Task.WhenAll(Enumerable.Range(0, 8).Select(_ => provider.LoadAsync()));
+
+        Assert.Single(loaded.Select(s => s.DeviceId).Distinct());
+        Assert.Equal(loaded[0].DeviceId, (await new JsonSettingsProvider(path, NullLogger.Instance).LoadAsync()).DeviceId);
+    }
+
+    [Fact]
+    public async Task LoadAsync_GivenOlderSettingsWithoutDeviceId_PersistsGeneratedIdentity()
+    {
+        var path = Path.Combine(this._testDirectory, "older.json");
+        await File.WriteAllTextAsync(path, "{\"activeThemeName\":\"Light\"}");
+        var first = await new JsonSettingsProvider(path, NullLogger.Instance).LoadAsync();
+        var restarted = await new JsonSettingsProvider(path, NullLogger.Instance).LoadAsync();
+
+        Assert.Equal("Light", restarted.ActiveThemeName);
+        Assert.Equal(first.DeviceId, restarted.DeviceId);
     }
 
     public void Dispose()

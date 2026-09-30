@@ -3,6 +3,7 @@ namespace FocusTimer.Persistence
     using System;
     using System.IO;
     using System.Text.Json;
+    using System.Threading;
     using System.Threading.Tasks;
     using FocusTimer.Core.Interfaces;
     using FocusTimer.Core.Models;
@@ -16,6 +17,8 @@ namespace FocusTimer.Persistence
     {
         private readonly JsonSerializerOptions _jsonOptions;
         private readonly IAppLogger? _logger;
+        private readonly SemaphoreSlim _fileGate = new(1, 1);
+        private readonly string _fallbackDeviceId = new Settings().DeviceId;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="JsonSettingsProvider"/> class.
@@ -83,21 +86,32 @@ namespace FocusTimer.Persistence
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         public async Task<Settings> LoadAsync()
         {
+            await this._fileGate.WaitAsync();
             try
             {
                 if (!File.Exists(this.SettingsFilePath))
                 {
-                    this._logger?.LogDebug($"Settings file not found at {this.SettingsFilePath}, using defaults.");
-                    return new Settings();
+                    var defaults = new Settings { DeviceId = this._fallbackDeviceId };
+                    await this.WriteAsync(defaults);
+                    this._logger?.LogDebug($"Settings file not found at {this.SettingsFilePath}; saved defaults.");
+                    return defaults;
                 }
 
                 string json = await File.ReadAllTextAsync(this.SettingsFilePath);
+                using JsonDocument document = JsonDocument.Parse(json);
                 Settings? settings = JsonSerializer.Deserialize<Settings>(json, this._jsonOptions);
 
                 if (settings == null)
                 {
                     this._logger?.LogWarning("Failed to deserialize settings; using defaults.");
-                    return new Settings();
+                    return new Settings { DeviceId = this._fallbackDeviceId };
+                }
+
+                if (!document.RootElement.TryGetProperty("deviceId", out JsonElement deviceId)
+                    || deviceId.ValueKind != JsonValueKind.String
+                    || string.IsNullOrWhiteSpace(deviceId.GetString()))
+                {
+                    await this.WriteAsync(settings);
                 }
 
                 this._logger?.LogDebug($"Settings loaded from {this.SettingsFilePath}.");
@@ -106,7 +120,11 @@ namespace FocusTimer.Persistence
             catch (Exception ex)
             {
                 this._logger?.LogError("Error loading settings.", ex);
-                return new Settings();
+                return new Settings { DeviceId = this._fallbackDeviceId };
+            }
+            finally
+            {
+                this._fileGate.Release();
             }
         }
 
@@ -119,10 +137,10 @@ namespace FocusTimer.Persistence
         {
             ArgumentNullException.ThrowIfNull(settings);
 
+            await this._fileGate.WaitAsync();
             try
             {
-                string json = JsonSerializer.Serialize(settings, this._jsonOptions);
-                await File.WriteAllTextAsync(this.SettingsFilePath, json);
+                await this.WriteAsync(settings);
                 this._logger?.LogDebug($"Settings saved to {this.SettingsFilePath}.");
             }
             catch (Exception ex)
@@ -130,6 +148,16 @@ namespace FocusTimer.Persistence
                 this._logger?.LogError("Error saving settings.", ex);
                 throw;
             }
+            finally
+            {
+                this._fileGate.Release();
+            }
+        }
+
+        private Task WriteAsync(Settings settings)
+        {
+            string json = JsonSerializer.Serialize(settings, this._jsonOptions);
+            return File.WriteAllTextAsync(this.SettingsFilePath, json);
         }
     }
 }

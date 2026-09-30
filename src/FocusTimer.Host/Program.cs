@@ -65,6 +65,15 @@ namespace FocusTimer.Host
         /// <param name="worklogDirectory">The directory that is created for worklogs.</param>
         /// <returns>The configured service provider.</returns>
         internal static IServiceProvider BuildServiceProvider(string? envLogDir, bool isWindows, string worklogDirectory)
+            => BuildServiceProviderWithSettings(envLogDir, isWindows, worklogDirectory, null);
+
+        /// <summary>Builds the service provider with an optional settings provider for composition tests.</summary>
+        /// <param name="envLogDir">Optional log directory.</param>
+        /// <param name="isWindows">Whether to use Windows services.</param>
+        /// <param name="worklogDirectory">Worklog directory.</param>
+        /// <param name="settingsProvider">Optional settings provider override.</param>
+        /// <returns>The configured service provider.</returns>
+        internal static IServiceProvider BuildServiceProviderWithSettings(string? envLogDir, bool isWindows, string worklogDirectory, ISettingsProvider? settingsProvider)
         {
             var services = new ServiceCollection();
 
@@ -115,6 +124,10 @@ namespace FocusTimer.Host
             }
 
             FocusTimer.Persistence.ServiceCollectionExtensions.AddPersistenceServices(services);
+            if (settingsProvider != null)
+            {
+                services.AddSingleton(settingsProvider);
+            }
 
             services.AddSingleton<IThemeService, Core.Services.ThemeService>();
             services.AddSingleton<ThemeManager>();
@@ -123,12 +136,13 @@ namespace FocusTimer.Host
             services.AddSingleton<Core.Interfaces.IEventBus, Core.Services.EventBus>();
             services.AddSingleton<TimeProvider>(TimeProvider.System);
             services.AddSingleton<ISourcePlatformProvider, SourcePlatformProvider>();
+            services.AddSingleton<InstallationIdentity>();
             services.AddSingleton<SessionTracker>(sp => new SessionTracker(
                 sp.GetRequiredService<IActiveWindowService>(),
                 sp.GetRequiredService<IAppLogger>(),
                 sp.GetRequiredService<TimeProvider>(),
                 sp.GetRequiredService<ISourcePlatformProvider>(),
-                () => sp.GetRequiredService<ISettingsProvider>().LoadAsync().GetAwaiter().GetResult().DeviceId));
+                () => sp.GetRequiredService<InstallationIdentity>().DeviceId));
             services.AddSingleton<ITimerService, TimerService>();
             services.AddSingleton<BreakReminderService>();
             services.AddSingleton<TodayStatsService>();

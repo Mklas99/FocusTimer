@@ -6,7 +6,7 @@ Defines the timer widget's visual modes and how the user resizes/adjusts its app
 ## Requirements
 
 ### Requirement: Full Mode
-The system SHALL provide a draggable, always-on-top full-mode window showing the timer, play/pause/reset controls, the project tag field, and settings/compact-toggle icon buttons, consuming shared semantic component roles and accessible hit targets.
+The system SHALL provide a draggable, always-on-top full-mode window showing the timer, play/pause/reset controls, the project tag field, and a compact-mode toggle, consuming shared semantic component roles and accessible hit targets. Settings SHALL be accessible through the system tray menu, not a widget button.
 
 #### Scenario: User drags the widget
 - **WHEN** the user drags the full-mode widget
@@ -17,7 +17,7 @@ The system SHALL provide a draggable, always-on-top full-mode window showing the
 - **THEN** the controls display shared semantic button states (hover, pressed, focus) and provide accessible hit targets of at least 24x24 pixels
 
 ### Requirement: Compact Mode
-The system SHALL provide a narrow-bar compact mode showing the same timer data, state brushes, and theme as full mode as a density-adjusted variant of the shared component system, toggleable from the widget or Settings, and SHALL persist the selected mode across restarts.
+The system SHALL provide a narrow-bar compact mode showing the same timer data, state brushes, and theme as full mode as a density-adjusted variant of the shared component system, toggleable from the widget or Settings, and SHALL persist the selected mode across restarts. Compact mode SHALL show Start/Pause and Expand controls; Reset remains available after expanding to full mode.
 
 #### Scenario: User toggles compact mode
 - **WHEN** the user toggles compact mode from the widget or Settings
