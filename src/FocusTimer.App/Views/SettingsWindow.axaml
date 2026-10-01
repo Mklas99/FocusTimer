@@ -20,9 +20,9 @@
         <vm:SettingsWindowViewModel />
     </Design.DataContext>
 
-    <Grid RowDefinitions="*,Auto" Margin="20">
+    <Grid RowDefinitions="*,Auto,Auto" Margin="20">
         <!-- Settings Content -->
-        <TabControl Grid.Row="0" SelectedIndex="{Binding SelectedTabIndex}">
+        <TabControl Grid.Row="0" SelectedIndex="{Binding SelectedTabIndex}" IsEnabled="{Binding CanEdit}">
             <!-- General Tab -->
             <TabItem Header="General">
                 <ScrollViewer Classes="settings-scroll">
@@ -420,11 +420,25 @@
             </TabItem>
         </TabControl>
 
+        <StackPanel Grid.Row="1" Spacing="6" Margin="0,10,0,0">
+            <Grid ColumnDefinitions="*,Auto" IsVisible="{Binding HasLoadError}">
+                <TextBlock Grid.Column="0" Text="{Binding LoadError}" TextWrapping="Wrap" VerticalAlignment="Center" Margin="0,0,10,0" />
+                <Button Grid.Column="1" Content="Retry load" Command="{Binding RetryLoadCommand}" />
+            </Grid>
+            <TextBlock Text="{Binding AutoStartDriftWarning}" TextWrapping="Wrap"
+                       IsVisible="{Binding HasAutoStartDrift}" />
+            <Grid ColumnDefinitions="*,Auto" IsVisible="{Binding HasCommitError}">
+                <TextBlock Grid.Column="0" Text="{Binding CommitError}" TextWrapping="Wrap" VerticalAlignment="Center" Margin="0,0,10,0" />
+                <Button Grid.Column="1" Content="Retry recovery" Command="{Binding RetryRecoveryCommand}"
+                        IsVisible="{Binding RecoveryRequired}" />
+            </Grid>
+        </StackPanel>
+
         <!-- Button Panel -->
-        <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="10" Margin="0,15,0,0">
-            <Button Content="OK" Width="80" Click="OnOkClicked" />
-            <Button Content="Apply" Width="80" Command="{Binding ApplyCommand}" />
-            <Button Content="Cancel" Width="80" Command="{Binding CancelCommand}" CommandParameter="{Binding $parent[Window]}" />
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="10" Margin="0,15,0,0">
+            <Button Content="OK" Width="80" Click="OnOkClicked" IsEnabled="{Binding CanCommit}" />
+            <Button Content="Apply" Width="80" Command="{Binding ApplyCommand}" IsEnabled="{Binding CanCommit}" />
+            <Button Content="Cancel" Width="80" Command="{Binding CancelCommand}" CommandParameter="{Binding $parent[Window]}" IsEnabled="{Binding CanClose}" />
         </StackPanel>
     </Grid>
 </Window>

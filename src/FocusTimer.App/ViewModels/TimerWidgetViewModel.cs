@@ -525,6 +525,18 @@ namespace FocusTimer.App.ViewModels
             this._sessionTracker.SetTrackingEnabled(settings.WorkLoggingEnabled);
         }
 
+        /// <summary>Activates committed settings and updates an active tracking session.</summary>
+        /// <param name="settings">Committed settings.</param>
+        /// <returns>A task representing session activation.</returns>
+        public async Task ActivateSettingsAsync(Settings settings)
+        {
+            this.ApplySettings(settings);
+            if (this.IsRunning && settings.WorkLoggingEnabled)
+            {
+                await this._sessionTracker.StartAsync(this.ProjectTag);
+            }
+        }
+
         /// <summary>
         /// Reapply settings to the widget (used when settings change at runtime).
         /// </summary>

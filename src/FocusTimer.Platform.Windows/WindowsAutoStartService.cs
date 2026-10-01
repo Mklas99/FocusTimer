@@ -4,6 +4,7 @@ namespace FocusTimer.Platform.Windows
     using System.IO;
     using System.Reflection;
     using FocusTimer.Core.Interfaces;
+    using FocusTimer.Core.Models;
     using Microsoft.Win32;
 
     /// <summary>
@@ -14,6 +15,7 @@ namespace FocusTimer.Platform.Windows
         private const string RunKey = @"Software\Microsoft\Windows\CurrentVersion\Run";
         private const string AppName = "FocusTimer";
         private readonly IAppLogger? _logger;
+        private readonly string _runKeyPath;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="WindowsAutoStartService"/> class without a logger.
@@ -30,6 +32,16 @@ namespace FocusTimer.Platform.Windows
         public WindowsAutoStartService(IAppLogger? logger)
         {
             this._logger = logger;
+            this._runKeyPath = RunKey;
+        }
+
+        /// <summary>Initializes a new instance of the <see cref="WindowsAutoStartService"/> class with a specified Run key path.</summary>
+        /// <param name="runKeyPath">Registry subkey path.</param>
+        /// <param name="logger">Optional diagnostics logger.</param>
+        public WindowsAutoStartService(string runKeyPath, IAppLogger? logger)
+        {
+            this._runKeyPath = runKeyPath;
+            this._logger = logger;
         }
 
         /// <inheritdoc/>
@@ -37,11 +49,10 @@ namespace FocusTimer.Platform.Windows
         {
             try
             {
-                using RegistryKey? key = Registry.CurrentUser.OpenSubKey(RunKey, writable: true);
+                using RegistryKey? key = this.OpenRunKey(writable: true);
                 if (key == null)
                 {
-                    this._logger?.LogWarning("Failed to open registry key for auto-start.");
-                    return;
+                    throw new IOException("The Windows Run registry key could not be opened for writing.");
                 }
 
                 if (enabled)
@@ -52,6 +63,10 @@ namespace FocusTimer.Platform.Windows
                     {
                         key.SetValue(AppName, $"\"{exePath}\"");
                         this._logger?.LogInformation($"Auto-start enabled: {exePath}");
+                    }
+                    else
+                    {
+                        throw new IOException("The application executable path could not be determined.");
                     }
                 }
                 else
@@ -67,6 +82,7 @@ namespace FocusTimer.Platform.Windows
             catch (Exception ex)
             {
                 this._logger?.LogError("Failed to set auto-start.", ex);
+                throw;
             }
         }
 
@@ -75,10 +91,10 @@ namespace FocusTimer.Platform.Windows
         {
             try
             {
-                using RegistryKey? key = Registry.CurrentUser.OpenSubKey(RunKey, writable: false);
+                using RegistryKey? key = this.OpenRunKey(writable: false);
                 if (key == null)
                 {
-                    return false;
+                    throw new IOException("The Windows Run registry key could not be opened for reading.");
                 }
 
                 string? value = key.GetValue(AppName) as string;
@@ -87,9 +103,63 @@ namespace FocusTimer.Platform.Windows
             catch (Exception ex)
             {
                 this._logger?.LogError("Failed to check auto-start status.", ex);
-                return false;
+                throw;
             }
         }
+
+        /// <inheritdoc/>
+        public AutoStartRegistration CaptureRegistration()
+        {
+            using RegistryKey? key = this.OpenRunKey(writable: false);
+            if (key == null)
+            {
+                throw new IOException("The Windows Run registry key could not be opened for reading.");
+            }
+
+            if (!key.GetValueNames().Contains(AppName, StringComparer.OrdinalIgnoreCase))
+            {
+                return new AutoStartRegistration(false);
+            }
+
+            object? value = key.GetValue(AppName, null, RegistryValueOptions.DoNotExpandEnvironmentNames);
+            if (value is not string command)
+            {
+                throw new IOException("The FocusTimer Run value is not a command string.");
+            }
+
+            return new AutoStartRegistration(
+                !string.IsNullOrEmpty(command), command, key.GetValueKind(AppName).ToString());
+        }
+
+        /// <inheritdoc/>
+        public void RestoreRegistration(AutoStartRegistration registration)
+        {
+            if (registration.Command == null || registration.ValueKind == null)
+            {
+                this.SetAutoStart(registration.Enabled);
+                return;
+            }
+
+            using RegistryKey? key = this.OpenRunKey(writable: true);
+            if (key == null)
+            {
+                throw new IOException("The Windows Run registry key could not be opened for writing.");
+            }
+
+            if (!Enum.TryParse(registration.ValueKind, out RegistryValueKind kind) ||
+                kind is not (RegistryValueKind.String or RegistryValueKind.ExpandString))
+            {
+                throw new IOException("The saved FocusTimer Run value kind is invalid.");
+            }
+
+            key.SetValue(AppName, registration.Command, kind);
+        }
+
+        /// <summary>Opens the Windows Run key for reading or writing.</summary>
+        /// <param name="writable">Whether write access is required.</param>
+        /// <returns>The key, or null when unavailable.</returns>
+        protected virtual RegistryKey? OpenRunKey(bool writable) =>
+            Registry.CurrentUser.OpenSubKey(this._runKeyPath, writable);
 
         private static string GetExecutablePath()
         {

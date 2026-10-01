@@ -25,7 +25,14 @@ namespace FocusTimer.App.Views
 
         private void OnSettingsClosing(object? sender, WindowClosingEventArgs e)
         {
-            (this.DataContext as SettingsWindowViewModel)?.RestoreAppearancePreview();
+            if (this.DataContext is SettingsWindowViewModel viewModel)
+            {
+                if (!viewModel.TryDiscardAndClose())
+                {
+                    e.Cancel = true;
+                    return;
+                }
+            }
         }
 
         private void OnSettingsClosed(object? sender, System.EventArgs e)

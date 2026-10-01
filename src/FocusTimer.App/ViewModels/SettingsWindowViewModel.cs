@@ -32,15 +32,27 @@ namespace FocusTimer.App.ViewModels
         private readonly IThemeService _themeService;
         private readonly ThemeManager _themeManager;
         private readonly IAppLogger _logger;
+        private readonly SettingsCommitCoordinator _commitCoordinator;
+        private Func<Settings, Task> _activateRuntime = _ => Task.CompletedTask;
+        private Func<Task>? _recoveryCompleted;
         private Settings? _attachedSettings;
         private Theme? _attachedTheme;
         private Settings _settings;
+        private Settings _lastAppliedSettings = new();
+        private bool _observedAutoStartEnabled;
         private string _selectedThemeName;
         private Theme _lastAppliedTheme = new();
         private bool _appearancePreviewChanged;
         private int _versionClickCount;
         private decimal? _activityPollingIntervalInput = 10;
         private int _selectedTabIndex;
+        private bool _isSettingsLoaded;
+        private string _loadError = string.Empty;
+        private string _commitError = string.Empty;
+        private bool _isCommitting;
+        private bool _recoveryRequired;
+        private bool _recoveryCloseWarned;
+        private bool _isDisposed;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SettingsWindowViewModel"/> class.
@@ -66,6 +78,8 @@ namespace FocusTimer.App.ViewModels
             this._themeManager = themeManager;
             this._themeManager.ActualWidgetTransparencyChanged += this.OnActualWidgetTransparencyChanged;
             this._logger = logWriter;
+            this._commitCoordinator = new SettingsCommitCoordinator(
+                settingsProvider, autoStartService, settings => this._activateRuntime(settings));
             this._settings = new Settings();
             this._selectedThemeName = "Dark";
             this.ChangelogContent = this.LoadChangelogContent();
@@ -74,22 +88,19 @@ namespace FocusTimer.App.ViewModels
             // Initialize commands
             this.ApplyCommand = ReactiveCommand.CreateFromTask(this.ApplyAsync);
             this.OkCommand = ReactiveCommand.CreateFromTask(this.OkAsync);
-            this.CancelCommand = ReactiveCommand.Create<Window>(Cancel);
+            this.CancelCommand = ReactiveCommand.Create<Window>(this.Cancel);
             this.BrowseWorklogDirectoryCommand = ReactiveCommand.CreateFromTask<Window>(this.BrowseWorklogDirectoryAsync);
             this.ImportThemeCommand = ReactiveCommand.CreateFromTask<Window>(this.ImportThemeAsync);
             this.ExportThemeCommand = ReactiveCommand.CreateFromTask<Window>(this.ExportThemeAsync);
             this.ResetThemeCommand = ReactiveCommand.Create(this.ResetTheme);
             this.OpenRepositoryCommand = ReactiveCommand.Create(this.OpenRepository);
             this.VersionInfoClickedCommand = ReactiveCommand.Create(this.OnVersionInfoClicked);
+            this.RetryLoadCommand = ReactiveCommand.CreateFromTask(this.RetryLoadAsync);
+            this.RetryRecoveryCommand = ReactiveCommand.CreateFromTask(this.RetryRecoveryAsync);
 
             // Load settings
             _ = this.LoadSettingsAsync();
         }
-
-        /// <summary>
-        /// Raised when settings have been applied/saved.
-        /// </summary>
-        public event EventHandler? SettingsApplied;
 
         /// <summary>
         /// Gets the view model of the Summary tab.
@@ -131,6 +142,97 @@ namespace FocusTimer.App.ViewModels
         /// Gets the command for canceling settings changes.
         /// </summary>
         public ICommand CancelCommand { get; }
+
+        /// <summary>Gets the command to retry loading settings after a failure.</summary>
+        public ICommand RetryLoadCommand { get; }
+
+        /// <summary>Gets the command to retry an unfinished settings recovery.</summary>
+        public ICommand RetryRecoveryCommand { get; }
+
+        /// <summary>Gets a value indicating whether a settings commit is running.</summary>
+        public bool IsCommitting
+        {
+            get => this._isCommitting;
+            private set
+            {
+                this.RaiseAndSetIfChanged(ref this._isCommitting, value);
+                this.RaisePropertyChanged(nameof(this.CanCommit));
+                this.RaisePropertyChanged(nameof(this.CanClose));
+                this.RaisePropertyChanged(nameof(this.CanEdit));
+            }
+        }
+
+        /// <summary>Gets a value indicating whether a failed commit needs recovery.</summary>
+        public bool RecoveryRequired
+        {
+            get => this._recoveryRequired;
+            private set
+            {
+                this.RaiseAndSetIfChanged(ref this._recoveryRequired, value);
+                this.RaisePropertyChanged(nameof(this.CanCommit));
+            }
+        }
+
+        /// <summary>Gets a value indicating whether Apply and OK are available.</summary>
+        public bool CanCommit => this.IsSettingsLoaded && !this.IsCommitting && !this.RecoveryRequired && !this._isDisposed;
+
+        /// <summary>Gets a value indicating whether draft fields can be edited.</summary>
+        public bool CanEdit => this.IsSettingsLoaded && !this.IsCommitting && !this._isDisposed;
+
+        /// <summary>Gets a value indicating whether Cancel can close the window.</summary>
+        public bool CanClose => !this.IsCommitting;
+
+        /// <summary>Gets a visible commit or validation failure.</summary>
+        public string CommitError
+        {
+            get => this._commitError;
+            private set
+            {
+                this.RaiseAndSetIfChanged(ref this._commitError, value);
+                this.RaisePropertyChanged(nameof(this.HasCommitError));
+            }
+        }
+
+        /// <summary>Gets a value indicating whether a commit failure should be shown.</summary>
+        public bool HasCommitError => !string.IsNullOrEmpty(this.CommitError);
+
+        /// <summary>Gets a value indicating whether the settings draft is available for editing.</summary>
+        public bool IsSettingsLoaded
+        {
+            get => this._isSettingsLoaded;
+            private set
+            {
+                this.RaiseAndSetIfChanged(ref this._isSettingsLoaded, value);
+                this.RaisePropertyChanged(nameof(this.CanCommit));
+                this.RaisePropertyChanged(nameof(this.CanEdit));
+            }
+        }
+
+        /// <summary>Gets the visible settings load error.</summary>
+        public string LoadError
+        {
+            get => this._loadError;
+            private set
+            {
+                this.RaiseAndSetIfChanged(ref this._loadError, value);
+                this.RaisePropertyChanged(nameof(this.HasLoadError));
+            }
+        }
+
+        /// <summary>Gets a value indicating whether the load error should be shown.</summary>
+        public bool HasLoadError => !string.IsNullOrEmpty(this.LoadError);
+
+        /// <summary>Gets a value indicating whether operating-system start-on-login registration is present.</summary>
+        public bool ObservedAutoStartEnabled => this._observedAutoStartEnabled;
+
+        /// <summary>Gets the warning shown when saved start-on-login differs from Windows registration.</summary>
+        public string AutoStartDriftWarning => this.IsSettingsLoaded &&
+            this._lastAppliedSettings.AutoStartOnLogin != this._observedAutoStartEnabled
+                ? "Saved start-on-login differs from Windows registration. Apply or OK will reconcile registration to the value shown in the toggle."
+                : string.Empty;
+
+        /// <summary>Gets a value indicating whether a registration mismatch warning should be shown.</summary>
+        public bool HasAutoStartDrift => !string.IsNullOrEmpty(this.AutoStartDriftWarning);
 
         /// <summary>
         /// Gets the command for browsing the worklog directory.
@@ -202,6 +304,10 @@ namespace FocusTimer.App.ViewModels
             {
                 this.RaiseAndSetIfChanged(ref this._activityPollingIntervalInput, value);
                 this.RaisePropertyChanged(nameof(this.ActivityPollingIntervalError));
+                if (!this.RecoveryRequired)
+                {
+                    this.CommitError = string.Empty;
+                }
             }
         }
 
@@ -454,6 +560,11 @@ namespace FocusTimer.App.ViewModels
         /// <param name="colorValue">The updated color value.</param>
         public void SetThemeColor(string propertyName, string colorValue)
         {
+            if (!this.CanEdit)
+            {
+                return;
+            }
+
             PropertyInfo? property = typeof(Theme).GetProperty(propertyName);
             if (property?.PropertyType != typeof(string))
             {
@@ -477,11 +588,54 @@ namespace FocusTimer.App.ViewModels
         /// </summary>
         public void RestoreAppearancePreview()
         {
+            if (!this.IsSettingsLoaded || this.IsCommitting)
+            {
+                return;
+            }
+
             if (this._appearancePreviewChanged)
             {
                 this._themeManager.ApplyTheme(this._lastAppliedTheme);
                 this._appearancePreviewChanged = false;
             }
+
+            this.Settings = this._lastAppliedSettings.Clone();
+            this._selectedThemeName = this.Settings.ActiveThemeName;
+            this.RaisePropertyChanged(nameof(this.SelectedThemeName));
+        }
+
+        /// <summary>Sets the App-owned awaited runtime activation operation.</summary>
+        /// <param name="activate">Activation operation.</param>
+        public void SetRuntimeActivator(Func<Settings, Task> activate) =>
+            this._activateRuntime = activate ?? throw new ArgumentNullException(nameof(activate));
+
+        /// <summary>Sets the App-owned continuation after successful startup recovery.</summary>
+        /// <param name="continueStartup">Startup continuation.</param>
+        public void SetRecoveryCompleted(Func<Task> continueStartup) =>
+            this._recoveryCompleted = continueStartup ?? throw new ArgumentNullException(nameof(continueStartup));
+
+        /// <summary>Attempts to discard the draft and close after warning about pending recovery.</summary>
+        /// <returns>True when the window can close.</returns>
+        public bool TryDiscardAndClose()
+        {
+            if (this.IsCommitting)
+            {
+                return false;
+            }
+
+            if (this.RecoveryRequired && !this._recoveryCloseWarned)
+            {
+                this._recoveryCloseWarned = true;
+                this.CommitError = "Settings recovery is unfinished. Close again to leave recovery pending for the next start.";
+                return false;
+            }
+
+            if (!this.RecoveryRequired)
+            {
+                this.RestoreAppearancePreview();
+            }
+
+            return true;
         }
 
         /// <summary>
@@ -489,6 +643,7 @@ namespace FocusTimer.App.ViewModels
         /// </summary>
         public void Dispose()
         {
+            this._isDisposed = true;
             this._themeManager.ActualWidgetTransparencyChanged -= this.OnActualWidgetTransparencyChanged;
             this.DetachTheme();
             if (this._attachedSettings != null)
@@ -497,9 +652,28 @@ namespace FocusTimer.App.ViewModels
             }
         }
 
-        private static void Cancel(Window window)
+        /// <summary>Loads a selected theme into the editable draft if the window remains active.</summary>
+        /// <param name="filePath">Selected theme file.</param>
+        /// <returns>A task representing the import.</returns>
+        internal async Task ImportThemeFileAsync(string filePath)
         {
-            window?.Close();
+            if (!this.CanEdit)
+            {
+                return;
+            }
+
+            Theme theme = await this._themeService.LoadThemeFromFileAsync(filePath);
+            if (!this.CanEdit)
+            {
+                return;
+            }
+
+            this.Settings.Theme = theme;
+            this.Settings.CustomThemePath = filePath;
+            this.Settings.ActiveThemeName = theme.ThemeName;
+            this._selectedThemeName = "Custom";
+            this.RaisePropertyChanged(nameof(this.SelectedThemeName));
+            this._logger.LogInformation($"Theme '{theme.ThemeName}' imported successfully");
         }
 
         private static double ToPercent(double normalized)
@@ -512,33 +686,128 @@ namespace FocusTimer.App.ViewModels
             return Math.Clamp(percent / 100.0, 0.0, 1.0);
         }
 
-        private async Task ApplyAsync()
+        private void Cancel(Window window)
         {
-            this.LastApplySucceeded = false;
-            if (!string.IsNullOrEmpty(this.ActivityPollingIntervalError))
+            if (!this.TryDiscardAndClose())
             {
                 return;
             }
 
+            window?.Close();
+        }
+
+        private async Task ApplyAsync()
+        {
+            this.LastApplySucceeded = false;
+            if (!this.CanCommit)
+            {
+                return;
+            }
+
+            string validationError = this.ValidateDraft();
+            if (!string.IsNullOrEmpty(validationError))
+            {
+                this.CommitError = validationError;
+                return;
+            }
+
+            this.IsCommitting = true;
+            this.CommitError = string.Empty;
             try
             {
-                // Apply auto-start setting to registry before saving
-                this._autoStartService.SetAutoStart(this._settings.AutoStartOnLogin);
-
-                this._settings.ActivityPollingIntervalSeconds = (int)this.ActivityPollingIntervalInput!.Value;
-                await this._settingsProvider.SaveAsync(this._settings);
-                this._lastAppliedTheme = this.Settings.Theme.Clone();
-                this._appearancePreviewChanged = false;
-                this.LastApplySucceeded = true;
-                this.SettingsApplied?.Invoke(this, EventArgs.Empty);
-                this._logger.LogDebug("Settings saved successfully");
+                Settings candidate = this.Settings.Clone();
+                candidate.ActivityPollingIntervalSeconds = (int)this.ActivityPollingIntervalInput!.Value;
+                SettingsCommitStatus result = await this._commitCoordinator.CommitAsync(
+                    candidate, this._lastAppliedSettings);
+                if (result == SettingsCommitStatus.Success)
+                {
+                    this._lastAppliedSettings = candidate.Clone();
+                    this._lastAppliedTheme = candidate.Theme.Clone();
+                    this._appearancePreviewChanged = false;
+                    this.LastApplySucceeded = true;
+                    this._observedAutoStartEnabled = candidate.AutoStartOnLogin;
+                    this.RaisePropertyChanged(nameof(this.ObservedAutoStartEnabled));
+                    this.RaisePropertyChanged(nameof(this.AutoStartDriftWarning));
+                    this.RaisePropertyChanged(nameof(this.HasAutoStartDrift));
+                    this._logger.LogDebug("Settings saved successfully");
+                }
+                else
+                {
+                    this.RecoveryRequired = result == SettingsCommitStatus.RecoveryRequired;
+                    string detail = this._commitCoordinator.LastError ?? "See the application log for details.";
+                    this.CommitError = this.RecoveryRequired
+                        ? $"Settings recovery is required: {detail} Retry recovery before applying more changes."
+                        : $"Settings could not be applied: {detail} The previous values were restored; correct the problem and retry.";
+                }
             }
             catch (Exception ex)
             {
-                this._logger.LogDebug($"Failed to save settings: {ex.Message}");
-
-                // TODO: Show error dialog to user
+                this._logger.LogError("Failed to apply settings.", ex);
+                this.CommitError = $"Settings could not be applied: {ex.Message}";
             }
+            finally
+            {
+                this.IsCommitting = false;
+            }
+        }
+
+        private async Task RetryRecoveryAsync()
+        {
+            if (this.IsCommitting)
+            {
+                return;
+            }
+
+            bool recovered = await this._commitCoordinator.RecoverAsync(
+                this.IsSettingsLoaded ? this._lastAppliedSettings : null);
+            this.RecoveryRequired = !recovered;
+            if (recovered)
+            {
+                this._recoveryCloseWarned = false;
+            }
+
+            this.CommitError = recovered
+                ? string.Empty
+                : $"Settings recovery is still required: {this._commitCoordinator.LastError} Check access, then retry.";
+            if (recovered && !this.IsSettingsLoaded)
+            {
+                await this.LoadSettingsAsync();
+                if (this.IsSettingsLoaded && this._recoveryCompleted != null)
+                {
+                    await this._recoveryCompleted();
+                }
+            }
+        }
+
+        private string ValidateDraft()
+        {
+            if (!string.IsNullOrEmpty(this.ActivityPollingIntervalError))
+            {
+                return this.ActivityPollingIntervalError;
+            }
+
+            if (this.Settings.BreakIntervalMinutes <= 0)
+            {
+                return "Break interval must be greater than zero.";
+            }
+
+            if (this.Settings.DataRetentionDays <= 0)
+            {
+                return "Data retention must be greater than zero days.";
+            }
+
+            if (string.IsNullOrWhiteSpace(this.Settings.LogDirectory) ||
+                string.IsNullOrWhiteSpace(this.Settings.WorklogDirectory))
+            {
+                return "Log and worklog directories are required.";
+            }
+
+            if (!this._themeService.ValidateTheme(this.Settings.Theme))
+            {
+                return "The selected theme contains invalid colors or appearance values.";
+            }
+
+            return string.Empty;
         }
 
         private async Task BrowseWorklogDirectoryAsync(Window window)
@@ -557,7 +826,10 @@ namespace FocusTimer.App.ViewModels
 
                 if (result.Count > 0)
                 {
-                    this.Settings.WorklogDirectory = result[0].Path.LocalPath;
+                    if (this.CanEdit)
+                    {
+                        this.Settings.WorklogDirectory = result[0].Path.LocalPath;
+                    }
                 }
             }
             catch (Exception ex)
@@ -568,9 +840,13 @@ namespace FocusTimer.App.ViewModels
 
         private async Task LoadSettingsAsync()
         {
+            this.IsSettingsLoaded = false;
+            this.LoadError = string.Empty;
             try
             {
-                this.Settings = await this._settingsProvider.LoadAsync();
+                Settings savedSettings = await this._settingsProvider.LoadAsync();
+                this._lastAppliedSettings = savedSettings.Clone();
+                this.Settings = savedSettings.Clone();
                 Theme? selectedPreset = this._themeService.GetBuiltInTheme(this.Settings.ActiveThemeName);
                 if (selectedPreset != null && !string.Equals(
                         this.Settings.Theme.ThemeName,
@@ -586,19 +862,33 @@ namespace FocusTimer.App.ViewModels
                 this.RaisePropertyChanged(nameof(this.SelectedThemeName));
                 this.RaisePropertyChanged(nameof(this.IsDeveloperModeVisible));
                 this.RaisePropertyChanged(nameof(this.SelectedDeveloperLogLevel));
-                bool isAutoStartEnabled = this._autoStartService.IsAutoStartEnabled();
-                if (this.Settings.AutoStartOnLogin != isAutoStartEnabled)
-                {
-                    this.Settings.AutoStartOnLogin = isAutoStartEnabled;
-                }
+                this._observedAutoStartEnabled = this._autoStartService.IsAutoStartEnabled();
+                this.RaisePropertyChanged(nameof(this.ObservedAutoStartEnabled));
 
                 this.RaiseOpacityDiagnostics();
+                this.IsSettingsLoaded = true;
+                this.RaisePropertyChanged(nameof(this.AutoStartDriftWarning));
+                this.RaisePropertyChanged(nameof(this.HasAutoStartDrift));
+            }
+            catch (SettingsRecoveryRequiredException)
+            {
+                this.RecoveryRequired = true;
+                this.LoadError = "An unfinished Settings commit needs recovery before the file can be loaded.";
+                this.CommitError = "Settings recovery is required. Retry recovery before applying more changes.";
             }
             catch (Exception ex)
             {
                 this._logger.LogError("Failed to load settings.", ex);
+                this.LoadError = "Settings could not be loaded. The existing file was left unchanged. Retry after fixing the file or access problem.";
+            }
+        }
 
-                // Keep default settings
+        private async Task RetryLoadAsync()
+        {
+            await this.LoadSettingsAsync();
+            if (this.IsSettingsLoaded && this._recoveryCompleted != null)
+            {
+                await this._recoveryCompleted();
             }
         }
 
@@ -629,23 +919,16 @@ namespace FocusTimer.App.ViewModels
                     },
                 };
                 IReadOnlyList<IStorageFile> result = await storageProvider.OpenFilePickerAsync(options);
-                if (result.Count > 0)
+                if (result.Count > 0 && this.CanEdit)
                 {
                     string filePath = result[0].Path.LocalPath;
-                    Theme theme = await this._themeService.LoadThemeFromFileAsync(filePath);
-                    this.Settings.Theme = theme;
-                    this.Settings.CustomThemePath = filePath;
-                    this.Settings.ActiveThemeName = theme.ThemeName;
-                    this._selectedThemeName = "Custom";
-                    this.RaisePropertyChanged(nameof(this.SelectedThemeName));
-                    this._logger.LogInformation($"Theme '{theme.ThemeName}' imported successfully");
+                    await this.ImportThemeFileAsync(filePath);
                 }
             }
             catch (Exception ex)
             {
                 this._logger.LogError($"Failed to import theme: {ex.Message}", ex);
-
-                // TODO: Show error dialog
+                this.CommitError = $"Theme import failed: {ex.Message}";
             }
         }
 
@@ -688,8 +971,13 @@ namespace FocusTimer.App.ViewModels
 
         private void ResetTheme()
         {
-            this._themeService.ResetToDefault();
-            this.Settings.Theme = this._themeService.CurrentTheme.Clone();
+            if (!this.CanEdit)
+            {
+                return;
+            }
+
+            this.Settings.Theme = this._themeService.GetBuiltInTheme("Dark")
+                ?? throw new InvalidOperationException("The built-in Dark theme is unavailable.");
             this.Settings.ActiveThemeName = "Dark";
             this._selectedThemeName = "Dark";
             this.RaisePropertyChanged(nameof(this.SelectedThemeName));
@@ -742,6 +1030,11 @@ namespace FocusTimer.App.ViewModels
 
         private void OnSettingsPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
+            if (!this.RecoveryRequired)
+            {
+                this.CommitError = string.Empty;
+            }
+
             if (e.PropertyName == nameof(this.Settings.Theme))
             {
                 this.AttachTheme(this.Settings.Theme);
@@ -761,6 +1054,11 @@ namespace FocusTimer.App.ViewModels
 
         private void OnThemePropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
+            if (!this.RecoveryRequired)
+            {
+                this.CommitError = string.Empty;
+            }
+
             this._appearancePreviewChanged = true;
             this.ApplyThemeChanges();
             if (e.PropertyName == nameof(Theme.WidgetBlurMode))

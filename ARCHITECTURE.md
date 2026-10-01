@@ -164,9 +164,11 @@ This allows late-binding access to services from non-DI-aware contexts. It is cu
 **Key Components**:
 
 - **JsonSettingsProvider.cs**
-  - Implements ISettingsProvider
+  - Implements `ISettingsProvider` and `ISettingsCommitStore`
   - Stores settings in `%APPDATA%\Roaming\FocusTimer\settings.json` (supports custom path injection for isolated test execution)
-  - Automatic JSON serialization/deserialization with sane defaults
+  - Uses atomic replacement for ordinary writes and a pending journal plus previous-state copy for Settings commits
+  - Loads defaults for a missing file; stops startup activation and opens Settings for retry when an existing file is malformed or unreadable
+  - Restores the original Windows Run command and value kind when a Settings commit fails or recovery runs
 
 - **CsvSessionRepository.cs**
   - Implements `IWorklogStore`

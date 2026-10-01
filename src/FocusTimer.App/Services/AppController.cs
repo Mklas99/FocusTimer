@@ -20,6 +20,7 @@ namespace FocusTimer.App.Services
     public class AppController
     {
         private readonly ISettingsProvider _settingsProvider;
+        private readonly IAutoStartService? _autoStartService;
         private readonly IGlobalHotkeyService _hotkeyService;
         private readonly INotificationService _notificationService;
         private readonly IThemeService _themeService;
@@ -53,6 +54,7 @@ namespace FocusTimer.App.Services
         /// <param name="logWriter">Logger for application logging.</param>
         /// <param name="eventBus">Event bus for subscribing to application-level events.</param>
         /// <param name="installationIdentity">Cached identity for worklog entries.</param>
+        /// <param name="autoStartService">Optional start-on-login service for recovery.</param>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Major Code Smell", "S107:Methods should not have too many parameters", Justification = "Constructor injection of dependencies.")]
         public AppController(
             ISettingsProvider settingsProvider,
@@ -67,9 +69,11 @@ namespace FocusTimer.App.Services
             ITrayIconController trayIconController,
             IAppLogger logWriter,
             IEventBus? eventBus,
-            InstallationIdentity installationIdentity)
+            InstallationIdentity installationIdentity,
+            IAutoStartService? autoStartService = null)
         {
             this._settingsProvider = settingsProvider;
+            this._autoStartService = autoStartService;
             this._hotkeyService = hotkeyService;
             this._notificationService = notificationService;
             this._themeService = themeService;
@@ -99,6 +103,12 @@ namespace FocusTimer.App.Services
         /// </summary>
         public Settings CurrentSettings { get; private set; }
 
+        /// <summary>Gets a value indicating whether startup settings recovery remains unfinished.</summary>
+        public bool StartupRecoveryRequired { get; private set; }
+
+        /// <summary>Gets a value indicating whether saved settings failed to load at startup.</summary>
+        public bool StartupSettingsLoadFailed { get; private set; }
+
         /// <summary>
         /// Initialize the controller and load settings.
         /// </summary>
@@ -117,14 +127,30 @@ namespace FocusTimer.App.Services
 
             try
             {
+                if (this._autoStartService != null)
+                {
+                    var coordinator = new SettingsCommitCoordinator(
+                        this._settingsProvider, this._autoStartService, _ => Task.CompletedTask);
+                    if (!await coordinator.RecoverAsync())
+                    {
+                        this.StartupRecoveryRequired = true;
+                        this._logWriter.LogError("Settings recovery is required before startup can activate settings.");
+                        return;
+                    }
+                }
+
                 this.CurrentSettings = await this._settingsProvider.LoadAsync();
             }
             catch (Exception ex)
             {
                 this._logWriter.LogError("Failed to load settings.", ex);
+                this.StartupSettingsLoadFailed = true;
+                return;
             }
 
             this._installationIdentity.Initialize(this.CurrentSettings.DeviceId);
+            this.StartupRecoveryRequired = false;
+            this.StartupSettingsLoadFailed = false;
 
             try
             {
@@ -193,19 +219,7 @@ namespace FocusTimer.App.Services
 
             try
             {
-                this._hotkeyService.UnregisterAll();
-
-                // Register show/hide hotkey (default: Ctrl+Alt+T)
-                string showHideHotkey = this.CurrentSettings.HotkeyShowHide ?? "Ctrl+Alt+T";
-                this._showHideHotkeyDefinition = this.ParseHotkeyOrDefault(showHideHotkey, "Ctrl+Alt+T");
-                this._hotkeyService.Register(this._showHideHotkeyDefinition);
-
-                // Register toggle timer hotkey (default: Ctrl+Alt+P)
-                string toggleTimerHotkey = this.CurrentSettings.HotkeyToggleTimer ?? "Ctrl+Alt+P";
-                this._toggleTimerHotkeyDefinition = this.ParseHotkeyOrDefault(toggleTimerHotkey, "Ctrl+Alt+P");
-                this._hotkeyService.Register(this._toggleTimerHotkeyDefinition);
-
-                this._logWriter.LogInformation($"Hotkeys registered: {this._showHideHotkeyDefinition}, {this._toggleTimerHotkeyDefinition}");
+                this.RegisterHotkeysCore();
             }
             catch (Exception ex)
             {
@@ -335,7 +349,7 @@ namespace FocusTimer.App.Services
         /// </summary>
         public void ShowSettings()
         {
-            if (!this._initialized)
+            if (!this._initialized && !this.StartupRecoveryRequired && !this.StartupSettingsLoadFailed)
             {
                 return;
             }
@@ -350,17 +364,12 @@ namespace FocusTimer.App.Services
                         DataContext = viewModel,
                     };
 
-                    // Subscribe to settings applied event
-                    viewModel.SettingsApplied += this.OnSettingsApplied;
+                    viewModel.SetRuntimeActivator(this.ActivateSettingsAsync);
+                    viewModel.SetRecoveryCompleted(this.ContinueAfterRecoveryAsync);
 
                     // Handle window closed event
                     this._settingsWindow.Closed += (s, e) =>
                     {
-                        if (this._settingsWindow?.DataContext is SettingsWindowViewModel vm)
-                        {
-                            vm.SettingsApplied -= this.OnSettingsApplied;
-                        }
-
                         this._settingsWindow = null;
                     };
                 }
@@ -509,39 +518,61 @@ namespace FocusTimer.App.Services
             this._logWriter.LogInformation($"User activity resumed at {e.Timestamp:O}");
         }
 
-        /// <summary>
-        /// Handle settings changes and apply them to the timer widget.
-        /// </summary>
-        private async void OnSettingsApplied(object? sender, EventArgs e)
+        private void RegisterHotkeysCore()
         {
-            try
+            this._hotkeyService.UnregisterAll();
+            string showHideHotkey = this.CurrentSettings.HotkeyShowHide ?? "Ctrl+Alt+T";
+            this._showHideHotkeyDefinition = this.ParseHotkeyOrDefault(showHideHotkey, "Ctrl+Alt+T");
+            this._hotkeyService.Register(this._showHideHotkeyDefinition);
+            string toggleTimerHotkey = this.CurrentSettings.HotkeyToggleTimer ?? "Ctrl+Alt+P";
+            this._toggleTimerHotkeyDefinition = this.ParseHotkeyOrDefault(toggleTimerHotkey, "Ctrl+Alt+P");
+            this._hotkeyService.Register(this._toggleTimerHotkeyDefinition);
+            this._logWriter.LogInformation(
+                $"Hotkeys registered: {this._showHideHotkeyDefinition}, {this._toggleTimerHotkeyDefinition}");
+        }
+
+        private async Task ContinueAfterRecoveryAsync()
+        {
+            if (this._initialized)
             {
-                // Reload settings
-                this.CurrentSettings = await this._settingsProvider.LoadAsync();
-
-                // Apply theme
-                this._themeManager.ApplyTheme(this.CurrentSettings.Theme);
-
-                // Apply to timer widget if it exists
-                if (this._timerWindow?.DataContext is TimerWidgetViewModel vm)
-                {
-                    await vm.ReloadSettingsAsync();
-                }
-
-                // Apply window-level settings
-                if (this._timerWindow != null)
-                {
-                    this._timerWindow.Topmost = this.CurrentSettings.AlwaysOnTop;
-                }
-
-                // Re-register hotkeys with new settings
-                this._hotkeyService.UnregisterAll();
-                this.RegisterHotkeys();
+                return;
             }
-            catch (Exception ex)
+
+            await this.InitializeAsync();
+            if (!this._initialized)
             {
-                this._logWriter.LogError($"Failed to apply settings.", ex);
+                return;
             }
+
+            if (!this.CurrentSettings.StartMinimized)
+            {
+                this.ShowTimerWidget();
+            }
+
+            this.RegisterHotkeys();
+        }
+
+        /// <summary>
+        /// Applies committed settings to the running widget and integrations.
+        /// </summary>
+        /// <param name="settings">Settings to activate.</param>
+        /// <returns>A task representing activation.</returns>
+        private async Task ActivateSettingsAsync(Settings settings)
+        {
+            this.CurrentSettings = settings.Clone();
+            this._themeService.ApplyTheme(this.CurrentSettings.Theme);
+            this._themeManager.ApplyTheme(this.CurrentSettings.Theme);
+            if (this._timerWindow?.DataContext is TimerWidgetViewModel vm)
+            {
+                await vm.ActivateSettingsAsync(this.CurrentSettings);
+            }
+
+            if (this._timerWindow != null)
+            {
+                this._timerWindow.Topmost = this.CurrentSettings.AlwaysOnTop;
+            }
+
+            this.RegisterHotkeysCore();
         }
     }
 }

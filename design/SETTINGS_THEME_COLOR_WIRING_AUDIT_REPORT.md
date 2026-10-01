@@ -10,7 +10,7 @@ The `wire-settings-theme-colors` change corrected `InputFocusBorder` and `TabSel
 
 All seven built-in palettes passed the [Settings contrast check](SETTINGS_THEME_COLOR_CONTRAST_CHECK.md), including focused fields and tabs. An isolated rendered Settings preview was inspected in each palette, with a Dark-to-Light live switch and focused Light/High Contrast states. Those checks cover the delivered text, input, and tab roles; they do not close the broader OI-24 control redesign. Light checkbox marks and action button surfaces still lack a clear visual treatment.
 
-The appearance preview is restored from the saved theme when Settings closes without applying. OI-21 remains open for consistent Save/Apply and Cancel behavior across other settings. Custom imported themes are not constrained by the built-in contrast check. See [OpenIssues.md](../docs/versions/current/OpenIssues.md) for the remaining scope.
+The appearance preview is restored from the last successful Settings commit when Settings closes without applying. The shared Apply/OK and Cancel behavior across other settings is now delivered by `make-settings-edits-consistent`; OI-21 remains open for the optional immediate-change setting and OI-24 visual work. Custom imported themes are not constrained by the built-in contrast check. See [OpenIssues.md](../docs/versions/current/OpenIssues.md) for the remaining scope.
 
 ## Diagnosis
 

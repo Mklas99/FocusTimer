@@ -4,6 +4,8 @@
 
 This report records the Settings window before the OI-21 redesign. It covers General, Logging, Appearance, Hotkeys, About, and the unlocked Developer Options section. The timer widget layout is outside scope.
 
+Implementation update: `make-settings-edits-consistent` now supplies the shared draft, Apply/OK commit, Cancel/title-bar discard, temporary theme preview, and visible failure and recovery states. Behavior findings and line references below describe the pre-change audit and are retained as historical evidence. The control styling and optional immediate-change setting remain open in OI-21/OI-24.
+
 Findings marked **code-backed** follow from the repository and Avalonia 11.2.0 control templates. Findings marked **rendering unverified** need a running Settings window. No Settings screenshots were found in the inspected files, and no FocusTimer process was running during the audit. No UI states were observed directly. The [Avalonia 11.2.0 Button template](https://github.com/AvaloniaUI/Avalonia/blob/11.2.0/src/Avalonia.Themes.Fluent/Controls/Button.xaml) and [Expander template](https://raw.githubusercontent.com/AvaloniaUI/Avalonia/11.2.0/src/Avalonia.Themes.Fluent/Controls/Expander.xaml) were consulted for template state behavior; other Fluent controls are identified as template-owned without asserting their exact rendered colors.
 
 ## Diagnosis

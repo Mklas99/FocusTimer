@@ -8,6 +8,8 @@ Make the Settings window feel like one coherent desktop interface. Tabs, accordi
 
 These are the target behaviors for OI-21; the current implementation may differ.
 
+The shared draft, full Apply/OK commit, Cancel/title-bar discard, temporary appearance preview, and visible load/commit/recovery errors are implemented by `make-settings-edits-consistent`. An unfinished commit is recovered before startup activates settings; a failed load stops activation and opens Settings for retry. Windows start-on-login registration is compared with the saved value and reconciled on Apply/OK, with the original Run value preserved for recovery. The immediate-change option remains open; appearance previews immediately by default, while nonappearance settings take effect on commit. OI-24 covers the remaining visual polish.
+
 - Treat edits on every Settings tab as one draft. Changing tabs must not save or apply that draft.
 - Keep the existing distinction between Save/OK and Apply: Save/OK persists the full draft and closes the window; Apply persists the full draft and keeps it open. The last successful Save/Apply becomes the new restore point.
 - Add a Settings option for immediate changes. When off, edits remain a draft and do not change running behavior or appearance until Save/OK or Apply succeeds. When on, eligible edits may preview in the running app immediately, but they are not persisted until Save/OK or Apply succeeds. Document any setting that cannot preview safely.
@@ -27,7 +29,8 @@ These are the target behaviors for OI-21; the current implementation may differ.
 - [ ] Decide whether to keep the native tray menu's system styling or use a themeable app menu. Base the decision on the audit and keep menu behavior accessible.
 - [ ] Establish one Settings control system for tabs, accordions, inputs, checkboxes, sliders, and buttons. Specify normal, hover, pressed, selected/checked, disabled, invalid, and keyboard focus states where applicable. Preserve readable contrast in built-in and custom themes.
 - [ ] Redesign the Settings page hierarchy and spacing. Give the footer a clear boundary and distinguish its primary action from secondary actions. Keep the Appearance editor scannable; group detailed theme fields without hiding essential controls.
-- [ ] Implement one draft and restore-point model shared by all tabs. Make Save/OK, Apply, Cancel, title-bar close, and optional immediate preview follow the decisions above. Treat import, theme reset, and preset selection as draft changes until saved or applied.
+- [x] Implement one draft and restore-point model shared by all tabs. Make Save/OK, Apply, Cancel, and title-bar close follow the decisions above. Treat import, theme reset, and preset selection as draft changes until saved or applied.
+- [ ] Add the optional immediate-change setting and define which nonappearance settings can preview safely.
 - [ ] Provide visible validation and save-failure feedback without silently discarding edits. Check keyboard order, focus visibility, labels, and pointer targets.
 - [ ] Update OpenSpec, design references, and user-facing documentation to match the final behavior and visual roles.
 

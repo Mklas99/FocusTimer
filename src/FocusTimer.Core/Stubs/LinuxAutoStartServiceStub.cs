@@ -31,6 +31,10 @@ namespace FocusTimer.Core.Stubs
         public void SetAutoStart(bool enabled)
         {
             this._logger?.LogInformation($"[Linux Stub] SetAutoStart: {enabled}");
+            if (enabled)
+            {
+                throw new PlatformNotSupportedException("Start on login is not implemented on Linux.");
+            }
 
             // TODO: Implement by creating/removing .desktop file
             // Example path: ~/.config/autostart/FocusTimer.desktop
