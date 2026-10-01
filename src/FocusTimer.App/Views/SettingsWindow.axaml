@@ -126,11 +126,11 @@
                                     Width="80" Margin="10,0,0,0" />
                         </Grid>
 
-                        <TextBlock Classes="SectionHeader" Text="Color Palette" />
-
-                        <Grid ColumnDefinitions="*,12,*">
-                            <Expander Grid.Column="0" Header="Timer Widget" IsExpanded="True" Classes="settings-accordion">
-                                <Grid ColumnDefinitions="126,*,Auto" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" Margin="0,8,0,0">
+                        <Expander Header="Color Palette" IsExpanded="True" Classes="settings-accordion">
+                            <Grid ColumnDefinitions="*,12,*" Margin="0,8,0,0">
+                                <StackPanel Grid.Column="0" Spacing="8">
+                                    <TextBlock Classes="SectionHeader" Text="Timer Widget" />
+                                    <Grid ColumnDefinitions="126,*,Auto" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
                                     <TextBlock Grid.Row="0" Grid.Column="0" Classes="SettingLabel" Text="Background:" />
                                     <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Settings.Theme.WindowBackground}" Watermark="#1E1E1E" Margin="0,0,8,0" />
                                     <Button Grid.Row="0" Grid.Column="2" Classes="color-swatch" Background="{Binding Settings.Theme.WindowBackground}" Tag="WindowBackground" Click="OnColorPreviewClicked" ToolTip.Tip="Open color picker" />
@@ -160,11 +160,12 @@
                                     <TextBlock Grid.Row="7" Grid.Column="0" Classes="SettingLabel" Text="Button Disabled:" Margin="0,6,0,0" />
                                     <TextBox Grid.Row="7" Grid.Column="1" Text="{Binding Settings.Theme.ButtonDisabled}" Watermark="#40FFFFFF" Margin="0,6,8,0" />
                                     <Button Grid.Row="7" Grid.Column="2" Classes="color-swatch" Background="{Binding Settings.Theme.ButtonDisabled}" Tag="ButtonDisabled" Click="OnColorPreviewClicked" ToolTip.Tip="Open color picker" Margin="0,6,0,0" />
-                                </Grid>
-                            </Expander>
+                                    </Grid>
+                                </StackPanel>
 
-                            <Expander Grid.Column="2" Header="Dialogs &amp; Notifications" IsExpanded="True" Classes="settings-accordion">
-                                <Grid ColumnDefinitions="126,*,Auto" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" Margin="0,8,0,0">
+                                <StackPanel Grid.Column="2" Spacing="8">
+                                    <TextBlock Classes="SectionHeader" Text="Dialogs &amp; Notifications" />
+                                    <Grid ColumnDefinitions="126,*,Auto" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
                                     <TextBlock Grid.Row="0" Grid.Column="0" Classes="SettingLabel" Text="Background:" />
                                     <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Settings.Theme.SettingsBackground}" Watermark="#2D2D30" Margin="0,0,8,0" />
                                     <Button Grid.Row="0" Grid.Column="2" Classes="color-swatch" Background="{Binding Settings.Theme.SettingsBackground}" Tag="SettingsBackground" Click="OnColorPreviewClicked" ToolTip.Tip="Open color picker" />
@@ -200,9 +201,10 @@
                                     <TextBlock Grid.Row="8" Grid.Column="0" Classes="SettingLabel" Text="Danger:" Margin="0,6,0,0" />
                                     <TextBox Grid.Row="8" Grid.Column="1" Text="{Binding Settings.Theme.DangerColor}" Watermark="#D9534F" Margin="0,6,8,0" />
                                     <Button Grid.Row="8" Grid.Column="2" Classes="color-swatch" Background="{Binding Settings.Theme.DangerColor}" Tag="DangerColor" Click="OnColorPreviewClicked" ToolTip.Tip="Open color picker" Margin="0,6,0,0" />
-                                </Grid>
-                            </Expander>
-                        </Grid>
+                                    </Grid>
+                                </StackPanel>
+                            </Grid>
+                        </Expander>
 
                         <!-- Opacity Controls Section -->
 
