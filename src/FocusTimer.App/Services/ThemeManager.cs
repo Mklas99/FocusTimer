@@ -160,7 +160,7 @@ namespace FocusTimer.App.Services
             // Input Controls
             this.UpdateColorResource(resources, "InputBackgroundColor", theme.InputBackground);
             this.UpdateColorResource(resources, "InputBorderColor", theme.InputBorder);
-            this.UpdateColorResource(resources, "InputFocusBorderColor", theme.AccentPrimary);
+            this.UpdateColorResource(resources, "InputFocusBorderColor", theme.InputFocusBorder);
             this.UpdateColorResource(resources, "InputTextColor", theme.InputText);
 
             // Project Tag
@@ -181,7 +181,7 @@ namespace FocusTimer.App.Services
 
             // Tab Control
             this.UpdateColorResource(resources, "TabBackgroundColor", theme.TabBackground);
-            this.UpdateColorResource(resources, "TabSelectedBackgroundColor", theme.AccentPrimary);
+            this.UpdateColorResource(resources, "TabSelectedBackgroundColor", theme.TabSelectedBackground);
             this.UpdateColorResource(resources, "TabHoverBackgroundColor", theme.TabHoverBackground);
             this.UpdateColorResource(resources, "TabTextColor", theme.TabText);
             this.UpdateColorResource(resources, "TabSelectedTextColor", theme.TabSelectedText);

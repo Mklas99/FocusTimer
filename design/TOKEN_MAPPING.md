@@ -39,6 +39,7 @@ Views (FullModeView, CompactModeView, SettingsWindow, etc.)
 | `WarningColor` | Hex Color | `WarningColor`, `WarningBrush` | Break reminder, warning status |
 | `InputBackground` | Hex Color | `InputBackgroundColor`, `InputBackgroundBrush` | Text boxes, numeric inputs background |
 | `InputBorder` | Hex Color | `InputBorderColor`, `InputBorderBrush` | Input field borders |
+| `InputFocusBorder` | Hex Color | `InputFocusBorderColor`, `InputFocusBorderBrush` | Focused Settings input border, independent of the accent color |
 | `InputText` | Hex Color | `InputTextColor`, `InputTextBrush` | Input field text foreground |
 | `ProjectTagBackground` | Hex Color | `ProjectTagBackgroundColor`, `ProjectTagBackgroundBrush` | Project input tag background |
 | `ProjectTagBorder` | Hex Color | `ProjectTagBorderColor`, `ProjectTagBorderBrush` | Project input tag border |
@@ -47,6 +48,7 @@ Views (FullModeView, CompactModeView, SettingsWindow, etc.)
 | `SettingsSectionHeader`| Hex Color | `SettingsSectionHeaderColor`, `SettingsSectionHeaderBrush` | Settings section header text |
 | `SettingsLabelText` | Hex Color | `SettingsLabelTextColor`, `SettingsLabelTextBrush` | Settings label text |
 | `TabBackground` | Hex Color | `TabBackgroundColor`, `TabBackgroundBrush` | Tab strip background |
+| `TabSelectedBackground` | Hex Color | `TabSelectedBackgroundColor`, `TabSelectedBackgroundBrush` | Selected Settings tab background, independent of the accent color |
 | `TabHoverBackground` | Hex Color | `TabHoverBackgroundColor`, `TabHoverBackgroundBrush` | Tab hover state |
 | `TabText` | Hex Color | `TabTextColor`, `TabTextBrush` | Tab header text |
 | `TabSelectedText` | Hex Color | `TabSelectedTextColor`, `TabSelectedTextBrush` | Active tab text |
@@ -76,3 +78,5 @@ All 7 built-in themes define every property listed above:
 - **High Contrast**
 
 Theme switching modifies these resources at runtime via `ThemeManager.ApplyTheme()`. Invariant geometry (spacing, corner radii, font metrics) remains constant across all themes.
+
+Settings text, input, and tab roles are scoped to the Settings window. The seven built-in palettes include contrast adjustments for Dark input focus, Light selected tabs, Solarized Dark labels and tabs, Nord focus and selected tabs, and Dracula selected tabs. The measured pairs and visual check are recorded in [SETTINGS_THEME_COLOR_CONTRAST_CHECK.md](SETTINGS_THEME_COLOR_CONTRAST_CHECK.md).

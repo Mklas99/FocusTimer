@@ -2,7 +2,15 @@
 
 > Historical snapshot taken before the M03 widget material change. The widget-layer findings below describe the prior renderer; see `TOKEN_MAPPING.md` and the `restore-widget-frosted-glass` change for its replacement.
 
-Static, read-only audit of the Settings window, both timer widget modes, and menus. “Rendered” below means that project code assigns a brush to a control or style. Fluent template output, Windows composition, and contrast still need a running UI check. This report records current behavior and a color-wiring plan; it does not change the app.
+This is the original read-only audit, retained as a record of the defects and proposed work. The findings and line references below describe the app at the time of that audit. “Rendered” in that snapshot meant that project code assigned a brush to a control or style; it did not establish the Fluent template output.
+
+## Current status (October 2026)
+
+The `wire-settings-theme-colors` change corrected `InputFocusBorder` and `TabSelectedBackground` resource sources. Settings-scoped styles now connect ordinary and disabled text, fields, selected values, and normal/hover/selected/focused tabs to the named theme resources. The preset dropdown glyph, expander header text, and action button text also remain visible in the Light preview. The widget project field retains its own project-tag styles; widget button colors and the native tray menu remain separate. The current Appearance page has one Color Palette accordion with Timer Widget and Dialogs & Notifications in two columns. The widget Minimize button is gone.
+
+All seven built-in palettes passed the [Settings contrast check](SETTINGS_THEME_COLOR_CONTRAST_CHECK.md), including focused fields and tabs. An isolated rendered Settings preview was inspected in each palette, with a Dark-to-Light live switch and focused Light/High Contrast states. Those checks cover the delivered text, input, and tab roles; they do not close the broader OI-24 control redesign. Light checkbox marks and action button surfaces still lack a clear visual treatment.
+
+The appearance preview is restored from the saved theme when Settings closes without applying. OI-21 remains open for consistent Save/Apply and Cancel behavior across other settings. Custom imported themes are not constrained by the built-in contrast check. See [OpenIssues.md](../docs/versions/current/OpenIssues.md) for the remaining scope.
 
 ## Diagnosis
 

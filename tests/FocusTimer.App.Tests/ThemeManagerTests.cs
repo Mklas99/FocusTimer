@@ -158,6 +158,38 @@ namespace FocusTimer.App.Tests
         }
 
         [Fact]
+        public void ApplyTheme_UsesIndependentInputFocusAndSelectedTabColorsAcrossUpdates()
+        {
+            var manager = new ThemeManager();
+            var resources = new ResourceDictionary();
+            var theme = new Theme
+            {
+                AccentPrimary = "#112233",
+                InputFocusBorder = "#445566",
+                TabSelectedBackground = "#778899",
+            };
+
+            manager.ApplyTheme(theme, resources);
+            Assert.Equal(Color.Parse(theme.InputFocusBorder), resources["InputFocusBorderColor"]);
+            Assert.Equal(Color.Parse(theme.InputFocusBorder),
+                Assert.IsType<SolidColorBrush>(resources["InputFocusBorderBrush"]).Color);
+            Assert.Equal(Color.Parse(theme.TabSelectedBackground), resources["TabSelectedBackgroundColor"]);
+            Assert.Equal(Color.Parse(theme.TabSelectedBackground),
+                Assert.IsType<SolidColorBrush>(resources["TabSelectedBackgroundBrush"]).Color);
+
+            theme.InputFocusBorder = "#AABBCC";
+            theme.TabSelectedBackground = "#DDEEFF";
+            manager.ApplyTheme(theme, resources);
+
+            Assert.Equal(Color.Parse(theme.InputFocusBorder), resources["InputFocusBorderColor"]);
+            Assert.Equal(Color.Parse(theme.InputFocusBorder),
+                Assert.IsType<SolidColorBrush>(resources["InputFocusBorderBrush"]).Color);
+            Assert.Equal(Color.Parse(theme.TabSelectedBackground), resources["TabSelectedBackgroundColor"]);
+            Assert.Equal(Color.Parse(theme.TabSelectedBackground),
+                Assert.IsType<SolidColorBrush>(resources["TabSelectedBackgroundBrush"]).Color);
+        }
+
+        [Fact]
         public void ApplyTheme_GivenZeroBackgroundOpacity_SetsTransparentWindowBackgroundBrush()
         {
             var manager = new ThemeManager();

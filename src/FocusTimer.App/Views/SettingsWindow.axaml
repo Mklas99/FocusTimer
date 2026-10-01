@@ -7,6 +7,7 @@
         mc:Ignorable="d"
         x:Class="FocusTimer.App.Views.SettingsWindow"
         x:DataType="vm:SettingsWindowViewModel"
+        Classes="settings-window"
         Title="FocusTimer – Settings"
         Width="640" Height="540"
         MinWidth="500" MinHeight="400"
@@ -224,7 +225,7 @@
                                 Minimum="0" Maximum="100"
                                 TickFrequency="1"
                                     IsSnapToTickEnabled="True" Margin="0,4,0,0" />
-                            <TextBlock Grid.Row="1" Grid.Column="2"
+                            <TextBlock Grid.Row="1" Grid.Column="2" Classes="settings-body"
                                    Text="{Binding BackgroundOpacityPercent, StringFormat='{}{0:F0}%'}"
                                        Width="50"
                                        TextAlignment="Right"
@@ -239,7 +240,7 @@
                                     TickFrequency="1"
                                     IsSnapToTickEnabled="True"
                                     Margin="0,4,0,0" />
-                            <TextBlock Grid.Row="2" Grid.Column="2"
+                            <TextBlock Grid.Row="2" Grid.Column="2" Classes="settings-body"
                                        Text="{Binding ClockOpacityPercent, StringFormat='{}{0:F0}%'}"
                                        Width="50"
                                        TextAlignment="Right"
@@ -254,7 +255,7 @@
                                     TickFrequency="1"
                                     IsSnapToTickEnabled="True"
                                     Margin="0,4,0,0" />
-                            <TextBlock Grid.Row="3" Grid.Column="2"
+                            <TextBlock Grid.Row="3" Grid.Column="2" Classes="settings-body"
                                        Text="{Binding ButtonsOpacityPercent, StringFormat='{}{0:F0}%'}"
                                        Width="50"
                                        TextAlignment="Right"
@@ -269,7 +270,7 @@
                                     TickFrequency="1"
                                     IsSnapToTickEnabled="True"
                                     Margin="0,4,0,0" />
-                            <TextBlock Grid.Row="4" Grid.Column="2"
+                            <TextBlock Grid.Row="4" Grid.Column="2" Classes="settings-body"
                                        Text="{Binding OverallFadePercent, StringFormat='{}{0:F0}%'}"
                                        Width="50"
                                        TextAlignment="Right"
@@ -306,7 +307,7 @@
 
                             <TextBlock Grid.Row="1" Grid.Column="0" Classes="SettingLabel" Text="Scale:" Margin="0,8,0,0" />
                             <Slider Grid.Row="1" Grid.Column="1" Classes="minimal-slider" Value="{Binding Settings.WidgetScale}" Minimum="0.5" Maximum="3.0" TickFrequency="0.1" IsSnapToTickEnabled="True" Margin="0,8,0,0" />
-                            <TextBlock Grid.Row="1" Grid.Column="2" Text="{Binding Settings.WidgetScale, StringFormat='{}{0:F1}×'}" Width="50" TextAlignment="Right" VerticalAlignment="Center" Margin="10,8,0,0" />
+                            <TextBlock Grid.Row="1" Grid.Column="2" Classes="settings-body" Text="{Binding Settings.WidgetScale, StringFormat='{}{0:F1}×'}" Width="50" TextAlignment="Right" VerticalAlignment="Center" Margin="10,8,0,0" />
                         </Grid>
 
                         <CheckBox IsChecked="{Binding Settings.UseCompactMode}" Content="Use compact mode" ToolTip.Tip="Switches the timer widget into a minimal mode" />
@@ -332,21 +333,21 @@
 
                             <TextBlock Grid.Row="1" Grid.Column="0" Classes="SettingLabel" Text="Repository:" Margin="0,8,0,0" />
                             <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Spacing="8" Margin="0,8,0,0">
-                                <TextBlock VerticalAlignment="Center" Text="{Binding RepositoryUrl}" TextWrapping="Wrap" />
+                                <TextBlock Classes="settings-body" VerticalAlignment="Center" Text="{Binding RepositoryUrl}" TextWrapping="Wrap" />
                                 <Button Content="Open" Width="70" Command="{Binding OpenRepositoryCommand}" />
                             </StackPanel>
 
                             <TextBlock Grid.Row="2" Grid.Column="0" Classes="SettingLabel" Text="Author:" Margin="0,8,0,0" />
-                            <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding AppAuthor}" Margin="0,8,0,0" TextWrapping="Wrap" />
+                            <TextBlock Grid.Row="2" Grid.Column="1" Classes="settings-body" Text="{Binding AppAuthor}" Margin="0,8,0,0" TextWrapping="Wrap" />
 
                             <TextBlock Grid.Row="3" Grid.Column="0" Classes="SettingLabel" Text="Info:" Margin="0,8,0,0" />
-                            <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding AppInformation}" Margin="0,8,0,0" TextWrapping="Wrap" />
+                            <TextBlock Grid.Row="3" Grid.Column="1" Classes="settings-body" Text="{Binding AppInformation}" Margin="0,8,0,0" TextWrapping="Wrap" />
                         </Grid>
 
                         <Expander Header="Changelog" IsExpanded="False" Classes="settings-accordion">
                             <Border Padding="0,8,0,0">
                                 <ScrollViewer MaxHeight="220">
-                                    <TextBlock Text="{Binding ChangelogContent}" TextWrapping="Wrap" FontFamily="Consolas" FontSize="12" />
+                                    <TextBlock Classes="settings-body" Text="{Binding ChangelogContent}" TextWrapping="Wrap" FontFamily="Consolas" FontSize="12" />
                                 </ScrollViewer>
                             </Border>
                         </Expander>
