@@ -131,7 +131,13 @@ namespace FocusTimer.App.Services
                 if (!string.IsNullOrEmpty(this.CurrentSettings.ActiveThemeName))
                 {
                     Theme? theme = this._themeService.GetBuiltInTheme(this.CurrentSettings.ActiveThemeName);
-                    if (theme != null)
+
+                    // A matching saved theme can contain edited appearance values.
+                    // Use the factory preset only for first-run defaults or a name mismatch.
+                    if (theme != null && !string.Equals(
+                            this.CurrentSettings.Theme.ThemeName,
+                            theme.ThemeName,
+                            StringComparison.OrdinalIgnoreCase))
                     {
                         this.CurrentSettings.Theme = theme;
                     }
@@ -161,7 +167,7 @@ namespace FocusTimer.App.Services
                 {
                     TimerWidgetViewModel viewModel = this._timerViewModelFactory();
                     viewModel.ApplySettings(this.CurrentSettings);
-                    this._timerWindow = new TimerWidgetWindow
+                    this._timerWindow = new TimerWidgetWindow(this._themeManager)
                     {
                         DataContext = viewModel,
                     };
@@ -224,7 +230,7 @@ namespace FocusTimer.App.Services
                     if (this._timerWindow == null)
                     {
                         TimerWidgetViewModel viewModel = this._timerViewModelFactory();
-                        this._timerWindow = new TimerWidgetWindow
+                        this._timerWindow = new TimerWidgetWindow(this._themeManager)
                         {
                             DataContext = viewModel,
                         };
@@ -520,7 +526,6 @@ namespace FocusTimer.App.Services
                 // Apply window-level settings
                 if (this._timerWindow != null)
                 {
-                    this._timerWindow.Opacity = 1.0;
                     this._timerWindow.Topmost = this.CurrentSettings.AlwaysOnTop;
                 }
 

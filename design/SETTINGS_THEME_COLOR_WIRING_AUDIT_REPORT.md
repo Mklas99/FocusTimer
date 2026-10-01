@@ -1,5 +1,7 @@
 # Theme color wiring audit
 
+> Historical snapshot taken before the M03 widget material change. The widget-layer findings below describe the prior renderer; see `TOKEN_MAPPING.md` and the `restore-widget-frosted-glass` change for its replacement.
+
 Static, read-only audit of the Settings window, both timer widget modes, and menus. “Rendered” below means that project code assigns a brush to a control or style. Fluent template output, Windows composition, and contrast still need a running UI check. This report records current behavior and a color-wiring plan; it does not change the app.
 
 ## Diagnosis

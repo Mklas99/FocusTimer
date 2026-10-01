@@ -19,6 +19,18 @@ namespace FocusTimer.App.Views
         public SettingsWindow()
         {
             this.InitializeComponent();
+            this.Closing += this.OnSettingsClosing;
+            this.Closed += this.OnSettingsClosed;
+        }
+
+        private void OnSettingsClosing(object? sender, WindowClosingEventArgs e)
+        {
+            (this.DataContext as SettingsWindowViewModel)?.RestoreAppearancePreview();
+        }
+
+        private void OnSettingsClosed(object? sender, System.EventArgs e)
+        {
+            (this.DataContext as SettingsWindowViewModel)?.Dispose();
         }
 
         private async void OnColorPreviewClicked(object? sender, RoutedEventArgs e)

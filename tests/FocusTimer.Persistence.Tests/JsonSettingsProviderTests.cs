@@ -46,6 +46,8 @@ public class JsonSettingsProviderTests : IDisposable
             BreakIntervalMinutes = 37,
             WorklogDirectory = Path.Combine(this._testDirectory, "worklogs"),
         };
+        settings.Theme.WidgetBlurMode = WidgetBlurModes.Soft;
+        settings.Theme.BackgroundOpacity = 0.37;
 
         await provider.SaveAsync(settings);
         var loaded = await provider.LoadAsync();
@@ -54,6 +56,8 @@ public class JsonSettingsProviderTests : IDisposable
         Assert.Equal(37, loaded.BreakIntervalMinutes);
         Assert.Equal(settings.WorklogDirectory, loaded.WorklogDirectory);
         Assert.Equal(settings.DeviceId, loaded.DeviceId);
+        Assert.Equal(WidgetBlurModes.Soft, loaded.Theme.WidgetBlurMode);
+        Assert.Equal(0.37, loaded.Theme.BackgroundOpacity);
         Assert.False(string.IsNullOrWhiteSpace(loaded.DeviceId));
         Assert.True(File.Exists(customPath));
     }
@@ -118,6 +122,7 @@ public class JsonSettingsProviderTests : IDisposable
 
         Assert.Equal("Light", restarted.ActiveThemeName);
         Assert.Equal(first.DeviceId, restarted.DeviceId);
+        Assert.Equal(WidgetBlurModes.Strong, restarted.Theme.WidgetBlurMode);
     }
 
     public void Dispose()

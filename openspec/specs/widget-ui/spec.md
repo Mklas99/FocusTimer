@@ -24,7 +24,7 @@ The system SHALL provide a narrow-bar compact mode showing the same timer data, 
 - **THEN** the widget switches display mode immediately, preserving identical semantic control roles (including Start/Pause styling) and the app remembers that mode on next launch
 
 ### Requirement: Scale and Opacity
-The system SHALL provide a `WidgetScale` setting that resizes fonts and controls responsively anchored to canonical design-system base dimensions, and independent background, clock, and controls opacity settings plus an overall opacity multiplier.
+The system SHALL provide a `WidgetScale` setting that resizes fonts and controls responsively anchored to canonical design-system base dimensions, and independent background, clock, and controls opacity settings plus an overall opacity multiplier. Background opacity SHALL affect only the widget shell tint.
 
 #### Scenario: User adjusts widget scale
 - **WHEN** the user changes `WidgetScale`
@@ -34,12 +34,24 @@ The system SHALL provide a `WidgetScale` setting that resizes fonts and controls
 - **WHEN** the user changes background, clock, or controls opacity, or the overall multiplier
 - **THEN** the corresponding widget element's transparency updates live
 
+#### Scenario: User adjusts background opacity
+- **WHEN** the user changes the background opacity slider
+- **THEN** the shell tint changes without changing clock, button, or project-field opacity
+
+#### Scenario: User cancels an appearance preview
+- **WHEN** the user previews blur or tint changes in Settings and closes without applying
+- **THEN** the last successfully applied widget appearance is restored
+
 ### Requirement: Material Layering and Fallback
-The timer widget SHALL apply platform material backdrop effects using a deliberate fallback sequence (`Mica, AcrylicBlur, Blur, Transparent`) on a single composited surface and SHALL provide a solid or near-solid fallback surface ensuring high text legibility when transparency effects are unavailable or disabled.
+The timer widget SHALL offer Off, Soft, and Strong background blur choices on one shell surface. Off SHALL request `Transparent`; Soft SHALL request `Blur, Transparent`; Strong SHALL request `AcrylicBlur, Blur, Transparent`. A blur request that falls through to plain transparency SHALL preserve the selected tint opacity and report that blur is unavailable. An unavailable transparency mode or High Contrast SHALL use a readable solid shell. At 0% tint, the widget SHALL add no theme color tint, while the achieved platform backdrop may still be opaque. OI-28 tracks a future custom blur radius and verifiably see-through backdrop.
 
 #### Scenario: Widget renders on supported platform
-- **WHEN** the widget opens on a platform supporting OS backdrop blur or Mica
+- **WHEN** the widget opens on a platform supporting the selected backdrop level
 - **THEN** the widget renders the single composited material backdrop without stacked translucent layers
+
+#### Scenario: User selects a blur choice
+- **WHEN** the user changes Off, Soft, or Strong in Settings
+- **THEN** the backdrop changes live in full and compact modes beneath sharp foreground content
 
 #### Scenario: Material effects unavailable or disabled
 - **WHEN** the operating system or environment does not support transparency effects or when composition is disabled

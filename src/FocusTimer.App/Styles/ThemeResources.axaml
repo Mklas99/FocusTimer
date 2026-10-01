@@ -11,6 +11,7 @@
         <!-- Window Colors -->
         <Color x:Key="WindowBackgroundColor">#1E1E1E</Color>
         <SolidColorBrush x:Key="WindowBackgroundBrush" Color="{DynamicResource WindowBackgroundColor}"/>
+        <SolidColorBrush x:Key="WidgetShellActiveBrush" Color="#1E1E1E"/>
 
         <Color x:Key="WindowForegroundColor">#FFFFFF</Color>
         <SolidColorBrush x:Key="WindowForegroundBrush" Color="{DynamicResource WindowForegroundColor}"/>
@@ -178,7 +179,8 @@
         <SolidColorBrush x:Key="ActionPrimaryBrush" Color="{DynamicResource ButtonNormalColor}"/>
         <SolidColorBrush x:Key="ActionPrimaryHoverBrush" Color="{DynamicResource ButtonHoverColor}"/>
         <SolidColorBrush x:Key="ActionPrimaryPressedBrush" Color="{DynamicResource ButtonPressedColor}"/>
-        <SolidColorBrush x:Key="WidgetBaseLayerBrush" Color="{DynamicResource WindowBackgroundColor}"/>
+        <SolidColorBrush x:Key="WidgetShellTintBrush" Color="{DynamicResource WindowBackgroundColor}"/>
+        <SolidColorBrush x:Key="WidgetShellFallbackBrush" Color="{DynamicResource WindowBackgroundColor}"/>
 
     </Styles.Resources>
 </Styles>

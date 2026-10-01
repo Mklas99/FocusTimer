@@ -10,10 +10,10 @@
     WindowStartupLocation="Manual"
     SystemDecorations="None"
     ShowInTaskbar="False"
-    TransparencyLevelHint="Mica, AcrylicBlur, Blur, Transparent"
+    TransparencyLevelHint="AcrylicBlur, Blur, Transparent"
     CanResize="False"
     Background="Transparent"
-    TransparencyBackgroundFallback="{DynamicResource WindowBackgroundBrush}"
+    TransparencyBackgroundFallback="{DynamicResource WidgetShellFallbackBrush}"
     ExtendClientAreaToDecorationsHint="True"
     ExtendClientAreaChromeHints="NoChrome"
     ExtendClientAreaTitleBarHeightHint="-1"
@@ -53,22 +53,12 @@
             ClipToBounds="True"
             VerticalAlignment="Center"
             HorizontalAlignment="Center">
-                <Border x:Name="WidgetBaseLayer"
+                <Border x:Name="WidgetShell"
                     Grid.RowSpan="2"
-                    Background="{DynamicResource WidgetBaseLayerBrush}"
-                    CornerRadius="{DynamicResource WidgetCornerRadius}"
-                    Opacity="{Binding EffectiveWidgetBaseOpacity}"
-                    IsHitTestVisible="False"
-                    BorderBrush="Transparent"
-                    BorderThickness="0" />
-
-                <Border x:Name="PanelMaterialLayer"
-                    Grid.RowSpan="2"
-                    Background="{DynamicResource WindowBackgroundBrush}"
+                    Background="{DynamicResource WidgetShellActiveBrush}"
                     BorderBrush="{DynamicResource WindowBorderBrush}"
                     BorderThickness="1"
                     CornerRadius="{DynamicResource WidgetCornerRadius}"
-                    Opacity="{Binding EffectiveBackgroundOpacity}"
                     IsHitTestVisible="False" />
 
                 <!-- Minimize button (top right with accessible hit target) -->

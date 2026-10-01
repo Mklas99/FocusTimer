@@ -208,15 +208,19 @@
 
                         <TextBlock Classes="SectionHeader" Text="Opacity Controls" />
                         <Grid ColumnDefinitions="140,*,Auto" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto">
-                            <!-- Widget Base opacity slider removed temporarily -->
+                            <TextBlock Grid.Row="0" Grid.Column="0" Classes="SettingLabel" Text="Background blur:" />
+                            <ComboBox Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2"
+                                      ItemsSource="{Binding AvailableBlurModes}"
+                                      SelectedItem="{Binding SelectedBlurMode}"
+                                      ToolTip.Tip="Blur behind the widget: Off, Soft, or Strong" />
 
-                            <TextBlock Grid.Row="1" Grid.Column="0" Classes="SettingLabel" Text="Background:" />
+                            <TextBlock Grid.Row="1" Grid.Column="0" Classes="SettingLabel" Text="Background tint opacity:" Margin="0,4,0,0" />
                             <Slider Grid.Row="1" Grid.Column="1"
                                     Classes="minimal-slider"
                                 Value="{Binding BackgroundOpacityPercent}"
                                 Minimum="0" Maximum="100"
                                 TickFrequency="1"
-                                    IsSnapToTickEnabled="True" />
+                                    IsSnapToTickEnabled="True" Margin="0,4,0,0" />
                             <TextBlock Grid.Row="1" Grid.Column="2"
                                    Text="{Binding BackgroundOpacityPercent, StringFormat='{}{0:F0}%'}"
                                        Width="50"

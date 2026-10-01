@@ -37,6 +37,7 @@ namespace FocusTimer.Core.Models
         // Opacity Controls
         private double _widgetBaseOpacity = 1.0;
         private double _backgroundOpacity = 1.0;
+        private string _widgetBlurMode = WidgetBlurModes.Strong;
         private double _timerOpacity = 1.0;
         private double _buttonOpacity = 1.0;
 
@@ -522,6 +523,16 @@ namespace FocusTimer.Core.Models
         }
 
         /// <summary>
+        /// Gets or sets the widget backdrop blur choice.
+        /// </summary>
+        [JsonPropertyName("widgetBlurMode")]
+        public string WidgetBlurMode
+        {
+            get => this._widgetBlurMode;
+            set => this.SetField(ref this._widgetBlurMode, value);
+        }
+
+        /// <summary>
         /// Gets or sets the timer opacity.
         /// </summary>
         [JsonPropertyName("timerOpacity")]
@@ -597,6 +608,7 @@ namespace FocusTimer.Core.Models
                 TabText = this.TabText,
                 TabSelectedText = this.TabSelectedText,
                 BackgroundOpacity = this.BackgroundOpacity,
+                WidgetBlurMode = this.WidgetBlurMode,
                 TimerOpacity = this.TimerOpacity,
                 ButtonOpacity = this.ButtonOpacity,
             };

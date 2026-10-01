@@ -13,6 +13,19 @@ public class ThemeServiceTests
         Assert.NotEmpty(service.BuiltInThemes);
         Assert.NotNull(service.GetBuiltInTheme("Dark"));
         Assert.NotNull(service.GetBuiltInTheme("Light"));
+        Assert.Equal(WidgetBlurModes.Strong, service.GetBuiltInTheme("Dark")!.WidgetBlurMode);
+        Assert.Equal(WidgetBlurModes.Off, service.GetBuiltInTheme("High Contrast")!.WidgetBlurMode);
+    }
+
+    [Fact]
+    public void Clone_PreservesEditedBlurAndBackgroundOpacity()
+    {
+        var theme = new Theme { WidgetBlurMode = WidgetBlurModes.Soft, BackgroundOpacity = 0.42 };
+
+        var clone = theme.Clone();
+
+        Assert.Equal(WidgetBlurModes.Soft, clone.WidgetBlurMode);
+        Assert.Equal(0.42, clone.BackgroundOpacity);
     }
 
     [Fact]

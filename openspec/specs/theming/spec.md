@@ -6,14 +6,18 @@ Defines built-in and custom theme support for the widget and settings UI.
 ## Requirements
 
 ### Requirement: Built-In Themes
-The system SHALL provide 7 built-in themes (Dark, Light, Monokai, Solarized Dark, Nord, Dracula, High Contrast), selectable in Settings and applied live.
+The system SHALL provide 7 built-in themes (Dark, Light, Monokai, Solarized Dark, Nord, Dracula, High Contrast), selectable in Settings and applied live. Each SHALL provide a default widget blur choice; High Contrast SHALL use a solid, unblurred shell.
 
 #### Scenario: User selects a built-in theme
 - **WHEN** the user selects a theme from Settings → Appearance
 - **THEN** the widget and settings UI re-theme immediately without a restart
 
+#### Scenario: User restarts after editing a built-in theme
+- **WHEN** the user applies an edited blur or tint opacity with a built-in theme selected and restarts
+- **THEN** the saved values remain active instead of being replaced by factory defaults
+
 ### Requirement: Custom Theme Import/Export
-The system SHALL let the user import and export custom themes as `.fttheme` JSON files via a file picker, and SHALL validate the file's contents on import.
+The system SHALL let the user import and export custom themes as `.fttheme` JSON files via a file picker, including widget blur and background opacity, and SHALL validate the file's contents on import. Older files missing the blur choice SHALL use the compatible default.
 
 #### Scenario: User imports a theme file
 - **WHEN** the user selects a `.fttheme` file to import
@@ -31,7 +35,7 @@ The system SHALL let the user restore the Dark theme with a single action.
 - **THEN** the Dark theme is applied
 
 ### Requirement: Theme Invariant Boundaries
-The system SHALL ensure that built-in themes and imported custom themes modify only palette colors and material opacity values, preserving layout geometry, spacing scales, corner radii, typography hierarchy, and control interaction states across all themes.
+The system SHALL ensure that built-in themes and imported custom themes modify only palette colors, material opacity values, and the widget blur choice, preserving layout geometry, spacing scales, corner radii, typography hierarchy, and control interaction states across all themes.
 
 #### Scenario: User switches between themes
 - **WHEN** the user switches between Dark, Monokai, Nord, Light, Dracula, Solarized Dark, or High Contrast themes

@@ -20,7 +20,7 @@ Views (FullModeView, CompactModeView, SettingsWindow, etc.)
 
 | Theme.cs Property | Type | Avalonia Semantic Key | Semantic Role |
 |---|---|---|---|
-| `WindowBackground` | Hex Color | `WindowBackgroundColor`, `WindowBackgroundBrush` | Base surface for timer widget |
+| `WindowBackground` | Hex Color | `WindowBackgroundColor`, `WindowBackgroundBrush`, `WidgetShellTintBrush`, `WidgetShellFallbackBrush`, `WidgetShellActiveBrush` | Widget tint color and opaque material fallback; active brush follows the achieved backdrop |
 | `WindowForeground` | Hex Color | `WindowForegroundColor`, `WindowForegroundBrush` | High-emphasis window chrome |
 | `WindowBorder` | Hex Color | `WindowBorderColor`, `WindowBorderBrush` | Widget window outline |
 | `PrimaryText` | Hex Color | `PrimaryTextColor`, `PrimaryTextBrush` | Main typography foreground |
@@ -55,9 +55,14 @@ Views (FullModeView, CompactModeView, SettingsWindow, etc.)
 
 | Theme.cs Property | Clamped Range | Avalonia Resource | Target Element |
 |---|---|---|---|
-| `BackgroundOpacity` | 0.0 – 1.0 | `BackgroundOpacity`, `WindowBackgroundBrush.Opacity` | Widget material background surface |
-| `TimerOpacity` | 0.0 – 1.0 | `TimerOpacity`, `TimerTextBrush.Opacity` | Elapsed time digits layer |
-| `ButtonOpacity` | 0.0 – 1.0 | `ButtonOpacity`, `ButtonNormalBrush.Opacity` | Control buttons layer |
+| `BackgroundOpacity` | 0.0 – 1.0 | `WidgetShellTintBrush.Opacity` | Widget shell tint only; blur stays independent |
+| `WidgetBlurMode` | Off / Soft / Strong | Window transparency hints | Background blur; lower levels are fallbacks |
+| `TimerOpacity` | 0.0 – 1.0 | `TimerTextBrush.Opacity`, clock layer opacity | Elapsed time digits layer |
+| `ButtonOpacity` | 0.0 – 1.0 | `ButtonNormalBrush.Opacity`, controls layer opacity | Control buttons layer |
+
+`Settings.WidgetOpacity` fades the window as a whole. `WidgetBaseOpacity` remains readable in older theme files but does not render a second shell layer.
+
+`WidgetShellActiveBrush` uses the selected tint opacity whenever the platform provides AcrylicBlur, Blur, or Transparent. If a blur request falls through to Transparent, the diagnostic reports the actual level and the shell remains see through. High Contrast or no transparency uses the opaque fallback.
 
 ## 4. Built-in Theme Coverage Verification
 

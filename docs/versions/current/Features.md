@@ -12,13 +12,14 @@
 | F-02 | Worklog summary breakdown | Adds a reusable, UI-free summary service (range, grouping, filters, Unassigned bucket, visible read warnings) and a Today breakdown by application or project in a new Settings Summary tab. Built so more ranges, filters, groupings, rule-based project detection, and a tray-opened report window plug in without a rewrite. | OI-04 (partial); enables OI-08, OI-12, OI-15 | In progress | `feature/F-02_worklog-summary-breakdown` / `worklog-summary-breakdown` |
 | M01 | UI design system foundation | Establishes a three-tier token architecture, a single authoritative style source, tokenized spacing and radii, accessible 24x24 hit targets with focus rings, aligned Full/Compact modes, and a material fallback order with a solid fallback surface. | Supports OI-03 and OI-13 (partial) | Completed | `maintainance/M01_establish-system-design-foundation` / `introduce-ui-design-system` |
 | M02 | Reliability and quality tooling | Isolates persistence tests from the real AppData path, feeds coverage reports to SonarQube in CI, and clears the resulting SonarQube/StyleCop findings. | OI-18, OI-19 | Completed | `maintainance/M02_reliability-and-quality-tooling` |
+| M03 | Widget design adaptation | Adds a single widget shell, platform blur choices, and independent tint opacity. Windows testing found Soft falls back to clear transparency and Strong's AcrylicBlur looks nearly solid; OI-28 tracks a custom backdrop. | OI-25; enables OI-28 | In progress | `maintainance/M03_design-adaptation` / `restore-widget-frosted-glass` |
 
 ## Feature candidates
 
 | Feature / improvement collection | Outcome | Related issues | Status |
 |---|---|---|---|
 | Everyday desktop control | The widget restores safely, minimizes predictably, offers configurable hotkeys, exposes useful tray actions, and makes logs easy to find. | OI-01, OI-02, OI-03, OI-05, OI-13 | Candidate |
-| UI appearance and usability | Settings controls have a consistent modern look, readable theme colors, and one color palette accordion in Appearance; widget background opacity works as configured. | OI-24, OI-25 | Candidate |
+| UI appearance and usability | Settings controls have a consistent modern look, readable theme colors, and one color palette accordion in Appearance; widget background opacity works as configured, with a later custom backdrop investigation. | OI-24, OI-25, OI-28 | Candidate |
 | Better worklog management and reporting | Users can review, correct, delete, and export tracked work, with useful breakdowns by application and project. | OI-04, OI-07, OI-09, OI-12, OI-15 | Candidate |
 | Manual time log | Users can add missed work intervals to the worklog with a start, end, and work details. | OI-22 | Candidate |
 | Report timeline view | Users can inspect recorded work intervals in chronological order, including manual entries. | OI-23; complements OI-04 | Candidate |

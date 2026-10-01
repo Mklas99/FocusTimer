@@ -1,5 +1,6 @@
 namespace FocusTimer.Core.Tests;
 
+using FocusTimer.Core.Models;
 using FocusTimer.Core.Services;
 
 public sealed class ThemeServiceFileTests : IDisposable
@@ -22,6 +23,8 @@ public sealed class ThemeServiceFileTests : IDisposable
         var service = new ThemeService();
         var theme = service.GetBuiltInTheme("Light")!;
         theme.AccentPrimary = "#123456";
+        theme.WidgetBlurMode = WidgetBlurModes.Soft;
+        theme.BackgroundOpacity = 0.43;
         var path = Path.Combine(this._dir, "nested", "theme.json");
 
         await service.SaveThemeToFileAsync(theme, path);
@@ -30,6 +33,8 @@ public sealed class ThemeServiceFileTests : IDisposable
         Assert.Equal("#123456", loaded.AccentPrimary);
         Assert.Equal(theme.ThemeName, loaded.ThemeName);
         Assert.Equal(theme.WindowBackground, loaded.WindowBackground);
+        Assert.Equal(WidgetBlurModes.Soft, loaded.WidgetBlurMode);
+        Assert.Equal(0.43, loaded.BackgroundOpacity);
     }
 
     [Fact]
@@ -80,6 +85,16 @@ public sealed class ThemeServiceFileTests : IDisposable
         var theme = await new ThemeService().LoadThemeFromFileAsync(path);
 
         Assert.Equal("Commented", theme.ThemeName);
+        Assert.Equal(WidgetBlurModes.Strong, theme.WidgetBlurMode);
+    }
+
+    [Fact]
+    public async Task LoadThemeFromFileAsync_GivenUnknownBlur_RejectsTheme()
+    {
+        var path = Path.Combine(this._dir, "invalid-blur.fttheme");
+        await File.WriteAllTextAsync(path, "{ \"widgetBlurMode\": \"Extreme\" }");
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => new ThemeService().LoadThemeFromFileAsync(path));
     }
 
     [Fact]

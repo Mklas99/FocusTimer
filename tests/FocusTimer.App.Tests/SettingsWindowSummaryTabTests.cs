@@ -1,10 +1,14 @@
 namespace FocusTimer.App.Tests;
 
+using Avalonia.Controls;
+using System.Reactive;
+using System.Reactive.Threading.Tasks;
 using FocusTimer.App.Services;
 using FocusTimer.App.ViewModels;
 using FocusTimer.Core.Interfaces;
 using FocusTimer.Core.Models;
 using FocusTimer.Core.Services;
+using ReactiveUI;
 
 public class SettingsWindowSummaryTabTests
 {
@@ -44,11 +48,93 @@ public class SettingsWindowSummaryTabTests
         Assert.Equal(2, summary.Calls);
     }
 
-    private static SettingsWindowViewModel Create(CountingSummaryService summary) => new(
-        new StubSettingsProvider(),
+    [Fact]
+    public void WidgetAppearancePreview_CancelRestoresLastAppliedTheme()
+    {
+        var themeManager = new ThemeManager();
+        var savedSettings = new Settings
+        {
+            Theme = new Theme
+            {
+                ThemeName = "Dark",
+                BackgroundOpacity = 0.8,
+                WidgetBlurMode = WidgetBlurModes.Strong,
+            },
+        };
+        var vm = Create(new CountingSummaryService(), themeManager, savedSettings);
+
+        vm.BackgroundOpacityPercent = 25;
+        vm.SelectedBlurMode = WidgetBlurModes.Soft;
+
+        Assert.Equal(0.25, themeManager.ActiveTheme!.BackgroundOpacity);
+        Assert.Equal(WidgetBlurModes.Soft, themeManager.ActiveTheme.WidgetBlurMode);
+
+        vm.RestoreAppearancePreview();
+
+        Assert.Equal(0.8, themeManager.ActiveTheme!.BackgroundOpacity);
+        Assert.Equal(WidgetBlurModes.Strong, themeManager.ActiveTheme.WidgetBlurMode);
+        vm.Dispose();
+    }
+
+    [Fact]
+    public async Task WidgetAppearancePreview_ApplyAdvancesRestorePoint()
+    {
+        var themeManager = new ThemeManager();
+        var vm = Create(new CountingSummaryService(), themeManager, new Settings());
+
+        vm.SelectedBlurMode = WidgetBlurModes.Soft;
+        await ((ReactiveCommand<Unit, Unit>)vm.ApplyCommand).Execute().ToTask();
+        Assert.True(vm.LastApplySucceeded);
+
+        vm.SelectedBlurMode = WidgetBlurModes.Off;
+        vm.RestoreAppearancePreview();
+
+        Assert.Equal(WidgetBlurModes.Soft, themeManager.ActiveTheme!.WidgetBlurMode);
+        vm.Dispose();
+    }
+
+    [Fact]
+    public void FirstRunSettings_UsesTheSameDarkPresetAsTheWidget()
+    {
+        var vm = Create(new CountingSummaryService(), new ThemeManager(), new Settings());
+
+        Assert.Equal("Dark", vm.Settings.Theme.ThemeName);
+        Assert.Equal(0.8, vm.Settings.Theme.BackgroundOpacity);
+        Assert.Equal(WidgetBlurModes.Strong, vm.SelectedBlurMode);
+        vm.Dispose();
+    }
+
+    [Fact]
+    public void TransparencyDiagnostics_ReportsAchievedLevelAndSolidFallback()
+    {
+        var manager = new ThemeManager();
+        var vm = Create(new CountingSummaryService(), manager, new Settings());
+
+        manager.ReportActualWidgetTransparency(WindowTransparencyLevel.AcrylicBlur);
+        Assert.Contains("Requested: Strong | Active: AcrylicBlur | Surface: platform blur", vm.TransparencyDiagnostics);
+
+        manager.ReportActualWidgetTransparency(WindowTransparencyLevel.Blur);
+        Assert.Contains("Requested: Strong | Active: Blur | Surface: platform blur", vm.TransparencyDiagnostics);
+
+        manager.ReportActualWidgetTransparency(WindowTransparencyLevel.Transparent);
+        Assert.Contains("Requested: Strong | Active: Transparent (blur unavailable) | Surface: transparent backdrop", vm.TransparencyDiagnostics);
+
+        vm.SelectedBlurMode = WidgetBlurModes.Off;
+        Assert.Contains("Requested: Off | Active: Transparent | Surface: transparent backdrop", vm.TransparencyDiagnostics);
+
+        manager.ReportActualWidgetTransparency(WindowTransparencyLevel.None);
+        Assert.Contains("Requested: Off | Active: None | Surface: solid fallback", vm.TransparencyDiagnostics);
+        vm.Dispose();
+    }
+
+    private static SettingsWindowViewModel Create(
+        CountingSummaryService summary,
+        ThemeManager? themeManager = null,
+        Settings? settings = null) => new(
+        new StubSettingsProvider(settings),
         new StubAutoStartService(),
         new ThemeService(),
-        new ThemeManager(),
+        themeManager ?? new ThemeManager(),
         NullAppLogger.Instance,
         new WorklogSummaryViewModel(
             summary,
@@ -68,9 +154,9 @@ public class SettingsWindowSummaryTabTests
         }
     }
 
-    private sealed class StubSettingsProvider : ISettingsProvider
+    private sealed class StubSettingsProvider(Settings? settings) : ISettingsProvider
     {
-        public Task<Settings> LoadAsync() => Task.FromResult(new Settings());
+        public Task<Settings> LoadAsync() => Task.FromResult(settings ?? new Settings());
 
         public Task SaveAsync(Settings settings) => Task.CompletedTask;
     }

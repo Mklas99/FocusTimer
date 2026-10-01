@@ -9,6 +9,48 @@ using FocusTimer.Core.Stubs;
 
 public sealed class AppControllerStartupTests
 {
+    [Theory]
+    [InlineData("Dark", "Dark", "Soft", 0.38, "Soft", 0.38)]
+    [InlineData("Dark", "Custom", "Soft", 0.38, "Strong", 0.80)]
+    public async Task InitializeAsync_PreservesSavedThemeButUsesPresetForDefaults(
+        string activeName,
+        string savedName,
+        string savedBlur,
+        double savedOpacity,
+        string expectedBlur,
+        double expectedOpacity)
+    {
+        var settings = new Settings
+        {
+            ActiveThemeName = activeName,
+            Theme = new Theme
+            {
+                ThemeName = savedName,
+                WidgetBlurMode = savedBlur,
+                BackgroundOpacity = savedOpacity,
+            },
+        };
+        var controller = new AppController(
+            new FixedSettingsProvider(settings),
+            new CountingHotkeys(),
+            new LinuxIdleDetectionServiceStub(),
+            null!,
+            new ThemeService(),
+            new ThemeManager(),
+            () => throw new InvalidOperationException("Window creation is unavailable in this test."),
+            null!,
+            null!,
+            null!,
+            new NullLogger(),
+            null,
+            new InstallationIdentity());
+
+        await controller.InitializeAsync();
+
+        Assert.Equal(expectedBlur, controller.CurrentSettings.Theme.WidgetBlurMode);
+        Assert.Equal(expectedOpacity, controller.CurrentSettings.Theme.BackgroundOpacity);
+    }
+
     [Fact]
     public async Task InitializeAsync_WhenSavedThemeFails_KeepsIdentityAndEnablesTrayActions()
     {

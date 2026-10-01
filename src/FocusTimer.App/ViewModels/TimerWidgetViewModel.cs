@@ -223,8 +223,7 @@ namespace FocusTimer.App.ViewModels
         }
 
         /// <summary>
-        /// Gets brush used for the widget background. Always fully opaque; visual transparency
-        /// is controlled via EffectiveBackgroundOpacity on the background layer.
+        /// Gets the legacy opaque background brush; the widget shell uses ThemeManager resources.
         /// </summary>
         public Avalonia.Media.IBrush BackgroundBrush
         {
@@ -324,7 +323,7 @@ namespace FocusTimer.App.ViewModels
         }
 
         /// <summary>
-        /// Gets or sets overall opacity multiplier (0.2..1) applied to background, clock and controls.
+        /// Gets or sets whole-window opacity (0.2..1).
         /// Backed by Settings.WidgetOpacity so it is persisted.
         /// </summary>
         public double OverallOpacity
@@ -352,12 +351,12 @@ namespace FocusTimer.App.ViewModels
         /// <summary>
         /// Gets effective opacities with the overall multiplier applied.
         /// </summary>
-        public double EffectiveBackgroundOpacity => this.BackgroundOpacity * this.OverallOpacity;
+        public double EffectiveBackgroundOpacity => this.BackgroundOpacity;
 
         /// <summary>
         /// Gets the effective opacity for the rear widget shell (base layer) with the overall multiplier applied.
         /// </summary>
-        public double EffectiveWidgetBaseOpacity => (this.Settings?.Theme?.WidgetBaseOpacity ?? 1.0) * this.OverallOpacity;
+        public double EffectiveWidgetBaseOpacity => this.Settings?.Theme?.WidgetBaseOpacity ?? 1.0;
 
         /// <summary>
         /// Gets a value indicating whether the controls layer accepts pointer input.
@@ -368,12 +367,12 @@ namespace FocusTimer.App.ViewModels
         /// <summary>
         /// Gets the effective opacity for the clock with the overall multiplier applied.
         /// </summary>
-        public double EffectiveClockOpacity => this.ClockOpacity * this.OverallOpacity;
+        public double EffectiveClockOpacity => this.ClockOpacity;
 
         /// <summary>
         /// Gets the effective opacity for controls with the overall multiplier applied.
         /// </summary>
-        public double EffectiveControlsOpacity => this.ControlsOpacity * this.OverallOpacity;
+        public double EffectiveControlsOpacity => this.ControlsOpacity;
 
         /// <summary>
         /// Gets current elapsed time.

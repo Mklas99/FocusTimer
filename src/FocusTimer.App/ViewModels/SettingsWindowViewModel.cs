@@ -36,6 +36,8 @@ namespace FocusTimer.App.ViewModels
         private Theme? _attachedTheme;
         private Settings _settings;
         private string _selectedThemeName;
+        private Theme _lastAppliedTheme = new();
+        private bool _appearancePreviewChanged;
         private int _versionClickCount;
         private decimal? _activityPollingIntervalInput = 10;
         private int _selectedTabIndex;
@@ -62,6 +64,7 @@ namespace FocusTimer.App.ViewModels
             this._autoStartService = autoStartService;
             this._themeService = themeService;
             this._themeManager = themeManager;
+            this._themeManager.ActualWidgetTransparencyChanged += this.OnActualWidgetTransparencyChanged;
             this._logger = logWriter;
             this._settings = new Settings();
             this._selectedThemeName = "Dark";
@@ -306,6 +309,28 @@ namespace FocusTimer.App.ViewModels
         }
 
         /// <summary>
+        /// Gets the available widget backdrop blur choices.
+        /// </summary>
+        public IReadOnlyList<string> AvailableBlurModes { get; } =
+            [WidgetBlurModes.Off, WidgetBlurModes.Soft, WidgetBlurModes.Strong];
+
+        /// <summary>
+        /// Gets or sets the selected widget backdrop blur choice.
+        /// </summary>
+        public string SelectedBlurMode
+        {
+            get => this.Settings.Theme.WidgetBlurMode;
+            set
+            {
+                if (WidgetBlurModes.IsValid(value) && this.Settings.Theme.WidgetBlurMode != value)
+                {
+                    this.Settings.Theme.WidgetBlurMode = value;
+                    this.RaisePropertyChanged(nameof(this.SelectedBlurMode));
+                }
+            }
+        }
+
+        /// <summary>
         /// Gets or sets the clock text opacity in percent (0..100).
         /// </summary>
         public double ClockOpacityPercent
@@ -386,13 +411,19 @@ namespace FocusTimer.App.ViewModels
         /// Gets transparency mode diagnostics shown in Appearance tab.
         /// </summary>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Major Code Smell", "S2325:Methods and properties that don't access instance data should be static", Justification = "Instance property required for XAML data binding.")]
-        public string TransparencyDiagnostics => "Window: Transparent | Hint: Transparent > Blur > AcrylicBlur > Mica | Fallback: Transparent";
+        public string TransparencyDiagnostics =>
+            $"Requested: {this.SelectedBlurMode} | Active: {this._themeManager.ActualWidgetTransparency}" +
+            (this.SelectedBlurMode != WidgetBlurModes.Off &&
+             this._themeManager.ActualWidgetTransparency == WindowTransparencyLevel.Transparent
+                ? " (blur unavailable)"
+                : string.Empty) +
+            $" | Surface: {this.GetWidgetSurfaceDescription()}";
 
         /// <summary>
         /// Gets acrylic diagnostics shown in Appearance tab.
         /// </summary>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Major Code Smell", "S2325:Methods and properties that don't access instance data should be static", Justification = "Instance property required for XAML data binding.")]
-        public string AcrylicDiagnostics => OperatingSystem.IsWindows() ? "Acrylic/Mica availability depends on compositor and OS policies." : "Mica/Acrylic not expected; blur fallback path will be used.";
+        public string AcrylicDiagnostics => "The slider controls theme tint only. Platform AcrylicBlur may look opaque even at 0% tint.";
 
         /// <summary>
         /// Gets a single-line summary of effective normalized opacities.
@@ -442,6 +473,31 @@ namespace FocusTimer.App.ViewModels
             this.OnVersionInfoClicked();
         }
 
+        /// <summary>
+        /// Restores the last applied theme after an unapplied appearance preview.
+        /// </summary>
+        public void RestoreAppearancePreview()
+        {
+            if (this._appearancePreviewChanged)
+            {
+                this._themeManager.ApplyTheme(this._lastAppliedTheme);
+                this._appearancePreviewChanged = false;
+            }
+        }
+
+        /// <summary>
+        /// Releases subscriptions held by this settings view model.
+        /// </summary>
+        public void Dispose()
+        {
+            this._themeManager.ActualWidgetTransparencyChanged -= this.OnActualWidgetTransparencyChanged;
+            this.DetachTheme();
+            if (this._attachedSettings != null)
+            {
+                this.DetachSettings(this._attachedSettings);
+            }
+        }
+
         private static void Cancel(Window window)
         {
             window?.Close();
@@ -472,6 +528,8 @@ namespace FocusTimer.App.ViewModels
 
                 this._settings.ActivityPollingIntervalSeconds = (int)this.ActivityPollingIntervalInput!.Value;
                 await this._settingsProvider.SaveAsync(this._settings);
+                this._lastAppliedTheme = this.Settings.Theme.Clone();
+                this._appearancePreviewChanged = false;
                 this.LastApplySucceeded = true;
                 this.SettingsApplied?.Invoke(this, EventArgs.Empty);
                 this._logger.LogDebug("Settings saved successfully");
@@ -514,6 +572,17 @@ namespace FocusTimer.App.ViewModels
             try
             {
                 this.Settings = await this._settingsProvider.LoadAsync();
+                Theme? selectedPreset = this._themeService.GetBuiltInTheme(this.Settings.ActiveThemeName);
+                if (selectedPreset != null && !string.Equals(
+                        this.Settings.Theme.ThemeName,
+                        selectedPreset.ThemeName,
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    this.Settings.Theme = selectedPreset;
+                }
+
+                this._lastAppliedTheme = this.Settings.Theme.Clone();
+                this._appearancePreviewChanged = false;
                 this._selectedThemeName = this.Settings.ActiveThemeName;
                 this.RaisePropertyChanged(nameof(this.SelectedThemeName));
                 this.RaisePropertyChanged(nameof(this.IsDeveloperModeVisible));
@@ -677,6 +746,7 @@ namespace FocusTimer.App.ViewModels
             if (e.PropertyName == nameof(this.Settings.Theme))
             {
                 this.AttachTheme(this.Settings.Theme);
+                this._appearancePreviewChanged = true;
                 this.ApplyThemeChanges();
                 this.RaiseOpacityDiagnostics();
                 return;
@@ -692,7 +762,14 @@ namespace FocusTimer.App.ViewModels
 
         private void OnThemePropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
+            this._appearancePreviewChanged = true;
             this.ApplyThemeChanges();
+            if (e.PropertyName == nameof(Theme.WidgetBlurMode))
+            {
+                this.RaisePropertyChanged(nameof(this.SelectedBlurMode));
+                this.RaisePropertyChanged(nameof(this.TransparencyDiagnostics));
+            }
+
             if (e.PropertyName == nameof(Theme.BackgroundOpacity))
             {
                 this.RaisePropertyChanged(nameof(this.BackgroundOpacityPercent));
@@ -710,6 +787,24 @@ namespace FocusTimer.App.ViewModels
             }
 
             this.RaisePropertyChanged(nameof(this.OpacityDiagnosticsSummary));
+        }
+
+        private void OnActualWidgetTransparencyChanged(WindowTransparencyLevel level) =>
+            this.RaisePropertyChanged(nameof(this.TransparencyDiagnostics));
+
+        private string GetWidgetSurfaceDescription()
+        {
+            if (this._themeManager.IsWidgetShellFallbackActive)
+            {
+                return "solid fallback";
+            }
+
+            if (this._themeManager.ActualWidgetTransparency == WindowTransparencyLevel.Transparent)
+            {
+                return "transparent backdrop";
+            }
+
+            return "platform blur";
         }
 
         private void ApplyThemeChanges()
@@ -781,6 +876,7 @@ namespace FocusTimer.App.ViewModels
         private void RaiseOpacityDiagnostics()
         {
             this.RaisePropertyChanged(nameof(this.BackgroundOpacityPercent));
+            this.RaisePropertyChanged(nameof(this.SelectedBlurMode));
             this.RaisePropertyChanged(nameof(this.ClockOpacityPercent));
             this.RaisePropertyChanged(nameof(this.ButtonsOpacityPercent));
             this.RaisePropertyChanged(nameof(this.OverallFadePercent));
