@@ -2,7 +2,6 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:converters="using:FocusTimer.App.Converters"
     xmlns:vm="using:FocusTimer.App.ViewModels"
-    xmlns:materialIcons="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
     xmlns:views="clr-namespace:FocusTimer.App.Views"
     x:Class="FocusTimer.App.Views.TimerWidgetWindow"
     x:DataType="vm:TimerWidgetViewModel"
@@ -48,39 +47,19 @@
         HorizontalAlignment="Center">
 
             <Grid x:Name="ContentLayer"
-            RowDefinitions="Auto,Auto"
             Background="Transparent"
             ClipToBounds="True"
             VerticalAlignment="Center"
             HorizontalAlignment="Center">
                 <Border x:Name="WidgetShell"
-                    Grid.RowSpan="2"
                     Background="{DynamicResource WidgetShellActiveBrush}"
                     BorderBrush="{DynamicResource WindowBorderBrush}"
                     BorderThickness="1"
                     CornerRadius="{DynamicResource WidgetCornerRadius}"
                     IsHitTestVisible="False" />
 
-                <!-- Minimize button (top right with accessible hit target) -->
-                <Button Grid.Row="0"
-                Classes="icon-button"
-                HorizontalAlignment="Right"
-                VerticalAlignment="Top"
-                MinWidth="{DynamicResource MinHitTargetSize}"
-                MinHeight="{DynamicResource MinHitTargetSize}"
-                Margin="0,2,4,0"
-                Click="MinimizeButton_Click"
-                ToolTip.Tip="Minimize"
-                Opacity="{Binding EffectiveControlsOpacity}"
-                IsHitTestVisible="{Binding AreControlsInteractable}">
-                    <materialIcons:MaterialIcon Kind="WindowMinimize"
-                    Foreground="{DynamicResource SecondaryTextBrush}"
-                    Width="14"
-                    Height="10" />
-                </Button>
-
                 <!-- Content area: switch between full and compact modes -->
-                <Grid Grid.Row="1"
+                <Grid
                 Background="Transparent"
                 VerticalAlignment="Center"
                 HorizontalAlignment="Center">

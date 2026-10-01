@@ -212,13 +212,6 @@ namespace FocusTimer.App.Views
             this.BeginMoveDrag(e);
         }
 
-        // Handler for minimize button
-        private void MinimizeButton_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
-        {
-            this.WindowState = WindowState.Minimized;
-            (this.DataContext as TimerWidgetViewModel)?.Logger?.LogDebug("Timer widget minimized.");
-        }
-
         private void OnWindowClosing(object? sender, WindowClosingEventArgs e)
         {
             // Prevent the window from actually closing

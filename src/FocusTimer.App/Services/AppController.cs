@@ -244,6 +244,11 @@ namespace FocusTimer.App.Services
                         viewModel.ApplySettings(this.CurrentSettings);
                     }
 
+                    if (this._timerWindow.WindowState == WindowState.Minimized)
+                    {
+                        this._timerWindow.WindowState = WindowState.Normal;
+                    }
+
                     this._timerWindow.Show();
                     this._timerWindow.Activate();
                 }

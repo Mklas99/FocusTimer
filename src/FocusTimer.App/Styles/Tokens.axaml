@@ -20,7 +20,7 @@
         <Thickness x:Key="SpacingThicknessMd">12</Thickness>
         <Thickness x:Key="SpacingThicknessLg">16</Thickness>
         <Thickness x:Key="WidgetPadding">8</Thickness>
-        <Thickness x:Key="WidgetContentMargin">8,4,8,8</Thickness>
+        <Thickness x:Key="WidgetContentMargin">8</Thickness>
 
         <!-- Corner Radii Scale -->
         <CornerRadius x:Key="RadiusXs">4</CornerRadius>
