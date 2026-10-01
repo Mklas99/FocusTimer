@@ -43,14 +43,14 @@ The system SHALL provide a `WidgetScale` setting that resizes fonts and controls
 - **THEN** the last successfully applied widget appearance is restored
 
 ### Requirement: Material Layering and Fallback
-The timer widget SHALL offer Off, Soft, and Strong background blur choices on one shell surface. Off SHALL request `Transparent`; Soft SHALL request `Blur, Transparent`; Strong SHALL request `AcrylicBlur, Blur, Transparent`. A blur request that falls through to plain transparency SHALL preserve the selected tint opacity and report that blur is unavailable. An unavailable transparency mode or High Contrast SHALL use a readable solid shell. At 0% tint, the widget SHALL add no theme color tint, while the achieved platform backdrop may still be opaque. OI-28 tracks a future custom blur radius and verifiably see-through backdrop.
+The timer widget SHALL offer Off and Solid background choices on one shell surface. Off SHALL request `Transparent` and apply the selected tint opacity; Solid SHALL use an opaque theme-colored shell independent of the saved tint opacity. An unavailable transparency mode or High Contrast SHALL use a readable solid shell. At 0% tint, Off SHALL add no theme color tint. Saved Soft, Strong, and Blur values SHALL load as Off. OI-28 tracks a future verifiably see-through custom blur without desktop capture.
 
 #### Scenario: Widget renders on supported platform
 - **WHEN** the widget opens on a platform supporting the selected backdrop level
 - **THEN** the widget renders the single composited material backdrop without stacked translucent layers
 
 #### Scenario: User selects a blur choice
-- **WHEN** the user changes Off, Soft, or Strong in Settings
+- **WHEN** the user changes Off or Solid in Settings
 - **THEN** the backdrop changes live in full and compact modes beneath sharp foreground content
 
 #### Scenario: Material effects unavailable or disabled

@@ -49,6 +49,7 @@ namespace FocusTimer.App.Services
         /// </summary>
         public bool IsWidgetShellFallbackActive => this.ActiveTheme != null &&
             (string.Equals(this.ActiveTheme.ThemeName, "High Contrast", StringComparison.OrdinalIgnoreCase) ||
+             this.ActiveTheme.WidgetBlurMode == WidgetBlurModes.Solid ||
              this.ActualWidgetTransparency == WindowTransparencyLevel.None);
 
         /// <summary>

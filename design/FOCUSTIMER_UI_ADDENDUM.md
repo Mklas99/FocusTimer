@@ -45,7 +45,7 @@ Where the supported Windows/Avalonia version permits it:
 
 | Surface | Preferred direction |
 |---|---|
-| timer widget shell | selectable Off / Soft / Strong platform backdrop preference with independent tint opacity and an opaque fallback; see OI-28 for a guaranteed see-through custom blur |
+| timer widget shell | selectable Off / Solid backdrop with independent tint opacity for Off; Solid uses opaque theme color; see OI-28 for a future see-through blur |
 | timer content area | sharp clock and controls above the shell, with very high legibility |
 | title/command/navigation region | lightly materialized, integrated with window backdrop |
 | tray flyout/popover | Acrylic-like/frosted transient surface |

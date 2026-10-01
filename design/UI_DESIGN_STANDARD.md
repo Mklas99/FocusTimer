@@ -205,7 +205,7 @@ Examples:
 - transient popover → Acrylic/frosted → blur → tinted solid
 - dense content → solid / near-solid directly
 
-The timer widget is a deliberate long-lived shell exception: its user-selectable backdrop order is Strong (`AcrylicBlur, Blur, Transparent`), Soft (`Blur, Transparent`), or Off (`Transparent`). Soft stays see through and reports blur unavailable when Blur falls through to Transparent. Strong's platform AcrylicBlur may look nearly solid even at 0% theme tint; the slider controls only the widget tint, not the platform effect. Its shell becomes opaque for High Contrast or no transparency. The tint slider does not change clock or control opacity. OI-28 tracks a custom radius and see-through backdrop investigation.
+The timer widget is a deliberate long-lived shell exception: it offers Off (`Transparent`) and Solid (opaque theme color). Solid ignores but preserves the tint slider value. High Contrast or unavailable transparency also uses an opaque shell. The tint slider does not change clock or control opacity. Blur is hidden until it can visibly differ from Off; OI-28 tracks a native composition prototype without desktop capture.
 
 Never rely on an accidental fallback sequence.
 

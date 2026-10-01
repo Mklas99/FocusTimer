@@ -46,7 +46,7 @@ public class JsonSettingsProviderTests : IDisposable
             BreakIntervalMinutes = 37,
             WorklogDirectory = Path.Combine(this._testDirectory, "worklogs"),
         };
-        settings.Theme.WidgetBlurMode = WidgetBlurModes.Soft;
+        settings.Theme.WidgetBlurMode = WidgetBlurModes.Solid;
         settings.Theme.BackgroundOpacity = 0.37;
 
         await provider.SaveAsync(settings);
@@ -56,7 +56,7 @@ public class JsonSettingsProviderTests : IDisposable
         Assert.Equal(37, loaded.BreakIntervalMinutes);
         Assert.Equal(settings.WorklogDirectory, loaded.WorklogDirectory);
         Assert.Equal(settings.DeviceId, loaded.DeviceId);
-        Assert.Equal(WidgetBlurModes.Soft, loaded.Theme.WidgetBlurMode);
+        Assert.Equal(WidgetBlurModes.Solid, loaded.Theme.WidgetBlurMode);
         Assert.Equal(0.37, loaded.Theme.BackgroundOpacity);
         Assert.False(string.IsNullOrWhiteSpace(loaded.DeviceId));
         Assert.True(File.Exists(customPath));
@@ -122,7 +122,22 @@ public class JsonSettingsProviderTests : IDisposable
 
         Assert.Equal("Light", restarted.ActiveThemeName);
         Assert.Equal(first.DeviceId, restarted.DeviceId);
-        Assert.Equal(WidgetBlurModes.Strong, restarted.Theme.WidgetBlurMode);
+        Assert.Equal(WidgetBlurModes.Off, restarted.Theme.WidgetBlurMode);
+    }
+
+    [Theory]
+    [InlineData("Soft")]
+    [InlineData("Strong")]
+    [InlineData("Blur")]
+    public async Task LoadAsync_GivenLegacyBackdropChoice_PreservesTintAndMigratesChoice(string legacyMode)
+    {
+        var path = Path.Combine(this._testDirectory, "legacy-backdrop.json");
+        await File.WriteAllTextAsync(path, $"{{ \"theme\": {{ \"widgetBlurMode\": \"{legacyMode}\", \"backgroundOpacity\": 0.29 }} }}");
+
+        var loaded = await new JsonSettingsProvider(path, NullLogger.Instance).LoadAsync();
+
+        Assert.Equal(WidgetBlurModes.Off, loaded.Theme.WidgetBlurMode);
+        Assert.Equal(0.29, loaded.Theme.BackgroundOpacity);
     }
 
     public void Dispose()

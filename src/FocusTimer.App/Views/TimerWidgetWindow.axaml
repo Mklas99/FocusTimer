@@ -10,7 +10,7 @@
     WindowStartupLocation="Manual"
     SystemDecorations="None"
     ShowInTaskbar="False"
-    TransparencyLevelHint="AcrylicBlur, Blur, Transparent"
+    TransparencyLevelHint="Transparent"
     CanResize="False"
     Background="Transparent"
     TransparencyBackgroundFallback="{DynamicResource WidgetShellFallbackBrush}"

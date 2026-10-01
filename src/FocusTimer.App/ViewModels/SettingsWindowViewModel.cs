@@ -309,10 +309,13 @@ namespace FocusTimer.App.ViewModels
         }
 
         /// <summary>
-        /// Gets the available widget backdrop blur choices.
+        /// Gets the available widget backdrop choices.
         /// </summary>
         public IReadOnlyList<string> AvailableBlurModes { get; } =
-            [WidgetBlurModes.Off, WidgetBlurModes.Soft, WidgetBlurModes.Strong];
+            [WidgetBlurModes.Off, WidgetBlurModes.Solid];
+
+        /// <summary>Gets a value indicating whether tint opacity affects the selected backdrop.</summary>
+        public bool IsBackgroundTintOpacityAvailable => this.SelectedBlurMode != WidgetBlurModes.Solid;
 
         /// <summary>
         /// Gets or sets the selected widget backdrop blur choice.
@@ -413,23 +416,19 @@ namespace FocusTimer.App.ViewModels
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Major Code Smell", "S2325:Methods and properties that don't access instance data should be static", Justification = "Instance property required for XAML data binding.")]
         public string TransparencyDiagnostics =>
             $"Requested: {this.SelectedBlurMode} | Active: {this._themeManager.ActualWidgetTransparency}" +
-            (this.SelectedBlurMode != WidgetBlurModes.Off &&
-             this._themeManager.ActualWidgetTransparency == WindowTransparencyLevel.Transparent
-                ? " (blur unavailable)"
-                : string.Empty) +
             $" | Surface: {this.GetWidgetSurfaceDescription()}";
 
         /// <summary>
         /// Gets acrylic diagnostics shown in Appearance tab.
         /// </summary>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Major Code Smell", "S2325:Methods and properties that don't access instance data should be static", Justification = "Instance property required for XAML data binding.")]
-        public string AcrylicDiagnostics => "The slider controls theme tint only. Platform AcrylicBlur may look opaque even at 0% tint.";
+        public string AcrylicDiagnostics => "Tint opacity applies to Off. Solid always uses a fully opaque background. Blur is unavailable for now.";
 
         /// <summary>
         /// Gets a single-line summary of effective normalized opacities.
         /// </summary>
         public string OpacityDiagnosticsSummary =>
-            $"BG={this.NormalizedBackgroundOpacity:F2} | Clock={this.NormalizedClockOpacity:F2} | Controls={this.NormalizedButtonsOpacity:F2} | Overall={this.NormalizedOverallFade:F2}";
+            $"BG={(this.SelectedBlurMode == WidgetBlurModes.Solid ? "solid" : this.NormalizedBackgroundOpacity.ToString("F2"))} | Clock={this.NormalizedClockOpacity:F2} | Controls={this.NormalizedButtonsOpacity:F2} | Overall={this.NormalizedOverallFade:F2}";
 
         /// <summary>
         /// Gets the current value of a theme color property.
@@ -767,7 +766,9 @@ namespace FocusTimer.App.ViewModels
             if (e.PropertyName == nameof(Theme.WidgetBlurMode))
             {
                 this.RaisePropertyChanged(nameof(this.SelectedBlurMode));
+                this.RaisePropertyChanged(nameof(this.IsBackgroundTintOpacityAvailable));
                 this.RaisePropertyChanged(nameof(this.TransparencyDiagnostics));
+                this.RaisePropertyChanged(nameof(this.OpacityDiagnosticsSummary));
             }
 
             if (e.PropertyName == nameof(Theme.BackgroundOpacity))
@@ -796,7 +797,7 @@ namespace FocusTimer.App.ViewModels
         {
             if (this._themeManager.IsWidgetShellFallbackActive)
             {
-                return "solid fallback";
+                return this.SelectedBlurMode == WidgetBlurModes.Solid ? "solid fill" : "solid fallback";
             }
 
             if (this._themeManager.ActualWidgetTransparency == WindowTransparencyLevel.Transparent)
@@ -877,6 +878,7 @@ namespace FocusTimer.App.ViewModels
         {
             this.RaisePropertyChanged(nameof(this.BackgroundOpacityPercent));
             this.RaisePropertyChanged(nameof(this.SelectedBlurMode));
+            this.RaisePropertyChanged(nameof(this.IsBackgroundTintOpacityAvailable));
             this.RaisePropertyChanged(nameof(this.ClockOpacityPercent));
             this.RaisePropertyChanged(nameof(this.ButtonsOpacityPercent));
             this.RaisePropertyChanged(nameof(this.OverallFadePercent));

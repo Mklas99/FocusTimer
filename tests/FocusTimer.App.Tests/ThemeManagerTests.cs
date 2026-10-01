@@ -32,11 +32,11 @@ namespace FocusTimer.App.Tests
         }
 
         [Fact]
-        public void WidgetShell_KeepsTintOpacityWhenRequestedBlurFallsBackToTransparent()
+        public void WidgetShell_OffKeepsTintOpacityOnTransparentDesktop()
         {
             var manager = new ThemeManager();
             var dict = new ResourceDictionary();
-            manager.ApplyTheme(new Theme { WidgetBlurMode = WidgetBlurModes.Strong, BackgroundOpacity = 0 }, dict);
+            manager.ApplyTheme(new Theme { WidgetBlurMode = WidgetBlurModes.Off, BackgroundOpacity = 0 }, dict);
 
             manager.ReportActualWidgetTransparency(WindowTransparencyLevel.Transparent);
             Assert.False(manager.IsWidgetShellFallbackActive);
@@ -54,7 +54,7 @@ namespace FocusTimer.App.Tests
             var dict = new ResourceDictionary();
             var theme = new Core.Services.ThemeService().GetBuiltInTheme("High Contrast")!;
             theme.BackgroundOpacity = 0;
-            theme.WidgetBlurMode = WidgetBlurModes.Strong;
+            theme.WidgetBlurMode = WidgetBlurModes.Off;
             manager.ApplyTheme(theme, dict);
             manager.ReportActualWidgetTransparency(WindowTransparencyLevel.Transparent);
 
@@ -62,11 +62,22 @@ namespace FocusTimer.App.Tests
             Assert.Same(dict["WidgetShellFallbackBrush"], dict["WidgetShellActiveBrush"]);
         }
 
+        [Fact]
+        public void WidgetShell_SolidIgnoresSavedTintOpacityWithoutDimmingForeground()
+        {
+            var manager = new ThemeManager();
+            var dict = new ResourceDictionary();
+            manager.ApplyTheme(new Theme { WidgetBlurMode = WidgetBlurModes.Solid, BackgroundOpacity = 0 }, dict);
+            manager.ReportActualWidgetTransparency(WindowTransparencyLevel.Transparent);
+
+            Assert.True(manager.IsWidgetShellFallbackActive);
+            Assert.Same(dict["WidgetShellFallbackBrush"], dict["WidgetShellActiveBrush"]);
+            Assert.Equal(1, Assert.IsType<SolidColorBrush>(dict["WidgetShellActiveBrush"]).Opacity);
+            Assert.Equal(0, manager.ActiveTheme!.BackgroundOpacity);
+        }
+
         [Theory]
-        [InlineData(WidgetBlurModes.Soft, "Blur")]
-        [InlineData(WidgetBlurModes.Strong, "AcrylicBlur")]
-        [InlineData(WidgetBlurModes.Soft, "Transparent")]
-        [InlineData(WidgetBlurModes.Strong, "Transparent")]
+        [InlineData(WidgetBlurModes.Off, "Transparent")]
         public void WidgetShell_ZeroTintStaysClearAtEverySupportedTransparencyLevel(
             string mode,
             string actualLevelName)
@@ -95,13 +106,13 @@ namespace FocusTimer.App.Tests
             var manager = new ThemeManager();
             Theme? published = null;
             manager.ThemeApplied += theme => published = theme;
-            var theme = new Theme { WidgetBlurMode = WidgetBlurModes.Soft };
+            var theme = new Theme { WidgetBlurMode = WidgetBlurModes.Solid };
 
             manager.ApplyTheme(theme, new ResourceDictionary());
             theme.WidgetBlurMode = WidgetBlurModes.Off;
 
-            Assert.Equal(WidgetBlurModes.Soft, published!.WidgetBlurMode);
-            Assert.Equal(WidgetBlurModes.Soft, manager.ActiveTheme!.WidgetBlurMode);
+            Assert.Equal(WidgetBlurModes.Solid, published!.WidgetBlurMode);
+            Assert.Equal(WidgetBlurModes.Solid, manager.ActiveTheme!.WidgetBlurMode);
         }
 
         [Fact]

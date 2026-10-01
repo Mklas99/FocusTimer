@@ -9,20 +9,20 @@ See [proposal.md](proposal.md). `TimerWidgetWindow.axaml` requests `Mica, Acryli
 **Goals:**
 
 - Give the shell tint one opacity owner and leave foreground element opacity independent.
-- Make the three blur choices take effect live without recreating the widget or changing its bounds.
+- Make Off and Solid take effect live without recreating the widget or changing its bounds.
 - Preserve readable fallback and older settings and `.fttheme` files.
 
 **Non-Goals:**
 
-- A numeric blur-radius API or a custom desktop capture and blur renderer.
+- A numeric blur-radius API or desktop capture and blur renderer.
 - Redesigning widget geometry, controls, or the Settings draft/Cancel model tracked by OI-21.
 - Adding Linux-specific blur code; unsupported platforms use the same fallback contract.
 
 ## Decisions
 
-### 1. Use platform blur levels as the three choices
+### 1. Use honest backdrop choices
 
-Store a stable `Off`, `Soft`, or `Strong` value in `Theme` and expose it in Appearance beside Background opacity. Map Off to `Transparent`, Soft to `Blur, Transparent`, and Strong to `AcrylicBlur, Blur, Transparent`. On the tested Windows compositor, Blur is unavailable, so Soft falls through to Transparent and remains see through; the diagnostic must say blur is unavailable. AcrylicBlur is reported for Strong but appears nearly solid even at 0% tint. Remove Mica from this widget's preferred sequence because it is system-tinted rather than the desktop blur requested here. Observe `ActualTransparencyLevel` so the UI can report the achieved API effect without promising visual transparency. The shared shell applies the choice to both modes. Avalonia's backdrop levels are discrete and do not provide a continuous blur radius. OI-28 tracks a true custom radius and a verifiably see-through desktop backdrop.
+Store `Off` or `Solid` in `Theme` and expose them beside Background tint opacity. Off requests `Transparent`; Solid also requests `Transparent` but uses a fully opaque theme-colored shell. The tint slider is disabled for Solid while its saved value is retained for Off. Older serialized Soft, Strong, and Blur values normalize to Off, preserving the user's tint and clear visibility. On the tested Windows compositor, Blur was unavailable and AcrylicBlur looked nearly solid even at 0% tint. A temporary DWM Desktop Acrylic test made every choice look solid despite the API accepting the setting, so blur is hidden until a visibly distinct implementation exists. Observe `ActualTransparencyLevel` for fallback reporting. OI-28 tracks a native composition prototype for true see-through blur; desktop capture is excluded.
 
 ### 2. Compose one shell tint beneath unchanged content
 
@@ -32,13 +32,13 @@ Replace the visible base/panel pair with one semantic widget-shell tint surface.
 
 ### 3. Store blur with theme appearance and validate imports
 
-Use a string-stable serialized enum or equivalent validated value for blur. New Dark and other regular themes default to Strong so the restored frost is available; tune their initial tint opacities for visible blur without sacrificing contrast. High Contrast defaults to Off and forces a solid shell even if an imported or previously stored value asks for blur. A missing blur field in older settings or `.fttheme` files resolves to Strong; an unknown supplied value fails theme import validation. Update `Theme.Clone()` and theme export so the choice survives preset selection, settings reload, import/export, and restart. Preserve existing color and opacity values in older files. At startup, use the Dark factory preset only for a truly new/default settings instance; a persisted `Settings.Theme` is authoritative even when `ActiveThemeName` names a built-in preset. Explicit preset selection or reset still replaces the edited values with that preset.
+Use a string-stable serialized value for the backdrop choice. New themes default to Off; High Contrast defaults to Off and forces a solid shell. A missing choice in older settings or `.fttheme` files resolves to Off; supplied Soft, Strong, and Blur values migrate to Off; an unknown value fails theme import validation. `Theme.Clone()` and theme export preserve the choice through preset selection, settings reload, import/export, and restart. Preserve existing color and opacity values in older files. At startup, use the Dark factory preset only for a truly new/default settings instance; a persisted `Settings.Theme` is authoritative even when `ActiveThemeName` names a built-in preset. Explicit preset selection or reset still replaces the edited values with that preset.
 
 Settings currently edits a separate `Settings` instance. Have its appearance preview publish a theme snapshot through `ThemeManager` (or a small equivalent app-level event), and have the widget window consume that snapshot for blur and tint. The window must not rely only on its persisted `TimerWidgetViewModel.Settings` for live preview. Capture the last successfully applied appearance when Settings opens, advance that restore point after successful Apply, and reapply it on Cancel or window close. This restores the new appearance preview without redesigning the remaining Settings draft model.
 
 ### 4. Keep accessibility fallback separate from the tint slider
 
-When transparency is unavailable or disabled, render a solid or near-solid shell using the theme's opaque background color. Do not dim foreground content to simulate fallback. High Contrast always takes this path. When blur falls through to Transparent, preserve the user's tint opacity so the widget stays see through, and report that the requested blur was unavailable. The tint opacity can reach 0% on every transparency-capable path.
+When Solid is selected or transparency is unavailable or disabled, render a solid shell using the theme's opaque background color. Do not dim foreground content to simulate fallback. High Contrast always takes this path. Off preserves the user's tint opacity and can reach 0%.
 
 ## Risks / Trade-offs
 

@@ -58,21 +58,21 @@ public class SettingsWindowSummaryTabTests
             {
                 ThemeName = "Dark",
                 BackgroundOpacity = 0.8,
-                WidgetBlurMode = WidgetBlurModes.Strong,
+                WidgetBlurMode = WidgetBlurModes.Off,
             },
         };
         var vm = Create(new CountingSummaryService(), themeManager, savedSettings);
 
         vm.BackgroundOpacityPercent = 25;
-        vm.SelectedBlurMode = WidgetBlurModes.Soft;
+        vm.SelectedBlurMode = WidgetBlurModes.Solid;
 
         Assert.Equal(0.25, themeManager.ActiveTheme!.BackgroundOpacity);
-        Assert.Equal(WidgetBlurModes.Soft, themeManager.ActiveTheme.WidgetBlurMode);
+        Assert.Equal(WidgetBlurModes.Solid, themeManager.ActiveTheme.WidgetBlurMode);
 
         vm.RestoreAppearancePreview();
 
         Assert.Equal(0.8, themeManager.ActiveTheme!.BackgroundOpacity);
-        Assert.Equal(WidgetBlurModes.Strong, themeManager.ActiveTheme.WidgetBlurMode);
+        Assert.Equal(WidgetBlurModes.Off, themeManager.ActiveTheme.WidgetBlurMode);
         vm.Dispose();
     }
 
@@ -82,14 +82,14 @@ public class SettingsWindowSummaryTabTests
         var themeManager = new ThemeManager();
         var vm = Create(new CountingSummaryService(), themeManager, new Settings());
 
-        vm.SelectedBlurMode = WidgetBlurModes.Soft;
+        vm.SelectedBlurMode = WidgetBlurModes.Solid;
         await ((ReactiveCommand<Unit, Unit>)vm.ApplyCommand).Execute().ToTask();
         Assert.True(vm.LastApplySucceeded);
 
         vm.SelectedBlurMode = WidgetBlurModes.Off;
         vm.RestoreAppearancePreview();
 
-        Assert.Equal(WidgetBlurModes.Soft, themeManager.ActiveTheme!.WidgetBlurMode);
+        Assert.Equal(WidgetBlurModes.Solid, themeManager.ActiveTheme!.WidgetBlurMode);
         vm.Dispose();
     }
 
@@ -100,7 +100,8 @@ public class SettingsWindowSummaryTabTests
 
         Assert.Equal("Dark", vm.Settings.Theme.ThemeName);
         Assert.Equal(0.8, vm.Settings.Theme.BackgroundOpacity);
-        Assert.Equal(WidgetBlurModes.Strong, vm.SelectedBlurMode);
+        Assert.Equal(WidgetBlurModes.Off, vm.SelectedBlurMode);
+        Assert.Equal([WidgetBlurModes.Off, WidgetBlurModes.Solid], vm.AvailableBlurModes);
         vm.Dispose();
     }
 
@@ -110,14 +111,12 @@ public class SettingsWindowSummaryTabTests
         var manager = new ThemeManager();
         var vm = Create(new CountingSummaryService(), manager, new Settings());
 
-        manager.ReportActualWidgetTransparency(WindowTransparencyLevel.AcrylicBlur);
-        Assert.Contains("Requested: Strong | Active: AcrylicBlur | Surface: platform blur", vm.TransparencyDiagnostics);
-
-        manager.ReportActualWidgetTransparency(WindowTransparencyLevel.Blur);
-        Assert.Contains("Requested: Strong | Active: Blur | Surface: platform blur", vm.TransparencyDiagnostics);
-
         manager.ReportActualWidgetTransparency(WindowTransparencyLevel.Transparent);
-        Assert.Contains("Requested: Strong | Active: Transparent (blur unavailable) | Surface: transparent backdrop", vm.TransparencyDiagnostics);
+        Assert.Contains("Requested: Off | Active: Transparent | Surface: transparent backdrop", vm.TransparencyDiagnostics);
+
+        vm.SelectedBlurMode = WidgetBlurModes.Solid;
+        Assert.False(vm.IsBackgroundTintOpacityAvailable);
+        Assert.Contains("Requested: Solid | Active: Transparent | Surface: solid fill", vm.TransparencyDiagnostics);
 
         vm.SelectedBlurMode = WidgetBlurModes.Off;
         Assert.Contains("Requested: Off | Active: Transparent | Surface: transparent backdrop", vm.TransparencyDiagnostics);

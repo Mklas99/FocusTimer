@@ -10,8 +10,8 @@ using FocusTimer.Core.Stubs;
 public sealed class AppControllerStartupTests
 {
     [Theory]
-    [InlineData("Dark", "Dark", "Soft", 0.38, "Soft", 0.38)]
-    [InlineData("Dark", "Custom", "Soft", 0.38, "Strong", 0.80)]
+    [InlineData("Dark", "Dark", "Soft", 0.38, "Off", 0.38)]
+    [InlineData("Dark", "Custom", "Soft", 0.38, "Off", 0.80)]
     public async Task InitializeAsync_PreservesSavedThemeButUsesPresetForDefaults(
         string activeName,
         string savedName,

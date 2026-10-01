@@ -56,13 +56,13 @@ Views (FullModeView, CompactModeView, SettingsWindow, etc.)
 | Theme.cs Property | Clamped Range | Avalonia Resource | Target Element |
 |---|---|---|---|
 | `BackgroundOpacity` | 0.0 – 1.0 | `WidgetShellTintBrush.Opacity` | Widget shell tint only; blur stays independent |
-| `WidgetBlurMode` | Off / Soft / Strong | Window transparency hints | Background blur; lower levels are fallbacks |
+| `WidgetBlurMode` | Off / Solid | Window transparency hint and shell fill | Background effect; legacy Soft/Strong/Blur values load as Off |
 | `TimerOpacity` | 0.0 – 1.0 | `TimerTextBrush.Opacity`, clock layer opacity | Elapsed time digits layer |
 | `ButtonOpacity` | 0.0 – 1.0 | `ButtonNormalBrush.Opacity`, controls layer opacity | Control buttons layer |
 
 `Settings.WidgetOpacity` fades the window as a whole. `WidgetBaseOpacity` remains readable in older theme files but does not render a second shell layer.
 
-`WidgetShellActiveBrush` uses the selected tint opacity whenever the platform provides AcrylicBlur, Blur, or Transparent. If a blur request falls through to Transparent, the diagnostic reports the actual level and the shell remains see through. High Contrast or no transparency uses the opaque fallback.
+`WidgetShellActiveBrush` uses selected tint opacity for Off. Solid, High Contrast, or unavailable transparency uses the opaque fallback. Blur is hidden until it can visibly differ from Off.
 
 ## 4. Built-in Theme Coverage Verification
 

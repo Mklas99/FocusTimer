@@ -13,17 +13,14 @@ public sealed class WidgetBackdropLevelsTests
             [WindowTransparencyLevel.Transparent],
             WidgetBackdropLevels.ForTheme(new Theme { WidgetBlurMode = WidgetBlurModes.Off }));
         Assert.Equal(
-            [WindowTransparencyLevel.Blur, WindowTransparencyLevel.Transparent],
-            WidgetBackdropLevels.ForTheme(new Theme { WidgetBlurMode = WidgetBlurModes.Soft }));
-        Assert.Equal(
-            [WindowTransparencyLevel.AcrylicBlur, WindowTransparencyLevel.Blur, WindowTransparencyLevel.Transparent],
-            WidgetBackdropLevels.ForTheme(new Theme { WidgetBlurMode = WidgetBlurModes.Strong }));
+            [WindowTransparencyLevel.Transparent],
+            WidgetBackdropLevels.ForTheme(new Theme { WidgetBlurMode = WidgetBlurModes.Solid }));
     }
 
     [Fact]
     public void ForTheme_HighContrastNeverRequestsBlur()
     {
-        var theme = new Theme { ThemeName = "High Contrast", WidgetBlurMode = WidgetBlurModes.Strong };
+        var theme = new Theme { ThemeName = "High Contrast", WidgetBlurMode = WidgetBlurModes.Solid };
 
         Assert.Equal([WindowTransparencyLevel.Transparent], WidgetBackdropLevels.ForTheme(theme));
     }
