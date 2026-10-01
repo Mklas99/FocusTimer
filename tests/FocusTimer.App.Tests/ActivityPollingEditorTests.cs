@@ -56,7 +56,12 @@ public class ActivityPollingEditorTests
         Assert.Equal(10, provider.Saved.ActivityPollingIntervalSeconds);
     }
 
-    private static SettingsWindowViewModel Create(Provider p) => new(p, new AutoStart(), new ThemeService(), new ThemeManager(), new Logger());
+    private static SettingsWindowViewModel Create(Provider p) => new(
+        p, new AutoStart(), new ThemeService(), new ThemeManager(), new Logger(),
+        new WorklogSummaryViewModel(
+            new EmptySummary(),
+            new WorklogGroupingRegistry([new ApplicationGrouping(), new ProjectGrouping()]),
+            TimeProvider.System));
     private static Task Apply(SettingsWindowViewModel vm) => (Task)typeof(SettingsWindowViewModel)
         .GetMethod("ApplyAsync", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(vm, null)!;
 
@@ -85,5 +90,11 @@ public class ActivityPollingEditorTests
         public void LogWarning(string m) { }
         public void LogInformation(string m) { }
         public void LogDebug(string m) { }
+    }
+
+    private sealed class EmptySummary : IWorklogSummaryService
+    {
+        public Task<WorklogSummary> SummarizeAsync(WorklogSummaryRequest request, CancellationToken cancellationToken = default) =>
+            Task.FromResult(new WorklogSummary(request, WorklogOutcome.Success(), [], TimeSpan.Zero, []));
     }
 }

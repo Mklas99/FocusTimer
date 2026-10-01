@@ -500,11 +500,9 @@ namespace FocusTimer.App.ViewModels
                 // Ensure UI updates happen on the UI thread
                 await Dispatcher.UIThread.InvokeAsync(() =>
                 {
-                    this.Settings = loadedSettings;
+                    this.ApplySettings(loadedSettings);
                 });
 
-                this._sessionTracker.SetPollingInterval(this.Settings.ActivityPollingIntervalSeconds);
-                this._sessionTracker.SetTrackingEnabled(this.Settings.WorkLoggingEnabled);
                 if (this.IsRunning && this.Settings.WorkLoggingEnabled)
                 {
                     await this._sessionTracker.StartAsync(this.ProjectTag);
@@ -517,6 +515,15 @@ namespace FocusTimer.App.ViewModels
 
                 // TODO: Consider showing a notification to the user about failed settings load
             }
+        }
+
+        /// <summary>Applies already loaded settings without reading the settings file.</summary>
+        /// <param name="settings">Settings loaded by the controller.</param>
+        public void ApplySettings(Settings settings)
+        {
+            this.Settings = settings;
+            this._sessionTracker.SetPollingInterval(settings.ActivityPollingIntervalSeconds);
+            this._sessionTracker.SetTrackingEnabled(settings.WorkLoggingEnabled);
         }
 
         /// <summary>

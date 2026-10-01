@@ -26,7 +26,6 @@ namespace FocusTimer.App.Views
         public TimerWidgetWindow()
         {
             this.InitializeComponent();
-            this.Opened += this.OnWindowOpened;
 
             // Handle closing event to hide instead of close
             this.Closing += this.OnWindowClosing;
@@ -97,17 +96,6 @@ namespace FocusTimer.App.Views
         private void InitializeComponent()
         {
             AvaloniaXamlLoader.Load(this);
-        }
-
-        /// <summary>
-        /// Initialize settings after window is opened.
-        /// </summary>
-        private async void OnWindowOpened(object? sender, EventArgs e)
-        {
-            if (this.DataContext is TimerWidgetViewModel viewModel)
-            {
-                await viewModel.InitializeSettingsAsync();
-            }
         }
 
         /// <summary>

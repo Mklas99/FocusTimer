@@ -28,12 +28,14 @@ namespace FocusTimer.App.Services
         private readonly Func<SettingsWindowViewModel> _settingsViewModelFactory;
         private readonly ITrayIconController? _trayIconController;
         private readonly IAppLogger _logWriter;
+        private readonly InstallationIdentity _installationIdentity;
         private TrayIcon? _trayIcon;
         private TimerWidgetWindow? _timerWindow;
         private SettingsWindow? _settingsWindow;
         private HotkeyDefinition _showHideHotkeyDefinition;
         private HotkeyDefinition _toggleTimerHotkeyDefinition;
         private bool _pausedByIdle;
+        private bool _initialized;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AppController"/> class.
@@ -50,6 +52,7 @@ namespace FocusTimer.App.Services
         /// <param name="trayIconController">Controller for managing the system tray icon.</param>
         /// <param name="logWriter">Logger for application logging.</param>
         /// <param name="eventBus">Event bus for subscribing to application-level events.</param>
+        /// <param name="installationIdentity">Cached identity for worklog entries.</param>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Major Code Smell", "S107:Methods should not have too many parameters", Justification = "Constructor injection of dependencies.")]
         public AppController(
             ISettingsProvider settingsProvider,
@@ -63,7 +66,8 @@ namespace FocusTimer.App.Services
             TodayStatsService todayStatsService,
             ITrayIconController trayIconController,
             IAppLogger logWriter,
-            IEventBus? eventBus)
+            IEventBus? eventBus,
+            InstallationIdentity installationIdentity)
         {
             this._settingsProvider = settingsProvider;
             this._hotkeyService = hotkeyService;
@@ -75,6 +79,7 @@ namespace FocusTimer.App.Services
             this.CurrentSettings = new Settings();
             this._trayIconController = trayIconController;
             this._logWriter = logWriter;
+            this._installationIdentity = installationIdentity;
 
             this._showHideHotkeyDefinition = this.ParseHotkeyOrDefault(this.CurrentSettings.HotkeyShowHide, "Ctrl+Alt+T");
             this._toggleTimerHotkeyDefinition = this.ParseHotkeyOrDefault(this.CurrentSettings.HotkeyToggleTimer, "Ctrl+Alt+P");
@@ -100,15 +105,29 @@ namespace FocusTimer.App.Services
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         public async Task InitializeAsync()
         {
+            // Load settings before exposing timer actions, even if theme resources fail.
             try
             {
-                // Initialize theme resources first
                 this._themeManager.InitializeThemeResources();
+            }
+            catch (Exception ex)
+            {
+                this._logWriter.LogError("Failed to initialize theme resources.", ex);
+            }
 
-                // Load settings
+            try
+            {
                 this.CurrentSettings = await this._settingsProvider.LoadAsync();
+            }
+            catch (Exception ex)
+            {
+                this._logWriter.LogError("Failed to load settings.", ex);
+            }
 
-                // Apply saved theme
+            this._installationIdentity.Initialize(this.CurrentSettings.DeviceId);
+
+            try
+            {
                 if (!string.IsNullOrEmpty(this.CurrentSettings.ActiveThemeName))
                 {
                     Theme? theme = this._themeService.GetBuiltInTheme(this.CurrentSettings.ActiveThemeName);
@@ -118,28 +137,42 @@ namespace FocusTimer.App.Services
                     }
                 }
 
-                // Apply theme to UI
                 this._themeManager.ApplyTheme(this.CurrentSettings.Theme);
+            }
+            catch (Exception ex)
+            {
+                this._logWriter.LogError("Failed to apply saved theme; using the default theme.", ex);
+                this.CurrentSettings.ActiveThemeName = "Dark";
+                this.CurrentSettings.Theme = new Theme { ThemeName = "Dark" };
 
-                // Setup tray icon controller after timer window is created
+                try
+                {
+                    this._themeManager.ApplyTheme(this.CurrentSettings.Theme);
+                }
+                catch (Exception fallbackEx)
+                {
+                    this._logWriter.LogError("Failed to apply the default theme.", fallbackEx);
+                }
+            }
+
+            try
+            {
                 if (this._timerWindow == null)
                 {
                     TimerWidgetViewModel viewModel = this._timerViewModelFactory();
+                    viewModel.ApplySettings(this.CurrentSettings);
                     this._timerWindow = new TimerWidgetWindow
                     {
                         DataContext = viewModel,
                     };
-
-                    // Initialize settings async
-                    _ = viewModel.InitializeSettingsAsync();
                 }
             }
             catch (Exception ex)
             {
-                this._logWriter.LogError($"Failed to load settings.", ex);
-
-                // Continue with defaults
+                this._logWriter.LogError("Failed to create timer widget.", ex);
             }
+
+            this._initialized = true;
         }
 
         /// <summary>
@@ -147,6 +180,11 @@ namespace FocusTimer.App.Services
         /// </summary>
         public void RegisterHotkeys()
         {
+            if (!this._initialized)
+            {
+                return;
+            }
+
             try
             {
                 this._hotkeyService.UnregisterAll();
@@ -174,6 +212,11 @@ namespace FocusTimer.App.Services
         /// </summary>
         public void ShowTimerWidget()
         {
+            if (!this._initialized)
+            {
+                return;
+            }
+
             Dispatcher.UIThread.Post(() =>
             {
                 try
@@ -192,8 +235,7 @@ namespace FocusTimer.App.Services
                             (this._trayIconController as TrayStateController)?.SetTrayIcon(this._trayIcon);
                         }
 
-                        // Initialize settings async
-                        _ = viewModel.InitializeSettingsAsync();
+                        viewModel.ApplySettings(this.CurrentSettings);
                     }
 
                     this._timerWindow.Show();
@@ -222,6 +264,11 @@ namespace FocusTimer.App.Services
         /// </summary>
         public void ToggleTimerWidget()
         {
+            if (!this._initialized)
+            {
+                return;
+            }
+
             Dispatcher.UIThread.Post(() =>
             {
                 if (this._timerWindow == null || !this._timerWindow.IsVisible)
@@ -249,6 +296,11 @@ namespace FocusTimer.App.Services
         /// </summary>
         public void ToggleTimer()
         {
+            if (!this._initialized)
+            {
+                return;
+            }
+
             Dispatcher.UIThread.Post(() =>
             {
                 if (this._timerWindow?.DataContext is TimerWidgetViewModel vm)
@@ -272,6 +324,11 @@ namespace FocusTimer.App.Services
         /// </summary>
         public void ShowSettings()
         {
+            if (!this._initialized)
+            {
+                return;
+            }
+
             Dispatcher.UIThread.Post(() =>
             {
                 if (this._settingsWindow == null)
@@ -389,6 +446,11 @@ namespace FocusTimer.App.Services
 
         private void OnHotkeyPressed(object? sender, HotkeyPressedEventArgs e)
         {
+            if (!this._initialized)
+            {
+                return;
+            }
+
             Dispatcher.UIThread.Post(() =>
             {
                 if (IsHotkeyMatch(e.Definition, this._showHideHotkeyDefinition))

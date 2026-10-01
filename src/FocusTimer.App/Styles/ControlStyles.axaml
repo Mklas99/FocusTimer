@@ -195,4 +195,9 @@
         <Setter Property="Padding" Value="4" />
     </Style>
 
+    <Style Selector="TextBlock.summary-unassigned">
+        <Setter Property="FontStyle" Value="Italic" />
+        <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}" />
+    </Style>
+
 </Styles>
