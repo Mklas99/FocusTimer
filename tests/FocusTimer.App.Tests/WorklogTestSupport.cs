@@ -44,6 +44,10 @@ internal sealed class MemoryWorklogStore : IWorklogStore
 
     public void Add(params TimeEntry[] entries) => this._entries.AddRange(entries);
 
+    public void Clear() => this._entries.Clear();
+
+    public void ReplaceFirst(TimeEntry entry) => this._entries[0] = entry;
+
     public Task<WorklogOutcome> AppendAsync(IReadOnlyCollection<TimeEntry> entries, CancellationToken cancellationToken = default)
     {
         this.BeforeWrite?.Invoke();

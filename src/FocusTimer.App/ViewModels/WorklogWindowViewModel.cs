@@ -264,6 +264,7 @@ namespace FocusTimer.App.ViewModels
             }
 
             this.EarliestDay = WorklogDayBounds.EarliestDay(this.Today, retention);
+            this.Entries.SetEarliestDay(this._earliestDay);
             this.DayMessage = string.Empty;
             if (this._earliestDay is { } limit && this._selectedDay < limit)
             {

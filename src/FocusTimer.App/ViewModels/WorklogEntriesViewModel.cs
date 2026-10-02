@@ -18,6 +18,7 @@ namespace FocusTimer.App.ViewModels
     {
         private readonly IWorklogStore _store;
         private readonly TimeProvider _timeProvider;
+        private readonly IWorklogEditingService? _editingService;
         private IReadOnlyList<WorklogEntryRowViewModel> _rows = [];
         private IReadOnlyList<TimeEntry> _loadedEntries = [];
         private WorklogEntryRowViewModel? _selectedRow;
@@ -25,6 +26,11 @@ namespace FocusTimer.App.ViewModels
         private string _statusMessage = string.Empty;
         private string _warningText = string.Empty;
         private bool _isDialogOpen;
+        private WorklogEntryEditorViewModel? _editor;
+        private WorklogEntryRowViewModel? _pendingDelete;
+        private string _overlapWarning = string.Empty;
+        private string _actionError = string.Empty;
+        private DateOnly? _earliestDay;
         private DateOnly _day;
         private CancellationTokenSource? _cts;
         private int _version;
@@ -34,13 +40,115 @@ namespace FocusTimer.App.ViewModels
         /// </summary>
         /// <param name="store">The worklog to read.</param>
         /// <param name="timeProvider">The clock and time zone that decide the local day.</param>
-        public WorklogEntriesViewModel(IWorklogStore store, TimeProvider timeProvider)
+        /// <param name="editingService">Adds, edits, and deletes entries; without it the table is read-only.</param>
+        public WorklogEntriesViewModel(IWorklogStore store, TimeProvider timeProvider, IWorklogEditingService? editingService = null)
         {
             this._store = store;
             this._timeProvider = timeProvider;
+            this._editingService = editingService;
             this._day = DateOnly.FromDateTime(timeProvider.GetLocalNow().DateTime);
             this.RefreshCommand = ReactiveCommand.CreateFromTask(this.RefreshAsync);
+            var canAdd = this.WhenAnyValue(x => x.IsEditingAvailable, x => x.IsDialogOpen, (available, open) => available && !open);
+            var canChange = this.WhenAnyValue(x => x.IsEditingAvailable, x => x.IsDialogOpen, x => x.SelectedRow, (available, open, row) => available && !open && row is not null);
+            this.AddCommand = ReactiveCommand.CreateFromTask(this.BeginAddAsync, canAdd);
+            this.EditCommand = ReactiveCommand.CreateFromTask(this.BeginEditAsync, canChange);
+            this.DeleteCommand = ReactiveCommand.Create(this.BeginDelete, canChange);
+            this.ConfirmDeleteCommand = ReactiveCommand.CreateFromTask(this.ConfirmDeleteAsync);
+            this.CancelDeleteCommand = ReactiveCommand.Create(this.CancelDelete);
+            this.DismissOverlapWarningCommand = ReactiveCommand.Create(() => { this.OverlapWarning = string.Empty; });
+            this.DismissActionErrorCommand = ReactiveCommand.Create(() => { this.ActionError = string.Empty; });
         }
+
+        /// <summary>Gets the task of the most recent save or conflict follow-up (close the form, reload); used to await it.</summary>
+        public Task PendingOperation { get; private set; } = Task.CompletedTask;
+
+        /// <summary>Gets the command that opens the form for a new manual entry.</summary>
+        public ICommand AddCommand { get; }
+
+        /// <summary>Gets the command that opens the form for the selected entry.</summary>
+        public ICommand EditCommand { get; }
+
+        /// <summary>Gets the command that asks to delete the selected entry.</summary>
+        public ICommand DeleteCommand { get; }
+
+        /// <summary>Gets the command that deletes the entry waiting for confirmation.</summary>
+        public ICommand ConfirmDeleteCommand { get; }
+
+        /// <summary>Gets the command that withdraws the delete request.</summary>
+        public ICommand CancelDeleteCommand { get; }
+
+        /// <summary>Gets the command that hides the overlap warning.</summary>
+        public ICommand DismissOverlapWarningCommand { get; }
+
+        /// <summary>Gets the command that hides the action error.</summary>
+        public ICommand DismissActionErrorCommand { get; }
+
+        /// <summary>Gets a value indicating whether entries can be added, edited, and deleted.</summary>
+        public bool IsEditingAvailable => this._editingService is not null;
+
+        /// <summary>Gets the open add/edit form, or null.</summary>
+        public WorklogEntryEditorViewModel? Editor
+        {
+            get => this._editor;
+            private set
+            {
+                this.RaiseAndSetIfChanged(ref this._editor, value);
+                this.RaisePropertyChanged(nameof(this.IsEditorOpen));
+                this.UpdateDialogState();
+            }
+        }
+
+        /// <summary>Gets a value indicating whether the add/edit form is open.</summary>
+        public bool IsEditorOpen => this._editor is not null;
+
+        /// <summary>Gets the entry waiting for delete confirmation, or null.</summary>
+        public WorklogEntryRowViewModel? PendingDelete
+        {
+            get => this._pendingDelete;
+            private set
+            {
+                this.RaiseAndSetIfChanged(ref this._pendingDelete, value);
+                this.RaisePropertyChanged(nameof(this.IsDeleteConfirmOpen));
+                this.RaisePropertyChanged(nameof(this.DeletePrompt));
+                this.UpdateDialogState();
+            }
+        }
+
+        /// <summary>Gets a value indicating whether the delete confirmation is shown.</summary>
+        public bool IsDeleteConfirmOpen => this._pendingDelete is not null;
+
+        /// <summary>Gets the question shown in the delete confirmation.</summary>
+        public string DeletePrompt => this._pendingDelete is { } row
+            ? $"Delete this entry? {row.Summary}, {row.DurationText}. This cannot be undone."
+            : string.Empty;
+
+        /// <summary>Gets a dismissible warning about entries that overlap the one just saved, or an empty string.</summary>
+        public string OverlapWarning
+        {
+            get => this._overlapWarning;
+            private set
+            {
+                this.RaiseAndSetIfChanged(ref this._overlapWarning, value);
+                this.RaisePropertyChanged(nameof(this.HasOverlapWarning));
+            }
+        }
+
+        /// <summary>Gets a value indicating whether the overlap warning is shown.</summary>
+        public bool HasOverlapWarning => this._overlapWarning.Length > 0;
+
+        /// <summary>Gets a dismissible message about a delete or an out-of-date entry, or an empty string.</summary>
+        public string ActionError
+        {
+            get => this._actionError;
+            private set
+            {
+                this.RaiseAndSetIfChanged(ref this._actionError, value);
+                this.RaisePropertyChanged(nameof(this.HasActionError));
+            }
+        }
+
+        /// <summary>Gets a value indicating whether the action error is shown.</summary>
+        public bool HasActionError => this._actionError.Length > 0;
 
         /// <summary>Gets the command that reloads the day.</summary>
         public ICommand RefreshCommand { get; }
@@ -70,8 +178,15 @@ namespace FocusTimer.App.ViewModels
             {
                 this.RaiseAndSetIfChanged(ref this._selectedRow, value);
                 this.RaisePropertyChanged(nameof(this.HasSelection));
+                this.RaisePropertyChanged(nameof(this.IsDetailsVisible));
             }
         }
+
+        /// <summary>
+        /// Gets a value indicating whether the details of the selected row are shown. They are hidden while a form or
+        /// confirmation is open, so the table keeps room to stay visible.
+        /// </summary>
+        public bool IsDetailsVisible => this._selectedRow is not null && !this._isDialogOpen;
 
         /// <summary>
         /// Gets or sets a value indicating whether an add or edit dialog is open. While it is, the host does not
@@ -80,7 +195,11 @@ namespace FocusTimer.App.ViewModels
         public bool IsDialogOpen
         {
             get => this._isDialogOpen;
-            set => this.RaiseAndSetIfChanged(ref this._isDialogOpen, value);
+            set
+            {
+                this.RaiseAndSetIfChanged(ref this._isDialogOpen, value);
+                this.RaisePropertyChanged(nameof(this.IsDetailsVisible));
+            }
         }
 
         /// <summary>Gets a value indicating whether a row is selected.</summary>
@@ -137,8 +256,16 @@ namespace FocusTimer.App.ViewModels
             {
                 this._day = day;
                 this.RaisePropertyChanged(nameof(this.Day));
+                this.OverlapWarning = string.Empty;
+                this.ActionError = string.Empty;
+                this.CloseEditor();
+                this.PendingDelete = null;
             }
         }
+
+        /// <summary>Sets the earliest day the add form offers; set by the host from the retention setting.</summary>
+        /// <param name="earliestDay">The earliest day retention keeps, or null for no limit.</param>
+        public void SetEarliestDay(DateOnly? earliestDay) => this._earliestDay = earliestDay;
 
         /// <summary>
         /// Reloads the shown day. A newer reload supersedes an older one.
@@ -178,6 +305,157 @@ namespace FocusTimer.App.ViewModels
             {
                 this.Apply(read);
             }
+        }
+
+        private static string DescribeOverlaps(IReadOnlyList<TimeEntry> overlaps)
+        {
+            if (overlaps.Count == 0)
+            {
+                return string.Empty;
+            }
+
+            var shown = overlaps.Take(3).Select(e => new WorklogEntryRowViewModel(e).Summary).ToList();
+            var more = overlaps.Count > 3 ? $" and {overlaps.Count - 3} more" : string.Empty;
+            return $"Saved, but it overlaps {(overlaps.Count == 1 ? "another entry" : "other entries")}: {string.Join("; ", shown)}{more}. "
+                + "Overlapping time is counted twice in totals.";
+        }
+
+        private void UpdateDialogState() => this.IsDialogOpen = this._editor is not null || this._pendingDelete is not null;
+
+        private void CloseEditor()
+        {
+            if (this._editor is { } editor)
+            {
+                editor.Saved -= this.OnEditorSaved;
+                editor.Stale -= this.OnEditorStale;
+                editor.Cancelled -= this.OnEditorCancelled;
+                this.Editor = null;
+            }
+        }
+
+        private async Task BeginAddAsync()
+        {
+            if (this._editingService is null)
+            {
+                return;
+            }
+
+            var suggestions = await this.LoadProjectSuggestionsAsync();
+            this.OpenEditor(WorklogEntryEditorViewModel.ForAdd(
+                this._editingService, this._day, this.GetToday(), this._earliestDay, suggestions));
+        }
+
+        private async Task BeginEditAsync()
+        {
+            if (this._editingService is null || this._selectedRow is not { } row)
+            {
+                return;
+            }
+
+            var suggestions = await this.LoadProjectSuggestionsAsync();
+            this.OpenEditor(WorklogEntryEditorViewModel.ForEdit(this._editingService, row.Entry, this.GetToday(), suggestions));
+        }
+
+        private void OpenEditor(WorklogEntryEditorViewModel editor)
+        {
+            this.CloseEditor();
+            this.ActionError = string.Empty;
+            editor.Saved += this.OnEditorSaved;
+            editor.Stale += this.OnEditorStale;
+            editor.Cancelled += this.OnEditorCancelled;
+            this.Editor = editor;
+        }
+
+        private DateOnly GetToday() => DateOnly.FromDateTime(this._timeProvider.GetLocalNow().DateTime);
+
+        private void OnEditorCancelled() => this.CloseEditor();
+
+        private void OnEditorSaved(WorklogEditResult result) => this.PendingOperation = this.HandleSavedAsync(result);
+
+        private void OnEditorStale(WorklogEditResult result) => this.PendingOperation = this.HandleStaleAsync(result);
+
+        private Task HandleSavedAsync(WorklogEditResult result)
+        {
+            this.CloseEditor();
+            this.OverlapWarning = DescribeOverlaps(result.OverlappingEntries);
+            return this.RefreshAsync();
+        }
+
+        private Task HandleStaleAsync(WorklogEditResult result)
+        {
+            this.CloseEditor();
+            this.ActionError = result.Message ?? "The entry changed elsewhere. The day has been reloaded.";
+            return this.RefreshAsync();
+        }
+
+        private void BeginDelete()
+        {
+            if (this._selectedRow is { } row)
+            {
+                this.PendingDelete = row;
+            }
+        }
+
+        private void CancelDelete() => this.PendingDelete = null;
+
+        private async Task ConfirmDeleteAsync()
+        {
+            if (this._editingService is null || this._pendingDelete is not { } row)
+            {
+                return;
+            }
+
+            this.PendingDelete = null;
+            WorklogEditResult result;
+            try
+            {
+                result = await this._editingService.DeleteAsync(row.Entry);
+            }
+            catch (Exception)
+            {
+                this.ActionError = "The entry could not be deleted.";
+                return;
+            }
+
+            if (!result.IsSuccess)
+            {
+                this.ActionError = result.Message ?? "The entry could not be deleted.";
+            }
+
+            if (result.IsSuccess || result.NeedsReload)
+            {
+                await this.RefreshAsync();
+            }
+        }
+
+        private async Task<IReadOnlyList<string>> LoadProjectSuggestionsAsync()
+        {
+            var projects = this._loadedEntries.Select(e => e.ProjectTag).ToList();
+            if (this._day != this.GetToday())
+            {
+                try
+                {
+                    var range = SummaryRanges.Today(this._timeProvider);
+                    var read = await this._store.QueryAsync(new WorklogQuery(range.StartInclusive, range.EndExclusive));
+                    if (read.Outcome.IsSuccess)
+                    {
+                        projects.AddRange(read.Entries.Select(e => e.ProjectTag));
+                    }
+                }
+                catch (Exception)
+                {
+                    // Suggestions are a convenience; typing a project still works.
+                }
+            }
+
+            return projects
+                .Select(p => p?.Trim())
+                .Where(p => !string.IsNullOrEmpty(p))
+                .Select(p => p!)
+                .GroupBy(p => p, StringComparer.OrdinalIgnoreCase)
+                .Select(g => g.First())
+                .OrderBy(p => p, StringComparer.OrdinalIgnoreCase)
+                .ToList();
         }
 
         private void Apply(WorklogReadResult read)

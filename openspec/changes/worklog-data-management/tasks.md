@@ -48,10 +48,10 @@
 
 ## 7. Add, edit, delete UI and overlap warning (App)
 
-- [ ] 7.1 Add the add/edit dialog (date, start time, duration text, window text, editable project combo box with the selected day's and today's projects; edit shows application read-only and disables start) with inline messages from the service; verify with view model tests (duration formats, bad text message, project typed vs chosen, over 100 characters) and a headless dialog test
-- [ ] 7.2 Wire Add, Edit, Delete (with confirmation) and reload after success; verify with view model tests that the list reflects each change and that cancelling changes nothing
-- [ ] 7.3 Add the dismissible overlap warning banner (click and keyboard-reachable close control, replaced by the next save, never blocking); verify with tests for show, dismiss by each way, replace, and no-overlap
-- [ ] 7.4 Show specific messages and reload for conflict, not found, file in use, and unsupported schema; verify with fake-store view model tests for each outcome
+- [x] 7.1 Add the add/edit dialog (date, start time, duration text, window text, editable project combo box with the selected day's and today's projects; edit shows application read-only and disables start) with inline messages from the service; verify with view model tests (duration formats, bad text message, project typed vs chosen, over 100 characters) and a headless dialog test
+- [x] 7.2 Wire Add, Edit, Delete (with confirmation) and reload after success; verify with view model tests that the list reflects each change and that cancelling changes nothing
+- [x] 7.3 Add the dismissible overlap warning banner (click and keyboard-reachable close control, replaced by the next save, never blocking); verify with tests for show, dismiss by each way, replace, and no-overlap
+- [x] 7.4 Show specific messages and reload for conflict, not found, file in use, and unsupported schema; verify with fake-store view model tests for each outcome
 
 ## 8. Summary in the Worklog window (App)
 
