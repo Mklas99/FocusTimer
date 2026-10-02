@@ -7,7 +7,7 @@ public enum ActivityKind { Active }
 /// <summary>Describes why an entry ended.</summary>
 public enum EndReason { ApplicationChange, ManualPause, IdlePause, DayBoundary, ApplicationExit, Unknown }
 /// <summary>Describes how an entry was captured.</summary>
-public enum CaptureSource { ActiveWindow }
+public enum CaptureSource { ActiveWindow, Manual }
 /// <summary>Describes the originating platform.</summary>
 public enum SourcePlatform { Windows, Linux, MacOS, Unknown }
 /// <summary>Describes project attribution provenance.</summary>
@@ -27,6 +27,7 @@ public static class WorklogValueCodec
         EndReason.ApplicationExit => "application-exit",
         EndReason.Unknown => "unknown",
         CaptureSource.ActiveWindow => "active-window",
+        CaptureSource.Manual => "manual",
         SourcePlatform.Windows => "windows",
         SourcePlatform.Linux => "linux",
         SourcePlatform.MacOS => "macos",

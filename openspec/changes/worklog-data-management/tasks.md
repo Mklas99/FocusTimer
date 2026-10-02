@@ -4,10 +4,10 @@
 
 ## 1. Manual capture source and storage rules (Core, Persistence)
 
-- [ ] 1.1 Add `CaptureSource.Manual` with stored value `manual` in `WorklogValues`, and map it in `CsvWorklogCodec.ParseCapture`; verify with a Persistence test that a manual entry round-trips and a query filtered on Manual returns only manual entries
-- [ ] 1.2 Add a test that a day file with only active-window rows still reads, appends, patches, and deletes unchanged (schema version not bumped); verify the test passes
-- [ ] 1.3 Change the same-day check in `CsvSessionRepository.MutateAsync` to compare against the start date (end on the start date, or exactly the next midnight when already stored); verify with tests that an old midnight-ending entry can be shortened and renamed, and that a patch moving the start's day is still rejected
-- [ ] 1.4 Update the `worklog-storage` wording in `ARCHITECTURE.md` for the new source and the day rule; verify no statement contradicts the code
+- [x] 1.1 Add `CaptureSource.Manual` with stored value `manual` in `WorklogValues`, and map it in `CsvWorklogCodec.ParseCapture`; verify with a Persistence test that a manual entry round-trips and a query filtered on Manual returns only manual entries
+- [x] 1.2 Add a test that a day file with only active-window rows still reads, appends, patches, and deletes unchanged (schema version not bumped); verify the test passes
+- [x] 1.3 Change the same-day check in `CsvSessionRepository.MutateAsync` to compare against the start date (end on the start date, or exactly the next midnight when already stored); verify with tests that an old midnight-ending entry can be shortened and renamed, and that a patch moving the start's day is still rejected
+- [x] 1.4 Update the `worklog-storage` wording in `ARCHITECTURE.md` for the new source and the day rule; verify no statement contradicts the code
 
 ## 2. Tracker midnight split (Core)
 

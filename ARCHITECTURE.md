@@ -158,7 +158,7 @@ This allows late-binding access to services from non-DI-aware contexts. It is cu
 
 **Key Responsibilities**:
 - JSON settings provider (load/save application settings)
-- Current-schema CSV worklog store (idempotent append, query, same-day patch, and delete)
+- Current-schema CSV worklog store (idempotent append, query, same-day patch, and delete). An entry belongs to the local day it starts on; a patch may not change that day or move the end onto another date (entries written before the tracker closed segments at 23:59:59 may end exactly at the next midnight and stay editable). Capture sources are `active-window` (tracked) and `manual` (added by the user); no schema version change
 - ServiceCollectionExtensions for DI registration
 
 **Key Components**:

@@ -251,8 +251,7 @@ public sealed class CsvSessionRepository : IWorklogStore
         var changed = mutate(old);
         if (changed is not null && WorklogEntryValidator.Validate(changed).Count > 0)
             return new(WorklogOutcomeKind.ValidationFailure, "Patched entry is invalid.");
-        if (changed is not null && (changed.StartedAt.Date != old.StartedAt.Date ||
-            changed.EndedAt.Date != old.EndedAt.Date))
+        if (changed is not null && MovesToAnotherDay(old, changed))
             return new(WorklogOutcomeKind.ValidationFailure, "An entry cannot move to another local day.");
         var path = GetPath(ResolveRoot(await this._settingsProvider.LoadAsync()), old.StartedAt.Date);
         var gate = Locks.GetOrAdd(path, _ => new SemaphoreSlim(1, 1));
@@ -279,6 +278,18 @@ public sealed class CsvSessionRepository : IWorklogStore
         catch (OperationCanceledException) { throw; }
         catch (Exception ex) { return new(WorklogOutcomeKind.IoFailure, ex.Message); }
         finally { gate.Release(); }
+    }
+
+    // An entry belongs to the day it starts on. Entries written before the tracker closed segments at 23:59:59
+    // may end exactly at the next midnight; those stay valid and editable.
+    private static bool MovesToAnotherDay(TimeEntry old, TimeEntry changed)
+    {
+        if (changed.StartedAt.Date != old.StartedAt.Date)
+            return true;
+        if (changed.EndedAt.Date == changed.StartedAt.Date)
+            return false;
+        var oldEndedAtNextMidnight = old.EndedAt.Date != old.StartedAt.Date;
+        return !(oldEndedAtNextMidnight && changed.EndedAt.Date == old.EndedAt.Date);
     }
 
     private static string ResolveRoot(Settings settings) => string.IsNullOrWhiteSpace(settings.WorklogDirectory) ? Settings.DefaultWorklogDirectory : settings.WorklogDirectory;
