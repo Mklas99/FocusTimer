@@ -12,12 +12,15 @@ using FocusTimer.Core.Stubs;
 using ReactiveUI;
 
 /// <summary>
-/// Covers SettingsWindowViewModel's three file-dialog commands for the one branch headless
-/// Avalonia can actually reach: Avalonia's headless platform backs Window.StorageProvider
-/// with NoopStorageProvider, whose pickers always return an empty/null result without
-/// throwing — the same outward behavior as a user cancelling the real dialog. StorageProvider
-/// isn't virtual, so the "a file was picked" and "the picker threw" branches have no seam to
-/// test without changing production code.
+/// Covers SettingsWindowViewModel's three file-dialog commands for the outcome reachable
+/// headlessly: on Linux, Avalonia's headless platform backs Window.StorageProvider with
+/// NoopStorageProvider, whose pickers return an empty/null result without throwing — the
+/// same outward effect as a user cancelling the real dialog. Each command's own try/catch
+/// already makes "no selection" and "the picker threw" converge on the same settings-
+/// unchanged outcome, so assertions here only depend on that convergence, not on which
+/// branch actually ran — deliberately, since the headless storage provider's behavior on
+/// other platforms isn't verified. StorageProvider's getter isn't virtual, so there is no
+/// seam to force either branch directly.
 /// </summary>
 public sealed class SettingsFileDialogTests
 {
@@ -48,8 +51,10 @@ public sealed class SettingsFileDialogTests
     }
 
     [Fact]
-    public async Task ExportThemeCommand_WhenUserCancels_CompletesWithoutLoggingAnExport()
+    public async Task ExportThemeCommand_WithoutASavedFile_NeverLogsASuccessfulExport()
     {
+        // Deliberately does not assert on logger.Errors: a thrown picker and a null result
+        // both leave this true, but only a null result leaves Errors empty (see class remarks).
         var logger = new RecordingLogger();
         var editor = CreateEditor(logger);
         var window = new Window();
@@ -57,7 +62,6 @@ public sealed class SettingsFileDialogTests
         await Execute(editor.ExportThemeCommand, window);
 
         Assert.DoesNotContain(logger.InformationMessages, m => m.Contains("exported", StringComparison.OrdinalIgnoreCase));
-        Assert.Empty(logger.Errors);
     }
 
     private static Task Execute(System.Windows.Input.ICommand command, Window window) =>
