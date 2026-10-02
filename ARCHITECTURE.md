@@ -39,8 +39,8 @@ Program.Main(string[] args)
 **Purpose**: User interface implementation with Avalonia XAML, ViewModels, and window logic.
 
 **Key Responsibilities**:
-- Avalonia XAML views (CompactModeView, SettingsWindow, TimerWidgetWindow)
-- ReactiveUI ViewModels (MainWindowViewModel, SettingsWindowViewModel, TimerWidgetViewModel)
+- Avalonia XAML views (CompactModeView, SettingsWindow, WorklogWindow, TimerWidgetWindow)
+- ReactiveUI ViewModels (MainWindowViewModel, SettingsWindowViewModel, TimerWidgetViewModel, WorklogWindowViewModel)
 - Converters (Color, Boolean, PlayPause state converters)
 - Services specific to UI (AppController, ThemeManager, TrayStateController)
 - Implements IAppInitializer for coordinated startup via DI
@@ -77,6 +77,7 @@ View (XAML)
   - WorklogSummaryViewModel / WorklogSummaryView: the day's time breakdown by application, project, or window. Both are host-independent (they never reference a window), so the Worklog window hosts them
   - TimerWidgetWindow: Compact timer display
   - Converters: Color opacity, angle rotation, play/pause icons
+  - WorklogEntryEditorViewModel: the add/edit form (inline in the Entries tab); it calls only `IWorklogEditingService`. The Timeline tab (WorklogTimelineViewModel / WorklogTimelineView, laid out by the custom `TimelinePanel`) reads the entries the Entries tab loaded, so the two never disagree; overlapping entries are drawn side by side in lanes
 
 **Dependencies**: Core, Persistence
 

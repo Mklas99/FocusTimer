@@ -68,8 +68,8 @@
 
 ## 10. Documentation and final checks
 
-- [ ] 10.1 Add the F-03 row to `docs/versions/current/Features.md` and update OI-15, OI-22, OI-23, OI-31, OI-33, and OI-04 in `OpenIssues.md` to match what was delivered; verify the rows agree with this change and with each other
-- [ ] 10.2 Add the window, editing service, groupings, day selection, and day bounds to `ARCHITECTURE.md`; verify no statement contradicts the code or the specs
-- [ ] 10.3 Confirm no change in `FocusTimer.Platform.Windows` or the Linux stubs; verify with a search of the diff
-- [ ] 10.4 Run the full test suite, the StyleCop/`dotnet format` check, and `openspec validate worklog-data-management --strict`; verify all pass and record any pre-existing failures separately
-- [ ] 10.5 Run the app and walk through, including the Summary tab in a light theme and in High Contrast (F-02 task 3.2 carried over): open from tray, add a manual entry that overlaps, dismiss the warning, edit duration, delete, change day, switch grouping to by window, press Refresh while tracking, watch the tray total; verify each behaves as specified
+- [x] 10.1 Add the F-03 row to `docs/versions/current/Features.md` and update OI-15, OI-22, OI-23, OI-31, OI-33, and OI-04 in `OpenIssues.md` to match what was delivered; verify the rows agree with this change and with each other
+- [x] 10.2 Add the window, editing service, groupings, day selection, and day bounds to `ARCHITECTURE.md`; verify no statement contradicts the code or the specs
+- [x] 10.3 Confirm no change in `FocusTimer.Platform.Windows` or the Linux stubs; verify with a search of the diff
+- [x] 10.4 Run the full test suite, the StyleCop/`dotnet format` check, and `openspec validate worklog-data-management --strict`; verify all pass and record any pre-existing failures separately
+- [ ] 10.5 Run the app and walk through, including the Summary tab in a light theme and in High Contrast (F-02 task 3.2 carried over): open from tray, add a manual entry that overlaps, dismiss the warning, edit duration, delete, change day, switch grouping to by window, press Refresh while tracking, watch the tray total; verify each behaves as specified NOT DONE on Linux (the Windows host cannot run here). Covered headlessly instead: opening from the tray item, add with overlap warning and dismiss, edit, delete with confirmation, day change, by-window grouping, refresh, tray total, and renders in Light, Dark, Nord, and High Contrast. Still to do by hand on Windows: run the app, walk through the list above while tracking is running, and check the Summary view in a light theme and High Contrast (F-02 task 3.2).
