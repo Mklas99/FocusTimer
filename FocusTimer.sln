@@ -37,6 +37,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FocusTimer.Platform.Windows
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FocusTimer.Host.Tests", "tests\FocusTimer.Host.Tests\FocusTimer.Host.Tests.csproj", "{249D0AC6-61F8-48D1-9C96-6BAAC3F54913}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FocusTimer.App.HeadlessTests", "tests\FocusTimer.App.HeadlessTests\FocusTimer.App.HeadlessTests.csproj", "{9FCCFAC0-8359-46F9-A8AB-7FF3CCEEFA26}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -173,6 +175,18 @@ Global
 		{249D0AC6-61F8-48D1-9C96-6BAAC3F54913}.Release|x64.Build.0 = Release|Any CPU
 		{249D0AC6-61F8-48D1-9C96-6BAAC3F54913}.Release|x86.ActiveCfg = Release|Any CPU
 		{249D0AC6-61F8-48D1-9C96-6BAAC3F54913}.Release|x86.Build.0 = Release|Any CPU
+		{9FCCFAC0-8359-46F9-A8AB-7FF3CCEEFA26}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9FCCFAC0-8359-46F9-A8AB-7FF3CCEEFA26}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9FCCFAC0-8359-46F9-A8AB-7FF3CCEEFA26}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{9FCCFAC0-8359-46F9-A8AB-7FF3CCEEFA26}.Debug|x64.Build.0 = Debug|Any CPU
+		{9FCCFAC0-8359-46F9-A8AB-7FF3CCEEFA26}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{9FCCFAC0-8359-46F9-A8AB-7FF3CCEEFA26}.Debug|x86.Build.0 = Debug|Any CPU
+		{9FCCFAC0-8359-46F9-A8AB-7FF3CCEEFA26}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9FCCFAC0-8359-46F9-A8AB-7FF3CCEEFA26}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9FCCFAC0-8359-46F9-A8AB-7FF3CCEEFA26}.Release|x64.ActiveCfg = Release|Any CPU
+		{9FCCFAC0-8359-46F9-A8AB-7FF3CCEEFA26}.Release|x64.Build.0 = Release|Any CPU
+		{9FCCFAC0-8359-46F9-A8AB-7FF3CCEEFA26}.Release|x86.ActiveCfg = Release|Any CPU
+		{9FCCFAC0-8359-46F9-A8AB-7FF3CCEEFA26}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -184,6 +198,7 @@ Global
 		{E65915E8-E633-4440-8D77-A006ACEA0B3C} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 		{EDFEF711-2B99-46CE-A2C8-A0CF306D6169} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 		{249D0AC6-61F8-48D1-9C96-6BAAC3F54913} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
+		{9FCCFAC0-8359-46F9-A8AB-7FF3CCEEFA26} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {B67E032A-CB24-4067-AB09-4FA5431EA413}
