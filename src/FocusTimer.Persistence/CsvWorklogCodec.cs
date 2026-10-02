@@ -203,7 +203,7 @@ public sealed class CsvWorklogCodec
     private static string? Empty(string value) => value.Length == 0 ? null : value;
     private static ActivityKind ParseActivity(string value) => value == "active" ? ActivityKind.Active : throw new FormatException("Activity kind is invalid.");
 
-    private static CaptureSource ParseCapture(string value) => value == "active-window" ? CaptureSource.ActiveWindow : throw new FormatException("Capture source is invalid.");
+    private static CaptureSource ParseCapture(string value) => value switch { "active-window" => CaptureSource.ActiveWindow, "manual" => CaptureSource.Manual, _ => throw new FormatException("Capture source is invalid.") };
 
     private static ProjectAssignmentSource ParseProject(string value) => value switch { "unassigned" => ProjectAssignmentSource.Unassigned, "session" => ProjectAssignmentSource.Session, "rule" => ProjectAssignmentSource.Rule, "editor" => ProjectAssignmentSource.Editor, "imported" => ProjectAssignmentSource.Imported, _ => throw new FormatException("Project assignment source is invalid.") };
 

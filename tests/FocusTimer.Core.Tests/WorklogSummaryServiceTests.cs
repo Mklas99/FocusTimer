@@ -320,6 +320,49 @@ public class WorklogSummaryServiceTests
         Assert.Equal("Resolved", Assert.Single(byProject.Rows).Label);
     }
 
+    [Fact]
+    public void WindowGrouping_TrimsAndIgnoresCase_AndKeepsNoTitleApart()
+    {
+        var grouping = new WindowGrouping();
+        var context = new GroupingContext(null);
+        var a = grouping.Select(Entry("x", 0, 1) with { WindowTitle = "Report.docx" }, context);
+        var b = grouping.Select(Entry("x", 0, 1) with { WindowTitle = "report.docx " }, context);
+        var none = grouping.Select(Entry("x", 0, 1) with { WindowTitle = string.Empty }, context);
+        var blank = grouping.Select(Entry("x", 0, 1) with { WindowTitle = "   " }, context);
+        var named = grouping.Select(Entry("x", 0, 1) with { WindowTitle = WindowGrouping.NoWindowLabel }, context);
+
+        Assert.Equal(a.Key, b.Key);
+        Assert.Equal("Report.docx", a.Label);
+        Assert.Equal(none.Key, blank.Key);
+        Assert.Equal(WindowGrouping.NoWindowLabel, none.Label);
+        Assert.True(none.IsUnassigned);
+        Assert.False(named.IsUnassigned);
+        Assert.NotEqual(none.Key, named.Key);
+    }
+
+    [Fact]
+    public async Task Summarize_ByWindow_GroupsCaseVariantsAndCountsEmptyTitlesSeparately()
+    {
+        var registry = new WorklogGroupingRegistry([new ApplicationGrouping(), new ProjectGrouping(), new WindowGrouping()]);
+        var service = new WorklogSummaryService(
+            new FakeStore(
+                Entry("Code", 0, 30) with { WindowTitle = "Report.docx" },
+                Entry("Code", 30, 60) with { WindowTitle = "report.docx " },
+                Entry("Manual entry", 60, 150) with { WindowTitle = string.Empty },
+                Entry("Chrome", 150, 160) with { WindowTitle = "Mail" }),
+            registry,
+            new StoredProjectResolver(),
+            NullLogger.Instance);
+
+        var summary = await service.SummarizeAsync(new WorklogSummaryRequest(Day, WindowGrouping.GroupingId));
+
+        Assert.True(summary.IsSuccess);
+        Assert.Equal([WindowGrouping.NoWindowLabel, "Report.docx", "Mail"], summary.Rows.Select(r => r.Label));
+        Assert.Equal(TimeSpan.FromMinutes(90), summary.Rows[0].Duration);
+        Assert.Equal(TimeSpan.FromMinutes(60), summary.Rows[1].Duration);
+        Assert.Equal(TimeSpan.FromMinutes(160), summary.Total);
+    }
+
     private static WorklogSummaryService CreateService(FakeStore store) =>
         new(store, DefaultRegistry(), new StoredProjectResolver(), NullLogger.Instance);
 

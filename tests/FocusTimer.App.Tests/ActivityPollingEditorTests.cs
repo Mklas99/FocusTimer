@@ -57,11 +57,7 @@ public class ActivityPollingEditorTests
     }
 
     private static SettingsWindowViewModel Create(Provider p) => new(
-        p, new AutoStart(), new ThemeService(), new ThemeManager(), new Logger(),
-        new WorklogSummaryViewModel(
-            new EmptySummary(),
-            new WorklogGroupingRegistry([new ApplicationGrouping(), new ProjectGrouping()]),
-            TimeProvider.System));
+        p, new AutoStart(), new ThemeService(), new ThemeManager(), new Logger());
     private static Task Apply(SettingsWindowViewModel vm) => (Task)typeof(SettingsWindowViewModel)
         .GetMethod("ApplyAsync", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(vm, null)!;
 

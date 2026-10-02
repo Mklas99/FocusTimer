@@ -1,0 +1,350 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:FocusTimer.App.ViewModels"
+             xmlns:controls="using:FocusTimer.App.Controls"
+             x:DataType="vm:WorklogEntriesViewModel"
+             x:Class="FocusTimer.App.Views.WorklogEntriesView">
+
+    <!-- The table takes its surfaces and text from the theme resources (Fluent's own list colors ignore the
+         selected theme, which made secondary text unreadable on a light list in High Contrast). -->
+    <UserControl.Styles>
+        <Style Selector="ListBox.worklog-table">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+        </Style>
+        <Style Selector="ListBox.worklog-table ListBoxItem">
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+        </Style>
+        <Style Selector="ListBox.worklog-table ListBoxItem:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource TabHoverBackgroundBrush}" />
+            <Setter Property="TextElement.Foreground" Value="{DynamicResource TabTextBrush}" />
+        </Style>
+        <Style Selector="ListBox.worklog-table ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter, ListBox.worklog-table ListBoxItem:selected:pointerover /template/ ContentPresenter#PART_ContentPresenter, ListBox.worklog-table ListBoxItem:selected:focus /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource TabSelectedBackgroundBrush}" />
+            <Setter Property="TextElement.Foreground" Value="{DynamicResource TabSelectedTextBrush}" />
+        </Style>
+        <Style Selector="TextBlock.worklog-manual">
+            <Setter Property="FontWeight" Value="SemiBold" />
+        </Style>
+        <Style Selector="Border.worklog-panel">
+            <Setter Property="Padding" Value="12" />
+            <Setter Property="Margin" Value="0,0,0,8" />
+            <Setter Property="CornerRadius" Value="{StaticResource RadiusSm}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtleBrush}" />
+        </Style>
+    </UserControl.Styles>
+
+    <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,*,Auto">
+
+        <!-- Toolbar -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="{StaticResource SpacingSm}" Margin="0,0,0,8">
+            <Button Content="Add entry"
+                    MinWidth="{StaticResource MinHitTargetSize}"
+                    MinHeight="{StaticResource MinHitTargetSize}"
+                    Command="{Binding AddCommand}"
+                    IsVisible="{Binding IsEditingAvailable}"
+                    ToolTip.Tip="Add time you forgot to track" />
+            <Button Content="Edit"
+                    MinWidth="{StaticResource MinHitTargetSize}"
+                    MinHeight="{StaticResource MinHitTargetSize}"
+                    Command="{Binding EditCommand}"
+                    IsVisible="{Binding IsEditingAvailable}"
+                    ToolTip.Tip="Change the window, project, or duration of the selected entry" />
+            <Button Content="Delete"
+                    MinWidth="{StaticResource MinHitTargetSize}"
+                    MinHeight="{StaticResource MinHitTargetSize}"
+                    Command="{Binding DeleteCommand}"
+                    IsVisible="{Binding IsEditingAvailable}"
+                    ToolTip.Tip="Delete the selected entry" />
+            <Button Content="Refresh"
+                    MinWidth="{StaticResource MinHitTargetSize}"
+                    MinHeight="{StaticResource MinHitTargetSize}"
+                    Command="{Binding RefreshCommand}"
+                    ToolTip.Tip="Reload the entries for this day" />
+
+            <!-- Search: every word must be part of the application, window, project, source, or times -->
+            <Grid ColumnDefinitions="*,Auto" Width="280" Margin="8,0,0,0">
+                <TextBox x:Name="SearchBox"
+                         Grid.ColumnSpan="2"
+                         MinHeight="{StaticResource MinHitTargetSize}"
+                         Text="{Binding SearchText, Mode=TwoWay}"
+                         Watermark="Search entries (Ctrl + F)"
+                         AutomationProperties.Name="Search entries"
+                         ToolTip.Tip="Words must all appear in the application, window, project, source, or times" />
+                <Button Grid.Column="1"
+                        Content="&#10005;"
+                        Margin="0,0,4,0"
+                        Padding="6,0"
+                        MinWidth="{StaticResource MinHitTargetSize}"
+                        MinHeight="{StaticResource MinHitTargetSize}"
+                        VerticalAlignment="Center"
+                        Command="{Binding ClearSearchCommand}"
+                        IsVisible="{Binding IsSearchActive}"
+                        AutomationProperties.Name="Clear search"
+                        ToolTip.Tip="Clear the search (Esc)" />
+            </Grid>
+            <TextBlock Text="{Binding SearchResultText}"
+                       VerticalAlignment="Center"
+                       Foreground="{DynamicResource SecondaryTextBrush}"
+                       IsVisible="{Binding IsSearchActive}" />
+        </StackPanel>
+
+        <!-- Warnings: overlap and action errors can be dismissed by click or with the keyboard-reachable button -->
+        <StackPanel Grid.Row="1" Spacing="{StaticResource SpacingXs}">
+            <Border Classes="worklog-panel"
+                    Margin="0,0,0,4"
+                    BorderBrush="{DynamicResource WarningBrush}"
+                    IsVisible="{Binding HasOverlapWarning}"
+                    Tapped="OnOverlapWarningTapped"
+                    AutomationProperties.Name="Overlap warning">
+                <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock Grid.Column="0"
+                               Text="{Binding OverlapWarning}"
+                               TextWrapping="Wrap"
+                               Foreground="{DynamicResource WarningBrush}" />
+                    <Button Grid.Column="1"
+                            Content="Dismiss"
+                            Margin="12,0,0,0"
+                            MinHeight="{StaticResource MinHitTargetSize}"
+                            Command="{Binding DismissOverlapWarningCommand}"
+                            AutomationProperties.Name="Dismiss overlap warning" />
+                </Grid>
+            </Border>
+            <Border Classes="worklog-panel"
+                    Margin="0,0,0,4"
+                    BorderBrush="{DynamicResource DangerBrush}"
+                    IsVisible="{Binding HasActionError}"
+                    Tapped="OnActionErrorTapped"
+                    AutomationProperties.Name="Error message">
+                <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock Grid.Column="0"
+                               Text="{Binding ActionError}"
+                               TextWrapping="Wrap"
+                               Foreground="{DynamicResource DangerBrush}" />
+                    <Button Grid.Column="1"
+                            Content="Dismiss"
+                            Margin="12,0,0,0"
+                            MinHeight="{StaticResource MinHitTargetSize}"
+                            Command="{Binding DismissActionErrorCommand}"
+                            AutomationProperties.Name="Dismiss error message" />
+                </Grid>
+            </Border>
+            <TextBlock Text="{Binding WarningText}"
+                       TextWrapping="Wrap"
+                       Margin="0,0,0,8"
+                       Foreground="{DynamicResource WarningBrush}"
+                       IsVisible="{Binding HasWarning}" />
+        </StackPanel>
+
+        <!-- Add / edit form -->
+        <Border Grid.Row="2"
+                Classes="worklog-panel"
+                IsVisible="{Binding IsEditorOpen}">
+            <Grid x:DataType="vm:WorklogEntryEditorViewModel"
+                  DataContext="{Binding Editor}"
+                  ColumnDefinitions="110,*"
+                  RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+                <Grid.KeyBindings>
+                    <KeyBinding Gesture="Escape" Command="{Binding CancelCommand}" />
+                </Grid.KeyBindings>
+                <Grid.Styles>
+                    <Style Selector="TextBlock.SettingLabel">
+                        <Setter Property="VerticalAlignment" Value="Center" />
+                        <Setter Property="Margin" Value="0,0,8,0" />
+                    </Style>
+                    <Style Selector="Grid > TextBox, Grid > ComboBox, Grid > CalendarDatePicker, Grid > TextBlock.worklog-fixed">
+                        <Setter Property="Margin" Value="0,0,0,6" />
+                    </Style>
+                </Grid.Styles>
+
+                <TextBlock Grid.Row="0" Grid.ColumnSpan="2" Classes="SectionHeader" Text="{Binding Title}" />
+
+                <TextBlock Grid.Row="1" Grid.Column="0" Classes="SettingLabel" Text="Application" />
+                <TextBlock Grid.Row="1" Grid.Column="1" Classes="worklog-fixed" Text="{Binding ApplicationText}" VerticalAlignment="Center" />
+
+                <TextBlock Grid.Row="2" Grid.Column="0" Classes="SettingLabel" Text="Date" IsVisible="{Binding IsStartEditable}" />
+                <CalendarDatePicker Grid.Row="2" Grid.Column="1"
+                                    HorizontalAlignment="Left"
+                                    Background="Transparent"
+                                    MinHeight="{StaticResource MinHitTargetSize}"
+                                    SelectedDate="{Binding Date, Mode=TwoWay}"
+                                    DisplayDateStart="{Binding DisplayDateStart}"
+                                    DisplayDateEnd="{Binding DisplayDateEnd}"
+                                    IsVisible="{Binding IsStartEditable}"
+                                    AutomationProperties.Name="Date" />
+
+                <TextBlock Grid.Row="3" Grid.Column="0" Classes="SettingLabel" Text="Start" />
+                <TextBox Grid.Row="3" Grid.Column="1"
+                         HorizontalAlignment="Left"
+                         Width="140"
+                         Text="{Binding StartText, Mode=TwoWay}"
+                         Watermark="14:30"
+                         IsVisible="{Binding IsStartEditable}"
+                         AutomationProperties.Name="Start time" />
+                <TextBlock Grid.Row="3" Grid.Column="1" Classes="worklog-fixed"
+                           Text="{Binding StartText}"
+                           VerticalAlignment="Center"
+                           IsVisible="{Binding IsStartReadOnly}" />
+
+                <TextBlock Grid.Row="4" Grid.Column="0" Classes="SettingLabel" Text="Duration" />
+                <TextBox Grid.Row="4" Grid.Column="1"
+                         HorizontalAlignment="Left"
+                         Width="140"
+                         Text="{Binding DurationText, Mode=TwoWay}"
+                         Watermark="2h 30m or 2.5h"
+                         AutomationProperties.Name="Duration" />
+
+                <TextBlock Grid.Row="5" Grid.Column="0" Classes="SettingLabel" Text="Window" />
+                <TextBox Grid.Row="5" Grid.Column="1"
+                         Text="{Binding WindowText, Mode=TwoWay}"
+                         Watermark="Optional"
+                         AutomationProperties.Name="Window" />
+
+                <TextBlock Grid.Row="6" Grid.Column="0" Classes="SettingLabel" Text="Project" />
+                <Grid Grid.Row="6" Grid.Column="1" ColumnDefinitions="*,Auto" Margin="0,0,0,6">
+                    <AutoCompleteBox x:Name="ProjectBox"
+                                     Grid.Column="0"
+                                     MinimumPrefixLength="0"
+                                     FilterMode="Contains"
+                                     MaxLength="100"
+                                     ItemsSource="{Binding ProjectSuggestions}"
+                                     Text="{Binding ProjectText, Mode=TwoWay}"
+                                     Watermark="Optional (type or pick a project)"
+                                     AutomationProperties.Name="Project" />
+                    <Button Grid.Column="1"
+                            Content="&#9662;"
+                            Margin="4,0,0,0"
+                            MinWidth="{StaticResource MinHitTargetSize}"
+                            MinHeight="{StaticResource MinHitTargetSize}"
+                            Click="OnProjectDropDownClick"
+                            AutomationProperties.Name="Show projects already used"
+                            ToolTip.Tip="Show projects already used" />
+                </Grid>
+
+                <TextBlock Grid.Row="7" Grid.ColumnSpan="2"
+                           Text="{Binding ErrorText}"
+                           TextWrapping="Wrap"
+                           Margin="0,0,0,6"
+                           Foreground="{DynamicResource DangerBrush}"
+                           IsVisible="{Binding HasError}" />
+
+                <StackPanel Grid.Row="8" Grid.Column="1" Orientation="Horizontal" Spacing="{StaticResource SpacingSm}">
+                    <Button Content="Save"
+                            IsDefault="True"
+                            MinWidth="{StaticResource MinHitTargetSize}"
+                            MinHeight="{StaticResource MinHitTargetSize}"
+                            Command="{Binding SaveCommand}"
+                            IsEnabled="{Binding !IsSaving}" />
+                    <Button Content="Cancel"
+                            IsCancel="True"
+                            MinWidth="{StaticResource MinHitTargetSize}"
+                            MinHeight="{StaticResource MinHitTargetSize}"
+                            Command="{Binding CancelCommand}" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Delete confirmation -->
+        <Border Grid.Row="3"
+                Classes="worklog-panel"
+                BorderBrush="{DynamicResource DangerBrush}"
+                IsVisible="{Binding IsDeleteConfirmOpen}">
+            <StackPanel Spacing="{StaticResource SpacingSm}">
+                <TextBlock Text="{Binding DeletePrompt}" TextWrapping="Wrap" />
+                <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpacingSm}">
+                    <Button Content="Delete"
+                            MinWidth="{StaticResource MinHitTargetSize}"
+                            MinHeight="{StaticResource MinHitTargetSize}"
+                            Command="{Binding ConfirmDeleteCommand}" />
+                    <Button Content="Cancel"
+                            IsCancel="True"
+                            MinWidth="{StaticResource MinHitTargetSize}"
+                            MinHeight="{StaticResource MinHitTargetSize}"
+                            Command="{Binding CancelDeleteCommand}" />
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
+        <!-- Read states -->
+        <StackPanel Grid.Row="4" Spacing="{StaticResource SpacingSm}">
+            <TextBlock Text="Loading…"
+                       Foreground="{DynamicResource SecondaryTextBrush}"
+                       IsVisible="{Binding IsLoading}" />
+            <TextBlock Text="{Binding StatusMessage}"
+                       TextWrapping="Wrap"
+                       Foreground="{DynamicResource SecondaryTextBrush}"
+                       IsVisible="{Binding IsMessageVisible}" />
+        </StackPanel>
+
+        <!-- Table: header row and rows share the same column widths -->
+        <Grid Grid.Row="5" RowDefinitions="Auto,*" MinHeight="120" IsVisible="{Binding IsReady}">
+            <Grid Grid.Row="0" ColumnDefinitions="56,56,76,150,*,130" Margin="12,0,12,4">
+                <TextBlock Grid.Column="0" Classes="SettingLabel" Text="Start" />
+                <TextBlock Grid.Column="1" Classes="SettingLabel" Text="End" />
+                <TextBlock Grid.Column="2" Classes="SettingLabel" Text="Duration" />
+                <TextBlock Grid.Column="3" Classes="SettingLabel" Text="Application" />
+                <TextBlock Grid.Column="4" Classes="SettingLabel" Text="Window" />
+                <TextBlock Grid.Column="5" Classes="SettingLabel" Text="Project" />
+            </Grid>
+            <ListBox Grid.Row="1"
+                     Classes="worklog-table"
+                     ItemsSource="{Binding Rows}"
+                     SelectedItem="{Binding SelectedRow, Mode=TwoWay}"
+                     AutomationProperties.Name="Worklog entries">
+                <ListBox.ItemTemplate>
+                    <DataTemplate x:DataType="vm:WorklogEntryRowViewModel">
+                        <Grid ColumnDefinitions="56,56,76,150,*,130" MinHeight="{StaticResource MinHitTargetSize}">
+                            <controls:HighlightTextBlock Grid.Column="0" SourceText="{Binding StartText}" Terms="{Binding HighlightTerms}" FontFamily="{StaticResource TabularTimerFontFamily}" VerticalAlignment="Center" />
+                            <controls:HighlightTextBlock Grid.Column="1" SourceText="{Binding EndText}" Terms="{Binding HighlightTerms}" FontFamily="{StaticResource TabularTimerFontFamily}" VerticalAlignment="Center" />
+                            <controls:HighlightTextBlock Grid.Column="2" SourceText="{Binding DurationText}" Terms="{Binding HighlightTerms}" FontFamily="{StaticResource TabularTimerFontFamily}" VerticalAlignment="Center" />
+                            <controls:HighlightTextBlock Grid.Column="3" SourceText="{Binding ApplicationText}" Terms="{Binding HighlightTerms}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" ToolTip.Tip="{Binding ApplicationText}" Classes.worklog-manual="{Binding IsManual}" />
+                            <controls:HighlightTextBlock Grid.Column="4" SourceText="{Binding WindowText}" Terms="{Binding HighlightTerms}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" ToolTip.Tip="{Binding WindowText}" Margin="0,0,8,0" />
+                            <controls:HighlightTextBlock Grid.Column="5" SourceText="{Binding ProjectText}" Terms="{Binding HighlightTerms}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" ToolTip.Tip="{Binding ProjectText}" />
+                        </Grid>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </Grid>
+
+        <!-- Details of the selected entry -->
+        <Border Grid.Row="6"
+                Classes="worklog-panel"
+                Margin="0,8,0,0"
+                IsVisible="{Binding IsDetailsVisible}">
+            <Grid x:DataType="vm:WorklogEntryRowViewModel"
+                  DataContext="{Binding SelectedRow}"
+                  ColumnDefinitions="Auto,*,Auto,*"
+                  RowDefinitions="Auto,Auto,Auto,Auto,Auto">
+                <Grid.Styles>
+                    <Style Selector="TextBlock.SettingLabel">
+                        <Setter Property="Margin" Value="0,2,12,2" />
+                    </Style>
+                    <Style Selector="TextBlock, SelectableTextBlock">
+                        <Setter Property="VerticalAlignment" Value="Center" />
+                    </Style>
+                </Grid.Styles>
+                <TextBlock Grid.Row="0" Grid.Column="0" Classes="SettingLabel" Text="Entry ID" />
+                <SelectableTextBlock Grid.Row="0" Grid.Column="1" Text="{Binding EntryIdText}" TextTrimming="CharacterEllipsis" />
+                <TextBlock Grid.Row="0" Grid.Column="2" Classes="SettingLabel" Text="Revision" />
+                <TextBlock Grid.Row="0" Grid.Column="3" Text="{Binding RevisionText}" />
+                <TextBlock Grid.Row="1" Grid.Column="0" Classes="SettingLabel" Text="Session ID" />
+                <SelectableTextBlock Grid.Row="1" Grid.Column="1" Text="{Binding SessionIdText}" TextTrimming="CharacterEllipsis" />
+                <TextBlock Grid.Row="1" Grid.Column="2" Classes="SettingLabel" Text="Last modified" />
+                <TextBlock Grid.Row="1" Grid.Column="3" Text="{Binding LastModifiedText}" />
+                <TextBlock Grid.Row="2" Grid.Column="0" Classes="SettingLabel" Text="Ended by" />
+                <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding EndReasonText}" />
+                <TextBlock Grid.Row="2" Grid.Column="2" Classes="SettingLabel" Text="Project set by" />
+                <TextBlock Grid.Row="2" Grid.Column="3" Text="{Binding ProjectSourceText}" />
+                <TextBlock Grid.Row="3" Grid.Column="0" Classes="SettingLabel" Text="Platform" />
+                <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding PlatformText}" />
+                <TextBlock Grid.Row="3" Grid.Column="2" Classes="SettingLabel" Text="Device" />
+                <SelectableTextBlock Grid.Row="3" Grid.Column="3" Text="{Binding DeviceText}" TextTrimming="CharacterEllipsis" />
+                <TextBlock Grid.Row="4" Grid.Column="0" Classes="SettingLabel" Text="Exact time" />
+                <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding ExactTimeText}" />
+                <TextBlock Grid.Row="4" Grid.Column="2" Classes="SettingLabel" Text="Source" />
+                <TextBlock Grid.Row="4" Grid.Column="3" Text="{Binding SourceText}" />
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

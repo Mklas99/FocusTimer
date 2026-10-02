@@ -119,6 +119,35 @@ public sealed class AppBootstrapTests
     }
 
     [Fact]
+    public void TrayMenu_Worklog_ShowsWorklogViaController()
+    {
+        using var harness = new ControllerHarness();
+        var app = new FocusTimer.App.App();
+        RunInitializeAsync(app, harness.Controller, harness.Logger, null, null);
+        Assert.Null(GetWorklogWindow(harness.Controller));
+
+        InvokePrivate(app, "TrayMenu_Worklog", null, EventArgs.Empty);
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.NotNull(GetWorklogWindow(harness.Controller));
+    }
+
+    [Fact]
+    public void TrayMenu_HasWorklogDirectlyAboveSettings()
+    {
+        using var harness = new ControllerHarness();
+        var app = new FocusTimer.App.App();
+        var trayController = new RecordingTrayIconController();
+
+        RunInitializeAsync(app, harness.Controller, harness.Logger, trayController, null);
+
+        var items = trayController.ReceivedTrayIcon!.Menu!.Items
+            .Select(item => (item as NativeMenuItem)?.Header ?? "-")
+            .ToList();
+        Assert.Equal(["Show/Hide Timer", "Start/Pause Timer", "-", "Worklog...", "Settings...", "-", "Exit"], items);
+    }
+
+    [Fact]
     public void TrayMenu_Exit_ExitsViaController()
     {
         using var harness = new ControllerHarness();
@@ -176,6 +205,10 @@ public sealed class AppBootstrapTests
         init.GetAwaiter().GetResult();
     }
 
+    private static Window? GetWorklogWindow(AppController controller) => (Window?)typeof(AppController)
+        .GetField("_worklogWindow", BindingFlags.Instance | BindingFlags.NonPublic)!
+        .GetValue(controller);
+
     private static Window? GetSettingsWindow(AppController controller) => (Window?)typeof(AppController)
         .GetField("_settingsWindow", BindingFlags.Instance | BindingFlags.NonPublic)!
         .GetValue(controller);
@@ -215,11 +248,7 @@ public sealed class AppBootstrapTests
                 new LinuxAutoStartServiceStub(),
                 themeService,
                 themeManager,
-                this.Logger,
-                new WorklogSummaryViewModel(
-                    new EmptySummaryService(),
-                    new WorklogGroupingRegistry([new ApplicationGrouping(), new ProjectGrouping()]),
-                    TimeProvider.System));
+                this.Logger);
 
             this.Controller = new AppController(
                 provider,
@@ -234,7 +263,16 @@ public sealed class AppBootstrapTests
                 null!,
                 this.Logger,
                 eventBus,
-                new InstallationIdentity());
+                new InstallationIdentity(),
+                null,
+                () => new WorklogWindowViewModel(
+                    new WorklogEntriesViewModel(new CsvSessionRepository(provider), TimeProvider.System),
+                    new WorklogSummaryViewModel(
+                        new EmptySummaryService(),
+                        new WorklogGroupingRegistry([new ApplicationGrouping(), new ProjectGrouping(), new WindowGrouping()]),
+                        TimeProvider.System),
+                    provider,
+                    TimeProvider.System));
         }
 
         public AppController Controller { get; }

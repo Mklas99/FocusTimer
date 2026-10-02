@@ -1,0 +1,244 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:FocusTimer.App.ViewModels"
+             xmlns:controls="using:FocusTimer.App.Controls"
+             x:DataType="vm:WorklogTimelineViewModel"
+             x:Class="FocusTimer.App.Views.WorklogTimelineView">
+
+    <UserControl.Styles>
+        <!-- Tracked entries are solid; manual entries have a dashed outline and a "Manual" label, so the
+             difference never depends on color alone. -->
+        <Style Selector="Border.timeline-block">
+            <Setter Property="Background" Value="{DynamicResource TabSelectedBackgroundBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtleBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="{StaticResource RadiusXs}" />
+            <Setter Property="Padding" Value="6,2" />
+            <Setter Property="ClipToBounds" Value="True" />
+        </Style>
+        <Style Selector="Border.timeline-block.timeline-manual">
+            <Setter Property="Background" Value="{DynamicResource SettingsBackgroundBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource PrimaryTextBrush}" />
+            <Setter Property="BorderThickness" Value="2" />
+        </Style>
+        <Style Selector="Border.timeline-block TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource TabSelectedTextBrush}" />
+        </Style>
+        <Style Selector="Border.timeline-block.timeline-manual TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+        </Style>
+        <Style Selector="Border.timeline-hour">
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtleBrush}" />
+            <Setter Property="BorderThickness" Value="0,1,0,0" />
+        </Style>
+        <Style Selector="Border.timeline-column">
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtleBrush}" />
+            <Setter Property="BorderThickness" Value="1,0,0,0" />
+        </Style>
+        <Style Selector="Border.timeline-header">
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtleBrush}" />
+            <Setter Property="BorderThickness" Value="1,0,0,1" />
+            <Setter Property="Padding" Value="6,2" />
+        </Style>
+        <Style Selector="TextBlock.timeline-unassigned">
+            <Setter Property="FontStyle" Value="Italic" />
+        </Style>
+    </UserControl.Styles>
+
+    <Grid RowDefinitions="Auto,Auto,Auto,*">
+
+        <!-- Grouping and zoom: Ctrl + mouse wheel zooms too (Ctrl + plus, Ctrl + minus, Ctrl + 0 on the keyboard) -->
+        <StackPanel Grid.Row="0"
+                    Orientation="Horizontal"
+                    Spacing="{StaticResource SpacingSm}"
+                    Margin="0,0,0,8">
+            <TextBlock Classes="SettingLabel" Text="Group by" VerticalAlignment="Center" />
+            <ComboBox MinHeight="{StaticResource MinHitTargetSize}"
+                      MinWidth="190"
+                      ItemsSource="{Binding GroupingOptions}"
+                      SelectedItem="{Binding SelectedGrouping}"
+                      AutomationProperties.Name="Group the timeline by">
+                <ComboBox.ItemTemplate>
+                    <DataTemplate x:DataType="vm:GroupingOption">
+                        <TextBlock Text="{Binding DisplayName}" />
+                    </DataTemplate>
+                </ComboBox.ItemTemplate>
+            </ComboBox>
+            <TextBlock Classes="SettingLabel" Text="Zoom" VerticalAlignment="Center" Margin="12,0,0,0" />
+            <Button Content="&#8722;"
+                    MinWidth="{StaticResource MinHitTargetSize}"
+                    MinHeight="{StaticResource MinHitTargetSize}"
+                    Command="{Binding ZoomOutCommand}"
+                    IsEnabled="{Binding CanZoomOut}"
+                    AutomationProperties.Name="Zoom out"
+                    ToolTip.Tip="Zoom out (Ctrl + minus)" />
+            <TextBlock Text="{Binding ZoomText}"
+                       MinWidth="48"
+                       TextAlignment="Center"
+                       VerticalAlignment="Center"
+                       AutomationProperties.Name="Current zoom" />
+            <Button Content="+"
+                    MinWidth="{StaticResource MinHitTargetSize}"
+                    MinHeight="{StaticResource MinHitTargetSize}"
+                    Command="{Binding ZoomInCommand}"
+                    IsEnabled="{Binding CanZoomIn}"
+                    AutomationProperties.Name="Zoom in"
+                    ToolTip.Tip="Zoom in (Ctrl + plus)" />
+            <Button Content="Reset"
+                    MinHeight="{StaticResource MinHitTargetSize}"
+                    Command="{Binding ResetZoomCommand}"
+                    AutomationProperties.Name="Reset zoom"
+                    ToolTip.Tip="Back to 100% (Ctrl + 0)" />
+            <TextBlock Text="Ctrl + mouse wheel zooms the hours"
+                       VerticalAlignment="Center"
+                       Foreground="{DynamicResource SecondaryTextBrush}"
+                       FontSize="{StaticResource FontSizeCaption}" />
+        </StackPanel>
+
+        <!-- Read states and warnings are the same as on the Entries tab -->
+        <StackPanel Grid.Row="1" Spacing="{StaticResource SpacingSm}">
+            <TextBlock Text="{Binding Entries.WarningText}"
+                       TextWrapping="Wrap"
+                       Margin="0,0,0,8"
+                       Foreground="{DynamicResource WarningBrush}"
+                       IsVisible="{Binding Entries.HasWarning}" />
+            <TextBlock Text="Loading…"
+                       Foreground="{DynamicResource SecondaryTextBrush}"
+                       IsVisible="{Binding Entries.IsLoading}" />
+            <TextBlock Text="{Binding Entries.StatusMessage}"
+                       TextWrapping="Wrap"
+                       Foreground="{DynamicResource SecondaryTextBrush}"
+                       IsVisible="{Binding Entries.IsMessageVisible}" />
+        </StackPanel>
+
+        <!-- Column headers of a grouped timeline: they stay at the top while the day scrolls and follow sideways scrolling -->
+        <Grid Grid.Row="2" ColumnDefinitions="48,*" IsVisible="{Binding HasGroups}">
+            <ScrollViewer x:Name="HeaderScroller"
+                          Grid.Column="1"
+                          Margin="0,0,16,0"
+                          HorizontalScrollBarVisibility="Hidden"
+                          VerticalScrollBarVisibility="Disabled">
+                <ItemsControl ItemsSource="{Binding Groups}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <controls:TimelineColumnsPanel ColumnCount="{Binding $parent[UserControl].((vm:WorklogTimelineViewModel)DataContext).ColumnCount}" />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:TimelineGroupViewModel">
+                            <Border Classes="timeline-header"
+                                    ToolTip.Tip="{Binding ToolTipText}"
+                                    AutomationProperties.Name="{Binding ToolTipText}">
+                                <StackPanel>
+                                    <TextBlock Text="{Binding Label}"
+                                               FontWeight="SemiBold"
+                                               TextTrimming="CharacterEllipsis"
+                                               Classes.timeline-unassigned="{Binding IsUnassigned}" />
+                                    <TextBlock Foreground="{DynamicResource SecondaryTextBrush}"
+                                               FontSize="{StaticResource FontSizeCaption}"
+                                               TextTrimming="CharacterEllipsis">
+                                        <Run Text="{Binding TotalText}" /><Run Text=" · " /><Run Text="{Binding CountText}" />
+                                    </TextBlock>
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </Grid>
+
+        <ScrollViewer x:Name="Scroller"
+                      Grid.Row="3"
+                      Classes="settings-scroll"
+                      Focusable="True"
+                      HorizontalScrollBarVisibility="Auto"
+                      IsVisible="{Binding HasBlocks}"
+                      AutomationProperties.Name="Timeline of the day">
+            <Grid ColumnDefinitions="48,*" Height="{Binding AxisHeight}">
+                <!-- Hour lines: 24 equal rows that follow the zoom -->
+                <ItemsControl Grid.ColumnSpan="2" ItemsSource="{Binding HourLabels}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <UniformGrid Columns="1" Rows="24" />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="x:String">
+                            <Border Classes="timeline-hour" />
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <!-- Lines between the group columns -->
+                <ItemsControl Grid.Column="1" Margin="0,0,16,0" ItemsSource="{Binding Groups}" IsHitTestVisible="False">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <controls:TimelineColumnsPanel ColumnCount="{Binding $parent[UserControl].((vm:WorklogTimelineViewModel)DataContext).ColumnCount}" />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:TimelineGroupViewModel">
+                            <Border Classes="timeline-column" />
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <!-- Entries as blocks; overlapping entries share the width of their column -->
+                <ItemsControl Grid.Column="1" Margin="0,0,16,0" ItemsSource="{Binding Blocks}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <controls:TimelinePanel HourHeight="{Binding $parent[UserControl].((vm:WorklogTimelineViewModel)DataContext).HourHeight}"
+                                                    ColumnCount="{Binding $parent[UserControl].((vm:WorklogTimelineViewModel)DataContext).ColumnCount}" />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:TimelineBlockViewModel">
+                            <Border Classes="timeline-block"
+                                    Classes.timeline-manual="{Binding IsManual}"
+                                    ToolTip.Tip="{Binding ToolTipText}"
+                                    AutomationProperties.Name="{Binding ToolTipText}">
+                                <StackPanel>
+                                    <TextBlock Text="{Binding TimeText}"
+                                               FontFamily="{StaticResource TabularTimerFontFamily}"
+                                               FontSize="{StaticResource FontSizeCaption}" />
+                                    <TextBlock Text="{Binding TitleText}"
+                                               TextTrimming="CharacterEllipsis"
+                                               FontWeight="SemiBold" />
+                                    <TextBlock Text="{Binding DetailText}"
+                                               TextTrimming="CharacterEllipsis"
+                                               FontSize="{StaticResource FontSizeCaption}" />
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <!-- Hour labels: pinned to the left while the day scrolls sideways -->
+                <Border x:Name="Gutter"
+                        Grid.Column="0"
+                        ZIndex="10"
+                        Background="{DynamicResource SettingsBackgroundBrush}">
+                    <ItemsControl ItemsSource="{Binding HourLabels}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <UniformGrid Columns="1" Rows="24" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="x:String">
+                                <Border Classes="timeline-hour">
+                                    <TextBlock Text="{Binding}"
+                                               FontFamily="{StaticResource TabularTimerFontFamily}"
+                                               FontSize="{StaticResource FontSizeCaption}"
+                                               Foreground="{DynamicResource SecondaryTextBrush}"
+                                               VerticalAlignment="Top"
+                                               Margin="0,2,0,0" />
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </Border>
+            </Grid>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

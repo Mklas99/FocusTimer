@@ -69,7 +69,7 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for detailed architecture, design pattern
 ## Features
 
 - **Compact Timer Widget**: Minimal, distraction-free UI for time tracking
-- **System Tray Integration**: Hide/show and control timer from tray menu
+- **System Tray Integration**: Hide/show and control timer from the tray menu, and open the Worklog window (entries and summary for a chosen day) or Settings
 - **Global Hotkeys**: Configurable keyboard shortcuts (Windows)
 - **Automatic Time Entry Logging**: Versioned daily CSV worklogs with durable entry/session identities
 - **JSON Settings**: Persist user preferences (theme, hotkeys, start minimized, etc.)

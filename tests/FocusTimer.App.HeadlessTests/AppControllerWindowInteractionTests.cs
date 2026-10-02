@@ -116,6 +116,60 @@ public sealed class AppControllerWindowInteractionTests
     }
 
     [Fact]
+    public async Task ShowWorklog_CalledTwice_ReusesTheSameWindow()
+    {
+        using var harness = new Harness();
+        await harness.InitializeAsync();
+
+        harness.Controller.ShowWorklog();
+        Dispatcher.UIThread.RunJobs();
+        var first = Assert.IsType<WorklogWindow>(harness.FindOpenWorklogWindow());
+        harness.Controller.ShowWorklog();
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.Same(first, harness.FindOpenWorklogWindow());
+        Assert.True(first.IsVisible);
+        var viewModel = Assert.IsType<WorklogWindowViewModel>(first.DataContext);
+        Assert.Equal(WorklogTab.Entries, viewModel.SelectedTab);
+        Assert.Equal(viewModel.Today, viewModel.SelectedDay);
+    }
+
+    [Fact]
+    public async Task ShowWorklog_AfterClosing_OpensANewWindow()
+    {
+        using var harness = new Harness();
+        await harness.InitializeAsync();
+        harness.Controller.ShowWorklog();
+        Dispatcher.UIThread.RunJobs();
+        var first = Assert.IsType<WorklogWindow>(harness.FindOpenWorklogWindow());
+
+        first.Close();
+        Dispatcher.UIThread.RunJobs();
+        Assert.Null(harness.FindOpenWorklogWindow());
+        harness.Controller.ShowWorklog();
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.NotSame(first, harness.FindOpenWorklogWindow());
+    }
+
+    [Fact]
+    public async Task ExitApplication_WithOpenWorklogWindow_ClosesIt()
+    {
+        using var harness = new Harness();
+        await harness.InitializeAsync();
+        harness.Controller.ShowTimerWidget();
+        harness.Controller.ShowWorklog();
+        Dispatcher.UIThread.RunJobs();
+        var window = Assert.IsType<WorklogWindow>(harness.FindOpenWorklogWindow());
+
+        harness.Controller.ExitApplication();
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.False(window.IsVisible);
+        Assert.Null(harness.FindOpenWorklogWindow());
+    }
+
+    [Fact]
     public async Task OnHotkeyPressed_ShowHideDefinition_TogglesWidgetVisibility()
     {
         var hotkeys = new RaisableHotkeyService();
@@ -329,11 +383,7 @@ public sealed class AppControllerWindowInteractionTests
                 new LinuxAutoStartServiceStub(),
                 themeService,
                 themeManager,
-                this.Logger,
-                new WorklogSummaryViewModel(
-                    new EmptySummaryService(),
-                    new WorklogGroupingRegistry([new ApplicationGrouping(), new ProjectGrouping()]),
-                    TimeProvider.System));
+                this.Logger);
 
             this.Controller = new AppController(
                 this.Provider,
@@ -348,7 +398,16 @@ public sealed class AppControllerWindowInteractionTests
                 null!,
                 this.Logger,
                 eventBus,
-                new InstallationIdentity());
+                new InstallationIdentity(),
+                null,
+                () => new WorklogWindowViewModel(
+                    new WorklogEntriesViewModel(new CsvSessionRepository(this.Provider), TimeProvider.System),
+                    new WorklogSummaryViewModel(
+                        new EmptySummaryService(),
+                        new WorklogGroupingRegistry([new ApplicationGrouping(), new ProjectGrouping(), new WindowGrouping()]),
+                        TimeProvider.System),
+                    this.Provider,
+                    TimeProvider.System));
         }
 
         public AppController Controller { get; }
@@ -374,6 +433,10 @@ public sealed class AppControllerWindowInteractionTests
             await this.Controller.InitializeAsync();
             Dispatcher.UIThread.RunJobs();
         }
+
+        public Window? FindOpenWorklogWindow() => (Window?)typeof(AppController)
+            .GetField("_worklogWindow", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+            .GetValue(this.Controller);
 
         public Window? FindOpenSettingsWindow() => (Window?)typeof(AppController)
             .GetField("_settingsWindow", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!

@@ -261,7 +261,8 @@ public sealed class SessionTracker
         {
             var boundaryLocal = DateTime.SpecifyKind(_current.StartedAt.Date.AddDays(1), DateTimeKind.Unspecified);
             var boundary = new DateTimeOffset(boundaryLocal, _timeZone.GetUtcOffset(boundaryLocal));
-            CloseCurrentEntry(boundary, EndReason.DayBoundary);
+            // Close one second early so no persisted entry ends on the next day's date; the second is not recorded.
+            CloseCurrentEntry(TimeZoneInfo.ConvertTime(boundary.AddSeconds(-1), _timeZone), EndReason.DayBoundary);
             CreateNewEntry(_currentWindow, boundary);
         }
     }

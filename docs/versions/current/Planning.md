@@ -179,7 +179,7 @@ Recommended behavior:
 
 Persisted entries should not cross a local calendar boundary.
 
-At midnight, close the entry exactly at the boundary and start a new entry with:
+At midnight, close the entry at 23:59:59 of its day (the second before the boundary is not recorded) and start a new entry at 00:00:00 with:
 
 - a new `EntryId`;
 - the same `SessionId`;

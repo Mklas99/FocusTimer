@@ -22,7 +22,7 @@
                     MinHeight="{StaticResource MinHitTargetSize}"
                     VerticalAlignment="Top"
                     Command="{Binding RefreshCommand}"
-                    ToolTip.Tip="Reload today's breakdown" />
+                    ToolTip.Tip="Reload the breakdown for this day" />
         </Grid>
 
         <!-- Grouping switch -->

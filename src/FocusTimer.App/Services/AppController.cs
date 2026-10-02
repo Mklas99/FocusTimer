@@ -27,12 +27,14 @@ namespace FocusTimer.App.Services
         private readonly ThemeManager _themeManager;
         private readonly Func<TimerWidgetViewModel> _timerViewModelFactory;
         private readonly Func<SettingsWindowViewModel> _settingsViewModelFactory;
+        private readonly Func<WorklogWindowViewModel>? _worklogViewModelFactory;
         private readonly ITrayIconController? _trayIconController;
         private readonly IAppLogger _logWriter;
         private readonly InstallationIdentity _installationIdentity;
         private TrayIcon? _trayIcon;
         private TimerWidgetWindow? _timerWindow;
         private SettingsWindow? _settingsWindow;
+        private WorklogWindow? _worklogWindow;
         private HotkeyDefinition _showHideHotkeyDefinition;
         private HotkeyDefinition _toggleTimerHotkeyDefinition;
         private bool _pausedByIdle;
@@ -56,6 +58,7 @@ namespace FocusTimer.App.Services
         /// <param name="eventBus">Event bus for subscribing to application-level events.</param>
         /// <param name="installationIdentity">Cached identity for worklog entries.</param>
         /// <param name="autoStartService">Optional start-on-login service for recovery.</param>
+        /// <param name="worklogViewModelFactory">Optional factory for the Worklog window view model; without it the window cannot be opened.</param>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Major Code Smell", "S107:Methods should not have too many parameters", Justification = "Constructor injection of dependencies.")]
         public AppController(
             ISettingsProvider settingsProvider,
@@ -71,7 +74,8 @@ namespace FocusTimer.App.Services
             IAppLogger logWriter,
             IEventBus? eventBus,
             InstallationIdentity installationIdentity,
-            IAutoStartService? autoStartService = null)
+            IAutoStartService? autoStartService = null,
+            Func<WorklogWindowViewModel>? worklogViewModelFactory = null)
         {
             this._settingsProvider = settingsProvider;
             this._autoStartService = autoStartService;
@@ -81,6 +85,7 @@ namespace FocusTimer.App.Services
             this._themeManager = themeManager;
             this._timerViewModelFactory = timerViewModelFactory;
             this._settingsViewModelFactory = settingsViewModelFactory;
+            this._worklogViewModelFactory = worklogViewModelFactory;
             this.CurrentSettings = new Settings();
             this._trayIconController = trayIconController;
             this._logWriter = logWriter;
@@ -392,6 +397,47 @@ namespace FocusTimer.App.Services
         }
 
         /// <summary>
+        /// Show the Worklog window: one instance, brought to the front when it is already open.
+        /// </summary>
+        public void ShowWorklog()
+        {
+            if (!this._initialized || this._worklogViewModelFactory is null)
+            {
+                return;
+            }
+
+            Dispatcher.UIThread.Post(async () =>
+            {
+                WorklogWindowViewModel? opening = null;
+                if (this._worklogWindow == null)
+                {
+                    opening = this._worklogViewModelFactory();
+                    this._worklogWindow = new WorklogWindow
+                    {
+                        DataContext = opening,
+                    };
+                    this._worklogWindow.Closed += (s, e) => this._worklogWindow = null;
+                }
+
+                this._worklogWindow.Show();
+                this._worklogWindow.Activate();
+                if (opening is null)
+                {
+                    return;
+                }
+
+                try
+                {
+                    await opening.OpenAsync();
+                }
+                catch (Exception ex)
+                {
+                    this._logWriter.LogError("Loading the Worklog window failed.", ex);
+                }
+            });
+        }
+
+        /// <summary>
         /// Exit the application cleanly.
         /// Stops timer, flushes logs, and disposes resources.
         /// </summary>
@@ -416,6 +462,7 @@ namespace FocusTimer.App.Services
 
                 // Close all windows
                 this._settingsWindow?.Close();
+                this._worklogWindow?.Close();
                 this._timerWindow?.Close();
 
                 // Shutdown application

@@ -39,8 +39,8 @@ Program.Main(string[] args)
 **Purpose**: User interface implementation with Avalonia XAML, ViewModels, and window logic.
 
 **Key Responsibilities**:
-- Avalonia XAML views (CompactModeView, SettingsWindow, TimerWidgetWindow)
-- ReactiveUI ViewModels (MainWindowViewModel, SettingsWindowViewModel, TimerWidgetViewModel)
+- Avalonia XAML views (CompactModeView, SettingsWindow, WorklogWindow, TimerWidgetWindow)
+- ReactiveUI ViewModels (MainWindowViewModel, SettingsWindowViewModel, TimerWidgetViewModel, WorklogWindowViewModel)
 - Converters (Color, Boolean, PlayPause state converters)
 - Services specific to UI (AppController, ThemeManager, TrayStateController)
 - Implements IAppInitializer for coordinated startup via DI
@@ -64,7 +64,7 @@ View (XAML)
 - **AppController.cs** (Singleton)
   - Orchestrates window lifecycle (show/hide TimerWidget, ShowSettings, etc.)
   - Subscribes to EntriesLoggedEvent via EventBus
-  - Manages user interactions with tray and windows
+  - Manages user interactions with tray and windows (the tray menu is Show/Hide, Start/Pause, Worklog, Settings, Exit; `ShowWorklog()` keeps one Worklog window, like `ShowSettings()` for Settings)
 
 - **TimerWidgetViewModel.cs** (Reactive)
   - Holds timer state (IsRunning, TimeElapsed, CurrentEntry)
@@ -72,10 +72,12 @@ View (XAML)
   - Exposes Logger and HotkeyService for views (property injection pattern)
 
 - **ViewModels & Views**
-  - SettingsWindowViewModel: Settings state and validation; hosts the Summary tab's view model
-  - WorklogSummaryViewModel / WorklogSummaryView: Today's time breakdown by application or project. Both are host-independent (they never reference the Settings window), so the same pair can move into a future report window opened from the tray
+  - SettingsWindowViewModel: Settings state and validation (General, Logging, Appearance, Hotkeys, About tabs)
+  - WorklogWindowViewModel / WorklogWindow: the window opened from the tray. It owns one selected local day (never later than today, never before the retention window) and pushes it to its tabs: Entries (WorklogEntriesViewModel / WorklogEntriesView, a table of one day's stored entries to the minute with a search over the loaded day (matches shown bold and underlined by `HighlightTextBlock`), exact times and source in the selected row's details, and read warnings), Timeline, and Summary. It does not depend on the Settings window or its draft
+  - WorklogSummaryViewModel / WorklogSummaryView: the day's time breakdown by application, project, or window. Both are host-independent (they never reference a window), so the Worklog window hosts them
   - TimerWidgetWindow: Compact timer display
   - Converters: Color opacity, angle rotation, play/pause icons
+  - WorklogEntryEditorViewModel: the add/edit form (inline in the Entries tab); it calls only `IWorklogEditingService`. The Timeline tab (WorklogTimelineViewModel / WorklogTimelineView, laid out by the custom `TimelinePanel`) reads all entries the Entries tab loaded (a search does not hide them), so the two never disagree; overlapping entries are drawn side by side in lanes, and Ctrl + mouse wheel changes the hour height (zoom, remembered between runs), recomputing the lanes. A Group by switch splits the timeline into one column per application, project, or window (the Summary's groupings, remembered with the zoom): `TimelinePanel` arranges blocks in columns, `TimelineColumnsPanel` lines up the headers and column lines, and the lanes are split only inside a column
 
 **Dependencies**: Core, Persistence
 
@@ -109,7 +111,9 @@ IIdleDetectionService // Poll OS idle state (Platform.Windows / Linux stub)
 IAutoStartService    // Register app in startup mechanisms (Platform.Windows / Linux stub)
 IThemeService        // Load/apply/import/export themes (implemented in Core: ThemeService)
 IWorklogSummaryService // Summarize worklog entries for a range into grouped rows (implemented in Core: WorklogSummaryService)
-IWorklogGrouping     // Decides which row an entry belongs to; ApplicationGrouping and ProjectGrouping are registered
+IWorklogViewStateStore // Remembers the Worklog window's view preferences such as the timeline zoom (timeline zoom and grouping; implemented in Persistence: JsonWorklogViewStateStore, `worklog-view.json` beside `settings.json`; never part of Settings)
+IWorklogEditingService // Add manual entries, edit (window title, project, duration), and delete entries with revision checks, overlap detection, and a WorklogChangedEvent (implemented in Core: WorklogEditingService)
+IWorklogGrouping     // Decides which row an entry belongs to; ApplicationGrouping, ProjectGrouping, and WindowGrouping (by window title; empty titles share a "No window title" row) are registered
 IProjectResolver     // Decides an entry's project when summarizing (default: StoredProjectResolver reads the stored tag)
 ITimerService        // Timer state and elapsed-time tracking (implemented in Core: TimerService)
 ```
@@ -117,7 +121,8 @@ ITimerService        // Timer state and elapsed-time tracking (implemented in Co
 **Core.Services (concrete, no interface — used directly by App/Host)**:
 - `SessionTracker` — tracks active-window changes, builds TimeEntry segments for the current session
 - `BreakReminderService` — fires break reminders on an interval, tracks acknowledgement
-- `TodayStatsService` — aggregates today's tracked time for the tray tooltip
+- `TodayStatsService` — aggregates today's tracked time for the tray tooltip; `TrayStateController` recomputes it when the user changes today's worklog (`WorklogChangedEvent`)
+- `DurationParser` — reads typed durations ("2h 30m", "2.5h") in whole minutes; `WorklogDayBounds` — the earliest day retention keeps (today minus retention days minus one)
 - `WorklogGroupingRegistry` — the ordered set of `IWorklogGrouping` implementations a summary can use
 
 **Worklog summary seams** (OI-04): a `WorklogSummaryRequest` (a `SummaryRange`, a grouping id, an optional `SummaryFilter`) goes to `IWorklogSummaryService`, which queries `IWorklogStore`, clips entries to the range, resolves each entry's project through `IProjectResolver`, groups it with the chosen `IWorklogGrouping`, and returns rows with duration, share, and entry count plus read warnings. A failed read is reported as a failure, never as zero time. Adding a time range, a filter field, a grouping (register another `IWorklogGrouping`), or rule-based project detection (replace `IProjectResolver`, OI-08) does not change the service.
@@ -158,7 +163,7 @@ This allows late-binding access to services from non-DI-aware contexts. It is cu
 
 **Key Responsibilities**:
 - JSON settings provider (load/save application settings)
-- Current-schema CSV worklog store (idempotent append, query, same-day patch, and delete)
+- Current-schema CSV worklog store (idempotent append, query, same-day patch, and delete). An entry belongs to the local day it starts on; a patch may not change that day or move the end onto another date (entries written before the tracker closed segments at 23:59:59 may end exactly at the next midnight and stay editable). Capture sources are `active-window` (tracked) and `manual` (added by the user); no schema version change
 - ServiceCollectionExtensions for DI registration
 
 **Key Components**:
@@ -301,18 +306,23 @@ services.AddSingleton<BreakReminderService>();
 services.AddSingleton<TodayStatsService>();
 services.AddSingleton<IWorklogGrouping, ApplicationGrouping>();
 services.AddSingleton<IWorklogGrouping, ProjectGrouping>();
+services.AddSingleton<IWorklogGrouping, WindowGrouping>();
 services.AddSingleton<WorklogGroupingRegistry>();
 services.AddSingleton<IProjectResolver, StoredProjectResolver>();
 services.AddSingleton<IWorklogSummaryService, WorklogSummaryService>();
+services.AddSingleton<IWorklogEditingService, WorklogEditingService>();
 services.AddSingleton<AppController>();
 
 // ViewModels (transient, plus factory delegates for windows created after startup)
 services.AddTransient<MainWindowViewModel>();
 services.AddTransient<TimerWidgetViewModel>();
 services.AddTransient<WorklogSummaryViewModel>();
+services.AddTransient<WorklogEntriesViewModel>();
+services.AddTransient<WorklogWindowViewModel>();
 services.AddTransient<SettingsWindowViewModel>();
 services.AddTransient<Func<TimerWidgetViewModel>>(sp => () => sp.GetRequiredService<TimerWidgetViewModel>());
 services.AddTransient<Func<SettingsWindowViewModel>>(sp => () => sp.GetRequiredService<SettingsWindowViewModel>());
+services.AddTransient<Func<WorklogWindowViewModel>>(sp => () => sp.GetRequiredService<WorklogWindowViewModel>());
 
 var provider = services.BuildServiceProvider();
 Program.Services = provider;
@@ -452,7 +462,7 @@ The `else` branch in `Program.cs`'s static constructor already registers Linux n
 See `docs/versions/current/OpenIssues.md` for the full, current backlog of known gaps.
 ## Foreground capture cadence and ownership
 
-SessionTracker uses the injected TimeProvider's monotonic timestamps for foreground deadlines. TimerService keeps its one-second tick. Local-calendar maintenance runs before capture admission and before final closure, so midnight segmentation does not wait for the sampling deadline. Foreground changes are attributed at observation time; longer intervals can miss intermediate visits.
+SessionTracker uses the injected TimeProvider's monotonic timestamps for foreground deadlines. TimerService keeps its one-second tick. Local-calendar maintenance runs before capture admission and before final closure, so midnight segmentation does not wait for the sampling deadline. A segment crossing local midnight is closed at 23:59:59 with the day-boundary end reason and its replacement starts at 00:00:00, so every persisted entry starts and ends on the same local date (a segment that began in the last second of a day is zero-length and is dropped). Foreground changes are attributed at observation time; longer intervals can miss intermediate visits.
 
 One capture reservation covers both initial and periodic lookups. Busy periodic ticks return without queueing. Stop or disable invalidates the session generation; a stale result cannot create a segment. At most the latest restart waits behind an outstanding lookup. Deadlines advance after completion, preventing catch-up bursts; applying a changed interval reschedules from application time, while reapplying the same value preserves the deadline. TimerService observes tracking tasks and logs failures.
 

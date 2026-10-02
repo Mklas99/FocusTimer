@@ -151,18 +151,23 @@ namespace FocusTimer.Host
             // IProjectResolver to change how a project is decided (for example rule-based detection).
             services.AddSingleton<IWorklogGrouping, ApplicationGrouping>();
             services.AddSingleton<IWorklogGrouping, ProjectGrouping>();
+            services.AddSingleton<IWorklogGrouping, WindowGrouping>();
             services.AddSingleton<WorklogGroupingRegistry>();
             services.AddSingleton<IProjectResolver, StoredProjectResolver>();
             services.AddSingleton<IWorklogSummaryService, WorklogSummaryService>();
+            services.AddSingleton<IWorklogEditingService, WorklogEditingService>();
             services.AddSingleton<AppController>();
 
             services.AddTransient<MainWindowViewModel>();
             services.AddTransient<TimerWidgetViewModel>();
             services.AddTransient<WorklogSummaryViewModel>();
+            services.AddTransient<WorklogEntriesViewModel>();
+            services.AddTransient<WorklogWindowViewModel>();
             services.AddTransient<SettingsWindowViewModel>();
 
             services.AddTransient<Func<TimerWidgetViewModel>>(sp => () => sp.GetRequiredService<TimerWidgetViewModel>());
             services.AddTransient<Func<SettingsWindowViewModel>>(sp => () => sp.GetRequiredService<SettingsWindowViewModel>());
+            services.AddTransient<Func<WorklogWindowViewModel>>(sp => () => sp.GetRequiredService<WorklogWindowViewModel>());
 
             return services.BuildServiceProvider();
         }

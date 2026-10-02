@@ -1,0 +1,93 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:FocusTimer.App.ViewModels"
+        xmlns:views="using:FocusTimer.App.Views"
+        x:Class="FocusTimer.App.Views.WorklogWindow"
+        x:DataType="vm:WorklogWindowViewModel"
+        Classes="settings-window"
+        Title="FocusTimer – Worklog"
+        Width="900" Height="620"
+        MinWidth="640" MinHeight="560"
+        WindowStartupLocation="CenterScreen"
+        CanResize="True"
+        Background="{DynamicResource SettingsBackgroundBrush}"
+        Foreground="{DynamicResource PrimaryTextBrush}">
+
+    <Window.Styles>
+        <!-- The date picker's text field takes the same input colors as the Settings text fields. -->
+        <Style Selector="CalendarDatePicker /template/ TextBox#PART_TextBox">
+            <Setter Property="Background" Value="{DynamicResource InputBackgroundBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource InputTextBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource InputBorderBrush}" />
+        </Style>
+        <Style Selector="CalendarDatePicker /template/ TextBox#PART_TextBox:pointerover /template/ Border#PART_BorderElement, CalendarDatePicker /template/ TextBox#PART_TextBox:focus /template/ Border#PART_BorderElement">
+            <Setter Property="Background" Value="{DynamicResource InputBackgroundBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource InputFocusBorderBrush}" />
+        </Style>
+    </Window.Styles>
+
+    <Window.KeyBindings>
+        <KeyBinding Gesture="F5" Command="{Binding RefreshCommand}" />
+    </Window.KeyBindings>
+
+    <Grid RowDefinitions="Auto,Auto,*" Margin="20">
+
+        <!-- Day selector: one day at a time for every tab -->
+        <Grid Grid.Row="0" ColumnDefinitions="Auto,Auto,Auto,Auto,*" Margin="0,0,0,12">
+            <Button Grid.Column="0"
+                    Content="&#8249;"
+                    MinWidth="{StaticResource MinHitTargetSize}"
+                    MinHeight="{StaticResource MinHitTargetSize}"
+                    Command="{Binding PreviousDayCommand}"
+                    IsEnabled="{Binding CanSelectPrevious}"
+                    AutomationProperties.Name="Previous day"
+                    ToolTip.Tip="Previous day" />
+            <CalendarDatePicker Grid.Column="1"
+                                Margin="{StaticResource SpacingThicknessXs}"
+                                MinHeight="{StaticResource MinHitTargetSize}"
+                                Background="Transparent"
+                                SelectedDate="{Binding SelectedDate, Mode=TwoWay}"
+                                DisplayDateStart="{Binding DisplayDateStart}"
+                                DisplayDateEnd="{Binding DisplayDateEnd}"
+                                AutomationProperties.Name="Selected day" />
+            <Button Grid.Column="2"
+                    Content="&#8250;"
+                    MinWidth="{StaticResource MinHitTargetSize}"
+                    MinHeight="{StaticResource MinHitTargetSize}"
+                    Command="{Binding NextDayCommand}"
+                    IsEnabled="{Binding CanSelectNext}"
+                    AutomationProperties.Name="Next day"
+                    ToolTip.Tip="Next day" />
+            <Button Grid.Column="3"
+                    Content="Today"
+                    Margin="{StaticResource SpacingThicknessSm}"
+                    MinHeight="{StaticResource MinHitTargetSize}"
+                    Command="{Binding TodayCommand}"
+                    AutomationProperties.Name="Go to today" />
+            <TextBlock Grid.Column="4"
+                       Classes="SectionHeader"
+                       Margin="12,0,0,0"
+                       VerticalAlignment="Center"
+                       Text="{Binding SelectedDayText}" />
+        </Grid>
+
+        <TextBlock Grid.Row="1"
+                   Margin="0,0,0,8"
+                   TextWrapping="Wrap"
+                   Foreground="{DynamicResource WarningBrush}"
+                   Text="{Binding DayMessage}"
+                   IsVisible="{Binding HasDayMessage}" />
+
+        <TabControl x:Name="Tabs" Grid.Row="2" SelectionChanged="OnTabSelectionChanged">
+            <TabItem Header="Entries" Tag="Entries">
+                <views:WorklogEntriesView Margin="0,12,0,0" DataContext="{Binding Entries}" />
+            </TabItem>
+            <TabItem Header="Timeline" Tag="Timeline">
+                <views:WorklogTimelineView Margin="0,12,0,0" DataContext="{Binding Timeline}" />
+            </TabItem>
+            <TabItem Header="Summary" Tag="Summary">
+                <views:WorklogSummaryView Margin="0,12,0,0" DataContext="{Binding Summary}" />
+            </TabItem>
+        </TabControl>
+    </Grid>
+</Window>
