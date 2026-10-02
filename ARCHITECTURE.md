@@ -109,7 +109,7 @@ IIdleDetectionService // Poll OS idle state (Platform.Windows / Linux stub)
 IAutoStartService    // Register app in startup mechanisms (Platform.Windows / Linux stub)
 IThemeService        // Load/apply/import/export themes (implemented in Core: ThemeService)
 IWorklogSummaryService // Summarize worklog entries for a range into grouped rows (implemented in Core: WorklogSummaryService)
-IWorklogGrouping     // Decides which row an entry belongs to; ApplicationGrouping and ProjectGrouping are registered
+IWorklogGrouping     // Decides which row an entry belongs to; ApplicationGrouping, ProjectGrouping, and WindowGrouping (by window title; empty titles share a "No window title" row) are registered
 IProjectResolver     // Decides an entry's project when summarizing (default: StoredProjectResolver reads the stored tag)
 ITimerService        // Timer state and elapsed-time tracking (implemented in Core: TimerService)
 ```

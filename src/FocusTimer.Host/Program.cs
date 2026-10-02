@@ -151,6 +151,7 @@ namespace FocusTimer.Host
             // IProjectResolver to change how a project is decided (for example rule-based detection).
             services.AddSingleton<IWorklogGrouping, ApplicationGrouping>();
             services.AddSingleton<IWorklogGrouping, ProjectGrouping>();
+            services.AddSingleton<IWorklogGrouping, WindowGrouping>();
             services.AddSingleton<WorklogGroupingRegistry>();
             services.AddSingleton<IProjectResolver, StoredProjectResolver>();
             services.AddSingleton<IWorklogSummaryService, WorklogSummaryService>();

@@ -28,8 +28,8 @@
 
 ## 4. By-window grouping (Core)
 
-- [ ] 4.1 Add `WindowGrouping` (trimmed, case-insensitive key, first-original label, reserved empty-title key) and register it in the Host registry; verify with tests for case/whitespace variants, empty title, and a window literally named like the empty label
-- [ ] 4.2 Extend `ARCHITECTURE.md` summary groupings with by window; verify the text matches the registry
+- [x] 4.1 Add `WindowGrouping` (trimmed, case-insensitive key, first-original label, reserved empty-title key) and register it in the Host registry; verify with tests for case/whitespace variants, empty title, and a window literally named like the empty label
+- [x] 4.2 Extend `ARCHITECTURE.md` summary groupings with by window; verify the text matches the registry
 
 ## 5. Worklog window shell and tray entry (App, Host)
 
