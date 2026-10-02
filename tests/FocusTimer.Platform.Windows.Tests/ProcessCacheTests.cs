@@ -71,6 +71,30 @@ public class ProcessCacheTests
         Assert.Equal(1, lifetime.Disposals);
     }
 
+    [Theory]
+    [InlineData("access")]
+    [InlineData("exited")]
+    [InlineData("invalid-pid")]
+    public async Task LifetimeOpenFailure_FallsBackToUncachedNamesWithoutLosingWindowInformation(string failure)
+    {
+        int lookups = 0;
+        using var service = new WindowsActiveWindowService(null, () => new IntPtr(1), _ => "document",
+            _ => 42, _ => { lookups++; return "editor"; }, _ => throw failure switch
+            {
+                "access" => new Win32Exception(5),
+                "exited" => new InvalidOperationException("Process exited."),
+                _ => new ArgumentException("Process ID unavailable."),
+            });
+
+        var first = await service.GetForegroundWindowAsync();
+        var second = await service.GetForegroundWindowAsync();
+
+        Assert.Equal("editor", first!.ProcessName);
+        Assert.Equal("document", first.WindowTitle);
+        Assert.Equal("editor", second!.ProcessName);
+        Assert.Equal(2, lookups);
+    }
+
     private sealed class Lifetime : IProcessLifetime
     {
         public bool Alive = true;

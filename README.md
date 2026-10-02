@@ -198,7 +198,7 @@ All Appearance controls preview immediately, including colors, opacity, scale, a
 dotnet test
 ```
 
-Run per-project unit-coverage with 60% minimum thresholds:
+Measure the full Core, Persistence, App, Windows platform, and Host assemblies with a 60% minimum line-coverage threshold per assembly:
 
 ```powershell
 ./scripts/run-unit-coverage.ps1

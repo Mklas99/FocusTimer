@@ -221,6 +221,105 @@ public sealed class AppControllerStartupTests
         Assert.Equal(2, hotkeys.RegisterCount);
     }
 
+    [Theory]
+    [InlineData("Ctrl+Shift+T", "Ctrl+Alt+P")]
+    [InlineData("Ctrl+Alt+K", "Ctrl+Alt+P")]
+    [InlineData("Ctrl+Alt+T", "Ctrl+Shift+P")]
+    [InlineData("Ctrl+Alt+T", "Ctrl+Alt+R")]
+    public async Task RuntimeActivation_ChangingEitherHotkeyKeyOrModifiers_ReplacesRegistrations(string showHide, string toggle)
+    {
+        var hotkeys = new CountingHotkeys();
+        var controller = CreateController(new Settings(), hotkeys, new RecordingLogger());
+        var activate = typeof(AppController).GetMethod("ActivateSettingsAsync", BindingFlags.Instance | BindingFlags.NonPublic)!;
+        await (Task)activate.Invoke(controller, [new Settings()])!;
+        var candidate = new Settings { HotkeyShowHide = showHide, HotkeyToggleTimer = toggle };
+
+        await (Task)activate.Invoke(controller, [candidate])!;
+
+        Assert.Equal(4, hotkeys.RegisterCount);
+        Assert.Equal(2, hotkeys.UnregisterCount);
+        var expectedShow = HotkeyDefinition.Parse(showHide)!.Value;
+        var expectedToggle = HotkeyDefinition.Parse(toggle)!.Value;
+        Assert.Equal(expectedShow.Modifiers, hotkeys.Registered[^2].Modifiers);
+        Assert.Equal(expectedShow.KeyCode, hotkeys.Registered[^2].KeyCode);
+        Assert.Equal(expectedToggle.Modifiers, hotkeys.Registered[^1].Modifiers);
+        Assert.Equal(expectedToggle.KeyCode, hotkeys.Registered[^1].KeyCode);
+    }
+
+    [Theory]
+    [InlineData(null, false)]
+    [InlineData("", true)]
+    [InlineData("not-a-hotkey", true)]
+    public async Task InvalidOrMissingSavedHotkeys_UseDefaultsAndReportInvalidDefinitions(string? saved, bool expectWarning)
+    {
+        var hotkeys = new CountingHotkeys();
+        var logger = new RecordingLogger();
+        var controller = CreateController(new Settings { HotkeyShowHide = saved, HotkeyToggleTimer = saved }, hotkeys, logger);
+        int startupWarnings = logger.Warnings.Count;
+        await controller.InitializeAsync();
+
+        controller.RegisterHotkeys();
+
+        Assert.Equal(2, hotkeys.RegisterCount);
+        Assert.Equal('T', hotkeys.Registered[0].KeyCode);
+        Assert.Equal('P', hotkeys.Registered[1].KeyCode);
+        Assert.All(hotkeys.Registered, definition => Assert.Equal(HotkeyModifiers.Control | HotkeyModifiers.Alt, definition.Modifiers));
+        Assert.Equal(expectWarning ? 2 : 0, logger.Warnings.Count - startupWarnings);
+    }
+
+    [Fact]
+    public async Task RegistrationFailure_IsLoggedAndRegistrationCanBeRetried()
+    {
+        var hotkeys = new CountingHotkeys { FailRegister = true };
+        var logger = new RecordingLogger();
+        var controller = CreateController(new Settings(), hotkeys, logger);
+        controller.RegisterHotkeys();
+        Assert.Equal(0, hotkeys.UnregisterCount);
+        await controller.InitializeAsync();
+
+        controller.RegisterHotkeys();
+        Assert.Contains("Failed to register hotkeys.", logger.Errors);
+        Assert.Empty(hotkeys.Registered);
+        hotkeys.FailRegister = false;
+        controller.RegisterHotkeys();
+
+        Assert.Equal(2, hotkeys.RegisterCount);
+        Assert.Equal(2, hotkeys.UnregisterCount);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ExitBeforeWindowCreation_AttemptsHotkeyCleanupAndLogsFailures(bool failCleanup)
+    {
+        var hotkeys = new CountingHotkeys { FailUnregister = failCleanup };
+        var logger = new RecordingLogger();
+        var controller = CreateController(new Settings(), hotkeys, logger);
+
+        controller.ExitApplication();
+
+        Assert.Equal(1, hotkeys.UnregisterCount);
+        if (failCleanup) Assert.Contains("Error during exit.", logger.Errors);
+        else Assert.Empty(logger.Errors);
+    }
+
+    private static AppController CreateController(Settings settings, CountingHotkeys hotkeys, RecordingLogger logger) => new(
+        new FixedSettingsProvider(settings), hotkeys, new LinuxIdleDetectionServiceStub(),
+        new LinuxNotificationServiceStub(), new ThemeService(), new ThemeManager(),
+        () => throw new InvalidOperationException("No windows are created by these tests."),
+        null!, null!, null!, logger, null, new InstallationIdentity());
+
+    private sealed class RecordingLogger : IAppLogger
+    {
+        public List<string> Warnings { get; } = new();
+        public List<string> Errors { get; } = new();
+        public void LogWarning(string message) => this.Warnings.Add(message);
+        public void LogError(string message, Exception? exception = null) => this.Errors.Add(message);
+        public void LogCritical(string message, Exception? exception = null) { }
+        public void LogInformation(string message) { }
+        public void LogDebug(string message) { }
+    }
+
     private sealed class FixedSettingsProvider(Settings settings) : ISettingsProvider
     {
         public Task<Settings> LoadAsync() => Task.FromResult(settings);
@@ -310,6 +409,10 @@ public sealed class AppControllerStartupTests
     private sealed class CountingHotkeys : IGlobalHotkeyService
     {
         public int RegisterCount { get; private set; }
+        public int UnregisterCount { get; private set; }
+        public bool FailRegister { get; set; }
+        public bool FailUnregister { get; set; }
+        public List<HotkeyDefinition> Registered { get; } = new();
 
         public event EventHandler<HotkeyPressedEventArgs> HotkeyPressed
         {
@@ -317,9 +420,18 @@ public sealed class AppControllerStartupTests
             remove { }
         }
 
-        public void Register(HotkeyDefinition definition) => this.RegisterCount++;
+        public void Register(HotkeyDefinition definition)
+        {
+            if (this.FailRegister) throw new IOException("Registration failed.");
+            this.RegisterCount++;
+            this.Registered.Add(definition);
+        }
 
-        public void UnregisterAll() { }
+        public void UnregisterAll()
+        {
+            this.UnregisterCount++;
+            if (this.FailUnregister) throw new IOException("Cleanup failed.");
+        }
     }
 
     private sealed class NullLogger : IAppLogger

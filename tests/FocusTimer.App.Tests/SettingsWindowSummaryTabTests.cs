@@ -612,6 +612,310 @@ public class SettingsWindowSummaryTabTests
         vm.Dispose();
     }
 
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData(" ")]
+    public async Task MissingLogDirectory_BlocksSavingWithoutChangingThePersistedSettings(string? directory)
+    {
+        var provider = new StubSettingsProvider(new Settings());
+        var vm = Create(new CountingSummaryService(), provider: provider);
+        try
+        {
+            vm.Settings.LogDirectory = directory!;
+            await ((ReactiveCommand<Unit, Unit>)vm.ApplyCommand).Execute().ToTask();
+
+            Assert.False(vm.LastApplySucceeded);
+            Assert.Contains("directories are required", vm.CommitError);
+            Assert.Equal(0, provider.SaveCalls);
+        }
+        finally { vm.Dispose(); }
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData(" ")]
+    public async Task MissingWorklogDirectory_BlocksSaving(string directory)
+    {
+        var provider = new StubSettingsProvider(new Settings());
+        var vm = Create(new CountingSummaryService(), provider: provider);
+        try
+        {
+            vm.Settings.WorklogDirectory = directory;
+            await ((ReactiveCommand<Unit, Unit>)vm.ApplyCommand).Execute().ToTask();
+
+            Assert.False(vm.LastApplySucceeded);
+            Assert.Contains("directories are required", vm.CommitError);
+            Assert.Equal(0, provider.SaveCalls);
+        }
+        finally { vm.Dispose(); }
+    }
+
+    [Fact]
+    public async Task StartupRecovery_ContinuesOnlyAfterRecoveryAndReloadBothSucceed()
+    {
+        var provider = new RecoveryJournalProvider { Pending = true, FailRestore = true };
+        var vm = Create(new CountingSummaryService(), provider: provider);
+        int continuations = 0;
+        vm.SetRecoveryCompleted(() => { continuations++; return Task.CompletedTask; });
+        try
+        {
+            Assert.True(vm.RecoveryRequired);
+            Assert.False(vm.IsSettingsLoaded);
+            Assert.False(vm.TryDiscardAndClose());
+            string recoveryError = vm.CommitError;
+            vm.ActivityPollingIntervalInput = 5;
+            Assert.Equal(recoveryError, vm.CommitError);
+
+            await ((ReactiveCommand<Unit, Unit>)vm.RetryRecoveryCommand).Execute().ToTask();
+            Assert.True(vm.RecoveryRequired);
+            Assert.False(vm.CanEdit);
+            Assert.Equal(0, continuations);
+
+            provider.FailRestore = false;
+            provider.FailLoad = true;
+            await ((ReactiveCommand<Unit, Unit>)vm.RetryRecoveryCommand).Execute().ToTask();
+            Assert.False(vm.RecoveryRequired);
+            Assert.False(vm.IsSettingsLoaded);
+            Assert.True(vm.HasLoadError);
+            Assert.Equal(0, continuations);
+
+            provider.FailLoad = false;
+            await ((ReactiveCommand<Unit, Unit>)vm.RetryRecoveryCommand).Execute().ToTask();
+            Assert.True(vm.IsSettingsLoaded);
+            Assert.True(vm.CanEdit);
+            Assert.False(vm.HasLoadError);
+            Assert.Equal(1, continuations);
+        }
+        finally { vm.Dispose(); }
+    }
+
+    [Fact]
+    public async Task RuntimeRecovery_BlocksCommitAndPreviewButRetainsTheEditableDraft()
+    {
+        var provider = new RecoveryJournalProvider { FailRestore = true };
+        var autoStart = new StubAutoStartService { FailWhenEnabled = true };
+        var manager = new ThemeManager();
+        var vm = Create(new CountingSummaryService(), manager, provider: provider, autoStart: autoStart);
+        int previews = 0;
+        vm.SetAppearancePreview(_ => previews++);
+        try
+        {
+            vm.Settings.AutoStartOnLogin = true;
+            vm.Settings.BreakIntervalMinutes = 25;
+            await ((ReactiveCommand<Unit, Unit>)vm.ApplyCommand).Execute().ToTask();
+            Assert.True(vm.RecoveryRequired);
+            Assert.False(vm.CanCommit);
+            Assert.True(vm.CanEdit);
+            Assert.True(provider.Pending);
+            var appliedThemeBefore = manager.ActiveTheme;
+            int previewsBefore = previews;
+            bool compactBefore = vm.Settings.UseCompactMode;
+            vm.SelectedThemeName = "Light";
+            vm.SetThemeColor(nameof(Theme.TimerText), "#123456");
+            vm.ToggleCompactModePreview();
+            vm.ResetThemeCommand.Execute(null);
+            Assert.Same(appliedThemeBefore, manager.ActiveTheme);
+            Assert.Equal(previewsBefore, previews);
+            Assert.Equal(compactBefore, vm.Settings.UseCompactMode);
+            Assert.False(vm.TryDiscardAndClose());
+            Assert.True(vm.TryDiscardAndClose());
+
+            provider.FailRestore = false;
+            await ((ReactiveCommand<Unit, Unit>)vm.RetryRecoveryCommand).Execute().ToTask();
+            Assert.False(vm.RecoveryRequired);
+            Assert.False(provider.Pending);
+            Assert.True(vm.CanEdit);
+            Assert.Equal(50, provider.Saved.BreakIntervalMinutes);
+            Assert.False(autoStart.Enabled);
+            Assert.False(vm.HasCommitError);
+        }
+        finally { vm.Dispose(); }
+    }
+
+    [Fact]
+    public async Task CommitInProgress_BlocksCloseAndRecoveryRetry()
+    {
+        var provider = new StubSettingsProvider(new Settings());
+        var vm = Create(new CountingSummaryService(), provider: provider);
+        var activation = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        vm.SetRuntimeActivator(_ => activation.Task);
+        var commit = ((ReactiveCommand<Unit, Unit>)vm.ApplyCommand).Execute().ToTask();
+        try
+        {
+            Assert.True(vm.IsCommitting);
+            Assert.False(vm.TryDiscardAndClose());
+            await ((ReactiveCommand<Unit, Unit>)vm.RetryRecoveryCommand).Execute().ToTask();
+            Assert.True(vm.IsCommitting);
+            Assert.False(vm.LastApplySucceeded);
+        }
+        finally
+        {
+            activation.TrySetResult();
+            await commit.WaitAsync(TimeSpan.FromSeconds(5));
+            vm.Dispose();
+        }
+    }
+
+    [Fact]
+    public async Task ImportedTheme_UpdatesTheDraftButDoesNotPersistUntilApply()
+    {
+        var provider = new StubSettingsProvider(new Settings());
+        var themeService = new DelayedImportThemeService();
+        var vm = Create(new CountingSummaryService(), provider: provider, themeService: themeService);
+        try
+        {
+            Task import = vm.ImportThemeFileAsync("custom-theme.json");
+            var imported = new Theme { ThemeName = "Imported", TimerText = "#123456" };
+            themeService.CompleteImport(imported);
+            await import;
+
+            Assert.Equal("Imported", vm.Settings.ActiveThemeName);
+            Assert.Equal("Custom", vm.SelectedThemeName);
+            Assert.Equal("custom-theme.json", vm.Settings.CustomThemePath);
+            Assert.Equal("#123456", vm.Settings.Theme.TimerText);
+            Assert.Equal(0, provider.SaveCalls);
+        }
+        finally { vm.Dispose(); }
+    }
+
+    [Fact]
+    public async Task ImportCompletedAfterDisposal_IsIgnored()
+    {
+        var themeService = new DelayedImportThemeService();
+        var vm = Create(new CountingSummaryService(), themeService: themeService);
+        string initialName = vm.Settings.ActiveThemeName;
+        Task import = vm.ImportThemeFileAsync("late.json");
+        vm.Dispose();
+        themeService.CompleteImport(new Theme { ThemeName = "Too late" });
+
+        await import;
+        await vm.ImportThemeFileAsync("after-disposal.json");
+
+        Assert.Equal(initialName, vm.Settings.ActiveThemeName);
+        Assert.Null(vm.Settings.CustomThemePath);
+    }
+
+    [Theory]
+    [InlineData("UnknownColor")]
+    [InlineData(nameof(Theme.BackgroundOpacity))]
+    public void UnknownOrNonColorProperty_DoesNotMutateTheTheme(string property)
+    {
+        var vm = Create(new CountingSummaryService());
+        try
+        {
+            string original = vm.Settings.Theme.TimerText;
+            vm.SetThemeColor(property, "#123456");
+
+            Assert.Equal(string.Empty, vm.GetThemeColor(property));
+            Assert.Equal(original, vm.Settings.Theme.TimerText);
+        }
+        finally { vm.Dispose(); }
+    }
+
+    [Fact]
+    public void InheritedPlayPauseColor_UsesTheNormalButtonColorUntilOverridden()
+    {
+        var vm = Create(new CountingSummaryService());
+        try
+        {
+            vm.Settings.Theme.PlayPauseColor = null;
+            vm.Settings.Theme.ButtonNormal = "#123456";
+            Assert.Equal("#123456", vm.GetThemeColor(nameof(Theme.PlayPauseColor)));
+            vm.PlayPauseColor = "#abcdef";
+            Assert.Equal("#abcdef", vm.GetThemeColor(nameof(Theme.PlayPauseColor)));
+            vm.Settings.Theme.ButtonNormal = "#000000";
+            Assert.Equal("#abcdef", vm.PlayPauseColor);
+        }
+        finally { vm.Dispose(); }
+    }
+
+    [Fact]
+    public void UnknownEmptyOrRepeatedPresetSelection_DoesNotReplaceTheEditableTheme()
+    {
+        var vm = Create(new CountingSummaryService());
+        try
+        {
+            var initialTheme = vm.Settings.Theme;
+            vm.SelectedThemeName = vm.SelectedThemeName;
+            vm.SelectedThemeName = string.Empty;
+            vm.SelectedThemeName = "Preset no longer installed";
+
+            Assert.Same(initialTheme, vm.Settings.Theme);
+        }
+        finally { vm.Dispose(); }
+    }
+
+    [Fact]
+    public void DeveloperUnlock_RequiresSevenClicksAndNeverRelocksOrSavesTheDraft()
+    {
+        var provider = new StubSettingsProvider(new Settings());
+        var vm = Create(new CountingSummaryService(), provider: provider);
+        try
+        {
+            for (int click = 0; click < 6; click++) vm.RegisterVersionInfoClick();
+            Assert.False(vm.IsDeveloperModeVisible);
+            vm.RegisterVersionInfoClick();
+            Assert.True(vm.IsDeveloperModeVisible);
+            for (int click = 0; click < 7; click++) vm.RegisterVersionInfoClick();
+            Assert.True(vm.IsDeveloperModeVisible);
+            Assert.False(provider.Saved.DeveloperModeEnabled);
+            Assert.Equal(0, provider.SaveCalls);
+        }
+        finally { vm.Dispose(); }
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData(" ")]
+    [InlineData("Debug")]
+    public void EmptyOrUnchangedDeveloperLevel_DoesNotNotifyOrOverwriteTheDraft(string? level)
+    {
+        var vm = Create(new CountingSummaryService());
+        try
+        {
+            var notifications = new List<string?>();
+            vm.PropertyChanged += (_, args) => notifications.Add(args.PropertyName);
+
+            vm.SelectedDeveloperLogLevel = level!;
+
+            Assert.Equal("Debug", vm.Settings.DeveloperLogLevel);
+            Assert.DoesNotContain(nameof(vm.SelectedDeveloperLogLevel), notifications);
+        }
+        finally { vm.Dispose(); }
+    }
+
+    private sealed class RecoveryJournalProvider : ISettingsProvider, ISettingsCommitStore
+    {
+        private Settings _previous = new();
+        public Settings Saved { get; private set; } = new();
+        public bool Pending { get; set; }
+        public bool FailRestore { get; set; }
+        public bool FailLoad { get; set; }
+        public Task<Settings> LoadAsync() => this.Pending
+            ? Task.FromException<Settings>(new SettingsRecoveryRequiredException())
+            : this.FailLoad ? Task.FromException<Settings>(new IOException("Reload failed."))
+            : Task.FromResult(this.Saved.Clone());
+        public Task SaveAsync(Settings settings) { this.Saved = settings.Clone(); return Task.CompletedTask; }
+        public Task<AutoStartRegistration?> GetPendingRecoveryAsync() =>
+            Task.FromResult(this.Pending ? new AutoStartRegistration(false) : null);
+        public Task BeginCommitAsync(Settings settings, AutoStartRegistration previousAutoStart)
+        {
+            this._previous = this.Saved.Clone();
+            this.Saved = settings.Clone();
+            this.Pending = true;
+            return Task.CompletedTask;
+        }
+        public Task RestorePreviousAsync()
+        {
+            if (this.FailRestore) throw new IOException("Rollback failed.");
+            this.Saved = this._previous.Clone();
+            return Task.CompletedTask;
+        }
+        public Task CompleteCommitAsync() { this.Pending = false; return Task.CompletedTask; }
+    }
+
     internal static SettingsWindowViewModel CreateAppearanceEditor() => Create(new CountingSummaryService());
 
     private static SettingsWindowViewModel Create(
