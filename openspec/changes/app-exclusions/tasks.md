@@ -5,17 +5,17 @@ All tasks are in `FocusTimer.Core`, `FocusTimer.Persistence`, and `FocusTimer.Ap
 
 ## 1. Window matcher (Core)
 
-- [ ] 1.1 Add the window rule model and glob matcher (case-insensitive, `*`/`?`, literal other characters, `.exe`-tolerant application pattern, blank-rule invalid, first-match evaluation); verify xUnit tests cover each `window-matching` scenario, including regex metacharacters in patterns.
+- [x] 1.1 Add the window rule model and glob matcher (case-insensitive, `*`/`?`, literal other characters, `.exe`-tolerant application pattern, blank-rule invalid, first-match evaluation); verify xUnit tests cover each `window-matching` scenario, including regex metacharacters in patterns.
 
 ## 2. Tracker exclusion (Core)
 
-- [ ] 2.1 Add the excluded state and `SetExclusionRules` to `SessionTracker`: close the open segment on an excluded sample, open nothing while excluded, start a fresh segment on the next non-excluded sample; verify tests with a fake clock cover switch to and from an excluded app, start on an excluded window, midnight while excluded, and lookup failure while excluded.
-- [ ] 2.2 Make rule changes apply from the next sample without closing segments, and identical lists a no-op; verify tests for rule added and removed while the window is in front and for existing entries staying unchanged.
-- [ ] 2.3 Verify the timer, break reminders, and polling-interval behavior are unchanged by running the existing `SessionTracker` and `ActivityPolling` test suites.
+- [x] 2.1 Add the excluded state and `SetExclusionRules` to `SessionTracker`: close the open segment on an excluded sample, open nothing while excluded, start a fresh segment on the next non-excluded sample; verify tests with a fake clock cover switch to and from an excluded app, start on an excluded window, midnight while excluded, and lookup failure while excluded.
+- [x] 2.2 Make rule changes apply from the next sample without closing segments, and identical lists a no-op; verify tests for rule added and removed while the window is in front and for existing entries staying unchanged.
+- [x] 2.3 Verify the timer, break reminders, and polling-interval behavior are unchanged by running the existing `SessionTracker` and `ActivityPolling` test suites.
 
 ## 3. Settings persistence
 
-- [ ] 3.1 Add the ordered exclusion list to `Settings` (default empty, included in the settings clone) with a property-level tolerant JSON converter that drops malformed or empty rules with a logged warning; verify Persistence tests for round trip, order, missing list, and one bad rule not resetting other settings.
+- [x] 3.1 Add the ordered exclusion list to `Settings` (default empty, included in the settings clone) with a property-level tolerant JSON converter that drops malformed or empty rules with a logged warning; verify Persistence tests for round trip, order, missing list, and one bad rule not resetting other settings.
 
 ## 4. Developer Options editor (App)
 

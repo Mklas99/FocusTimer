@@ -28,6 +28,8 @@ public sealed class SessionTracker
     private long _sessionGeneration;
     private bool _tracking;
     private bool _trackingEnabled = true;
+    private WindowMatchRule[] _exclusionRules = Array.Empty<WindowMatchRule>();
+    private bool _excluded;
 
     /// <summary>Initializes a tracker using system time and unknown device identity.</summary>
     public SessionTracker(IActiveWindowService activeWindowService, IAppLogger logger)
@@ -104,6 +106,16 @@ public sealed class SessionTracker
         return request.Completion.Task;
     }
 
+    /// <summary>Sets the ordered exclusion rules; they apply from the next foreground sample.</summary>
+    public void SetExclusionRules(IEnumerable<WindowMatchRule>? rules)
+    {
+        var valid = (rules ?? Enumerable.Empty<WindowMatchRule>()).Where(r => r is { IsValid: true }).ToArray();
+        lock (_stateLock)
+        {
+            if (!_exclusionRules.SequenceEqual(valid)) _exclusionRules = valid;
+        }
+    }
+
     /// <summary>Changes foreground sampling cadence without changing session boundaries.</summary>
     public void SetPollingInterval(int seconds)
     {
@@ -124,7 +136,7 @@ public sealed class SessionTracker
         long revision;
         lock (_stateLock)
         {
-            if (!_trackingEnabled || !_tracking || _current is null) return Task.CompletedTask;
+            if (!_trackingEnabled || !_tracking || (_current is null && !_excluded)) return Task.CompletedTask;
             SplitAtMidnight(_clock.GetLocalNow());
             if (_captureRunning || _clock.GetElapsedTime(_lastCaptureTimestamp) < TimeSpan.FromSeconds(_pollingIntervalSeconds))
                 return Task.CompletedTask;
@@ -158,7 +170,20 @@ public sealed class SessionTracker
                     {
                         var now = _clock.GetLocalNow();
                         SplitAtMidnight(now);
-                        if (initial is not null) CreateNewEntry(window, now);
+                        var excluded = initial is not null
+                            ? succeeded && WindowRuleMatcher.FindFirst(_exclusionRules, window) is not null
+                            : succeeded ? WindowRuleMatcher.FindFirst(_exclusionRules, window) is not null : _excluded;
+                        if (excluded)
+                        {
+                            CloseCurrentEntry(now, EndReason.ApplicationChange);
+                            _currentWindow = null;
+                            _excluded = true;
+                        }
+                        else if (initial is not null || (succeeded && _excluded))
+                        {
+                            _excluded = false;
+                            CreateNewEntry(window, now);
+                        }
                         else if (succeeded && _current is not null && HasWindowChanged(_currentWindow, window))
                         {
                             CloseCurrentEntry(now, EndReason.ApplicationChange);
@@ -244,6 +269,7 @@ public sealed class SessionTracker
     private void InvalidateSession()
     {
         _tracking = false;
+        _excluded = false;
         _sessionId = null;
         _sessionGeneration++;
         _pendingStart?.Completion.TrySetResult();

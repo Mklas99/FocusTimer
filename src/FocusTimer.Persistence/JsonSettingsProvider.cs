@@ -117,6 +117,14 @@ namespace FocusTimer.Persistence
                     throw new JsonException("The settings file does not contain a settings object.");
                 }
 
+                if (document.RootElement.TryGetProperty("exclusionRules", out JsonElement savedRules)
+                    && savedRules.ValueKind == JsonValueKind.Array
+                    && savedRules.GetArrayLength() != settings.ExclusionRules.Count)
+                {
+                    this._logger?.LogWarning(
+                        $"Ignored {savedRules.GetArrayLength() - settings.ExclusionRules.Count} malformed exclusion rule(s) in {this.SettingsFilePath}.");
+                }
+
                 if (!document.RootElement.TryGetProperty("deviceId", out JsonElement deviceId)
                     || deviceId.ValueKind != JsonValueKind.String
                     || string.IsNullOrWhiteSpace(deviceId.GetString()))

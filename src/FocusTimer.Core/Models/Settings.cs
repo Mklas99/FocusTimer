@@ -24,6 +24,7 @@ namespace FocusTimer.Core.Models
         private bool _developerModeEnabled;
         private string _developerLogLevel = "Debug";
         private int _activityPollingIntervalSeconds = 10;
+        private List<WindowMatchRule> _exclusionRules = new();
         private string? _hotkeyShowHide;
         private string? _hotkeyToggleTimer;
         private Theme _theme = new();
@@ -212,6 +213,16 @@ namespace FocusTimer.Core.Models
             set => this.SetField(ref this._activityPollingIntervalSeconds, value is >= 1 and <= 60 ? value : 10);
         }
 
+        /// <summary>
+        /// Gets or sets the ordered rules for windows whose activity must not be recorded.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonConverter(typeof(WindowMatchRuleListConverter))]
+        public List<WindowMatchRule> ExclusionRules
+        {
+            get => this._exclusionRules;
+            set => this.SetField(ref this._exclusionRules, value ?? new List<WindowMatchRule>());
+        }
+
         // Future: Hotkey settings (placeholders)
 
         /// <summary>
@@ -292,6 +303,7 @@ namespace FocusTimer.Core.Models
             DeveloperModeEnabled = this.DeveloperModeEnabled,
             DeveloperLogLevel = this.DeveloperLogLevel,
             ActivityPollingIntervalSeconds = this.ActivityPollingIntervalSeconds,
+            ExclusionRules = new List<WindowMatchRule>(this.ExclusionRules),
             HotkeyShowHide = this.HotkeyShowHide,
             HotkeyToggleTimer = this.HotkeyToggleTimer,
             Theme = this.Theme.Clone(),
