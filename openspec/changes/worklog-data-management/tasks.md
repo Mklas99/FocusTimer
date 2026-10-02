@@ -33,11 +33,11 @@
 
 ## 5. Worklog window shell and tray entry (App, Host)
 
-- [ ] 5.1 Add `WorklogWindow`, `WorklogWindowViewModel` (selected day limited by `WorklogDayBounds` and today, previous/next/Today/date pick, tab list, no automatic day change at midnight) and `AppController.ShowWorklog()` mirroring `ShowSettings()` including its initialization guard (single instance, activate on repeat), and close it in `ExitApplication`; verify with view model tests and a headless test that a second call reuses the window and that exit closes it
-- [ ] 5.2 Add the "Worklog..." tray item directly above "Settings..." in `App.axaml.cs`; verify with a test or code check of item order and by opening the window from the tray in the running app
-- [ ] 5.3 Register the window, view models, editing service, duration parser, and day bounds in `Program.cs`; verify the app starts and Host tests pass
-- [ ] 5.4 Handle `WorklogChangedEvent` in `TrayStateController` by calling its existing today refresh and tooltip update; verify with a test that the tooltip total changes after an add and after a delete
-- [ ] 5.5 Update the tray description in `README.md` and `ARCHITECTURE.md`; verify they agree with the tray order
+- [x] 5.1 Add `WorklogWindow`, `WorklogWindowViewModel` (selected day limited by `WorklogDayBounds` and today, previous/next/Today/date pick, tab list, no automatic day change at midnight) and `AppController.ShowWorklog()` mirroring `ShowSettings()` including its initialization guard (single instance, activate on repeat), and close it in `ExitApplication`; verify with view model tests and a headless test that a second call reuses the window and that exit closes it
+- [x] 5.2 Add the "Worklog..." tray item directly above "Settings..." in `App.axaml.cs`; verify with a test or code check of item order and by opening the window from the tray in the running app
+- [x] 5.3 Register the window, view models, editing service, duration parser, and day bounds in `Program.cs`; verify the app starts and Host tests pass
+- [x] 5.4 Handle `WorklogChangedEvent` in `TrayStateController` by calling its existing today refresh and tooltip update; verify with a test that the tooltip total changes after an add and after a delete
+- [x] 5.5 Update the tray description in `README.md` and `ARCHITECTURE.md`; verify they agree with the tray order
 
 ## 6. Entries tab (App)
 
