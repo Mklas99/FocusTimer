@@ -16,7 +16,7 @@
 
 ## 3. Finish Apply, OK, and runtime activation
 
-- [ ] 3.1 Replace the fire-and-forget `SettingsApplied` path with an awaited App-owned runtime activation result and prevent concurrent commits; verify tests for widget, topmost, hotkey, and polling reload plus an activation failure that starts compensation.
+- [x] 3.1 Replace the fire-and-forget `SettingsApplied` path with an awaited App-owned runtime activation result and prevent concurrent commits; verify tests for widget, topmost, hotkey, and polling reload plus an activation failure that starts compensation.
 - [x] 3.2 Add a Settings commit coordinator that reconciles Windows registration to the saved candidate, awaits activation, and compensates in reverse order on failure; make the App-owned startup path retry journalled file/registration restoration before activation, and verify fault-injection and repeated-startup-failure tests distinguish ordinary failure from `RecoveryRequired` and block another commit until Retry recovery succeeds.
 - [x] 3.3 Show a warning when saved auto-start differs from observed Windows registration and explain that Apply/OK will reconcile it, including an unrelated edit; verify mismatch, Cancel, successful reconciliation, and failed-reconciliation tests.
 - [x] 3.4 Reject Cancel and title-bar close while a commit runs, without queuing a discard; verify delayed Apply/OK tests keep the window and preview stable until the result, then allow a new close request or successful OK close.
@@ -27,4 +27,4 @@
 ## 4. Integration checks
 
 - [x] 4.1 Run the affected Core, Persistence, App, Host, and Windows-platform tests/builds; verify no regression in startup registration, theme preview, Summary refresh, or developer polling interval behavior.
-- [ ] 4.2 Exercise the Windows Settings window with edits across tabs, Apply followed by more edits and Cancel, close during a delayed commit, imported theme preview, load failure, auto-start drift, and ordinary/incomplete recovery; verify saved JSON, registration, running widget, and visible messages match the spec.
+- [x] 4.2 Exercise the Windows Settings window with edits across tabs, Apply followed by more edits and Cancel, close during a delayed commit, imported theme preview, load failure, auto-start drift, and ordinary/incomplete recovery; verify saved JSON, registration, running widget, and visible messages match the spec.

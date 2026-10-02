@@ -21,4 +21,4 @@ The native fixture writes `appearance-evidence` under its test output directory,
 
 Composition is verified through Avalonia's client and presenter on the Windows desktop platform. Physical keyboard interaction with individual Windows IME language implementations was not exercised; the fixture verifies clearing active preedit text, releasing editor focus, and rejecting routed text during saving. No new dependency, platform-service change, or requirement waiver was needed.
 
-OI-29 and unrelated OI-21/OI-24 visual work remain open. This change has not been archived.
+OI-29 and unrelated OI-21/OI-24 visual work remain open. This change was verified for archive on 2026-10-02; the batch verification and acceptance evidence are recorded in `docs/versions/current/M03Verification.md`.

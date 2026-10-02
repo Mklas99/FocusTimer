@@ -22,7 +22,7 @@ The system SHALL provide a `WidgetScale` setting that resizes fonts and controls
 - **THEN** the widget restores the last successfully applied shell tint opacity
 
 #### Scenario: User cancels an appearance preview
-- **WHEN** the user previews blur or tint changes in Settings and closes without applying
+- **WHEN** the user previews colors, background choice, opacity, overall fade, scale, or compact mode in Settings and closes without applying
 - **THEN** the widget restores the last successfully applied appearance
 
 #### Scenario: User removes the shell tint

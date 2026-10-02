@@ -8,14 +8,14 @@ context: |
   Solution structure (dependency direction: Host -> App, Core, Persistence, Platform.Windows):
     - FocusTimer.Host (net8.0-windows, WinExe): composition root, DI wiring, Avalonia bootstrap. Only project that produces an executable.
     - FocusTimer.App (net8.0): Avalonia UI - XAML views, ReactiveUI ViewModels, converters, AppController/ThemeManager/TrayStateController.
-    - FocusTimer.Core (net8.0): domain models, interfaces, EventBus<T>. Self-contained aside from Serilog. No circular dependencies.
+    - FocusTimer.Core (net8.0): domain models, interfaces, non-generic EventBus. Self-contained aside from Serilog. No circular dependencies.
     - FocusTimer.Persistence (net8.0): JSON settings, CSV worklogs (worklogs/yyyy/MM/yyyy-MM-dd-worklog.csv).
     - FocusTimer.Platform.Windows (net8.0-windows): OS integrations (global hotkeys, notifications, idle detection, active-window polling). Linux equivalents are stubs in FocusTimer.Core/Stubs.
 
   Conventions:
     - Dependency Injection: all services registered/wired in Host.Program, resolved via IServiceProvider (no service locator).
     - MVVM + ReactiveUI: Views bind to ViewModel properties/commands; worklog entries are immutable, while Settings is a mutable observable model.
-    - Event-driven: cross-component communication goes through IEventBus<T>, not direct references.
+    - Event-driven: domain notifications use IEventBus; Settings runtime activation uses an awaited App-owned callback.
     - Naming: PascalCase for classes/interfaces/methods/properties, camelCase with leading underscore for private fields, UPPER_SNAKE_CASE for constants.
     - StyleCop enforced via Directory.Build.props: sorted usings (System first), explicit access modifiers, ~120 char lines, XML docs on at least all public members.
     - Tests use xUnit ([Fact]/[Theory]); quality gate via SonarQube (scripts/run-sonar-dotnet.ps1), pre-commit hooks, `dotnet format`.
@@ -35,7 +35,6 @@ rules:
 # Add advisory guidance for how apply and archive work should be conducted.
 operations:
   archive:
-    guidance:
-      - Summarize what changed as a short, chronological list of concrete steps (what was built/fixed, in the order it happened), not a restatement of the proposal - mirror the style of the most recently archived docs/versions/<version>/Summary.md (e.g. docs/versions/v0.1/Summary.md).
-      - Keep the summary terse: a numbered list of steps plus a one sentence outcome is enough; skip prose padding.
-      - Update docs/versions/current/OpenIssues.md when a change adds, changes, or closes an OI-## item. Update docs/versions/current/Features.md only when the change affects the scope or status of a larger feature or improvement collection.
+    - Summarize what changed as a short, chronological list of concrete steps (what was built/fixed, in the order it happened), not a restatement of the proposal - mirror the style of the most recently archived docs/versions/<version>/Summary.md (e.g. docs/versions/v0.1/Summary.md).
+    - Keep the summary terse: a numbered list of steps plus a one sentence outcome is enough; skip prose padding.
+    - Update docs/versions/current/OpenIssues.md when a change adds, changes, or closes an OI-## item. Update docs/versions/current/Features.md only when the change affects the scope or status of a larger feature or improvement collection.
