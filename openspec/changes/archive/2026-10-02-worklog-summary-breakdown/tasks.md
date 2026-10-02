@@ -21,7 +21,7 @@
 
 ## 4. Settings integration and wiring
 
-- [ ] 4.1 Add a Summary tab to `SettingsWindow.axaml` between Logging and Appearance that hosts `WorklogSummaryView`, expose the summary view model on `SettingsWindowViewModel`, and refresh it when the tab is selected; verify by opening Settings, selecting the tab, and seeing today's rows, and by a test that selecting the tab triggers one refresh
+- [x] 4.1 Add a Summary tab to `SettingsWindow.axaml` between Logging and Appearance that hosts `WorklogSummaryView`, expose the summary view model on `SettingsWindowViewModel`, and refresh it when the tab is selected; verify by opening Settings, selecting the tab, and seeing today's rows, and by a test that selecting the tab triggers one refresh
 - [x] 4.2 Register the summary service, grouping registry with both groupings, the stored-project resolver, and the summary view model in `FocusTimer.Host/Program.cs`; verify the app starts and existing Host tests still pass, and confirm the design-time data context of the settings window still builds
 - [x] 4.3 Confirm no platform-specific code was added, so `FocusTimer.Platform.Windows` and the Linux stubs are untouched; verify with a search of the diff for changes in those projects
 

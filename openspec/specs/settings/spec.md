@@ -6,11 +6,15 @@ Defines the Settings window's structure and its hidden developer-mode unlock.
 ## Requirements
 
 ### Requirement: Settings Tabs
-The system SHALL provide a Settings window with General, Logging, Summary, Appearance, Hotkeys, and About tabs, covering auto-start, start-minimized, always-on-top, break reminders, worklog directory and retention, today's application/project breakdown, theme/opacity, hotkey display, and version/changelog/repo link.
+The system SHALL provide a Settings window with General, Logging, Summary, Appearance, Hotkeys, and About tabs, covering auto-start, start-minimized, always-on-top, break reminders, worklog directory and retention, today's time breakdown, theme/opacity, hotkey display, and version/changelog/repo link.
 
 #### Scenario: User opens Settings
 - **WHEN** the user opens the Settings window
 - **THEN** the General, Logging, Summary, Appearance, Hotkeys, and About tabs are available with their respective controls
+
+#### Scenario: User opens the Summary tab
+- **WHEN** the user selects the Summary tab
+- **THEN** today's breakdown is shown and refreshed
 
 ### Requirement: Hidden Developer Mode
 The system SHALL unlock a Developer section, including a log-level picker and an activity polling interval control, when the user clicks the version label 7 times in the About tab, and SHALL persist the unlock via `DeveloperModeEnabled`.

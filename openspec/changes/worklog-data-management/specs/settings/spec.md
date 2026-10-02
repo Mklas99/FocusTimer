@@ -6,3 +6,7 @@ The system SHALL provide a Settings window with General, Logging, Appearance, Ho
 #### Scenario: User opens Settings
 - **WHEN** the user opens the Settings window
 - **THEN** the General, Logging, Appearance, Hotkeys, and About tabs are available with their respective controls and no Summary tab is shown
+
+#### Scenario: User opens the Summary tab
+- **WHEN** the user looks for the Summary tab in Settings
+- **THEN** there is none, and today's breakdown is available in the Summary tab of the Worklog window instead

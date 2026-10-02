@@ -1,6 +1,6 @@
 ## 0. Prerequisite
 
-- [ ] 0.1 Verify and archive `worklog-summary-breakdown` (F-02) before starting group 1, including its open tasks 3.2 and 4.1; verify `openspec/specs/worklog-summary/spec.md` exists afterwards and `openspec validate worklog-data-management --strict` still passes
+- [x] 0.1 Archive `worklog-summary-breakdown` (F-02) before starting group 1; verified: archived as `2026-10-02-worklog-summary-breakdown`, `openspec/specs/worklog-summary/spec.md` exists, and `openspec validate worklog-data-management --strict` passes. Its task 3.2 (render in two themes incl. High Contrast) was archived unchecked and stays a manual check in 10.5
 
 ## 1. Manual capture source and storage rules (Core, Persistence)
 
@@ -72,4 +72,4 @@
 - [ ] 10.2 Add the window, editing service, groupings, day selection, and day bounds to `ARCHITECTURE.md`; verify no statement contradicts the code or the specs
 - [ ] 10.3 Confirm no change in `FocusTimer.Platform.Windows` or the Linux stubs; verify with a search of the diff
 - [ ] 10.4 Run the full test suite, the StyleCop/`dotnet format` check, and `openspec validate worklog-data-management --strict`; verify all pass and record any pre-existing failures separately
-- [ ] 10.5 Run the app and walk through: open from tray, add a manual entry that overlaps, dismiss the warning, edit duration, delete, change day, switch grouping to by window, press Refresh while tracking, watch the tray total; verify each behaves as specified
+- [ ] 10.5 Run the app and walk through, including the Summary tab in a light theme and in High Contrast (F-02 task 3.2 carried over): open from tray, add a manual entry that overlaps, dismiss the warning, edit duration, delete, change day, switch grouping to by window, press Refresh while tracking, watch the tray total; verify each behaves as specified
