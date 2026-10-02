@@ -41,10 +41,10 @@
 
 ## 6. Entries tab (App)
 
-- [ ] 6.1 Add `WorklogEntriesViewModel` loading the selected day via `QueryAsync` in start order with loading, empty, error, and warning states; verify with view model tests for each state and for a superseded reload
-- [ ] 6.2 Add `WorklogEntriesView` with the table, details of the selected row (ID, revision, last modified), Refresh, warning and error areas, 24x24 hit targets and keyboard focus, using design-system resources; verify it renders in at least two themes including High Contrast
-- [ ] 6.3 Verify entries with commas, quotes, and line breaks display intact; add a view model test with such a title
-- [ ] 6.4 Reload on window activation unless an add/edit dialog is open; verify with a view model test for both cases
+- [x] 6.1 Add `WorklogEntriesViewModel` loading the selected day via `QueryAsync` in start order with loading, empty, error, and warning states; verify with view model tests for each state and for a superseded reload
+- [x] 6.2 Add `WorklogEntriesView` with the table, details of the selected row (ID, revision, last modified), Refresh, warning and error areas, 24x24 hit targets and keyboard focus, using design-system resources; verify it renders in at least two themes including High Contrast; verified by headless Skia renders in Light, Dark, Nord, and High Contrast (found and fixed unthemed list colors and an unthemed date picker background) plus `WorklogWindowThemeTests` loading the window under all seven built-in themes
+- [x] 6.3 Verify entries with commas, quotes, and line breaks display intact; add a view model test with such a title
+- [x] 6.4 Reload on window activation unless an add/edit dialog is open; verify with a view model test for both cases
 
 ## 7. Add, edit, delete UI and overlap warning (App)
 

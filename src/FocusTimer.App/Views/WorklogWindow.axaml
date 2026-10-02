@@ -13,6 +13,19 @@
         Background="{DynamicResource SettingsBackgroundBrush}"
         Foreground="{DynamicResource PrimaryTextBrush}">
 
+    <Window.Styles>
+        <!-- The date picker's text field takes the same input colors as the Settings text fields. -->
+        <Style Selector="CalendarDatePicker /template/ TextBox#PART_TextBox">
+            <Setter Property="Background" Value="{DynamicResource InputBackgroundBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource InputTextBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource InputBorderBrush}" />
+        </Style>
+        <Style Selector="CalendarDatePicker /template/ TextBox#PART_TextBox:pointerover /template/ Border#PART_BorderElement, CalendarDatePicker /template/ TextBox#PART_TextBox:focus /template/ Border#PART_BorderElement">
+            <Setter Property="Background" Value="{DynamicResource InputBackgroundBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource InputFocusBorderBrush}" />
+        </Style>
+    </Window.Styles>
+
     <Window.KeyBindings>
         <KeyBinding Gesture="F5" Command="{Binding RefreshCommand}" />
     </Window.KeyBindings>
@@ -32,6 +45,7 @@
             <CalendarDatePicker Grid.Column="1"
                                 Margin="{StaticResource SpacingThicknessXs}"
                                 MinHeight="{StaticResource MinHitTargetSize}"
+                                Background="Transparent"
                                 SelectedDate="{Binding SelectedDate, Mode=TwoWay}"
                                 DisplayDateStart="{Binding DisplayDateStart}"
                                 DisplayDateEnd="{Binding DisplayDateEnd}"

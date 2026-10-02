@@ -4,6 +4,29 @@
              x:DataType="vm:WorklogEntriesViewModel"
              x:Class="FocusTimer.App.Views.WorklogEntriesView">
 
+    <!-- The table takes its surfaces and text from the theme resources (Fluent's own list colors ignore the
+         selected theme, which made secondary text unreadable on a light list in High Contrast). -->
+    <UserControl.Styles>
+        <Style Selector="ListBox.worklog-table">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+        </Style>
+        <Style Selector="ListBox.worklog-table ListBoxItem">
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+        </Style>
+        <Style Selector="ListBox.worklog-table ListBoxItem:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource TabHoverBackgroundBrush}" />
+            <Setter Property="TextElement.Foreground" Value="{DynamicResource TabTextBrush}" />
+        </Style>
+        <Style Selector="ListBox.worklog-table ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter, ListBox.worklog-table ListBoxItem:selected:pointerover /template/ ContentPresenter#PART_ContentPresenter, ListBox.worklog-table ListBoxItem:selected:focus /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource TabSelectedBackgroundBrush}" />
+            <Setter Property="TextElement.Foreground" Value="{DynamicResource TabSelectedTextBrush}" />
+        </Style>
+        <Style Selector="TextBlock.worklog-manual">
+            <Setter Property="FontWeight" Value="SemiBold" />
+        </Style>
+    </UserControl.Styles>
+
     <Grid RowDefinitions="Auto,Auto,Auto,*,Auto">
 
         <!-- Toolbar -->
@@ -45,6 +68,7 @@
                 <TextBlock Grid.Column="6" Classes="SettingLabel" Text="Source" />
             </Grid>
             <ListBox Grid.Row="1"
+                     Classes="worklog-table"
                      ItemsSource="{Binding Rows}"
                      SelectedItem="{Binding SelectedRow, Mode=TwoWay}"
                      AutomationProperties.Name="Worklog entries">
@@ -57,7 +81,7 @@
                             <TextBlock Grid.Column="3" Text="{Binding ApplicationText}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" ToolTip.Tip="{Binding ApplicationText}" />
                             <TextBlock Grid.Column="4" Text="{Binding WindowText}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" ToolTip.Tip="{Binding WindowText}" Margin="0,0,8,0" />
                             <TextBlock Grid.Column="5" Text="{Binding ProjectText}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" ToolTip.Tip="{Binding ProjectText}" />
-                            <TextBlock Grid.Column="6" Text="{Binding SourceText}" VerticalAlignment="Center" Foreground="{DynamicResource SecondaryTextBrush}" />
+                            <TextBlock Grid.Column="6" Text="{Binding SourceText}" VerticalAlignment="Center" Classes.worklog-manual="{Binding IsManual}" />
                         </Grid>
                     </DataTemplate>
                 </ListBox.ItemTemplate>
@@ -69,7 +93,8 @@
                 Margin="0,8,0,0"
                 Padding="12"
                 CornerRadius="{StaticResource RadiusSm}"
-                Background="{DynamicResource SurfaceSubtleBrush}"
+                BorderThickness="1"
+                BorderBrush="{DynamicResource BorderSubtleBrush}"
                 IsVisible="{Binding HasSelection}">
             <Grid x:DataType="vm:WorklogEntryRowViewModel"
                   DataContext="{Binding SelectedRow}"
