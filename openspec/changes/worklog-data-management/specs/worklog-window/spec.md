@@ -27,7 +27,7 @@ The system SHALL provide Entries, Timeline, and Summary tabs in the Worklog wind
 - **THEN** all Worklog tabs work and Settings edits are neither required nor affected
 
 ### Requirement: Single-Day Selection
-The system SHALL show exactly one local calendar day at a time across all Worklog tabs, SHALL default to the current local day, and SHALL let the user step to the previous or next day, jump back to Today, and pick a date.
+The system SHALL show exactly one local calendar day at a time across all Worklog tabs, SHALL default to the current local day, and SHALL let the user step to the previous or next day, jump back to Today, and pick a date. The selectable days SHALL run from today minus (data retention days minus one) up to today, and SHALL be unlimited into the past when retention is turned off.
 
 #### Scenario: Day changes
 - **WHEN** the user selects a previous day
@@ -36,6 +36,14 @@ The system SHALL show exactly one local calendar day at a time across all Worklo
 #### Scenario: Future day
 - **WHEN** the user tries to select a day after today
 - **THEN** the selection is not changed
+
+#### Scenario: Day outside the retention window
+- **WHEN** the user tries to select a day earlier than the retention window allows
+- **THEN** the selection is not changed and the earliest available day is indicated
+
+#### Scenario: Window open past midnight
+- **WHEN** the window stays open across local midnight
+- **THEN** the selected day does not change by itself, and the Today control selects the new current day
 
 #### Scenario: Day has no entries
 - **WHEN** the selected day has no worklog file or no entries
@@ -61,7 +69,7 @@ The system SHALL list each stored entry of the selected day in start-time order 
 - **THEN** an error message is shown and the table is not presented as empty
 
 ### Requirement: Refresh Behavior
-The system SHALL reload the selected day when the user selects a tab, presses Refresh, changes the day, or after a successful add, edit, or delete, and a newer reload SHALL supersede an older one.
+The system SHALL reload the selected day when the user selects a tab, presses Refresh, changes the day, activates the window (unless an add or edit dialog is open), or after a successful add, edit, or delete, and a newer reload SHALL supersede an older one.
 
 #### Scenario: Tab selected
 - **WHEN** the user switches to the Summary or Entries tab
@@ -70,6 +78,10 @@ The system SHALL reload the selected day when the user selects a tab, presses Re
 #### Scenario: Entry persisted while the window is open
 - **WHEN** the tracker persists a new entry for the selected day and the user presses Refresh
 - **THEN** the entry appears in Entries and in the Summary totals
+
+#### Scenario: Window activated
+- **WHEN** the user returns to the Worklog window from another window and no add or edit dialog is open
+- **THEN** the selected day is reloaded
 
 #### Scenario: Slow reload superseded
 - **WHEN** the user changes the day while a previous reload is still running

@@ -13,6 +13,12 @@ Users can record time automatically but cannot look at individual entries, fix a
 - Summary gains a third grouping, **by window**, next to by application and by project.
 - Editing and deleting use the store's revision check. A stale revision or a file in use is reported with a clear message and a reload, not a silent overwrite.
 - Settings loses its Summary tab.
+- The tracker closes a segment at 23:59:59 and starts the next at 00:00:00 at midnight, so every entry starts and ends on one local date (the one second between is not recorded).
+- The day selector and manual entry dates are limited to the retention window (today minus `DataRetentionDays - 1`; unlimited when retention is off), so manual time is never added for a day that cleanup would delete.
+- Manual entries are allowed even when work logging is off. Any add, edit, or delete of today's time refreshes the tray "Today" total.
+- The project field accepts free text and offers a dropdown of projects already used on the selected day and today.
+
+Prerequisite: the `worklog-summary-breakdown` change (F-02) is verified and archived first, because this change modifies its `worklog-summary` capability.
 
 Out of scope: editing start or end times directly, editing the application, multi-day or range views, export (OI-12), rule-based project detection (OI-08), the report window filters from OI-04 beyond day selection, and Linux-specific work (no platform code is touched).
 
@@ -23,15 +29,16 @@ Out of scope: editing start or end times directly, editing the application, mult
 - `worklog-entry-management`: Adding manual entries and editing or deleting existing ones, including field rules, overlap warnings, and conflict handling.
 
 ### Modified Capabilities
-- `worklog-storage`: Adds the `Manual` capture source so manual entries round-trip through storage.
+- `worklog-storage`: Adds the `Manual` capture source and corrects the same-day update rule so older entries ending at midnight can still be edited.
 - `worklog-summary`: Adds the by-window grouping and day-based range selection. This capability is introduced by the not yet archived `worklog-summary-breakdown` change, which must be archived first.
+- `activity-tracking`: Midnight segmentation closes at 23:59:59 and restarts at 00:00:00.
 - `settings`: The Settings window no longer has a Summary tab.
 - `system-tray`: The tray menu gains a Worklog entry above Settings.
 
 ## Impact
 
-- `FocusTimer.Core`: new `CaptureSource.Manual`, an editing service with overlap detection, a by-window grouping. No platform code, so nothing is Windows-only and no Linux stub is needed.
-- `FocusTimer.Persistence`: CSV codec maps the new capture source; no storage format version change expected (verify during implementation).
+- `FocusTimer.Core`: new `CaptureSource.Manual`, an editing service with overlap detection, a duration parser, a by-window grouping, and the 23:59:59 midnight split in `SessionTracker`. No platform code, so nothing is Windows-only and no Linux stub is needed.
+- `FocusTimer.Persistence`: CSV codec maps the new capture source; the same-day check in `MutateAsync` compares against the start date; no storage format version change expected.
 - `FocusTimer.App`: new Worklog window, view models and views (entries, timeline, add/edit dialog); `AppController.ShowWorklog`; tray menu item in `App.axaml.cs`; Summary view model re-hosted; `SettingsWindow` and its view model lose the Summary tab.
 - `FocusTimer.Host`: DI registration.
 - Tests: Core (service, grouping, overlap), Persistence (manual round trip, edit/delete conflicts), App (view models, refresh behavior), headless view test for the window.
