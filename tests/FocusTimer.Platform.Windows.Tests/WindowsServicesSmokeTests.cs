@@ -1,21 +1,25 @@
 namespace FocusTimer.Platform.Windows.Tests;
 
 using FocusTimer.Core.Models;
+using Microsoft.Win32;
 
 public class WindowsServicesSmokeTests
 {
     [Fact]
     public void AutoStartService_SetAndQuery_DoNotThrow()
     {
-        var service = new WindowsAutoStartService();
-
-        var ex = Record.Exception(() =>
+        string keyPath = $@"Software\FocusTimerTests\{Guid.NewGuid():N}";
+        Registry.CurrentUser.CreateSubKey(keyPath)?.Dispose();
+        try
         {
+            var service = new WindowsAutoStartService(keyPath, null);
             service.SetAutoStart(enabled: false);
-            _ = service.IsAutoStartEnabled();
-        });
-
-        Assert.Null(ex);
+            Assert.False(service.IsAutoStartEnabled());
+        }
+        finally
+        {
+            Registry.CurrentUser.DeleteSubKeyTree(keyPath, throwOnMissingSubKey: false);
+        }
     }
 
     [Fact]

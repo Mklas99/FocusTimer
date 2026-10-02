@@ -9,6 +9,154 @@ namespace FocusTimer.App.Tests
     public class ThemeManagerTests
     {
         [Fact]
+        public void ApplyTheme_SameAppearancePreservesBrushInstances()
+        {
+            var manager = new ThemeManager();
+            var resources = new ResourceDictionary();
+            var theme = new Core.Services.ThemeService().GetBuiltInTheme("Solarized Dark")!;
+            manager.ApplyTheme(theme, resources);
+            string[] keys = ["WindowBackgroundBrush", "WidgetShellTintBrush", "WidgetShellFallbackBrush",
+                "TimerTextBrush", "SystemAccentColorBrush", "SettingsBackgroundBrush", "FocusRingBrush",
+                "SettingsAccordionHeaderBrush", "WidgetShellActiveBrush"];
+            object?[] brushes = keys.Select(key => resources[key]).ToArray();
+
+            manager.ApplyTheme(theme.Clone(), resources);
+
+            for (int index = 0; index < keys.Length; index++)
+            {
+                Assert.Same(brushes[index], resources[keys[index]]);
+            }
+        }
+
+        [Fact]
+        public void ApplyTheme_ClockOpacityPreservesUnchangedBrushes()
+        {
+            var manager = new ThemeManager();
+            var resources = new ResourceDictionary();
+            var theme = new Core.Services.ThemeService().GetBuiltInTheme("Solarized Dark")!;
+            manager.ApplyTheme(theme, resources);
+            object? background = resources["WidgetShellTintBrush"];
+            object? accent = resources["SystemAccentColorBrush"];
+            object? timer = resources["TimerTextBrush"];
+
+            theme.TimerOpacity = 0.25;
+            manager.ApplyTheme(theme, resources);
+
+            Assert.Same(background, resources["WidgetShellTintBrush"]);
+            Assert.Same(accent, resources["SystemAccentColorBrush"]);
+            Assert.Same(timer, resources["TimerTextBrush"]);
+            Assert.Equal(1, Assert.IsType<SolidColorBrush>(resources["TimerTextBrush"]).Opacity);
+            Assert.Equal(0.25, resources["TimerOpacity"]);
+        }
+
+        [Fact]
+        public void ApplyTheme_BackgroundOpacityDoesNotChangeForegroundBrushes()
+        {
+            var manager = new ThemeManager();
+            var dict = new ResourceDictionary();
+            var theme = new Theme { BackgroundOpacity = 0.8 };
+            manager.ApplyTheme(theme, dict);
+            var timerBrush = Assert.IsType<SolidColorBrush>(dict["TimerTextBrush"]);
+            var buttonBrush = Assert.IsType<SolidColorBrush>(dict["ButtonNormalBrush"]);
+            var projectBrush = Assert.IsType<SolidColorBrush>(dict["ProjectTagBackgroundBrush"]);
+
+            theme.BackgroundOpacity = 0.2;
+            manager.ApplyTheme(theme, dict);
+
+            Assert.Equal(0.2, Assert.IsType<SolidColorBrush>(dict["WidgetShellTintBrush"]).Opacity);
+            var updatedTimer = Assert.IsType<SolidColorBrush>(dict["TimerTextBrush"]);
+            var updatedButton = Assert.IsType<SolidColorBrush>(dict["ButtonNormalBrush"]);
+            var updatedProject = Assert.IsType<SolidColorBrush>(dict["ProjectTagBackgroundBrush"]);
+            Assert.Equal((timerBrush.Color, timerBrush.Opacity), (updatedTimer.Color, updatedTimer.Opacity));
+            Assert.Equal((buttonBrush.Color, buttonBrush.Opacity), (updatedButton.Color, updatedButton.Opacity));
+            Assert.Equal((projectBrush.Color, projectBrush.Opacity), (updatedProject.Color, updatedProject.Opacity));
+        }
+
+        [Fact]
+        public void WidgetShell_OffKeepsTintOpacityOnTransparentDesktop()
+        {
+            var manager = new ThemeManager();
+            var dict = new ResourceDictionary();
+            manager.ApplyTheme(new Theme { WidgetBlurMode = WidgetBlurModes.Off, BackgroundOpacity = 0 }, dict);
+
+            manager.ReportActualWidgetTransparency(WindowTransparencyLevel.Transparent);
+            Assert.False(manager.IsWidgetShellFallbackActive);
+            Assert.Same(dict["WidgetShellTintBrush"], dict["WidgetShellActiveBrush"]);
+
+            manager.ApplyTheme(new Theme { WidgetBlurMode = WidgetBlurModes.Off, BackgroundOpacity = 0 }, dict);
+            Assert.False(manager.IsWidgetShellFallbackActive);
+            Assert.Same(dict["WidgetShellTintBrush"], dict["WidgetShellActiveBrush"]);
+        }
+
+        [Fact]
+        public void WidgetShell_HighContrastRemainsSolidOnTransparentDesktop()
+        {
+            var manager = new ThemeManager();
+            var dict = new ResourceDictionary();
+            var theme = new Core.Services.ThemeService().GetBuiltInTheme("High Contrast")!;
+            theme.BackgroundOpacity = 0;
+            theme.WidgetBlurMode = WidgetBlurModes.Off;
+            manager.ApplyTheme(theme, dict);
+            manager.ReportActualWidgetTransparency(WindowTransparencyLevel.Transparent);
+
+            Assert.True(manager.IsWidgetShellFallbackActive);
+            Assert.Same(dict["WidgetShellFallbackBrush"], dict["WidgetShellActiveBrush"]);
+        }
+
+        [Fact]
+        public void WidgetShell_SolidIgnoresSavedTintOpacityWithoutDimmingForeground()
+        {
+            var manager = new ThemeManager();
+            var dict = new ResourceDictionary();
+            manager.ApplyTheme(new Theme { WidgetBlurMode = WidgetBlurModes.Solid, BackgroundOpacity = 0 }, dict);
+            manager.ReportActualWidgetTransparency(WindowTransparencyLevel.Transparent);
+
+            Assert.True(manager.IsWidgetShellFallbackActive);
+            Assert.Same(dict["WidgetShellFallbackBrush"], dict["WidgetShellActiveBrush"]);
+            Assert.Equal(1, Assert.IsType<SolidColorBrush>(dict["WidgetShellActiveBrush"]).Opacity);
+            Assert.Equal(0, manager.ActiveTheme!.BackgroundOpacity);
+        }
+
+        [Theory]
+        [InlineData(WidgetBlurModes.Off, "Transparent")]
+        public void WidgetShell_ZeroTintStaysClearAtEverySupportedTransparencyLevel(
+            string mode,
+            string actualLevelName)
+        {
+            var manager = new ThemeManager();
+            var dict = new ResourceDictionary();
+            manager.ApplyTheme(new Theme { WidgetBlurMode = mode, BackgroundOpacity = 0 }, dict);
+
+            WindowTransparencyLevel actualLevel = actualLevelName switch
+            {
+                "Blur" => WindowTransparencyLevel.Blur,
+                "AcrylicBlur" => WindowTransparencyLevel.AcrylicBlur,
+                _ => WindowTransparencyLevel.Transparent,
+            };
+            manager.ReportActualWidgetTransparency(actualLevel);
+
+            Assert.False(manager.IsWidgetShellFallbackActive);
+            Assert.Same(dict["WidgetShellTintBrush"], dict["WidgetShellActiveBrush"]);
+            Assert.Equal(0, Assert.IsType<SolidColorBrush>(dict["WidgetShellActiveBrush"]).Opacity);
+        }
+
+
+        [Fact]
+        public void ApplyTheme_PublishesAppearanceSnapshot()
+        {
+            var manager = new ThemeManager();
+            Theme? published = null;
+            manager.ThemeApplied += theme => published = theme;
+            var theme = new Theme { WidgetBlurMode = WidgetBlurModes.Solid };
+
+            manager.ApplyTheme(theme, new ResourceDictionary());
+            theme.WidgetBlurMode = WidgetBlurModes.Off;
+
+            Assert.Equal(WidgetBlurModes.Solid, published!.WidgetBlurMode);
+            Assert.Equal(WidgetBlurModes.Solid, manager.ActiveTheme!.WidgetBlurMode);
+        }
+
+        [Fact]
         public void ApplyTheme_GivenThemeAndResourceDictionary_PopulatesAllExpectedResources()
         {
             var manager = new ThemeManager();
@@ -35,13 +183,51 @@ namespace FocusTimer.App.Tests
             Assert.True(dict.ContainsKey("BorderSubtleBrush"));
             Assert.True(dict.ContainsKey("SurfaceSubtleBrush"));
             Assert.True(dict.ContainsKey("ActionPrimaryBrush"));
-            Assert.True(dict.ContainsKey("WidgetBaseLayerBrush"));
+            Assert.True(dict.ContainsKey("WidgetShellTintBrush"));
+            Assert.True(dict.ContainsKey("WidgetShellFallbackBrush"));
 
             var bgBrush = Assert.IsType<SolidColorBrush>(dict["WindowBackgroundBrush"]);
             Assert.Equal(0.9, bgBrush.Opacity);
 
+            var shellTint = Assert.IsType<SolidColorBrush>(dict["WidgetShellTintBrush"]);
+            var shellFallback = Assert.IsType<SolidColorBrush>(dict["WidgetShellFallbackBrush"]);
+            Assert.Equal(0.9, shellTint.Opacity);
+            Assert.Equal(1.0, shellFallback.Opacity);
+
             var focusRingBrush = Assert.IsType<SolidColorBrush>(dict["FocusRingBrush"]);
             Assert.Equal(Color.Parse("#0078D7"), focusRingBrush.Color);
+        }
+
+        [Fact]
+        public void ApplyTheme_UsesIndependentInputFocusAndSelectedTabColorsAcrossUpdates()
+        {
+            var manager = new ThemeManager();
+            var resources = new ResourceDictionary();
+            var theme = new Theme
+            {
+                AccentPrimary = "#112233",
+                InputFocusBorder = "#445566",
+                TabSelectedBackground = "#778899",
+            };
+
+            manager.ApplyTheme(theme, resources);
+            Assert.Equal(Color.Parse(theme.InputFocusBorder), resources["InputFocusBorderColor"]);
+            Assert.Equal(Color.Parse(theme.InputFocusBorder),
+                Assert.IsType<SolidColorBrush>(resources["InputFocusBorderBrush"]).Color);
+            Assert.Equal(Color.Parse(theme.TabSelectedBackground), resources["TabSelectedBackgroundColor"]);
+            Assert.Equal(Color.Parse(theme.TabSelectedBackground),
+                Assert.IsType<SolidColorBrush>(resources["TabSelectedBackgroundBrush"]).Color);
+
+            theme.InputFocusBorder = "#AABBCC";
+            theme.TabSelectedBackground = "#DDEEFF";
+            manager.ApplyTheme(theme, resources);
+
+            Assert.Equal(Color.Parse(theme.InputFocusBorder), resources["InputFocusBorderColor"]);
+            Assert.Equal(Color.Parse(theme.InputFocusBorder),
+                Assert.IsType<SolidColorBrush>(resources["InputFocusBorderBrush"]).Color);
+            Assert.Equal(Color.Parse(theme.TabSelectedBackground), resources["TabSelectedBackgroundColor"]);
+            Assert.Equal(Color.Parse(theme.TabSelectedBackground),
+                Assert.IsType<SolidColorBrush>(resources["TabSelectedBackgroundBrush"]).Color);
         }
 
         [Fact]
@@ -59,6 +245,8 @@ namespace FocusTimer.App.Tests
 
             var bgBrush = Assert.IsAssignableFrom<IBrush>(dict["WindowBackgroundBrush"]);
             Assert.Equal(Brushes.Transparent, bgBrush);
+            Assert.Equal(0.0, Assert.IsType<SolidColorBrush>(dict["WidgetShellTintBrush"]).Opacity);
+            Assert.Equal(1.0, Assert.IsType<SolidColorBrush>(dict["WidgetShellFallbackBrush"]).Opacity);
         }
 
         [Fact]
@@ -75,6 +263,7 @@ namespace FocusTimer.App.Tests
             var bgBrush = Assert.IsType<SolidColorBrush>(dict["WindowBackgroundBrush"]);
             Assert.Equal(Color.Parse("#000000"), bgBrush.Color);
             Assert.Equal(1.0, bgBrush.Opacity);
+            Assert.Equal(1.0, Assert.IsType<SolidColorBrush>(dict["WidgetShellTintBrush"]).Opacity);
 
             var focusRingBrush = Assert.IsType<SolidColorBrush>(dict["FocusRingBrush"]);
             Assert.Equal(Color.Parse("#00FFFF"), focusRingBrush.Color);

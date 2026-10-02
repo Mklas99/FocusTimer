@@ -50,8 +50,7 @@
                 Width="{Binding ButtonSize}"
                 Height="{Binding ButtonSize}">
                     <materialIcons:MaterialIcon
-                    Kind="{Binding IsRunning, Converter={StaticResource PlayPauseConverter}}"
-                    Foreground="{DynamicResource ButtonNormalBrush}"
+                    Classes="widget-icon play-pause-icon" Kind="{Binding IsRunning, Converter={StaticResource PlayPauseConverter}}"
                     Width="{Binding IconSize}"
                     Height="{Binding IconSize}" />
                 </Button>
@@ -66,7 +65,7 @@
                 Width="{Binding ButtonSize}"
                 Height="{Binding ButtonSize}">
                     <materialIcons:MaterialIcon Kind="Refresh"
-                    Foreground="{DynamicResource ButtonNormalBrush}"
+                    Classes="widget-icon"
                     Width="{Binding IconSize}"
                     Height="{Binding IconSize}" />
                 </Button>
@@ -81,7 +80,7 @@
                 Width="{Binding ButtonSize}"
                 Height="{Binding ButtonSize}">
                     <materialIcons:MaterialIcon Kind="ChevronDown"
-                    Foreground="{DynamicResource ButtonNormalBrush}"
+                    Classes="widget-icon"
                     Width="{Binding IconSize}"
                     Height="{Binding IconSize}">
                         <materialIcons:MaterialIcon.RenderTransform>
@@ -101,7 +100,7 @@
                 Width="{Binding ButtonSize}"
                 Height="{Binding ButtonSize}">
                     <materialIcons:MaterialIcon Kind="Menu"
-                    Foreground="{DynamicResource ButtonNormalBrush}"
+                    Classes="widget-icon"
                     Width="{Binding IconSize}"
                     Height="{Binding IconSize}" />
                 </Button>

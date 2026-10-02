@@ -271,6 +271,36 @@ namespace FocusTimer.Core.Models
         }
 
         /// <summary>
+        /// Creates an independent copy of all persisted settings.
+        /// </summary>
+        /// <returns>A settings snapshot with an independent theme.</returns>
+        public Settings Clone() => new()
+        {
+            AutoStartOnLogin = this.AutoStartOnLogin,
+            StartMinimized = this.StartMinimized,
+            AlwaysOnTop = this.AlwaysOnTop,
+            BreakIntervalMinutes = this.BreakIntervalMinutes,
+            BreakRemindersEnabled = this.BreakRemindersEnabled,
+            RequireBreakReminderAcknowledgement = this.RequireBreakReminderAcknowledgement,
+            LogDirectory = this.LogDirectory,
+            WorklogDirectory = this.WorklogDirectory,
+            WorkLoggingEnabled = this.WorkLoggingEnabled,
+            DataRetentionDays = this.DataRetentionDays,
+            WidgetScale = this.WidgetScale,
+            WidgetOpacity = this.WidgetOpacity,
+            UseCompactMode = this.UseCompactMode,
+            DeveloperModeEnabled = this.DeveloperModeEnabled,
+            DeveloperLogLevel = this.DeveloperLogLevel,
+            ActivityPollingIntervalSeconds = this.ActivityPollingIntervalSeconds,
+            HotkeyShowHide = this.HotkeyShowHide,
+            HotkeyToggleTimer = this.HotkeyToggleTimer,
+            Theme = this.Theme.Clone(),
+            ActiveThemeName = this.ActiveThemeName,
+            CustomThemePath = this.CustomThemePath,
+            DeviceId = this.DeviceId,
+        };
+
+        /// <summary>
         /// Raises the PropertyChanged event for a given property name.
         /// </summary>
         /// <param name="propertyName">The name of the property that changed.</param>

@@ -205,6 +205,8 @@ Examples:
 - transient popover → Acrylic/frosted → blur → tinted solid
 - dense content → solid / near-solid directly
 
+The timer widget is a deliberate long-lived shell exception: it offers Off (`Transparent`) and Solid (opaque theme color). Solid ignores but preserves the tint slider value. High Contrast or unavailable transparency also uses an opaque shell. The tint slider does not change clock or control opacity. Blur is hidden until it can visibly differ from Off; OI-28 tracks a native composition prototype without desktop capture.
+
 Never rely on an accidental fallback sequence.
 
 Every translucent material MUST have a readable opaque or near-opaque fallback for reduced-transparency modes, unsupported composition, remote sessions, compositor restrictions, battery/performance constraints, high-contrast modes, and platform limitations.

@@ -30,6 +30,7 @@ namespace FocusTimer.Core.Models
 
         // Buttons & Controls
         private string _buttonNormal = "#4CDEFFBD";
+        private string? _playPauseColor;
         private string _buttonHover = "#5DEFFCE7";
         private string _buttonPressed = "#3BBD99AC";
         private string _buttonDisabled = "#40FFFFFF";
@@ -37,6 +38,7 @@ namespace FocusTimer.Core.Models
         // Opacity Controls
         private double _widgetBaseOpacity = 1.0;
         private double _backgroundOpacity = 1.0;
+        private string _widgetBlurMode = WidgetBlurModes.Off;
         private double _timerOpacity = 1.0;
         private double _buttonOpacity = 1.0;
 
@@ -522,6 +524,16 @@ namespace FocusTimer.Core.Models
         }
 
         /// <summary>
+        /// Gets or sets the widget backdrop choice. The property name is retained for saved-theme compatibility.
+        /// </summary>
+        [JsonPropertyName("widgetBlurMode")]
+        public string WidgetBlurMode
+        {
+            get => this._widgetBlurMode;
+            set => this.SetField(ref this._widgetBlurMode, WidgetBlurModes.Normalize(value));
+        }
+
+        /// <summary>
         /// Gets or sets the timer opacity.
         /// </summary>
         [JsonPropertyName("timerOpacity")]
@@ -549,6 +561,14 @@ namespace FocusTimer.Core.Models
             }
         }
 
+        /// <summary>Gets or sets the normal Play/Pause icon color; null inherits ButtonNormal.</summary>
+        [JsonPropertyName("playPauseColor")]
+        public string? PlayPauseColor
+        {
+            get => this._playPauseColor;
+            set => this.SetField(ref this._playPauseColor, value);
+        }
+
         /// <summary>
         /// Creates a deep copy of this theme.
         /// </summary>
@@ -569,6 +589,7 @@ namespace FocusTimer.Core.Models
                 TimerText = this.TimerText,
                 TimerBackground = this.TimerBackground,
                 ButtonNormal = this.ButtonNormal,
+                PlayPauseColor = this.PlayPauseColor,
                 ButtonHover = this.ButtonHover,
                 ButtonPressed = this.ButtonPressed,
                 ButtonDisabled = this.ButtonDisabled,
@@ -597,6 +618,7 @@ namespace FocusTimer.Core.Models
                 TabText = this.TabText,
                 TabSelectedText = this.TabSelectedText,
                 BackgroundOpacity = this.BackgroundOpacity,
+                WidgetBlurMode = this.WidgetBlurMode,
                 TimerOpacity = this.TimerOpacity,
                 ButtonOpacity = this.ButtonOpacity,
             };

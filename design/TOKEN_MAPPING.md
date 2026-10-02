@@ -20,7 +20,7 @@ Views (FullModeView, CompactModeView, SettingsWindow, etc.)
 
 | Theme.cs Property | Type | Avalonia Semantic Key | Semantic Role |
 |---|---|---|---|
-| `WindowBackground` | Hex Color | `WindowBackgroundColor`, `WindowBackgroundBrush` | Base surface for timer widget |
+| `WindowBackground` | Hex Color | `WindowBackgroundColor`, `WindowBackgroundBrush`, `WidgetShellTintBrush`, `WidgetShellFallbackBrush`, `WidgetShellActiveBrush` | Widget tint color and opaque material fallback; active brush follows the achieved backdrop |
 | `WindowForeground` | Hex Color | `WindowForegroundColor`, `WindowForegroundBrush` | High-emphasis window chrome |
 | `WindowBorder` | Hex Color | `WindowBorderColor`, `WindowBorderBrush` | Widget window outline |
 | `PrimaryText` | Hex Color | `PrimaryTextColor`, `PrimaryTextBrush` | Main typography foreground |
@@ -39,6 +39,7 @@ Views (FullModeView, CompactModeView, SettingsWindow, etc.)
 | `WarningColor` | Hex Color | `WarningColor`, `WarningBrush` | Break reminder, warning status |
 | `InputBackground` | Hex Color | `InputBackgroundColor`, `InputBackgroundBrush` | Text boxes, numeric inputs background |
 | `InputBorder` | Hex Color | `InputBorderColor`, `InputBorderBrush` | Input field borders |
+| `InputFocusBorder` | Hex Color | `InputFocusBorderColor`, `InputFocusBorderBrush` | Focused Settings input border, independent of the accent color |
 | `InputText` | Hex Color | `InputTextColor`, `InputTextBrush` | Input field text foreground |
 | `ProjectTagBackground` | Hex Color | `ProjectTagBackgroundColor`, `ProjectTagBackgroundBrush` | Project input tag background |
 | `ProjectTagBorder` | Hex Color | `ProjectTagBorderColor`, `ProjectTagBorderBrush` | Project input tag border |
@@ -47,6 +48,7 @@ Views (FullModeView, CompactModeView, SettingsWindow, etc.)
 | `SettingsSectionHeader`| Hex Color | `SettingsSectionHeaderColor`, `SettingsSectionHeaderBrush` | Settings section header text |
 | `SettingsLabelText` | Hex Color | `SettingsLabelTextColor`, `SettingsLabelTextBrush` | Settings label text |
 | `TabBackground` | Hex Color | `TabBackgroundColor`, `TabBackgroundBrush` | Tab strip background |
+| `TabSelectedBackground` | Hex Color | `TabSelectedBackgroundColor`, `TabSelectedBackgroundBrush` | Selected Settings tab background, independent of the accent color |
 | `TabHoverBackground` | Hex Color | `TabHoverBackgroundColor`, `TabHoverBackgroundBrush` | Tab hover state |
 | `TabText` | Hex Color | `TabTextColor`, `TabTextBrush` | Tab header text |
 | `TabSelectedText` | Hex Color | `TabSelectedTextColor`, `TabSelectedTextBrush` | Active tab text |
@@ -55,9 +57,14 @@ Views (FullModeView, CompactModeView, SettingsWindow, etc.)
 
 | Theme.cs Property | Clamped Range | Avalonia Resource | Target Element |
 |---|---|---|---|
-| `BackgroundOpacity` | 0.0 – 1.0 | `BackgroundOpacity`, `WindowBackgroundBrush.Opacity` | Widget material background surface |
-| `TimerOpacity` | 0.0 – 1.0 | `TimerOpacity`, `TimerTextBrush.Opacity` | Elapsed time digits layer |
-| `ButtonOpacity` | 0.0 – 1.0 | `ButtonOpacity`, `ButtonNormalBrush.Opacity` | Control buttons layer |
+| `BackgroundOpacity` | 0.0 – 1.0 | `WidgetShellTintBrush.Opacity` | Widget shell tint only; blur stays independent |
+| `WidgetBlurMode` | Off / Solid | Window transparency hint and shell fill | Background effect; legacy Soft/Strong/Blur values load as Off |
+| `TimerOpacity` | 0.0 – 1.0 | `TimerTextBrush.Opacity`, clock layer opacity | Elapsed time digits layer |
+| `ButtonOpacity` | 0.0 – 1.0 | `ButtonNormalBrush.Opacity`, controls layer opacity | Control buttons layer |
+
+`Settings.WidgetOpacity` fades the window as a whole. `WidgetBaseOpacity` remains readable in older theme files but does not render a second shell layer.
+
+`WidgetShellActiveBrush` uses selected tint opacity for Off. Solid, High Contrast, or unavailable transparency uses the opaque fallback. Blur is hidden until it can visibly differ from Off.
 
 ## 4. Built-in Theme Coverage Verification
 
@@ -71,3 +78,5 @@ All 7 built-in themes define every property listed above:
 - **High Contrast**
 
 Theme switching modifies these resources at runtime via `ThemeManager.ApplyTheme()`. Invariant geometry (spacing, corner radii, font metrics) remains constant across all themes.
+
+Settings text, input, and tab roles are scoped to the Settings window. The seven built-in palettes include contrast adjustments for Dark input focus, Light selected tabs, Solarized Dark labels and tabs, Nord focus and selected tabs, and Dracula selected tabs. The measured pairs and visual check are recorded in [SETTINGS_THEME_COLOR_CONTRAST_CHECK.md](SETTINGS_THEME_COLOR_CONTRAST_CHECK.md).

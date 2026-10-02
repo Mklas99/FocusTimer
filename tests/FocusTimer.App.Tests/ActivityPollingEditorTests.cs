@@ -29,7 +29,7 @@ public class ActivityPollingEditorTests
     public async Task ApplyAndCancelEditsPreserveLastAppliedValueAcrossReopen()
     {
         var provider = new Provider(); var vm = Create(provider); var applied = 0;
-        vm.SettingsApplied += (_, _) => applied++;
+        vm.SetRuntimeActivator(_ => { applied++; return Task.CompletedTask; });
         vm.ActivityPollingIntervalInput = 5;
         Assert.Equal(10, provider.Saved.ActivityPollingIntervalSeconds);
         await Apply(vm);
@@ -49,7 +49,7 @@ public class ActivityPollingEditorTests
     public async Task SaveFailureDoesNotActivateDraft()
     {
         var provider = new Provider { Fail = true }; var vm = Create(provider); var applied = 0;
-        vm.SettingsApplied += (_, _) => applied++;
+        vm.SetRuntimeActivator(_ => { applied++; return Task.CompletedTask; });
         vm.ActivityPollingIntervalInput = 60;
         await Apply(vm);
         Assert.False(vm.LastApplySucceeded); Assert.Equal(0, applied);

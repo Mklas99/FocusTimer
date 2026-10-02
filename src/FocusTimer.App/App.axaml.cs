@@ -158,6 +158,12 @@ namespace FocusTimer.App
                 // Initialize the AppController
                 await this._appController!.InitializeAsync();
 
+                if (this._appController.StartupRecoveryRequired || this._appController.StartupSettingsLoadFailed)
+                {
+                    await Dispatcher.UIThread.InvokeAsync(this._appController.ShowSettings);
+                    return;
+                }
+
                 // Show widget based on settings
                 await Dispatcher.UIThread.InvokeAsync(() =>
                 {

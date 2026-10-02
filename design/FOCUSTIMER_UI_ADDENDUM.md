@@ -45,8 +45,8 @@ Where the supported Windows/Avalonia version permits it:
 
 | Surface | Preferred direction |
 |---|---|
-| main window backdrop | subtle Mica-like/system backdrop |
-| timer content area | solid or near-solid with very high legibility |
+| timer widget shell | selectable Off / Solid backdrop with independent tint opacity for Off; Solid uses opaque theme color; see OI-28 for a future see-through blur |
+| timer content area | sharp clock and controls above the shell, with very high legibility |
 | title/command/navigation region | lightly materialized, integrated with window backdrop |
 | tray flyout/popover | Acrylic-like/frosted transient surface |
 | context menu/dropdown | Acrylic-like/frosted transient surface |

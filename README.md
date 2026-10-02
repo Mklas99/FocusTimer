@@ -1,4 +1,4 @@
-﻿# FocusTimer
+# FocusTimer
 
 [![SonarQube Cloud](https://sonarcloud.io/images/project_badges/sonarcloud-light.svg)](https://sonarcloud.io/summary/new_code?id=Mklas99_FocusTimer)
 
@@ -189,6 +189,8 @@ Logs are written to:
 - **File**: `Documents\FocusTimer\logs\` (override the root with the `FOCUSTIMER_LOG_DIR` environment variable)
 
 Settings are stored separately, in `%APPDATA%\Roaming\FocusTimer\settings.json`.
+
+All Appearance controls preview immediately, including colors, opacity, scale, and compact mode. Play/Pause color controls its normal icon color; Button Normal controls other icons, and Hover, Pressed, and Disabled control their shared interaction states. Older themes inherit Button Normal for Play/Pause. Success and Danger colors remain available for future status displays. The widget's compact-mode button edits the same draft while Settings is open; with Settings closed it saves immediately. Apply saves the complete draft and keeps Settings open; OK saves and closes. While saving, Settings keeps its appearance, blocks edits, and displays "Saving...". Cancel or title-bar close restores the last successful Apply/OK. Other settings take effect only after a successful commit.
 
 ### Running Tests
 

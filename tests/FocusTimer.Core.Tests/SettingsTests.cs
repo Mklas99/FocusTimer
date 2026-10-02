@@ -1,9 +1,62 @@
 namespace FocusTimer.Core.Tests;
 
+using System.Text.Json;
 using FocusTimer.Core.Models;
 
 public class SettingsTests
 {
+    [Fact]
+    public void Clone_PreservesEveryPersistedProperty()
+    {
+        var original = new Settings
+        {
+            AutoStartOnLogin = true,
+            StartMinimized = true,
+            AlwaysOnTop = false,
+            BreakIntervalMinutes = 25,
+            BreakRemindersEnabled = false,
+            RequireBreakReminderAcknowledgement = true,
+            LogDirectory = "logs-custom",
+            WorklogDirectory = "worklogs-custom",
+            WorkLoggingEnabled = false,
+            DataRetentionDays = 30,
+            WidgetScale = 1.5,
+            WidgetOpacity = 0.7,
+            UseCompactMode = true,
+            DeveloperModeEnabled = true,
+            DeveloperLogLevel = "Warning",
+            ActivityPollingIntervalSeconds = 15,
+            HotkeyShowHide = "Ctrl+Alt+H",
+            HotkeyToggleTimer = "Ctrl+Alt+T",
+            Theme = new Theme { ThemeName = "Custom", AccentPrimary = "#123456" },
+            ActiveThemeName = "Custom",
+            CustomThemePath = "theme.fttheme",
+            DeviceId = "device-42",
+        };
+
+        Settings snapshot = original.Clone();
+
+        Assert.Equal(JsonSerializer.Serialize(original), JsonSerializer.Serialize(snapshot));
+        Assert.Equal("device-42", snapshot.DeviceId);
+        Assert.NotSame(original.Theme, snapshot.Theme);
+    }
+
+    [Fact]
+    public void Clone_ChangesDoNotMutateOriginalOrCopyEventSubscribers()
+    {
+        var original = new Settings { Theme = new Theme { AccentPrimary = "#123456" } };
+        int originalNotifications = 0;
+        original.PropertyChanged += (_, _) => originalNotifications++;
+
+        Settings snapshot = original.Clone();
+        snapshot.Theme.AccentPrimary = "#654321";
+        snapshot.BreakIntervalMinutes = 30;
+
+        Assert.Equal("#123456", original.Theme.AccentPrimary);
+        Assert.Equal(50, original.BreakIntervalMinutes);
+        Assert.Equal(0, originalNotifications);
+    }
+
     [Theory]
     [InlineData(-5.0, 0.5)]
     [InlineData(10.0, 3.0)]

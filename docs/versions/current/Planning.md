@@ -26,7 +26,7 @@ The completed `establish-worklog-data-foundation` OpenSpec change targets develo
 | OI-10 | Focus Modes | No Pomodoro mode (work/break cycle automation) | | |
 | OI-11 | Focus Modes | (enable/disable) sound cues on break/resume events | | |
 | OI-12 | Reporting | data export + presets | | currently theme export only |
-| OI-13 | Widget UI | Minimize button is easy to miss after use | Proposed | Remove the widget button; use the existing tray Show/Hide action. See OpenIssues.md for the current decision. |
+| OI-13 | Widget UI | Minimize button is easy to miss after use | Completed | Removed the widget button; use the existing tray Show/Hide action. See OpenIssues.md for the current status. |
 
 ## Changes
 ### Requirement: Per-Application Time Segmentation

@@ -2,7 +2,6 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:converters="using:FocusTimer.App.Converters"
     xmlns:vm="using:FocusTimer.App.ViewModels"
-    xmlns:materialIcons="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
     xmlns:views="clr-namespace:FocusTimer.App.Views"
     x:Class="FocusTimer.App.Views.TimerWidgetWindow"
     x:DataType="vm:TimerWidgetViewModel"
@@ -10,10 +9,10 @@
     WindowStartupLocation="Manual"
     SystemDecorations="None"
     ShowInTaskbar="False"
-    TransparencyLevelHint="Mica, AcrylicBlur, Blur, Transparent"
+    TransparencyLevelHint="Transparent"
     CanResize="False"
     Background="Transparent"
-    TransparencyBackgroundFallback="{DynamicResource WindowBackgroundBrush}"
+    TransparencyBackgroundFallback="{DynamicResource WidgetShellFallbackBrush}"
     ExtendClientAreaToDecorationsHint="True"
     ExtendClientAreaChromeHints="NoChrome"
     ExtendClientAreaTitleBarHeightHint="-1"
@@ -48,49 +47,19 @@
         HorizontalAlignment="Center">
 
             <Grid x:Name="ContentLayer"
-            RowDefinitions="Auto,Auto"
             Background="Transparent"
             ClipToBounds="True"
             VerticalAlignment="Center"
             HorizontalAlignment="Center">
-                <Border x:Name="WidgetBaseLayer"
-                    Grid.RowSpan="2"
-                    Background="{DynamicResource WidgetBaseLayerBrush}"
-                    CornerRadius="{DynamicResource WidgetCornerRadius}"
-                    Opacity="{Binding EffectiveWidgetBaseOpacity}"
-                    IsHitTestVisible="False"
-                    BorderBrush="Transparent"
-                    BorderThickness="0" />
-
-                <Border x:Name="PanelMaterialLayer"
-                    Grid.RowSpan="2"
-                    Background="{DynamicResource WindowBackgroundBrush}"
+                <Border x:Name="WidgetShell"
+                    Background="{DynamicResource WidgetShellActiveBrush}"
                     BorderBrush="{DynamicResource WindowBorderBrush}"
                     BorderThickness="1"
                     CornerRadius="{DynamicResource WidgetCornerRadius}"
-                    Opacity="{Binding EffectiveBackgroundOpacity}"
                     IsHitTestVisible="False" />
 
-                <!-- Minimize button (top right with accessible hit target) -->
-                <Button Grid.Row="0"
-                Classes="icon-button"
-                HorizontalAlignment="Right"
-                VerticalAlignment="Top"
-                MinWidth="{DynamicResource MinHitTargetSize}"
-                MinHeight="{DynamicResource MinHitTargetSize}"
-                Margin="0,2,4,0"
-                Click="MinimizeButton_Click"
-                ToolTip.Tip="Minimize"
-                Opacity="{Binding EffectiveControlsOpacity}"
-                IsHitTestVisible="{Binding AreControlsInteractable}">
-                    <materialIcons:MaterialIcon Kind="WindowMinimize"
-                    Foreground="{DynamicResource SecondaryTextBrush}"
-                    Width="14"
-                    Height="10" />
-                </Button>
-
                 <!-- Content area: switch between full and compact modes -->
-                <Grid Grid.Row="1"
+                <Grid
                 Background="Transparent"
                 VerticalAlignment="Center"
                 HorizontalAlignment="Center">
@@ -98,12 +67,12 @@
                     Margin="{DynamicResource WidgetContentMargin}"
                     VerticalAlignment="Center"
                     HorizontalAlignment="Center"
-                    IsVisible="{Binding Settings.UseCompactMode, Converter={StaticResource BooleanNegationConverter}}" />
+                    IsVisible="{Binding UseCompactMode, Converter={StaticResource BooleanNegationConverter}}" />
                     <views:CompactModeView
                     Margin="{DynamicResource WidgetContentMargin}"
                     VerticalAlignment="Center"
                     HorizontalAlignment="Center"
-                    IsVisible="{Binding Settings.UseCompactMode}" />
+                    IsVisible="{Binding UseCompactMode}" />
                 </Grid>
             </Grid>
         </Border>

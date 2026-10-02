@@ -106,7 +106,8 @@ namespace FocusTimer.Core.Services
         public bool ValidateTheme(Theme theme)
         {
             // Check that all required color properties are not null or empty
-            return !string.IsNullOrWhiteSpace(theme.WindowBackground) &&
+            return WidgetBlurModes.IsValid(theme.WidgetBlurMode) &&
+                   !string.IsNullOrWhiteSpace(theme.WindowBackground) &&
                    !string.IsNullOrWhiteSpace(theme.PrimaryText) &&
                    !string.IsNullOrWhiteSpace(theme.ButtonNormal) &&
                    !string.IsNullOrWhiteSpace(theme.AccentPrimary);
@@ -141,7 +142,7 @@ namespace FocusTimer.Core.Services
                 WarningColor = "#FFA726",
                 InputBackground = "#1AFFFFFF",
                 InputBorder = "#35FFFFFF",
-                InputFocusBorder = "#0078D7",
+                InputFocusBorder = "#67C0FF",
                 InputText = "#FFFFFF",
                 ProjectTagBackground = "#1AFFFFFF",
                 ProjectTagBorder = "#35FFFFFF",
@@ -158,7 +159,7 @@ namespace FocusTimer.Core.Services
                 TabHoverBackground = "#1E1E1E",
                 TabText = "#CCCCCC",
                 TabSelectedText = "#FFFFFF",
-                BackgroundOpacity = 0.95,
+                BackgroundOpacity = 0.80,
                 TimerOpacity = 1.0,
                 ButtonOpacity = 0.9,
             });
@@ -201,11 +202,11 @@ namespace FocusTimer.Core.Services
                 SettingsSectionHeader = "#1E1E1E",
                 SettingsLabelText = "#5A5A5A",
                 TabBackground = "#F5F5F5",
-                TabSelectedBackground = "#0078D7",
+                TabSelectedBackground = "#006FC7",
                 TabHoverBackground = "#E8E8E8",
                 TabText = "#5A5A5A",
                 TabSelectedText = "#FFFFFF",
-                BackgroundOpacity = 0.98,
+                BackgroundOpacity = 0.90,
                 TimerOpacity = 1.0,
                 ButtonOpacity = 0.95,
             });
@@ -252,7 +253,7 @@ namespace FocusTimer.Core.Services
                 TabHoverBackground = "#3E3D32",
                 TabText = "#CFCFC2",
                 TabSelectedText = "#272822",
-                BackgroundOpacity = 0.92,
+                BackgroundOpacity = 0.80,
                 TimerOpacity = 1.0,
                 ButtonOpacity = 0.88,
             });
@@ -293,13 +294,13 @@ namespace FocusTimer.Core.Services
                 TitleBarButtonPressed = "#33FFFFFF",
                 SettingsBackground = "#073642",
                 SettingsSectionHeader = "#93A1A1",
-                SettingsLabelText = "#657B83",
+                SettingsLabelText = "#93A1A1",
                 TabBackground = "#002B36",
                 TabSelectedBackground = "#268BD2",
                 TabHoverBackground = "#073642",
-                TabText = "#657B83",
-                TabSelectedText = "#FDF6E3",
-                BackgroundOpacity = 0.94,
+                TabText = "#93A1A1",
+                TabSelectedText = "#000000",
+                BackgroundOpacity = 0.80,
                 TimerOpacity = 1.0,
                 ButtonOpacity = 0.9,
             });
@@ -329,7 +330,7 @@ namespace FocusTimer.Core.Services
                 WarningColor = "#EBCB8B",
                 InputBackground = "#3B4252",
                 InputBorder = "#4C566A",
-                InputFocusBorder = "#5E81AC",
+                InputFocusBorder = "#88C0D0",
                 InputText = "#ECEFF4",
                 ProjectTagBackground = "#3B4252",
                 ProjectTagBorder = "#4C566A",
@@ -345,8 +346,8 @@ namespace FocusTimer.Core.Services
                 TabSelectedBackground = "#5E81AC",
                 TabHoverBackground = "#3B4252",
                 TabText = "#D8DEE9",
-                TabSelectedText = "#ECEFF4",
-                BackgroundOpacity = 0.93,
+                TabSelectedText = "#10151D",
+                BackgroundOpacity = 0.80,
                 TimerOpacity = 1.0,
                 ButtonOpacity = 0.89,
             });
@@ -392,8 +393,8 @@ namespace FocusTimer.Core.Services
                 TabSelectedBackground = "#BD93F9",
                 TabHoverBackground = "#44475A",
                 TabText = "#BFBFBF",
-                TabSelectedText = "#F8F8F2",
-                BackgroundOpacity = 0.96,
+                TabSelectedText = "#282A36",
+                BackgroundOpacity = 0.80,
                 TimerOpacity = 1.0,
                 ButtonOpacity = 0.92,
             });
@@ -441,6 +442,7 @@ namespace FocusTimer.Core.Services
                 TabText = "#FFFF00",
                 TabSelectedText = "#000000",
                 BackgroundOpacity = 1.0,
+                WidgetBlurMode = WidgetBlurModes.Off,
                 TimerOpacity = 1.0,
                 ButtonOpacity = 1.0,
             });

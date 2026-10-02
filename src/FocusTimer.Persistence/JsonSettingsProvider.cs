@@ -13,7 +13,7 @@ namespace FocusTimer.Persistence
     /// JSON-based implementation of ISettingsProvider.
     /// Stores settings in user's AppData folder or a custom specified file path.
     /// </summary>
-    public class JsonSettingsProvider : ISettingsProvider
+    public class JsonSettingsProvider : ISettingsProvider, ISettingsCommitStore
     {
         private readonly JsonSerializerOptions _jsonOptions;
         private readonly IAppLogger? _logger;
@@ -80,8 +80,14 @@ namespace FocusTimer.Persistence
         /// </summary>
         public string SettingsFilePath { get; }
 
+        private string CandidatePath => this.SettingsFilePath + ".candidate";
+
+        private string PreviousPath => this.SettingsFilePath + ".previous";
+
+        private string JournalPath => this.SettingsFilePath + ".pending";
+
         /// <summary>
-        /// Load settings from JSON file. Returns defaults if file doesn't exist or is invalid.
+        /// Load settings from JSON file. Returns defaults only if the file does not exist.
         /// </summary>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         public async Task<Settings> LoadAsync()
@@ -89,6 +95,11 @@ namespace FocusTimer.Persistence
             await this._fileGate.WaitAsync();
             try
             {
+                if (File.Exists(this.JournalPath))
+                {
+                    throw new SettingsRecoveryRequiredException();
+                }
+
                 if (!File.Exists(this.SettingsFilePath))
                 {
                     var defaults = new Settings { DeviceId = this._fallbackDeviceId };
@@ -103,8 +114,7 @@ namespace FocusTimer.Persistence
 
                 if (settings == null)
                 {
-                    this._logger?.LogWarning("Failed to deserialize settings; using defaults.");
-                    return new Settings { DeviceId = this._fallbackDeviceId };
+                    throw new JsonException("The settings file does not contain a settings object.");
                 }
 
                 if (!document.RootElement.TryGetProperty("deviceId", out JsonElement deviceId)
@@ -120,7 +130,7 @@ namespace FocusTimer.Persistence
             catch (Exception ex)
             {
                 this._logger?.LogError("Error loading settings.", ex);
-                return new Settings { DeviceId = this._fallbackDeviceId };
+                throw;
             }
             finally
             {
@@ -140,6 +150,11 @@ namespace FocusTimer.Persistence
             await this._fileGate.WaitAsync();
             try
             {
+                if (File.Exists(this.JournalPath))
+                {
+                    throw new SettingsRecoveryRequiredException();
+                }
+
                 await this.WriteAsync(settings);
                 this._logger?.LogDebug($"Settings saved to {this.SettingsFilePath}.");
             }
@@ -154,10 +169,142 @@ namespace FocusTimer.Persistence
             }
         }
 
+        /// <inheritdoc/>
+        public async Task<AutoStartRegistration?> GetPendingRecoveryAsync()
+        {
+            await this._fileGate.WaitAsync();
+            try
+            {
+                if (!File.Exists(this.JournalPath))
+                {
+                    return null;
+                }
+
+                RecoveryJournal journal = await this.ReadJournalAsync();
+                return journal.PreviousAutoStart;
+            }
+            finally
+            {
+                this._fileGate.Release();
+            }
+        }
+
+        /// <inheritdoc/>
+        public async Task BeginCommitAsync(Settings settings, AutoStartRegistration previousAutoStart)
+        {
+            ArgumentNullException.ThrowIfNull(settings);
+            await this._fileGate.WaitAsync();
+            try
+            {
+                if (File.Exists(this.JournalPath))
+                {
+                    throw new SettingsRecoveryRequiredException();
+                }
+
+                string json = JsonSerializer.Serialize(settings, this._jsonOptions);
+                await File.WriteAllTextAsync(this.CandidatePath, json);
+                bool previousFileExists = File.Exists(this.SettingsFilePath);
+                if (previousFileExists)
+                {
+                    File.Copy(this.SettingsFilePath, this.PreviousPath, overwrite: true);
+                }
+
+                var journal = new RecoveryJournal(previousFileExists, previousAutoStart);
+                await this.WriteAtomicallyAsync(this.JournalPath, JsonSerializer.Serialize(journal));
+                File.Move(this.CandidatePath, this.SettingsFilePath, overwrite: true);
+            }
+            finally
+            {
+                this._fileGate.Release();
+            }
+        }
+
+        /// <inheritdoc/>
+        public async Task RestorePreviousAsync()
+        {
+            await this._fileGate.WaitAsync();
+            try
+            {
+                RecoveryJournal journal = await this.ReadJournalAsync();
+                if (journal.PreviousFileExists)
+                {
+                    if (!File.Exists(this.PreviousPath))
+                    {
+                        throw new IOException("The previous settings copy is missing.");
+                    }
+
+                    File.Copy(this.PreviousPath, this.CandidatePath, overwrite: true);
+                    File.Move(this.CandidatePath, this.SettingsFilePath, overwrite: true);
+                }
+                else if (File.Exists(this.SettingsFilePath))
+                {
+                    File.Delete(this.SettingsFilePath);
+                }
+            }
+            finally
+            {
+                this._fileGate.Release();
+            }
+        }
+
+        /// <inheritdoc/>
+        public async Task CompleteCommitAsync()
+        {
+            await this._fileGate.WaitAsync();
+            try
+            {
+                if (File.Exists(this.JournalPath))
+                {
+                    File.Delete(this.JournalPath);
+                }
+
+                try
+                {
+                    if (File.Exists(this.PreviousPath))
+                    {
+                        File.Delete(this.PreviousPath);
+                    }
+
+                    if (File.Exists(this.CandidatePath))
+                    {
+                        File.Delete(this.CandidatePath);
+                    }
+                }
+                catch (IOException ex)
+                {
+                    this._logger?.LogWarning($"Settings commit succeeded but recovery-file cleanup failed: {ex.Message}");
+                }
+                catch (UnauthorizedAccessException ex)
+                {
+                    this._logger?.LogWarning($"Settings commit succeeded but recovery-file cleanup failed: {ex.Message}");
+                }
+            }
+            finally
+            {
+                this._fileGate.Release();
+            }
+        }
+
+        private async Task<RecoveryJournal> ReadJournalAsync()
+        {
+            string json = await File.ReadAllTextAsync(this.JournalPath);
+            return JsonSerializer.Deserialize<RecoveryJournal>(json)
+                ?? throw new IOException("The settings recovery journal is invalid.");
+        }
+
         private Task WriteAsync(Settings settings)
         {
             string json = JsonSerializer.Serialize(settings, this._jsonOptions);
-            return File.WriteAllTextAsync(this.SettingsFilePath, json);
+            return this.WriteAtomicallyAsync(this.SettingsFilePath, json);
         }
+
+        private async Task WriteAtomicallyAsync(string path, string content)
+        {
+            string temporaryPath = path + ".tmp";
+            await File.WriteAllTextAsync(temporaryPath, content);
+            File.Move(temporaryPath, path, overwrite: true);
+        }
+
+        private sealed record RecoveryJournal(bool PreviousFileExists, AutoStartRegistration PreviousAutoStart);
     }
 }

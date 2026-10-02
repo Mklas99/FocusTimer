@@ -1,5 +1,6 @@
 <Styles xmlns="https://github.com/avaloniaui"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:icons="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia">
 
     <!--
       FocusTimer Unified Component Styles
@@ -36,6 +37,22 @@
     </Style>
 
     <!-- Style for the hero timer display text (tabular digits, high legibility) -->
+    <Style Selector="Button.icon-button icons|MaterialIcon.widget-icon">
+        <Setter Property="Foreground" Value="{DynamicResource ButtonNormalBrush}" />
+    </Style>
+    <Style Selector="Button.icon-button icons|MaterialIcon.play-pause-icon">
+        <Setter Property="Foreground" Value="{DynamicResource PlayPauseBrush}" />
+    </Style>
+    <Style Selector="Button.icon-button:pointerover icons|MaterialIcon.widget-icon">
+        <Setter Property="Foreground" Value="{DynamicResource ButtonHoverBrush}" />
+    </Style>
+    <Style Selector="Button.icon-button:pressed icons|MaterialIcon.widget-icon">
+        <Setter Property="Foreground" Value="{DynamicResource ButtonPressedBrush}" />
+    </Style>
+    <Style Selector="Button.icon-button:disabled icons|MaterialIcon.widget-icon">
+        <Setter Property="Foreground" Value="{DynamicResource ButtonDisabledBrush}" />
+    </Style>
+
     <Style Selector="TextBlock.timer-text">
         <Setter Property="FontFamily" Value="{DynamicResource TabularTimerFontFamily}" />
         <Setter Property="FontWeight" Value="Bold" />
@@ -73,6 +90,139 @@
         <Setter Property="Foreground" Value="{DynamicResource SettingsLabelTextBrush}" />
     </Style>
 
+    <!-- Settings colors stay scoped so widget controls retain their own palette. -->
+    <Style Selector="Window.settings-window TextBlock.settings-body">
+        <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+    </Style>
+
+    <Style Selector="Window.settings-window TextBlock.settings-body:disabled">
+        <Setter Property="Foreground" Value="{DynamicResource DisabledTextBrush}" />
+    </Style>
+
+    <Style Selector="Window.settings-window CheckBox">
+        <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+    </Style>
+
+    <Style Selector="Window.settings-window CheckBox:disabled">
+        <Setter Property="Foreground" Value="{DynamicResource DisabledTextBrush}" />
+    </Style>
+
+    <Style Selector="Window.settings-window Button">
+        <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+    </Style>
+
+    <Style Selector="Window.settings-window Button:disabled">
+        <Setter Property="Foreground" Value="{DynamicResource DisabledTextBrush}" />
+    </Style>
+
+    <Style Selector="Window.settings-window TextBox">
+        <Setter Property="Background" Value="{DynamicResource InputBackgroundBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource InputBorderBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource InputTextBrush}" />
+        <Setter Property="CaretBrush" Value="{DynamicResource InputTextBrush}" />
+    </Style>
+
+    <Style Selector="Window.settings-window TextBox:disabled">
+        <Setter Property="Foreground" Value="{DynamicResource DisabledTextBrush}" />
+    </Style>
+
+    <Style Selector="Window.settings-window NumericUpDown">
+        <Setter Property="Background" Value="{DynamicResource InputBackgroundBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource InputBorderBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource InputTextBrush}" />
+    </Style>
+
+    <Style Selector="Window.settings-window NumericUpDown:disabled">
+        <Setter Property="Foreground" Value="{DynamicResource DisabledTextBrush}" />
+    </Style>
+
+    <Style Selector="Window.settings-window ComboBox">
+        <Setter Property="Background" Value="{DynamicResource InputBackgroundBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource InputBorderBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource InputTextBrush}" />
+    </Style>
+
+    <Style Selector="Window.settings-window ComboBox:disabled">
+        <Setter Property="Foreground" Value="{DynamicResource DisabledTextBrush}" />
+    </Style>
+
+    <Style Selector="Window.settings-window ComboBox:disabled /template/ ContentControl#ContentPresenter">
+        <Setter Property="Foreground" Value="{DynamicResource DisabledTextBrush}" />
+    </Style>
+
+    <Style Selector="Window.settings-window ComboBox:disabled /template/ TextBlock#PlaceholderTextBlock">
+        <Setter Property="Foreground" Value="{DynamicResource DisabledTextBrush}" />
+    </Style>
+
+    <Style Selector="Window.settings-window TextBox:pointerover /template/ Border#PART_BorderElement">
+        <Setter Property="Background" Value="{DynamicResource InputBackgroundBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource InputBorderBrush}" />
+    </Style>
+
+    <Style Selector="Window.settings-window TextBox:focus /template/ Border#PART_BorderElement">
+        <Setter Property="Background" Value="{DynamicResource InputBackgroundBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource InputFocusBorderBrush}" />
+    </Style>
+
+    <Style Selector="Window.settings-window NumericUpDown:focus-within, Window.settings-window ComboBox:focus-visible">
+        <Setter Property="BorderBrush" Value="{DynamicResource InputFocusBorderBrush}" />
+    </Style>
+
+    <Style Selector="Window.settings-window ComboBox:pointerover /template/ Border#Background, Window.settings-window ComboBox:pressed /template/ Border#Background">
+        <Setter Property="Background" Value="{DynamicResource InputBackgroundBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource InputBorderBrush}" />
+    </Style>
+
+    <Style Selector="Window.settings-window ComboBox:focus-visible /template/ Border#HighlightBackground">
+        <Setter Property="Background" Value="{DynamicResource InputBackgroundBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource InputFocusBorderBrush}" />
+    </Style>
+
+    <Style Selector="Window.settings-window ComboBox:focus-within /template/ Border#Background">
+        <Setter Property="BorderBrush" Value="{DynamicResource InputFocusBorderBrush}" />
+    </Style>
+
+    <Style Selector="Window.settings-window ComboBox:focus-visible /template/ ContentControl#ContentPresenter">
+        <Setter Property="Foreground" Value="{DynamicResource InputTextBrush}" />
+    </Style>
+
+    <Style Selector="Window.settings-window ComboBox /template/ PathIcon#DropDownGlyph">
+        <Setter Property="Foreground" Value="{DynamicResource InputTextBrush}" />
+    </Style>
+
+    <Style Selector="Window.settings-window ComboBox:disabled /template/ PathIcon#DropDownGlyph">
+        <Setter Property="Foreground" Value="{DynamicResource DisabledTextBrush}" />
+    </Style>
+
+    <Style Selector="Window.settings-window TabItem">
+        <Setter Property="Background" Value="{DynamicResource TabBackgroundBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource TabTextBrush}" />
+    </Style>
+
+    <Style Selector="Window.settings-window TabItem:selected">
+        <Setter Property="Background" Value="{DynamicResource TabSelectedBackgroundBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource TabSelectedTextBrush}" />
+    </Style>
+
+    <Style Selector="Window.settings-window TabItem:pointerover:not(:selected) /template/ Border#PART_LayoutRoot">
+        <Setter Property="Background" Value="{DynamicResource TabHoverBackgroundBrush}" />
+        <Setter Property="TextElement.Foreground" Value="{DynamicResource TabTextBrush}" />
+    </Style>
+
+    <Style Selector="Window.settings-window TabItem:selected:pointerover /template/ Border#PART_LayoutRoot">
+        <Setter Property="Background" Value="{DynamicResource TabSelectedBackgroundBrush}" />
+        <Setter Property="TextElement.Foreground" Value="{DynamicResource TabSelectedTextBrush}" />
+    </Style>
+
+    <Style Selector="Window.settings-window TabItem:focus-visible /template/ Border#PART_LayoutRoot">
+        <Setter Property="BorderBrush" Value="{DynamicResource InputFocusBorderBrush}" />
+        <Setter Property="BorderThickness" Value="2" />
+    </Style>
+
+    <Style Selector="Window.settings-window TabItem:selected:focus-visible /template/ Border#PART_LayoutRoot">
+        <Setter Property="BorderBrush" Value="{DynamicResource TabSelectedTextBrush}" />
+    </Style>
+
     <!-- Version Info Text in About tab -->
     <Style Selector="TextBlock.VersionInfoText">
         <Setter Property="Cursor" Value="Hand" />
@@ -96,6 +246,7 @@
 
     <Style Selector="Expander.settings-accordion /template/ ToggleButton">
         <Setter Property="Background" Value="{DynamicResource SettingsAccordionHeaderBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
         <Setter Property="CornerRadius" Value="{DynamicResource RadiusSm}" />
     </Style>
 

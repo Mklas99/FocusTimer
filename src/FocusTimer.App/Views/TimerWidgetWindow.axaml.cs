@@ -1,16 +1,20 @@
 namespace FocusTimer.App.Views
 {
     using System;
+    using System.Linq;
     using System.Runtime.InteropServices;
+    using Avalonia;
     using Avalonia.Controls;
     using Avalonia.Controls.Primitives;
     using Avalonia.Input;
     using Avalonia.Interactivity;
     using Avalonia.Markup.Xaml;
     using Avalonia.VisualTree;
+    using FocusTimer.App.Services;
     using FocusTimer.App.ViewModels;
     using FocusTimer.Core;
     using FocusTimer.Core.Interfaces;
+    using FocusTimer.Core.Models;
     using Microsoft.Extensions.DependencyInjection;
 
     /// <summary>
@@ -18,14 +22,32 @@ namespace FocusTimer.App.Views
     /// </summary>
     public partial class TimerWidgetWindow : Window
     {
+        private readonly ThemeManager _themeManager;
         private bool _isDragging = false;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TimerWidgetWindow"/> class for the Avalonia runtime loader.
+        /// </summary>
+        public TimerWidgetWindow()
+            : this(new ThemeManager())
+        {
+        }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TimerWidgetWindow"/> class.
         /// </summary>
-        public TimerWidgetWindow()
+        /// <param name="themeManager">Shared theme manager for appearance preview.</param>
+        public TimerWidgetWindow(ThemeManager themeManager)
         {
+            this._themeManager = themeManager;
             this.InitializeComponent();
+            this._themeManager.ThemeApplied += this.OnThemeApplied;
+            this.PropertyChanged += this.OnWindowPropertyChanged;
+            this.Opened += this.OnWindowOpenedForTransparency;
+            if (this._themeManager.ActiveTheme is Theme activeTheme)
+            {
+                this.ApplyBackdrop(activeTheme);
+            }
 
             // Handle closing event to hide instead of close
             this.Closing += this.OnWindowClosing;
@@ -51,6 +73,8 @@ namespace FocusTimer.App.Views
         /// <param name="e">The event args.</param>
         protected override void OnClosed(EventArgs e)
         {
+            this._themeManager.ThemeApplied -= this.OnThemeApplied;
+            this.PropertyChanged -= this.OnWindowPropertyChanged;
             if (this.DataContext is TimerWidgetViewModel viewModel)
             {
                 viewModel.Dispose();
@@ -91,6 +115,30 @@ namespace FocusTimer.App.Views
             }
 
             return false;
+        }
+
+        private void OnThemeApplied(Theme theme) => this.ApplyBackdrop(theme);
+
+        private void ApplyBackdrop(Theme theme)
+        {
+            var levels = WidgetBackdropLevels.ForTheme(theme);
+            if (!this.TransparencyLevelHint.SequenceEqual(levels))
+            {
+                this.TransparencyLevelHint = levels;
+            }
+
+            this._themeManager.ReportActualWidgetTransparency(this.ActualTransparencyLevel);
+        }
+
+        private void OnWindowOpenedForTransparency(object? sender, EventArgs e) =>
+            this._themeManager.ReportActualWidgetTransparency(this.ActualTransparencyLevel);
+
+        private void OnWindowPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
+        {
+            if (e.Property == TopLevel.ActualTransparencyLevelProperty)
+            {
+                this._themeManager.ReportActualWidgetTransparency(this.ActualTransparencyLevel);
+            }
         }
 
         private void InitializeComponent()
@@ -168,13 +216,6 @@ namespace FocusTimer.App.Views
             }
 
             this.BeginMoveDrag(e);
-        }
-
-        // Handler for minimize button
-        private void MinimizeButton_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
-        {
-            this.WindowState = WindowState.Minimized;
-            (this.DataContext as TimerWidgetViewModel)?.Logger?.LogDebug("Timer widget minimized.");
         }
 
         private void OnWindowClosing(object? sender, WindowClosingEventArgs e)

@@ -49,8 +49,7 @@
                 VerticalAlignment="Center"
                 Margin="1">
                 <materialIcons:MaterialIcon
-                    Kind="{Binding IsRunning, Converter={StaticResource PlayPauseConverter}}"
-                    Foreground="{DynamicResource ButtonNormalBrush}"
+                    Classes="widget-icon play-pause-icon" Kind="{Binding IsRunning, Converter={StaticResource PlayPauseConverter}}"
                     Width="{Binding CompactIconSize}"
                     Height="{Binding CompactIconSize}" />
             </Button>
@@ -66,7 +65,7 @@
                 VerticalAlignment="Center"
                 Margin="1">
                 <materialIcons:MaterialIcon Kind="ViewHeadline"
-                    Foreground="{DynamicResource ButtonNormalBrush}"
+                    Classes="widget-icon"
                     Width="{Binding CompactIconSize}"
                     Height="{Binding CompactIconSize}" />
             </Button>
