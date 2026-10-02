@@ -160,6 +160,46 @@ public class SessionTrackerTests
         Assert.Equal(EndReason.DayBoundary, entries[0].EndReason);
         Assert.Equal(entries[0].SessionId, entries[1].SessionId);
         Assert.NotEqual(entries[0].EntryId, entries[1].EntryId);
+        Assert.Equal(new DateTimeOffset(2026, 3, 31, 23, 59, 59, TimeSpan.Zero), entries[0].EndedAt);
+        Assert.Equal(new DateTimeOffset(2026, 4, 1, 0, 0, 0, TimeSpan.Zero), entries[1].StartedAt);
+        Assert.All(entries, entry => Assert.Equal(entry.StartedAt.Date, entry.EndedAt.Date));
+    }
+
+    [Fact]
+    public async Task OnTimerTickAsync_GivenSeveralMidnightsWithoutTick_SplitsEveryDayAt235959()
+    {
+        var clock = new MutableTimeProvider(new DateTimeOffset(2026, 3, 30, 23, 0, 0, TimeSpan.Zero));
+        var tracker = CreateTracker(clock, new ActiveWindowInfo { ProcessName = "A", WindowTitle = "one" });
+        await tracker.StartAsync(null);
+        clock.Advance(TimeSpan.FromHours(27));
+        await tracker.OnTimerTickAsync();
+        clock.Advance(TimeSpan.FromMinutes(1));
+
+        var entries = tracker.CollectAndResetSegments();
+
+        Assert.Equal(3, entries.Count);
+        Assert.All(entries, entry => Assert.Empty(WorklogEntryValidator.Validate(entry)));
+        Assert.All(entries, entry => Assert.Equal(entry.StartedAt.Date, entry.EndedAt.Date));
+        Assert.Equal(EndReason.DayBoundary, entries[0].EndReason);
+        Assert.Equal(EndReason.DayBoundary, entries[1].EndReason);
+        Assert.Equal(new DateTimeOffset(2026, 3, 31, 0, 0, 0, TimeSpan.Zero), entries[1].StartedAt);
+        Assert.Equal(new DateTimeOffset(2026, 3, 31, 23, 59, 59, TimeSpan.Zero), entries[1].EndedAt);
+    }
+
+    [Fact]
+    public async Task OnTimerTickAsync_GivenSegmentStartedInLastSecondOfDay_DropsZeroLengthSegmentAtBoundary()
+    {
+        var clock = new MutableTimeProvider(new DateTimeOffset(2026, 3, 31, 23, 59, 59, TimeSpan.Zero));
+        var tracker = CreateTracker(clock, new ActiveWindowInfo { ProcessName = "A", WindowTitle = "one" });
+        await tracker.StartAsync(null);
+        clock.Advance(TimeSpan.FromSeconds(2));
+        await tracker.OnTimerTickAsync();
+        clock.Advance(TimeSpan.FromSeconds(1));
+
+        var entries = tracker.CollectAndResetSegments();
+
+        var entry = Assert.Single(entries);
+        Assert.Equal(new DateTimeOffset(2026, 4, 1, 0, 0, 0, TimeSpan.Zero), entry.StartedAt);
     }
 
     [Fact]

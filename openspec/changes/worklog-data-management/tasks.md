@@ -11,9 +11,9 @@
 
 ## 2. Tracker midnight split (Core)
 
-- [ ] 2.1 Change `SessionTracker.SplitAtMidnight` to close at boundary minus one second (23:59:59) and start the replacement at the boundary; verify by updating `SessionTrackerTests` midnight test (end 23:59:59, next start 00:00:00, same session, different entry IDs, `DayBoundary` end reason) and multi-day gap case
-- [ ] 2.2 Run the summary, today-total, and persistence tests that use midnight entries (`WorklogSummaryServiceTests`, `ActivityPollingTests`, `FailurePathTests`, `CsvWorklogStoreTests`); verify they pass or are updated for the new boundary
-- [ ] 2.3 Update docs that describe midnight splitting (`ARCHITECTURE.md`, `docs/versions/current/Planning.md` "close exactly at the boundary"); verify no document still says entries end at midnight
+- [x] 2.1 Change `SessionTracker.SplitAtMidnight` to close at boundary minus one second (23:59:59) and start the replacement at the boundary; verify by updating `SessionTrackerTests` midnight test (end 23:59:59, next start 00:00:00, same session, different entry IDs, `DayBoundary` end reason) and multi-day gap case
+- [x] 2.2 Run the summary, today-total, and persistence tests that use midnight entries (`WorklogSummaryServiceTests`, `ActivityPollingTests`, `FailurePathTests`, `CsvWorklogStoreTests`); verify they pass or are updated for the new boundary
+- [x] 2.3 Update docs that describe midnight splitting (`ARCHITECTURE.md`, `docs/versions/current/Planning.md` "close exactly at the boundary"); verify no document still says entries end at midnight
 
 ## 3. Editing service (Core)
 

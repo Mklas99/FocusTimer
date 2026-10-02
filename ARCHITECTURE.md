@@ -452,7 +452,7 @@ The `else` branch in `Program.cs`'s static constructor already registers Linux n
 See `docs/versions/current/OpenIssues.md` for the full, current backlog of known gaps.
 ## Foreground capture cadence and ownership
 
-SessionTracker uses the injected TimeProvider's monotonic timestamps for foreground deadlines. TimerService keeps its one-second tick. Local-calendar maintenance runs before capture admission and before final closure, so midnight segmentation does not wait for the sampling deadline. Foreground changes are attributed at observation time; longer intervals can miss intermediate visits.
+SessionTracker uses the injected TimeProvider's monotonic timestamps for foreground deadlines. TimerService keeps its one-second tick. Local-calendar maintenance runs before capture admission and before final closure, so midnight segmentation does not wait for the sampling deadline. A segment crossing local midnight is closed at 23:59:59 with the day-boundary end reason and its replacement starts at 00:00:00, so every persisted entry starts and ends on the same local date (a segment that began in the last second of a day is zero-length and is dropped). Foreground changes are attributed at observation time; longer intervals can miss intermediate visits.
 
 One capture reservation covers both initial and periodic lookups. Busy periodic ticks return without queueing. Stop or disable invalidates the session generation; a stale result cannot create a segment. At most the latest restart waits behind an outstanding lookup. Deadlines advance after completion, preventing catch-up bursts; applying a changed interval reschedules from application time, while reapplying the same value preserves the deadline. TimerService observes tracking tasks and logs failures.
 

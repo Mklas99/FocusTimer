@@ -64,7 +64,7 @@ public class ActivityPollingTests
     public async Task MidnightMaintenanceDoesNotWaitForCapture()
     {
         var (tracker, clock, windows) = Create();
-        clock.Now = new DateTimeOffset(2026, 9, 27, 23, 59, 59, TimeSpan.Zero);
+        clock.Now = new DateTimeOffset(2026, 9, 27, 23, 59, 58, TimeSpan.Zero);
         tracker.SetPollingInterval(60);
         await tracker.StartAsync(null);
         clock.Advance(2);
@@ -178,10 +178,10 @@ public class ActivityPollingTests
     public async Task PauseAfterMultiDayDelaySplitsEveryBoundaryWithoutAnotherCapture()
     {
         var (tracker, clock, windows) = Create();
-        clock.Now = new DateTimeOffset(2026, 9, 27, 23, 59, 59, TimeSpan.Zero);
+        clock.Now = new DateTimeOffset(2026, 9, 27, 23, 59, 58, TimeSpan.Zero);
         tracker.SetPollingInterval(60);
         await tracker.StartAsync(null);
-        clock.Advance(172802);
+        clock.Advance(172803);
         var entries = tracker.CollectAndResetSegments();
         Assert.Equal(4, entries.Count);
         Assert.Equal(1, windows.Calls);
