@@ -82,6 +82,9 @@
             <TabItem Header="Entries" Tag="Entries">
                 <views:WorklogEntriesView Margin="0,12,0,0" DataContext="{Binding Entries}" />
             </TabItem>
+            <TabItem Header="Timeline" Tag="Timeline">
+                <views:WorklogTimelineView Margin="0,12,0,0" DataContext="{Binding Timeline}" />
+            </TabItem>
             <TabItem Header="Summary" Tag="Summary">
                 <views:WorklogSummaryView Margin="0,12,0,0" DataContext="{Binding Summary}" />
             </TabItem>

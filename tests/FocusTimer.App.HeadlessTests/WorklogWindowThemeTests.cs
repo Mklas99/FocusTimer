@@ -47,7 +47,14 @@ public sealed class WorklogWindowThemeTests
             Assert.True(rows.Count == 2, $"{theme.ThemeName}: expected 2 table rows, found {rows.Count}");
             Assert.All(rows, row => Assert.True(row.Bounds.Height >= 24, $"{theme.ThemeName}: row height {row.Bounds.Height}"));
             var tabs = window.FindControl<TabControl>("Tabs")!;
-            Assert.Equal(["Entries", "Summary"], tabs.Items.OfType<TabItem>().Select(t => t.Header?.ToString()));
+            Assert.Equal(["Entries", "Timeline", "Summary"], tabs.Items.OfType<TabItem>().Select(t => t.Header?.ToString()));
+            tabs.SelectedIndex = 1;
+            await viewModel.SelectTabAsync(WorklogTab.Timeline);
+            Dispatcher.UIThread.RunJobs();
+            window.UpdateLayout();
+            var panel = window.GetVisualDescendants().OfType<FocusTimer.App.Controls.TimelinePanel>().Single();
+            Assert.True(panel.Children.Count == 2, $"{theme.ThemeName}: expected 2 timeline blocks, found {panel.Children.Count}");
+            Assert.All(panel.Children, block => Assert.True(block.Bounds.Height >= FocusTimer.App.Controls.TimelinePanel.MinimumBlockHeight, theme.ThemeName));
             window.Close();
         }
     }

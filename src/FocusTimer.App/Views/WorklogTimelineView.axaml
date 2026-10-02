@@ -1,0 +1,107 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:FocusTimer.App.ViewModels"
+             xmlns:controls="using:FocusTimer.App.Controls"
+             x:DataType="vm:WorklogTimelineViewModel"
+             x:Class="FocusTimer.App.Views.WorklogTimelineView">
+
+    <UserControl.Styles>
+        <!-- Tracked entries are solid; manual entries have a dashed outline and a "Manual" label, so the
+             difference never depends on color alone. -->
+        <Style Selector="Border.timeline-block">
+            <Setter Property="Background" Value="{DynamicResource TabSelectedBackgroundBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtleBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="{StaticResource RadiusXs}" />
+            <Setter Property="Padding" Value="6,2" />
+            <Setter Property="ClipToBounds" Value="True" />
+        </Style>
+        <Style Selector="Border.timeline-block.timeline-manual">
+            <Setter Property="Background" Value="{DynamicResource SettingsBackgroundBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource PrimaryTextBrush}" />
+            <Setter Property="BorderThickness" Value="2" />
+        </Style>
+        <Style Selector="Border.timeline-block TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource TabSelectedTextBrush}" />
+        </Style>
+        <Style Selector="Border.timeline-block.timeline-manual TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+        </Style>
+        <Style Selector="Border.timeline-hour">
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtleBrush}" />
+            <Setter Property="BorderThickness" Value="0,1,0,0" />
+        </Style>
+    </UserControl.Styles>
+
+    <Grid RowDefinitions="Auto,*">
+
+        <!-- Read states and warnings are the same as on the Entries tab -->
+        <StackPanel Grid.Row="0" Spacing="{StaticResource SpacingSm}">
+            <TextBlock Text="{Binding Entries.WarningText}"
+                       TextWrapping="Wrap"
+                       Margin="0,0,0,8"
+                       Foreground="{DynamicResource WarningBrush}"
+                       IsVisible="{Binding Entries.HasWarning}" />
+            <TextBlock Text="Loading…"
+                       Foreground="{DynamicResource SecondaryTextBrush}"
+                       IsVisible="{Binding Entries.IsLoading}" />
+            <TextBlock Text="{Binding Entries.StatusMessage}"
+                       TextWrapping="Wrap"
+                       Foreground="{DynamicResource SecondaryTextBrush}"
+                       IsVisible="{Binding Entries.IsMessageVisible}" />
+        </StackPanel>
+
+        <ScrollViewer x:Name="Scroller"
+                      Grid.Row="1"
+                      Classes="settings-scroll"
+                      IsVisible="{Binding HasBlocks}"
+                      AutomationProperties.Name="Timeline of the day">
+            <Grid ColumnDefinitions="48,*" Height="1440">
+                <!-- Hour grid and labels -->
+                <ItemsControl Grid.ColumnSpan="2" ItemsSource="{Binding HourLabels}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="x:String">
+                            <Border Classes="timeline-hour" Height="60">
+                                <TextBlock Text="{Binding}"
+                                           FontFamily="{StaticResource TabularTimerFontFamily}"
+                                           FontSize="{StaticResource FontSizeCaption}"
+                                           Foreground="{DynamicResource SecondaryTextBrush}"
+                                           VerticalAlignment="Top"
+                                           Margin="0,2,0,0" />
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <!-- Entries as blocks; overlapping entries share the width -->
+                <ItemsControl Grid.Column="1" Margin="0,0,16,0" ItemsSource="{Binding Blocks}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <controls:TimelinePanel />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:TimelineBlockViewModel">
+                            <Border Classes="timeline-block"
+                                    Classes.timeline-manual="{Binding IsManual}"
+                                    ToolTip.Tip="{Binding ToolTipText}"
+                                    AutomationProperties.Name="{Binding ToolTipText}">
+                                <StackPanel>
+                                    <TextBlock Text="{Binding TimeText}"
+                                               FontFamily="{StaticResource TabularTimerFontFamily}"
+                                               FontSize="{StaticResource FontSizeCaption}" />
+                                    <TextBlock Text="{Binding TitleText}"
+                                               TextTrimming="CharacterEllipsis"
+                                               FontWeight="SemiBold" />
+                                    <TextBlock Text="{Binding DetailText}"
+                                               TextTrimming="CharacterEllipsis"
+                                               FontSize="{StaticResource FontSizeCaption}" />
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </Grid>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

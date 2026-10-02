@@ -49,6 +49,7 @@ namespace FocusTimer.App.ViewModels
             TimeProvider timeProvider)
         {
             this.Entries = entries;
+            this.Timeline = new WorklogTimelineViewModel(entries);
             this.Summary = summary;
             this._settingsProvider = settingsProvider;
             this._timeProvider = timeProvider;
@@ -62,6 +63,9 @@ namespace FocusTimer.App.ViewModels
 
         /// <summary>Gets the Entries tab.</summary>
         public WorklogEntriesViewModel Entries { get; }
+
+        /// <summary>Gets the Timeline tab; it draws the same loaded day as the Entries tab.</summary>
+        public WorklogTimelineViewModel Timeline { get; }
 
         /// <summary>Gets the Summary tab.</summary>
         public WorklogSummaryViewModel Summary { get; }

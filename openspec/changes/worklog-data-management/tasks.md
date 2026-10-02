@@ -62,9 +62,9 @@
 
 ## 9. Timeline tab (App) - separable, can move to its own branch
 
-- [ ] 9.1 Add `WorklogTimelineViewModel` that orders the loaded day's entries, computes block positions and gaps, and marks manual entries; verify with tests for ordering, gaps, overlap placement, and empty day
-- [ ] 9.2 Add `WorklogTimelineView` with a time axis, blocks labeled with application and window, manual entries marked by label and shape (not color alone), and the shared warning area; verify it renders in at least two themes including High Contrast and that a day with overlap shows both entries
-- [ ] 9.3 Make Entries and Timeline use the same loaded day so they cannot disagree; verify with a test that one reload updates both
+- [x] 9.1 Add `WorklogTimelineViewModel` that orders the loaded day's entries, computes block positions and gaps, and marks manual entries; verify with tests for ordering, gaps, overlap placement, and empty day
+- [x] 9.2 Add `WorklogTimelineView` with a time axis, blocks labeled with application and window, manual entries marked by label and shape (not color alone), and the shared warning area; verify it renders in at least two themes including High Contrast and that a day with overlap shows both entries
+- [x] 9.3 Make Entries and Timeline use the same loaded day so they cannot disagree; verify with a test that one reload updates both
 
 ## 10. Documentation and final checks
 
