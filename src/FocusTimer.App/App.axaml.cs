@@ -74,6 +74,7 @@ namespace FocusTimer.App
                     CreateMenuItem("Show/Hide Timer", this.TrayMenu_ShowHide),
                     CreateMenuItem("Start/Pause Timer", this.TrayMenu_ToggleTimer),
                     new NativeMenuItemSeparator(),
+                    CreateMenuItem("Worklog...", this.TrayMenu_Worklog),
                     CreateMenuItem("Settings...", this.TrayMenu_Settings),
                     new NativeMenuItemSeparator(),
                     CreateMenuItem("Exit", this.TrayMenu_Exit),
@@ -224,6 +225,12 @@ namespace FocusTimer.App
         {
             this._appController?.ToggleTimer();
             this._logger?.LogDebug("Tray menu item 'Toggle Timer' clicked - toggling timer.");
+        }
+
+        private void TrayMenu_Worklog(object? sender, EventArgs e)
+        {
+            this._appController?.ShowWorklog();
+            this._logger?.LogDebug("Tray menu item 'Worklog' clicked - showing worklog window.");
         }
 
         private void TrayMenu_Settings(object? sender, EventArgs e)

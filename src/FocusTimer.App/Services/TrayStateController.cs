@@ -28,10 +28,12 @@ namespace FocusTimer.App.Services
         /// <param name="timerService">The timer service for managing timer state changes.</param>
         /// <param name="todayStatsService">The service for retrieving today's statistics.</param>
         /// <param name="logger">The logger for recording error and informational messages.</param>
+        /// <param name="eventBus">Optional event bus; when given, changes the user makes to today's worklog refresh the tooltip total.</param>
         public TrayStateController(
             ITimerService timerService,
             TodayStatsService todayStatsService,
-            IAppLogger logger)
+            IAppLogger logger,
+            IEventBus? eventBus = null)
         {
             this._timerService = timerService;
             this._todayStatsService = todayStatsService;
@@ -39,6 +41,7 @@ namespace FocusTimer.App.Services
             this._trayIconAssets = new TrayIconAssets();
             this._pendingState = timerService.CurrentState;
             this._isInitialized = false;
+            eventBus?.Subscribe<WorklogChangedEvent>(this.OnWorklogChanged);
         }
 
 #pragma warning disable CS0067
@@ -135,6 +138,15 @@ namespace FocusTimer.App.Services
             };
 
             this._trayIcon.ToolTipText = $"Focus Timer: {stateText} | {this._todayStatsService.GetTodaySummaryText()}";
+        }
+
+        private void OnWorklogChanged(WorklogChangedEvent changed)
+        {
+            // Only a change to today's time can alter the tooltip total; other days are ignored.
+            if (changed.IsToday && this._isInitialized)
+            {
+                _ = this.RefreshTodayAndUpdateTooltipAsync();
+            }
         }
 
         private async Task RefreshAfterEntriesLoggedAsync(IEnumerable<TimeEntry> entries)

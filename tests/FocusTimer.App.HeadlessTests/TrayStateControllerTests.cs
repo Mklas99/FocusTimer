@@ -141,6 +141,54 @@ public sealed class TrayStateControllerTests
         Assert.Contains(logger.Errors, m => m.Contains("Failed to refresh tray tooltip", StringComparison.Ordinal));
     }
 
+    [Fact]
+    public async Task WorklogChanged_ForToday_RecomputesTheTooltipTotalAfterAddEditAndDelete()
+    {
+        var store = new MutableWorklogStore();
+        var bus = new EventBus();
+        var stats = new TodayStatsService(store, new RecordingLogger(), TimeProvider.System);
+        var controller = new TrayStateController(new FakeTimerService(TimerState.Idle), stats, new RecordingLogger(), bus);
+        var trayIcon = new TrayIcon();
+        controller.SetTrayIcon(trayIcon);
+        await WaitUntilAsync(() => trayIcon.ToolTipText?.Contains("Today: 0h 00m", StringComparison.Ordinal) == true);
+
+        store.Minutes = 30;
+        bus.Publish(new WorklogChangedEvent { Day = DateOnly.FromDateTime(DateTime.Today), IsToday = true });
+        await WaitUntilAsync(() => trayIcon.ToolTipText!.Contains("Today: 0h 30m", StringComparison.Ordinal));
+
+        store.Minutes = 20;
+        bus.Publish(new WorklogChangedEvent { Day = DateOnly.FromDateTime(DateTime.Today), IsToday = true });
+        await WaitUntilAsync(() => trayIcon.ToolTipText!.Contains("Today: 0h 20m", StringComparison.Ordinal));
+
+        store.Minutes = 0;
+        bus.Publish(new WorklogChangedEvent { Day = DateOnly.FromDateTime(DateTime.Today), IsToday = true });
+        await WaitUntilAsync(() => trayIcon.ToolTipText!.Contains("Today: 0h 00m", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task WorklogChanged_ForAnotherDay_LeavesTheTooltipTotalAndDoesNotReadTheWorklog()
+    {
+        var store = new MutableWorklogStore();
+        var bus = new EventBus();
+        var stats = new TodayStatsService(store, new RecordingLogger(), TimeProvider.System);
+        var controller = new TrayStateController(new FakeTimerService(TimerState.Idle), stats, new RecordingLogger(), bus);
+        var trayIcon = new TrayIcon();
+        controller.SetTrayIcon(trayIcon);
+        await WaitUntilAsync(() => trayIcon.ToolTipText?.Contains("Today: 0h 00m", StringComparison.Ordinal) == true);
+        var queriesBefore = store.QueryCount;
+        store.Minutes = 45;
+
+        bus.Publish(new WorklogChangedEvent { Day = DateOnly.FromDateTime(DateTime.Today).AddDays(-1), IsToday = false });
+        for (var i = 0; i < 20; i++)
+        {
+            Dispatcher.UIThread.RunJobs();
+            Thread.Sleep(5);
+        }
+
+        Assert.Equal(queriesBefore, store.QueryCount);
+        Assert.Contains("Today: 0h 00m", trayIcon.ToolTipText);
+    }
+
     private static string TooltipState(TrayIcon trayIcon) =>
         trayIcon.ToolTipText!.Split(": ", 2)[1].Split(" | ", 2)[0];
 
@@ -186,6 +234,41 @@ public sealed class TrayStateControllerTests
         public void Stop(EndReason reason = EndReason.ManualPause) { }
 
         public void Reset() { }
+    }
+
+    private sealed class MutableWorklogStore : IWorklogStore
+    {
+        public int Minutes { get; set; }
+
+        public int QueryCount { get; private set; }
+
+        public Task<WorklogOutcome> AppendAsync(IReadOnlyCollection<TimeEntry> entries, CancellationToken cancellationToken = default) =>
+            Task.FromResult(WorklogOutcome.Success());
+
+        public Task<WorklogReadResult> GetAsync(string entryId, CancellationToken cancellationToken = default) =>
+            Task.FromResult(new WorklogReadResult(WorklogOutcome.Success(), []));
+
+        public Task<WorklogReadResult> QueryAsync(WorklogQuery query, CancellationToken cancellationToken = default)
+        {
+            this.QueryCount++;
+            if (this.Minutes == 0)
+            {
+                return Task.FromResult(new WorklogReadResult(WorklogOutcome.Success(), []));
+            }
+
+            var start = query.StartInclusive.AddHours(9);
+            var entry = new TimeEntry(
+                "e", "s", start, start.AddMinutes(this.Minutes), "App", "Window", null,
+                ProjectAssignmentSource.Unassigned, null, ActivityKind.Active, EndReason.ManualPause,
+                CaptureSource.ActiveWindow, SourcePlatform.Windows, null, 1, DateTimeOffset.UtcNow);
+            return Task.FromResult(new WorklogReadResult(WorklogOutcome.Success(), [entry]));
+        }
+
+        public Task<WorklogOutcome> PatchAsync(string entryId, int expectedRevision, WorklogPatch patch, CancellationToken cancellationToken = default) =>
+            Task.FromResult(WorklogOutcome.Success());
+
+        public Task<WorklogOutcome> DeleteAsync(string entryId, int expectedRevision, CancellationToken cancellationToken = default) =>
+            Task.FromResult(WorklogOutcome.Success());
     }
 
     private sealed class EmptyWorklogStore : IWorklogStore

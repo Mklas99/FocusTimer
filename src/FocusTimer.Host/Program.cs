@@ -155,15 +155,19 @@ namespace FocusTimer.Host
             services.AddSingleton<WorklogGroupingRegistry>();
             services.AddSingleton<IProjectResolver, StoredProjectResolver>();
             services.AddSingleton<IWorklogSummaryService, WorklogSummaryService>();
+            services.AddSingleton<IWorklogEditingService, WorklogEditingService>();
             services.AddSingleton<AppController>();
 
             services.AddTransient<MainWindowViewModel>();
             services.AddTransient<TimerWidgetViewModel>();
             services.AddTransient<WorklogSummaryViewModel>();
+            services.AddTransient<WorklogEntriesViewModel>();
+            services.AddTransient<WorklogWindowViewModel>();
             services.AddTransient<SettingsWindowViewModel>();
 
             services.AddTransient<Func<TimerWidgetViewModel>>(sp => () => sp.GetRequiredService<TimerWidgetViewModel>());
             services.AddTransient<Func<SettingsWindowViewModel>>(sp => () => sp.GetRequiredService<SettingsWindowViewModel>());
+            services.AddTransient<Func<WorklogWindowViewModel>>(sp => () => sp.GetRequiredService<WorklogWindowViewModel>());
 
             return services.BuildServiceProvider();
         }

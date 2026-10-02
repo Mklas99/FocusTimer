@@ -1,0 +1,105 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:FocusTimer.App.ViewModels"
+             x:DataType="vm:WorklogEntriesViewModel"
+             x:Class="FocusTimer.App.Views.WorklogEntriesView">
+
+    <Grid RowDefinitions="Auto,Auto,Auto,*,Auto">
+
+        <!-- Toolbar -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="{StaticResource SpacingSm}" Margin="0,0,0,8">
+            <Button Content="Refresh"
+                    MinWidth="{StaticResource MinHitTargetSize}"
+                    MinHeight="{StaticResource MinHitTargetSize}"
+                    Command="{Binding RefreshCommand}"
+                    ToolTip.Tip="Reload the entries for this day" />
+        </StackPanel>
+
+        <!-- Read warnings and states -->
+        <TextBlock Grid.Row="1"
+                   Text="{Binding WarningText}"
+                   TextWrapping="Wrap"
+                   Margin="0,0,0,8"
+                   Foreground="{DynamicResource WarningBrush}"
+                   IsVisible="{Binding HasWarning}" />
+
+        <StackPanel Grid.Row="2" Spacing="{StaticResource SpacingSm}">
+            <TextBlock Text="Loading…"
+                       Foreground="{DynamicResource SecondaryTextBrush}"
+                       IsVisible="{Binding IsLoading}" />
+            <TextBlock Text="{Binding StatusMessage}"
+                       TextWrapping="Wrap"
+                       Foreground="{DynamicResource SecondaryTextBrush}"
+                       IsVisible="{Binding IsMessageVisible}" />
+        </StackPanel>
+
+        <!-- Table: header row and rows share the same column widths -->
+        <Grid Grid.Row="3" RowDefinitions="Auto,*" IsVisible="{Binding IsReady}">
+            <Grid Grid.Row="0" ColumnDefinitions="76,76,84,140,*,120,72" Margin="12,0,12,4">
+                <TextBlock Grid.Column="0" Classes="SettingLabel" Text="Start" />
+                <TextBlock Grid.Column="1" Classes="SettingLabel" Text="End" />
+                <TextBlock Grid.Column="2" Classes="SettingLabel" Text="Duration" />
+                <TextBlock Grid.Column="3" Classes="SettingLabel" Text="Application" />
+                <TextBlock Grid.Column="4" Classes="SettingLabel" Text="Window" />
+                <TextBlock Grid.Column="5" Classes="SettingLabel" Text="Project" />
+                <TextBlock Grid.Column="6" Classes="SettingLabel" Text="Source" />
+            </Grid>
+            <ListBox Grid.Row="1"
+                     ItemsSource="{Binding Rows}"
+                     SelectedItem="{Binding SelectedRow, Mode=TwoWay}"
+                     AutomationProperties.Name="Worklog entries">
+                <ListBox.ItemTemplate>
+                    <DataTemplate x:DataType="vm:WorklogEntryRowViewModel">
+                        <Grid ColumnDefinitions="76,76,84,140,*,120,72" MinHeight="{StaticResource MinHitTargetSize}">
+                            <TextBlock Grid.Column="0" Text="{Binding StartText}" FontFamily="{StaticResource TabularTimerFontFamily}" VerticalAlignment="Center" />
+                            <TextBlock Grid.Column="1" Text="{Binding EndText}" FontFamily="{StaticResource TabularTimerFontFamily}" VerticalAlignment="Center" />
+                            <TextBlock Grid.Column="2" Text="{Binding DurationText}" FontFamily="{StaticResource TabularTimerFontFamily}" VerticalAlignment="Center" />
+                            <TextBlock Grid.Column="3" Text="{Binding ApplicationText}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" ToolTip.Tip="{Binding ApplicationText}" />
+                            <TextBlock Grid.Column="4" Text="{Binding WindowText}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" ToolTip.Tip="{Binding WindowText}" Margin="0,0,8,0" />
+                            <TextBlock Grid.Column="5" Text="{Binding ProjectText}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" ToolTip.Tip="{Binding ProjectText}" />
+                            <TextBlock Grid.Column="6" Text="{Binding SourceText}" VerticalAlignment="Center" Foreground="{DynamicResource SecondaryTextBrush}" />
+                        </Grid>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </Grid>
+
+        <!-- Details of the selected entry -->
+        <Border Grid.Row="4"
+                Margin="0,8,0,0"
+                Padding="12"
+                CornerRadius="{StaticResource RadiusSm}"
+                Background="{DynamicResource SurfaceSubtleBrush}"
+                IsVisible="{Binding HasSelection}">
+            <Grid x:DataType="vm:WorklogEntryRowViewModel"
+                  DataContext="{Binding SelectedRow}"
+                  ColumnDefinitions="Auto,*,Auto,*"
+                  RowDefinitions="Auto,Auto,Auto,Auto">
+                <Grid.Styles>
+                    <Style Selector="TextBlock.SettingLabel">
+                        <Setter Property="Margin" Value="0,2,12,2" />
+                    </Style>
+                    <Style Selector="TextBlock, SelectableTextBlock">
+                        <Setter Property="VerticalAlignment" Value="Center" />
+                    </Style>
+                </Grid.Styles>
+                <TextBlock Grid.Row="0" Grid.Column="0" Classes="SettingLabel" Text="Entry ID" />
+                <SelectableTextBlock Grid.Row="0" Grid.Column="1" Text="{Binding EntryIdText}" TextTrimming="CharacterEllipsis" />
+                <TextBlock Grid.Row="0" Grid.Column="2" Classes="SettingLabel" Text="Revision" />
+                <TextBlock Grid.Row="0" Grid.Column="3" Text="{Binding RevisionText}" />
+                <TextBlock Grid.Row="1" Grid.Column="0" Classes="SettingLabel" Text="Session ID" />
+                <SelectableTextBlock Grid.Row="1" Grid.Column="1" Text="{Binding SessionIdText}" TextTrimming="CharacterEllipsis" />
+                <TextBlock Grid.Row="1" Grid.Column="2" Classes="SettingLabel" Text="Last modified" />
+                <TextBlock Grid.Row="1" Grid.Column="3" Text="{Binding LastModifiedText}" />
+                <TextBlock Grid.Row="2" Grid.Column="0" Classes="SettingLabel" Text="Ended by" />
+                <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding EndReasonText}" />
+                <TextBlock Grid.Row="2" Grid.Column="2" Classes="SettingLabel" Text="Project set by" />
+                <TextBlock Grid.Row="2" Grid.Column="3" Text="{Binding ProjectSourceText}" />
+                <TextBlock Grid.Row="3" Grid.Column="0" Classes="SettingLabel" Text="Platform" />
+                <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding PlatformText}" />
+                <TextBlock Grid.Row="3" Grid.Column="2" Classes="SettingLabel" Text="Device" />
+                <SelectableTextBlock Grid.Row="3" Grid.Column="3" Text="{Binding DeviceText}" TextTrimming="CharacterEllipsis" />
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

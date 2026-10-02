@@ -73,9 +73,24 @@ public sealed class ProgramCompositionTests : IDisposable
 
         Assert.IsType<WorklogSummaryService>(sp.GetRequiredService<IWorklogSummaryService>());
         Assert.IsType<StoredProjectResolver>(sp.GetRequiredService<IProjectResolver>());
-        Assert.Equal(["app", "project"], sp.GetRequiredService<WorklogGroupingRegistry>().All.Select(g => g.Id));
+        Assert.Equal(["app", "project", "window"], sp.GetRequiredService<WorklogGroupingRegistry>().All.Select(g => g.Id));
         Assert.NotNull(sp.GetRequiredService<FocusTimer.App.ViewModels.WorklogSummaryViewModel>());
         Assert.NotNull(sp.GetRequiredService<FocusTimer.App.ViewModels.SettingsWindowViewModel>().WorklogSummary);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void BuildServiceProvider_RegistersWorklogWindowServices(bool isWindows)
+    {
+        var sp = this.Build(null, isWindows);
+
+        Assert.IsType<WorklogEditingService>(sp.GetRequiredService<IWorklogEditingService>());
+        var window = sp.GetRequiredService<Func<FocusTimer.App.ViewModels.WorklogWindowViewModel>>()();
+        Assert.NotNull(window.Entries);
+        Assert.NotNull(window.Summary);
+        Assert.Equal(window.Today, window.SelectedDay);
+        Assert.NotNull(sp.GetRequiredService<FocusTimer.App.ViewModels.WorklogEntriesViewModel>());
     }
 
     [Fact]

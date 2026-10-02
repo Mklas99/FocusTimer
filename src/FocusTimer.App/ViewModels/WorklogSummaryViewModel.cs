@@ -20,6 +20,8 @@ namespace FocusTimer.App.ViewModels
         private readonly IWorklogSummaryService _summaryService;
         private readonly TimeProvider _timeProvider;
         private IReadOnlyList<SummaryRowViewModel> _rows = [];
+        private string _rangeLabel = "Today";
+        private string _rangePhrase = "today";
         private GroupingOption _selectedGrouping;
         private SummaryViewStatus _status = SummaryViewStatus.Idle;
         private string _totalText = string.Empty;
@@ -44,7 +46,6 @@ namespace FocusTimer.App.ViewModels
             this.Groupings = groupings.All.Select(g => new GroupingOption(g.Id, g.DisplayName)).ToList();
             this._selectedGrouping = this.Groupings.FirstOrDefault() ?? new GroupingOption(string.Empty, string.Empty);
             this.RangeSelector = () => SummaryRanges.Today(this._timeProvider);
-            this.RangeLabel = "Today";
             this.RefreshCommand = ReactiveCommand.CreateFromTask(this.RefreshAsync);
         }
 
@@ -54,8 +55,19 @@ namespace FocusTimer.App.ViewModels
         /// <summary>Gets the command that reloads the summary.</summary>
         public ICommand RefreshCommand { get; }
 
-        /// <summary>Gets or sets the text describing the current range, such as "Today".</summary>
-        public string RangeLabel { get; set; }
+        /// <summary>Gets or sets the heading describing the current range, such as "Today".</summary>
+        public string RangeLabel
+        {
+            get => this._rangeLabel;
+            set => this.RaiseAndSetIfChanged(ref this._rangeLabel, value);
+        }
+
+        /// <summary>Gets or sets the phrase used in empty-state messages, such as "today" or "on 2026-05-03".</summary>
+        public string RangePhrase
+        {
+            get => this._rangePhrase;
+            set => this._rangePhrase = value;
+        }
 
         /// <summary>Gets or sets what decides the range on each refresh. Defaults to the current local day.</summary>
         public Func<SummaryRange> RangeSelector { get; set; }
@@ -195,8 +207,8 @@ namespace FocusTimer.App.ViewModels
             {
                 this.TotalText = string.Empty;
                 this.StatusMessage = summary.Warnings.Count > 0
-                    ? $"No readable time entries {this.RangeLabel.ToLowerInvariant()}."
-                    : $"No time tracked {this.RangeLabel.ToLowerInvariant()}.";
+                    ? $"No readable time entries {this.RangePhrase}."
+                    : $"No time tracked {this.RangePhrase}.";
                 this.Status = SummaryViewStatus.NoData;
                 return;
             }
