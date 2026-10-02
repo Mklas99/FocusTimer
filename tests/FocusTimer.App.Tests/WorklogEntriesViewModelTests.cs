@@ -119,8 +119,8 @@ public class WorklogEntriesViewModelTests
     public async Task RefreshAsync_GivenManualEntry_MarksItManualWithDetails()
     {
         var store = new MemoryWorklogStore();
-        store.Add(WorklogTestData.Tracked("m", new DateTimeOffset(2026, 5, 4, 9, 0, 0, TimeSpan.Zero), 45, "Manual entry", string.Empty)
-            with { CaptureSource = CaptureSource.Manual, ProjectTag = "Alpha", ProjectAssignmentSource = ProjectAssignmentSource.Editor });
+        var manual = WorklogTestData.Tracked("m", new DateTimeOffset(2026, 5, 4, 9, 0, 0, TimeSpan.Zero), 45, "Manual entry", string.Empty);
+        store.Add(manual with { CaptureSource = CaptureSource.Manual, ProjectTag = "Alpha", ProjectAssignmentSource = ProjectAssignmentSource.Editor });
         var vm = Create(store);
 
         await vm.RefreshAsync();
