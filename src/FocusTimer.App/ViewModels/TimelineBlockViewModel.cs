@@ -14,11 +14,15 @@ namespace FocusTimer.App.ViewModels
         /// <param name="row">The entry as shown in the table.</param>
         /// <param name="lane">The lane the block is drawn in, starting at zero.</param>
         /// <param name="laneCount">How many lanes the block's overlap group has.</param>
-        public TimelineBlockViewModel(WorklogEntryRowViewModel row, int lane, int laneCount)
+        /// <param name="column">The group column the block is in; zero when the timeline is not grouped.</param>
+        /// <param name="columnCount">How many group columns there are; one when the timeline is not grouped.</param>
+        public TimelineBlockViewModel(WorklogEntryRowViewModel row, int lane, int laneCount, int column = 0, int columnCount = 1)
         {
             this.Row = row;
             this.Lane = lane;
             this.LaneCount = laneCount;
+            this.Column = column;
+            this.ColumnCount = columnCount;
             var entry = row.Entry;
             this.StartMinute = entry.StartedAt.TimeOfDay.TotalMinutes;
             this.LengthMinutes = entry.Duration.TotalMinutes;
@@ -30,6 +34,12 @@ namespace FocusTimer.App.ViewModels
 
         /// <summary>Gets the row of the Entries table this block shows.</summary>
         public WorklogEntryRowViewModel Row { get; }
+
+        /// <summary>Gets the group column, starting at zero.</summary>
+        public int Column { get; }
+
+        /// <summary>Gets the number of group columns.</summary>
+        public int ColumnCount { get; }
 
         /// <summary>Gets the lane, starting at zero.</summary>
         public int Lane { get; }

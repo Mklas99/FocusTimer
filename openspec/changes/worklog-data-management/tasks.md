@@ -88,3 +88,10 @@
 - [x] 12.3 Highlight the matching parts of the six table columns with a color-independent bold underline; verify with match-finding tests, a view model test that rows carry the words, a headless test of the real table's runs, and renders in Light, Dark, and High Contrast on a selected row
 - [x] 12.4 Update the specs, `ARCHITECTURE.md`, and `OpenIssues.md`; verify `openspec validate worklog-data-management --strict` passes
 
+## 13. Timeline grouping
+
+- [x] 13.1 Add the Group by switch to the Timeline (all together, by application, by project, by window) with one column per group, headers with name, total, and count, columns ordered by total (unassigned last), and lanes only inside a column; verify with view model tests for each grouping, ordering, case merging, the project resolver, overlaps per column, switching back, and surviving zoom, search, reload, and day changes
+- [x] 13.2 Draw the grouped timeline: equal columns of at least 150 px, headers above the scroll area, lines between columns, sideways scrolling with pinned hour labels and headers; verify with headless tests on the real controls (switch, headers, many groups, scroll sync, few groups fill the width, zoom still works) and renders in Light, Dark, and High Contrast
+- [x] 13.3 Remember the grouping with the zoom (`WorklogViewState.TimelineGroupingId`); verify with tests for applying it on open without writing it back, case and unknown ids, and saving "none" as no grouping
+- [x] 13.4 Update the specs, `ARCHITECTURE.md`, and `OpenIssues.md`; verify `openspec validate worklog-data-management --strict` passes
+

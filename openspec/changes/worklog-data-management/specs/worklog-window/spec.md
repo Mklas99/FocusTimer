@@ -130,6 +130,41 @@ The system SHALL reload the selected day when the user selects a tab, presses Re
 - **WHEN** the user changes the day while a previous reload is still running
 - **THEN** only the result for the latest selected day is shown
 
+### Requirement: Timeline Grouping
+The system SHALL let the user switch the timeline between "All entries together" and a split into one column per group using the same groupings as the Summary (by application, by project, by window), SHALL show a header above each column with the group's name, total time, and entry count, SHALL order the columns by total time, largest first, with the group of entries without a value last, SHALL draw overlapping entries side by side only inside their own column, SHALL keep zoom, the selected day, and the full day's entries (a search does not remove blocks) in the grouped view, SHALL scroll sideways when the columns do not fit while the hour labels and the column headers stay in place, and SHALL remember the chosen grouping between runs together with the zoom.
+
+#### Scenario: Switch to grouped
+- **WHEN** the user chooses "By application" in the Group by list
+- **THEN** the timeline shows one column per application with a header naming the application, its total time, and its number of entries, and every entry's block sits in its application's column
+
+#### Scenario: Column order
+- **WHEN** the day has entries of applications with different totals
+- **THEN** the columns run from the largest total to the smallest, equal totals are ordered by name, and the column for entries without a value (such as no project) is last
+
+#### Scenario: Overlaps in different columns
+- **WHEN** entries of two different groups happen at the same time
+- **THEN** they are drawn in their own columns at full column width and are not split into lanes against each other
+
+#### Scenario: Overlaps in the same column
+- **WHEN** two entries of one group overlap in time
+- **THEN** they share that column's width side by side
+
+#### Scenario: Many groups
+- **WHEN** there are more groups than fit at the narrowest column width
+- **THEN** the timeline scrolls sideways, the column headers scroll with the columns, and the hour labels stay at the left
+
+#### Scenario: Switch back
+- **WHEN** the user chooses "All entries together"
+- **THEN** the timeline is one column without headers again
+
+#### Scenario: Day, zoom, and reload keep the grouping
+- **WHEN** the user changes the day, zooms, or the day is reloaded
+- **THEN** the timeline stays grouped by the same grouping and the columns are recomputed for the new data
+
+#### Scenario: Grouping is remembered
+- **WHEN** the user chose a grouping and opens the Worklog window again, even after restarting the application
+- **THEN** the timeline starts with that grouping, and an unknown or missing remembered grouping means "All entries together"
+
 ### Requirement: Timeline Zoom
 The system SHALL let the user change the vertical scale of the timeline so an hour has more or less height, with Ctrl + mouse wheel (up zooms in), with Ctrl + plus, Ctrl + minus, and Ctrl + 0, and with zoom out, zoom in, and reset buttons that show the current zoom as a percentage of the default, SHALL limit the scale to a minimum and a maximum, SHALL keep the moment under the mouse pointer (or the middle of the visible area for buttons and keys) in place while zooming, and SHALL redraw overlapping entries at the new scale.
 

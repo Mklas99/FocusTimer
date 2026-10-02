@@ -42,16 +42,20 @@ namespace FocusTimer.App.ViewModels
         /// <param name="summary">The Summary tab.</param>
         /// <param name="settingsProvider">Supplies the retention setting that limits selectable days.</param>
         /// <param name="timeProvider">The clock and time zone that decide the local day.</param>
-        /// <param name="viewState">Remembers view preferences such as the timeline zoom; optional.</param>
+        /// <param name="viewState">Remembers view preferences such as the timeline zoom and grouping; optional.</param>
+        /// <param name="groupings">The groupings the timeline can be split by (the same as the Summary's); optional.</param>
+        /// <param name="projectResolver">Decides an entry's project for the project grouping; optional.</param>
         public WorklogWindowViewModel(
             WorklogEntriesViewModel entries,
             WorklogSummaryViewModel summary,
             ISettingsProvider settingsProvider,
             TimeProvider timeProvider,
-            IWorklogViewStateStore? viewState = null)
+            IWorklogViewStateStore? viewState = null,
+            WorklogGroupingRegistry? groupings = null,
+            IProjectResolver? projectResolver = null)
         {
             this.Entries = entries;
-            this.Timeline = new WorklogTimelineViewModel(entries, viewState);
+            this.Timeline = new WorklogTimelineViewModel(entries, viewState, null, groupings, projectResolver);
             this.Summary = summary;
             this._settingsProvider = settingsProvider;
             this._timeProvider = timeProvider;

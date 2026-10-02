@@ -30,6 +30,27 @@ namespace FocusTimer.App.Views
             // Tunnel, so the scroll viewer does not scroll before Ctrl + wheel is turned into a zoom.
             this.AddHandler(InputElement.PointerWheelChangedEvent, this.OnPointerWheelChanged, RoutingStrategies.Tunnel);
             this.AddHandler(InputElement.KeyDownEvent, this.OnKeyDown, RoutingStrategies.Bubble);
+            this.AddHandler(ScrollViewer.ScrollChangedEvent, this.OnScrollChanged, RoutingStrategies.Bubble);
+        }
+
+        private void OnScrollChanged(object? sender, ScrollChangedEventArgs e)
+        {
+            if (!ReferenceEquals(e.Source, this.FindControl<ScrollViewer>("Scroller")))
+            {
+                return;
+            }
+
+            // Sideways scrolling moves the column headers with the day and keeps the hour labels in place.
+            var offsetX = this.FindControl<ScrollViewer>("Scroller")!.Offset.X;
+            if (this.FindControl<ScrollViewer>("HeaderScroller") is { } header)
+            {
+                header.Offset = new Vector(offsetX, 0);
+            }
+
+            if (this.FindControl<Border>("Gutter") is { } gutter)
+            {
+                gutter.RenderTransform = new Avalonia.Media.TranslateTransform(offsetX, 0);
+            }
         }
 
         private void OnPointerWheelChanged(object? sender, PointerWheelEventArgs e)

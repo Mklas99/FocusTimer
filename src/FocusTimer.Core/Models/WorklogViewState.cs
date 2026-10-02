@@ -5,4 +5,5 @@ namespace FocusTimer.Core.Models;
 /// settings, so changing a view never touches the Settings draft or its commit flow.
 /// </summary>
 /// <param name="TimelineHourHeight">The timeline's hour height (its zoom), or null when it was never changed.</param>
-public sealed record WorklogViewState(double? TimelineHourHeight = null);
+/// <param name="TimelineGroupingId">The id of the grouping the timeline is split by, or null for all entries together.</param>
+public sealed record WorklogViewState(double? TimelineHourHeight = null, string? TimelineGroupingId = null);

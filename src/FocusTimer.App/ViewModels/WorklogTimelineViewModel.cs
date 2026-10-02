@@ -9,11 +9,12 @@ namespace FocusTimer.App.ViewModels
     using System.Windows.Input;
     using FocusTimer.Core.Interfaces;
     using FocusTimer.Core.Models;
+    using FocusTimer.Core.Services;
     using ReactiveUI;
 
     /// <summary>
-    /// Shows the day that the Entries tab loaded as blocks along a time axis. It reads the same loaded list as the
-    /// table, so the two can never disagree.
+    /// Shows the day that the Entries tab loaded as blocks along a time axis, either all together or in one column per
+    /// application, project, or window. It reads the same loaded list as the table, so the two can never disagree.
     /// </summary>
     public class WorklogTimelineViewModel : ReactiveObject
     {
@@ -32,12 +33,19 @@ namespace FocusTimer.App.ViewModels
         /// <summary>The height of the smallest block, so very short entries stay visible.</summary>
         public const double MinimumBlockHeight = 20;
 
+        /// <summary>The id of the choice that draws every entry in one column.</summary>
+        public const string NoGroupingId = "";
+
         private readonly WorklogEntriesViewModel _entries;
         private readonly IWorklogViewStateStore? _viewState;
         private readonly TimeSpan _saveDelay;
+        private readonly WorklogGroupingRegistry? _groupings;
+        private readonly IProjectResolver _projectResolver;
         private CancellationTokenSource? _saveCts;
-        private bool _remembering = true;
+        private bool _remembering;
         private IReadOnlyList<TimelineBlockViewModel> _blocks = [];
+        private IReadOnlyList<TimelineGroupViewModel> _groups = [];
+        private GroupingOption _selectedGrouping;
         private double _scrollTargetMinute;
         private double _hourHeight = DefaultHourHeight;
 
@@ -45,25 +53,37 @@ namespace FocusTimer.App.ViewModels
         /// Initializes a new instance of the <see cref="WorklogTimelineViewModel"/> class.
         /// </summary>
         /// <param name="entries">The Entries tab whose loaded day is drawn.</param>
-        /// <param name="viewState">Remembers the zoom between runs; without it the zoom starts at 100% every time.</param>
-        /// <param name="saveDelay">How long the zoom must stay unchanged before it is saved; null means 400 ms.</param>
+        /// <param name="viewState">Remembers the zoom and grouping between runs; without it they start fresh every time.</param>
+        /// <param name="saveDelay">How long a change must stay unchanged before it is saved; null means 400 ms.</param>
+        /// <param name="groupings">The groupings the user can choose from; without them the timeline cannot be grouped.</param>
+        /// <param name="projectResolver">Decides an entry's project for the project grouping; the stored tag by default.</param>
         public WorklogTimelineViewModel(
             WorklogEntriesViewModel entries,
             IWorklogViewStateStore? viewState = null,
-            TimeSpan? saveDelay = null)
+            TimeSpan? saveDelay = null,
+            WorklogGroupingRegistry? groupings = null,
+            IProjectResolver? projectResolver = null)
         {
             this._entries = entries;
+            this._entries.PropertyChanged += this.OnEntriesChanged;
             this._viewState = viewState;
             this._saveDelay = saveDelay ?? TimeSpan.FromMilliseconds(400);
+            this._groupings = groupings;
+            this._projectResolver = projectResolver ?? new StoredProjectResolver();
             this._remembering = viewState is null;
-            this._entries.PropertyChanged += this.OnEntriesChanged;
+            this.GroupingOptions =
+            [
+                new GroupingOption(NoGroupingId, "All entries together"),
+                .. (groupings?.All ?? []).Select(g => new GroupingOption(g.Id, g.DisplayName)),
+            ];
+            this._selectedGrouping = this.GroupingOptions[0];
             this.ZoomInCommand = ReactiveCommand.Create(this.ZoomIn);
             this.ZoomOutCommand = ReactiveCommand.Create(this.ZoomOut);
             this.ResetZoomCommand = ReactiveCommand.Create(this.ResetZoom);
             this.Rebuild();
         }
 
-        /// <summary>Gets the task of the most recent zoom save; used to await it.</summary>
+        /// <summary>Gets the task of the most recent save of the zoom or grouping; used to await it.</summary>
         public Task PendingSave { get; private set; } = Task.CompletedTask;
 
         /// <summary>Gets the command that makes an hour taller.</summary>
@@ -74,6 +94,51 @@ namespace FocusTimer.App.ViewModels
 
         /// <summary>Gets the command that returns to the default scale.</summary>
         public ICommand ResetZoomCommand { get; }
+
+        /// <summary>Gets the choices for how the timeline is split: all together, or one column per group.</summary>
+        public IReadOnlyList<GroupingOption> GroupingOptions { get; }
+
+        /// <summary>
+        /// Gets or sets how the timeline is split. "All entries together" draws one column; the others draw one column
+        /// per application, project, or window, using the same groupings as the Summary.
+        /// </summary>
+        public GroupingOption SelectedGrouping
+        {
+            get => this._selectedGrouping;
+            set
+            {
+                if (value is null || Equals(this._selectedGrouping, value) || !this.GroupingOptions.Contains(value))
+                {
+                    return;
+                }
+
+                this.RaiseAndSetIfChanged(ref this._selectedGrouping, value);
+                this.RaisePropertyChanged(nameof(this.IsGrouped));
+                this.Rebuild();
+                this.QueueSave();
+            }
+        }
+
+        /// <summary>Gets a value indicating whether the timeline is split into group columns.</summary>
+        public bool IsGrouped => this._selectedGrouping.Id != NoGroupingId;
+
+        /// <summary>Gets the group columns, left to right; empty when the timeline is not grouped.</summary>
+        public IReadOnlyList<TimelineGroupViewModel> Groups
+        {
+            get => this._groups;
+            private set
+            {
+                this.RaiseAndSetIfChanged(ref this._groups, value);
+                this.RaisePropertyChanged(nameof(this.ColumnCount));
+                this.RaisePropertyChanged(nameof(this.HasGroups));
+            }
+        }
+
+        /// <summary>Gets a value indicating whether group columns are shown.</summary>
+        public bool HasGroups => this._groups.Count > 0;
+
+        /// <summary>Gets the number of columns the axis is split into; one when the timeline is not grouped.</summary>
+        public int ColumnCount => Math.Max(1, this._groups.Count);
 
         /// <summary>
         /// Gets or sets the height of one hour on the axis. The value is kept between <see cref="MinHourHeight"/> and
@@ -96,7 +161,7 @@ namespace FocusTimer.App.ViewModels
                 this.RaisePropertyChanged(nameof(this.ZoomText));
                 this.RaisePropertyChanged(nameof(this.CanZoomIn));
                 this.RaisePropertyChanged(nameof(this.CanZoomOut));
-                this.Blocks = Layout(this._entries.AllRows, this._hourHeight);
+                this.Rebuild();
             }
         }
 
@@ -162,9 +227,102 @@ namespace FocusTimer.App.ViewModels
         /// <returns>The blocks in start order.</returns>
         public static IReadOnlyList<TimelineBlockViewModel> Layout(
             IReadOnlyList<WorklogEntryRowViewModel> rows,
-            double hourHeight = DefaultHourHeight)
+            double hourHeight = DefaultHourHeight) =>
+            LayoutGroups(rows, hourHeight, null).Blocks;
+
+        /// <summary>
+        /// Places entries into one column per group (or one column when no grouping is given). Inside a column,
+        /// entries that overlap in time are drawn side by side. Columns are ordered by total time, largest first, with the
+        /// bucket for entries without a value last.
+        /// </summary>
+        /// <param name="rows">The rows to place.</param>
+        /// <param name="hourHeight">The hour height; it decides how many minutes the smallest block covers.</param>
+        /// <param name="groupOf">Decides each row's group; null draws everything in one column without group headers.</param>
+        /// <returns>The blocks in start order and the group columns.</returns>
+        public static TimelineLayout LayoutGroups(
+            IReadOnlyList<WorklogEntryRowViewModel> rows,
+            double hourHeight,
+            Func<WorklogEntryRowViewModel, GroupKey>? groupOf)
         {
             var minimumDisplayMinutes = MinimumBlockHeight / hourHeight * 60;
+            if (groupOf is null)
+            {
+                var single = PlaceLanes(rows, minimumDisplayMinutes);
+                return new TimelineLayout(single.Select(p => new TimelineBlockViewModel(p.Row, p.Lane, p.LaneCount)).ToList(), []);
+            }
+
+            var buckets = rows
+                .GroupBy(r => groupOf(r).Key)
+                .Select(g =>
+                {
+                    var key = groupOf(g.First());
+                    var total = TimeSpan.FromTicks(g.Sum(r => r.Entry.Duration.Ticks));
+                    return (Key: key, Rows: g.ToList(), Total: total);
+                })
+                .OrderBy(b => b.Key.IsUnassigned)
+                .ThenByDescending(b => b.Total)
+                .ThenBy(b => b.Key.Label, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            var groups = new List<TimelineGroupViewModel>();
+            var blocks = new List<TimelineBlockViewModel>();
+            for (var column = 0; column < buckets.Count; column++)
+            {
+                var bucket = buckets[column];
+                groups.Add(new TimelineGroupViewModel(column, bucket.Key.Label, bucket.Key.IsUnassigned, bucket.Total, bucket.Rows.Count));
+                blocks.AddRange(PlaceLanes(bucket.Rows, minimumDisplayMinutes)
+                    .Select(p => new TimelineBlockViewModel(p.Row, p.Lane, p.LaneCount, column, buckets.Count)));
+            }
+
+            return new TimelineLayout(blocks.OrderBy(b => b.Row.Entry.StartedAt).ThenBy(b => b.Column).ToList(), groups);
+        }
+
+        /// <summary>
+        /// Applies the zoom and grouping remembered from the last run. Changes the user makes afterwards are saved; the
+        /// applied values themselves are not written back.
+        /// </summary>
+        /// <returns>A task that completes when the remembered values have been applied.</returns>
+        public async Task LoadViewStateAsync()
+        {
+            if (this._viewState is null)
+            {
+                return;
+            }
+
+            try
+            {
+                var state = await this._viewState.LoadAsync().ConfigureAwait(true);
+                this._remembering = true;
+                if (state.TimelineGroupingId is { } groupingId
+                    && this.GroupingOptions.FirstOrDefault(o => string.Equals(o.Id, groupingId, StringComparison.OrdinalIgnoreCase)) is { } option)
+                {
+                    this.SelectedGrouping = option;
+                }
+
+                if (state.TimelineHourHeight is { } remembered && double.IsFinite(remembered))
+                {
+                    this.HourHeight = remembered;
+                }
+            }
+            finally
+            {
+                this._remembering = false;
+            }
+        }
+
+        /// <summary>Makes an hour one step taller.</summary>
+        public void ZoomIn() => this.HourHeight *= ZoomStep;
+
+        /// <summary>Makes an hour one step shorter.</summary>
+        public void ZoomOut() => this.HourHeight /= ZoomStep;
+
+        /// <summary>Returns to the default scale.</summary>
+        public void ResetZoom() => this.HourHeight = DefaultHourHeight;
+
+        private static List<(WorklogEntryRowViewModel Row, int Lane, int LaneCount)> PlaceLanes(
+            IReadOnlyList<WorklogEntryRowViewModel> rows,
+            double minimumDisplayMinutes)
+        {
             var ordered = rows.OrderBy(r => r.Entry.StartedAt).ThenBy(r => r.Entry.EndedAt).ToList();
             var placed = new List<(WorklogEntryRowViewModel Row, int Lane, int Group)>();
             var groupLaneCounts = new List<int>();
@@ -199,45 +357,8 @@ namespace FocusTimer.App.ViewModels
                 placed.Add((row, lane, group));
             }
 
-            return placed.Select(p => new TimelineBlockViewModel(p.Row, p.Lane, groupLaneCounts[p.Group])).ToList();
+            return placed.Select(p => (p.Row, p.Lane, groupLaneCounts[p.Group])).ToList();
         }
-
-        /// <summary>
-        /// Applies the zoom remembered from the last run. Changes the user makes afterwards are saved; the applied
-        /// value itself is not written back.
-        /// </summary>
-        /// <returns>A task that completes when the remembered zoom has been applied.</returns>
-        public async Task LoadViewStateAsync()
-        {
-            if (this._viewState is null)
-            {
-                return;
-            }
-
-            try
-            {
-                var state = await this._viewState.LoadAsync().ConfigureAwait(true);
-                this._remembering = false;
-                if (state.TimelineHourHeight is { } remembered && double.IsFinite(remembered))
-                {
-                    this._remembering = true;
-                    this.HourHeight = remembered;
-                }
-            }
-            finally
-            {
-                this._remembering = false;
-            }
-        }
-
-        /// <summary>Makes an hour one step taller.</summary>
-        public void ZoomIn() => this.HourHeight *= ZoomStep;
-
-        /// <summary>Makes an hour one step shorter.</summary>
-        public void ZoomOut() => this.HourHeight /= ZoomStep;
-
-        /// <summary>Returns to the default scale.</summary>
-        public void ResetZoom() => this.HourHeight = DefaultHourHeight;
 
         private void QueueSave()
         {
@@ -258,15 +379,16 @@ namespace FocusTimer.App.ViewModels
             try
             {
                 await Task.Delay(this._saveDelay, cancellationToken).ConfigureAwait(false);
-                await this._viewState!.SaveAsync(new WorklogViewState(this._hourHeight), cancellationToken).ConfigureAwait(false);
+                var grouping = this._selectedGrouping.Id == NoGroupingId ? null : this._selectedGrouping.Id;
+                await this._viewState!.SaveAsync(new WorklogViewState(this._hourHeight, grouping), cancellationToken).ConfigureAwait(false);
             }
             catch (OperationCanceledException)
             {
-                // A newer zoom replaced this one; it will save instead.
+                // A newer change replaced this one; it will save instead.
             }
             catch (Exception)
             {
-                // Remembering the zoom is a convenience; the store logs its own failure and the zoom still works.
+                // Remembering the view is a convenience; the store logs its own failure and the timeline still works.
             }
         }
 
@@ -280,7 +402,15 @@ namespace FocusTimer.App.ViewModels
 
         private void Rebuild()
         {
-            this.Blocks = Layout(this._entries.AllRows, this._hourHeight);
+            Func<WorklogEntryRowViewModel, GroupKey>? groupOf = null;
+            if (this.IsGrouped && this._groupings is not null && this._groupings.TryGet(this._selectedGrouping.Id, out var grouping))
+            {
+                groupOf = row => grouping.Select(row.Entry, new GroupingContext(this._projectResolver.Resolve(row.Entry)));
+            }
+
+            var layout = LayoutGroups(this._entries.AllRows, this._hourHeight, groupOf);
+            this.Blocks = layout.Blocks;
+            this.Groups = layout.Groups;
             this.ScrollTargetMinute = this._blocks.Count == 0
                 ? 8 * 60
                 : Math.Max(0, this._blocks.Min(b => b.StartMinute) - 30);

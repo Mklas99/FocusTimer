@@ -39,6 +39,27 @@ public class JsonWorklogViewStateStoreTests
         finally { Directory.Delete(root, true); }
     }
 
+    [Fact]
+    public async Task SaveAsync_RoundTripsTheTimelineGrouping_AndAnOldFileWithoutOneStillLoads()
+    {
+        var root = TestHelpers.CreateTempDirectory();
+        try
+        {
+            var path = Path.Combine(root, "worklog-view.json");
+            var store = new JsonWorklogViewStateStore(path);
+
+            await store.SaveAsync(new WorklogViewState(120, "project"));
+            var state = await store.LoadAsync();
+            Assert.Equal(("project", 120d), (state.TimelineGroupingId, state.TimelineHourHeight));
+
+            await File.WriteAllTextAsync(path, "{ \"timelineHourHeight\": 90 }");
+            var old = await store.LoadAsync();
+            Assert.Equal(90, old.TimelineHourHeight);
+            Assert.Null(old.TimelineGroupingId);
+        }
+        finally { Directory.Delete(root, true); }
+    }
+
     [Theory]
     [InlineData("not json at all")]
     [InlineData("")]
