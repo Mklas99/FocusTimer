@@ -369,6 +369,26 @@
                                            TextWrapping="Wrap" Foreground="{DynamicResource SettingsLabelTextBrush}" />
                                 <TextBlock Text="Longer intervals reduce polling work but may miss short app visits. Default: 10 seconds. Range: 1–60."
                                            TextWrapping="Wrap" Foreground="{DynamicResource SettingsLabelTextBrush}" />
+                                <TextBlock Classes="SettingLabel" Text="Excluded applications" />
+                                <TextBlock Text="Activity in matching windows is not recorded. Patterns are case-insensitive; * matches any text and ? one character. The first matching rule applies."
+                                           TextWrapping="Wrap" Foreground="{DynamicResource SettingsLabelTextBrush}" />
+                                <ItemsControl ItemsSource="{Binding ExclusionRules}" x:Name="ExclusionRuleList">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate x:DataType="vm:ExclusionRuleItemViewModel">
+                                            <StackPanel Spacing="4" Margin="0,0,0,8">
+                                                <Grid ColumnDefinitions="*,*,Auto,Auto,Auto">
+                                                    <TextBox Grid.Column="0" Margin="0,0,6,0" Text="{Binding AppPattern}" Watermark="Application, e.g. keepass" />
+                                                    <TextBox Grid.Column="1" Margin="0,0,6,0" Text="{Binding TitlePattern}" Watermark="Window title, e.g. *bank*" />
+                                                    <Button Grid.Column="2" Margin="0,0,6,0" Content="Up" Command="{Binding #ExclusionRuleList.((vm:SettingsWindowViewModel)DataContext).MoveExclusionRuleUpCommand}" CommandParameter="{Binding}" />
+                                                    <Button Grid.Column="3" Margin="0,0,6,0" Content="Down" Command="{Binding #ExclusionRuleList.((vm:SettingsWindowViewModel)DataContext).MoveExclusionRuleDownCommand}" CommandParameter="{Binding}" />
+                                                    <Button Grid.Column="4" Content="Remove" Command="{Binding #ExclusionRuleList.((vm:SettingsWindowViewModel)DataContext).RemoveExclusionRuleCommand}" CommandParameter="{Binding}" />
+                                                </Grid>
+                                                <TextBlock Text="{Binding Error}" TextWrapping="Wrap" Foreground="{DynamicResource SettingsLabelTextBrush}" />
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                <Button Content="Add exclusion rule" Command="{Binding AddExclusionRuleCommand}" HorizontalAlignment="Left" />
                                 <TextBlock TextWrapping="Wrap"
                                            Foreground="{DynamicResource SettingsLabelTextBrush}"
                                            FontSize="11"

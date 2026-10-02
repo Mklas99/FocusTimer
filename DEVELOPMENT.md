@@ -767,6 +767,12 @@ Foreground capture occurs immediately when tracking starts, then at the configur
 
 Measurements and reproduction instructions: [Activity polling performance](docs/versions/current/ActivityPollingPerformance.md). The isolated Windows smoke driver is `tools/FocusTimer.PollingSmoke`; pass an absolute synthetic-data directory when launching it. It uses platform stubs and does not register global hotkeys or change autostart.
 
+## Application exclusions
+
+In Developer Options, **Excluded applications** lists rules that keep matching windows out of the worklog. A rule has an application (process name) pattern, a window-title pattern, or both; when both are set, both must match. Patterns are case-insensitive; `*` matches any text, `?` one character, and everything else is literal (a trailing `.exe` on the application is optional). The first matching rule in list order applies. Apply and OK save and activate the list; Cancel restores the last applied one. A rule with no pattern is rejected in the editor.
+
+`Settings.ExclusionRules` is an additive list in settings JSON (`exclusionRules`, items with `appPattern` and `titlePattern`). A missing list means nothing is excluded; malformed or empty saved rules are dropped with a logged warning without discarding other settings. Exclusion happens at capture: the open segment closes when an excluded window is first observed and a new one starts when a non-excluded window is next observed, so the gap appears in the Timeline and in worklog totals, while the running timer keeps counting. Existing entries are never changed, and a title that changes between samples can leak up to one polling interval.
+
 ## Settings save presentation and icon colors
 
 Settings uses IsDraftVisible for visual availability and CanEdit for mutation guards. During IsCommitting, a transparent shield blocks pointer edits, focus moves to the reserved Saving... status, dropdowns/context menus close, and window handlers consume keyboard, text, wheel, paste, and cut input. Handlers detach on close; Apply restores valid editor focus, while successful OK closes. Imports begun before a commit are rejected even if they finish after it. Commit start clears active preedit text through Avalonia's text-input-method client before focus movement releases the editor. The native fixture verifies preedit clearing; individual Windows IME language implementations are not exercised with physical keyboard input.

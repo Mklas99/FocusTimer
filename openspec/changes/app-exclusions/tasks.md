@@ -19,11 +19,11 @@ All tasks are in `FocusTimer.Core`, `FocusTimer.Persistence`, and `FocusTimer.Ap
 
 ## 4. Developer Options editor (App)
 
-- [ ] 4.1 Add exclusion rule editing (add, edit, reorder, remove, inline validation) to `SettingsWindowViewModel` on the shared draft, with Apply/OK/Cancel and commit-failure behavior; verify view-model tests for validation, Cancel restoring the last applied list, and no tracker change while editing.
-- [ ] 4.2 Add the editor to the Developer Options area, hidden while developer mode is locked; verify with a headless view test that it is absent when locked and bound when unlocked.
-- [ ] 4.3 Push the applied list to the tracker in `TimerWidgetViewModel` on settings load and Apply, next to `SetPollingInterval`; verify a test that an applied rule reaches the tracker and a Cancelled draft does not.
+- [x] 4.1 Add exclusion rule editing (add, edit, reorder, remove, inline validation) to `SettingsWindowViewModel` on the shared draft, with Apply/OK/Cancel and commit-failure behavior; verify view-model tests for validation, Cancel restoring the last applied list, and no tracker change while editing.
+- [x] 4.2 Add the editor to the Developer Options area, hidden while developer mode is locked; verify with a headless view test that it is absent when locked and bound when unlocked.
+- [x] 4.3 Push the applied list to the tracker in `TimerWidgetViewModel` on settings load and Apply, next to `SetPollingInterval`; verify a test that an applied rule reaches the tracker and a Cancelled draft does not.
 
 ## 5. Docs and integration
 
-- [ ] 5.1 Update `OpenIssues.md` (OI-32 status), `Features.md`, and the tracker description in `ARCHITECTURE.md`, then check `openspec/` and root docs for contradictions; verify by re-reading the three files.
+- [x] 5.1 Update `OpenIssues.md` (OI-32 status), `Features.md`, and the tracker description in `ARCHITECTURE.md`, then check `openspec/` and root docs for contradictions; verify by re-reading the three files.
 - [ ] 5.2 Manual Windows walkthrough: exclude one application by name, confirm the Timeline shows a gap and the next application starts fresh, restart and confirm rules persist; record the result in the change notes. Run `openspec validate app-exclusions` and the full test suite.

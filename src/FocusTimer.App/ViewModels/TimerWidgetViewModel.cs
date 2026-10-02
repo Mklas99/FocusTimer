@@ -570,6 +570,7 @@ namespace FocusTimer.App.ViewModels
             }
 
             this._sessionTracker.SetPollingInterval(settings.ActivityPollingIntervalSeconds);
+            this._sessionTracker.SetExclusionRules(settings.ExclusionRules);
             this._sessionTracker.SetTrackingEnabled(settings.WorkLoggingEnabled);
         }
 

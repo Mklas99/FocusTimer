@@ -2,6 +2,7 @@ namespace FocusTimer.App.ViewModels
 {
     using System;
     using System.Collections.Generic;
+    using System.Collections.ObjectModel;
     using System.ComponentModel;
     using System.Diagnostics;
     using System.IO;
@@ -92,6 +93,12 @@ namespace FocusTimer.App.ViewModels
             this.VersionInfoClickedCommand = ReactiveCommand.Create(this.OnVersionInfoClicked);
             this.RetryLoadCommand = ReactiveCommand.CreateFromTask(this.RetryLoadAsync);
             this.RetryRecoveryCommand = ReactiveCommand.CreateFromTask(this.RetryRecoveryAsync);
+            this.AddExclusionRuleCommand = ReactiveCommand.Create(this.AddExclusionRule);
+            this.RemoveExclusionRuleCommand = ReactiveCommand.Create<ExclusionRuleItemViewModel>(this.RemoveExclusionRule);
+            this.MoveExclusionRuleUpCommand = ReactiveCommand.Create<ExclusionRuleItemViewModel>(
+                rule => this.MoveExclusionRule(rule, -1));
+            this.MoveExclusionRuleDownCommand = ReactiveCommand.Create<ExclusionRuleItemViewModel>(
+                rule => this.MoveExclusionRule(rule, 1));
 
             // Load settings
             _ = this.LoadSettingsAsync();
@@ -278,6 +285,7 @@ namespace FocusTimer.App.ViewModels
                 this.AttachSettings(value);
                 this.RaisePropertyChanged(nameof(this.PlayPauseColor));
                 this.ActivityPollingIntervalInput = value.ActivityPollingIntervalSeconds;
+                this.LoadExclusionRules(value);
                 this.RaisePropertyChanged(nameof(this.IsDeveloperModeVisible));
                 this.RaisePropertyChanged(nameof(this.SelectedDeveloperLogLevel));
             }
@@ -319,6 +327,26 @@ namespace FocusTimer.App.ViewModels
         public string ActivityPollingIntervalError => this.ActivityPollingIntervalInput is decimal seconds &&
             seconds >= 1 && seconds <= 60 && seconds == decimal.Truncate(seconds)
                 ? string.Empty : "Enter a whole number from 1 to 60 seconds.";
+
+        /// <summary>Gets the exclusion rule draft in evaluation order.</summary>
+        public ObservableCollection<ExclusionRuleItemViewModel> ExclusionRules { get; } = new();
+
+        /// <summary>Gets the command that appends a blank exclusion rule.</summary>
+        public ICommand AddExclusionRuleCommand { get; }
+
+        /// <summary>Gets the command that removes an exclusion rule.</summary>
+        public ICommand RemoveExclusionRuleCommand { get; }
+
+        /// <summary>Gets the command that moves an exclusion rule earlier in the list.</summary>
+        public ICommand MoveExclusionRuleUpCommand { get; }
+
+        /// <summary>Gets the command that moves an exclusion rule later in the list.</summary>
+        public ICommand MoveExclusionRuleDownCommand { get; }
+
+        /// <summary>Gets validation feedback for the exclusion rule draft.</summary>
+        public string ExclusionRulesError => this.ExclusionRules.Any(r => !string.IsNullOrEmpty(r.Error))
+            ? "Every exclusion rule needs an application pattern, a window title pattern, or both."
+            : string.Empty;
 
         /// <summary>Gets a value indicating whether the most recent Apply/OK saved successfully.</summary>
         public bool LastApplySucceeded { get; private set; }
@@ -781,6 +809,7 @@ namespace FocusTimer.App.ViewModels
             {
                 Settings candidate = this.Settings.Clone();
                 candidate.ActivityPollingIntervalSeconds = (int)this.ActivityPollingIntervalInput!.Value;
+                candidate.ExclusionRules = this.ExclusionRules.Select(r => r.ToRule()).ToList();
                 SettingsCommitStatus result = await this._commitCoordinator.CommitAsync(
                     candidate, this._lastAppliedSettings);
                 if (result == SettingsCommitStatus.Success)
@@ -851,11 +880,77 @@ namespace FocusTimer.App.ViewModels
             }
         }
 
+        private void LoadExclusionRules(Settings settings)
+        {
+            foreach (ExclusionRuleItemViewModel item in this.ExclusionRules)
+            {
+                item.PropertyChanged -= this.OnExclusionRuleChanged;
+            }
+
+            this.ExclusionRules.Clear();
+            foreach (WindowMatchRule rule in settings.ExclusionRules)
+            {
+                this.AttachExclusionRule(new ExclusionRuleItemViewModel(rule));
+            }
+
+            this.RaisePropertyChanged(nameof(this.ExclusionRulesError));
+        }
+
+        private void AttachExclusionRule(ExclusionRuleItemViewModel item, int? index = null)
+        {
+            item.PropertyChanged += this.OnExclusionRuleChanged;
+            this.ExclusionRules.Insert(index ?? this.ExclusionRules.Count, item);
+        }
+
+        private void OnExclusionRuleChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            this.RaisePropertyChanged(nameof(this.ExclusionRulesError));
+            if (!this.RecoveryRequired)
+            {
+                this.CommitError = string.Empty;
+            }
+        }
+
+        private void AddExclusionRule()
+        {
+            this.AttachExclusionRule(new ExclusionRuleItemViewModel());
+            this.OnExclusionRuleChanged(this, new PropertyChangedEventArgs(nameof(this.ExclusionRules)));
+        }
+
+        private void RemoveExclusionRule(ExclusionRuleItemViewModel? rule)
+        {
+            if (rule is null || !this.ExclusionRules.Remove(rule))
+            {
+                return;
+            }
+
+            rule.PropertyChanged -= this.OnExclusionRuleChanged;
+            this.OnExclusionRuleChanged(this, new PropertyChangedEventArgs(nameof(this.ExclusionRules)));
+        }
+
+        private void MoveExclusionRule(ExclusionRuleItemViewModel? rule, int offset)
+        {
+            int index = rule is null ? -1 : this.ExclusionRules.IndexOf(rule);
+            int target = index + offset;
+            if (index < 0 || target < 0 || target >= this.ExclusionRules.Count)
+            {
+                return;
+            }
+
+            this.ExclusionRules.Move(index, target);
+            this.OnExclusionRuleChanged(this, new PropertyChangedEventArgs(nameof(this.ExclusionRules)));
+        }
+
         private string ValidateDraft()
         {
             if (!string.IsNullOrEmpty(this.ActivityPollingIntervalError))
             {
                 return this.ActivityPollingIntervalError;
+            }
+
+            if (!string.IsNullOrEmpty(this.ExclusionRulesError))
+            {
+                return this.ExclusionRulesError;
             }
 
             if (this.Settings.BreakIntervalMinutes <= 0)
