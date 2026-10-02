@@ -89,6 +89,38 @@ public sealed class WorklogEntryFormTests
     }
 
     [Fact]
+    public async Task Search_MakesTheMatchedTextBoldAndUnderlinedInTheRealTable_AndClearingRestoresPlainText()
+    {
+        using var h = await Harness.OpenAsync();
+        h.Store.Seed(h.Day.AddHours(9), 30);
+        await h.Vm.Entries.RefreshAsync();
+        h.Pump();
+        var application = h.Find<FocusTimer.App.Controls.HighlightTextBlock>(t => t.SourceText == "Code");
+        Assert.Equal("Code", application.Text);
+        Assert.True(application.Inlines is null || application.Inlines.Count == 0);
+
+        h.Find<TextBox>(t => AutomationProperties.GetName(t) == "Search entries").Text = "od";
+        h.Pump();
+
+        application = h.Find<FocusTimer.App.Controls.HighlightTextBlock>(t => t.SourceText == "Code" && t.IsEffectivelyVisible);
+        var runs = application.Inlines!.OfType<Avalonia.Controls.Documents.Run>().ToList();
+        Assert.Equal(["C", "od", "e"], runs.Select(r => r.Text));
+        Assert.Equal("Code", string.Concat(runs.Select(r => r.Text)));
+        var match = runs[1];
+        Assert.Equal(Avalonia.Media.FontWeight.Bold, match.FontWeight);
+        Assert.Same(Avalonia.Media.TextDecorations.Underline, match.TextDecorations);
+        Assert.NotEqual(Avalonia.Media.FontWeight.Bold, runs[0].FontWeight);
+        Assert.Null(runs[0].TextDecorations);
+
+        h.Vm.Entries.ClearSearchCommand.Execute(null);
+        h.Pump();
+
+        application = h.Find<FocusTimer.App.Controls.HighlightTextBlock>(t => t.SourceText == "Code" && t.IsEffectivelyVisible);
+        Assert.Equal("Code", application.Text);
+        Assert.True(application.Inlines is null || application.Inlines.Count == 0);
+    }
+
+    [Fact]
     public async Task CtrlF_FocusesTheSearchBox_AndEscapeClearsTheSearch()
     {
         using var h = await Harness.OpenAsync();

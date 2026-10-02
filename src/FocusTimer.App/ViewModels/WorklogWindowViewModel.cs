@@ -42,14 +42,16 @@ namespace FocusTimer.App.ViewModels
         /// <param name="summary">The Summary tab.</param>
         /// <param name="settingsProvider">Supplies the retention setting that limits selectable days.</param>
         /// <param name="timeProvider">The clock and time zone that decide the local day.</param>
+        /// <param name="viewState">Remembers view preferences such as the timeline zoom; optional.</param>
         public WorklogWindowViewModel(
             WorklogEntriesViewModel entries,
             WorklogSummaryViewModel summary,
             ISettingsProvider settingsProvider,
-            TimeProvider timeProvider)
+            TimeProvider timeProvider,
+            IWorklogViewStateStore? viewState = null)
         {
             this.Entries = entries;
-            this.Timeline = new WorklogTimelineViewModel(entries);
+            this.Timeline = new WorklogTimelineViewModel(entries, viewState);
             this.Summary = summary;
             this._settingsProvider = settingsProvider;
             this._timeProvider = timeProvider;
@@ -158,6 +160,7 @@ namespace FocusTimer.App.ViewModels
         {
             this._selectedTab = WorklogTab.Entries;
             this.RaisePropertyChanged(nameof(this.SelectedTab));
+            await this.Timeline.LoadViewStateAsync();
             await this.LoadBoundsAsync();
             this.SetDay(this.Today);
             await this.ReloadSelectedTabAsync();

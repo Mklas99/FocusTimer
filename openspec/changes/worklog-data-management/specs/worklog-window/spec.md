@@ -99,6 +99,10 @@ The system SHALL provide a search field next to the Entries action buttons that 
 - **WHEN** the selected entry no longer matches
 - **THEN** the selection is cleared
 
+#### Scenario: Matches are highlighted
+- **WHEN** a search is active
+- **THEN** the parts of the start, end, duration, application, window, and project cells that match a typed word are bold and underlined (not only colored), also on the selected row and in every theme, and clearing the search shows plain text again
+
 #### Scenario: Search does not change other tabs
 - **WHEN** a search is active
 - **THEN** the Timeline and Summary still show every entry of the day
@@ -144,6 +148,14 @@ The system SHALL let the user change the vertical scale of the timeline so an ho
 #### Scenario: Reset
 - **WHEN** the user presses Reset or Ctrl + 0
 - **THEN** the scale returns to the default of 100%
+
+#### Scenario: Zoom is remembered
+- **WHEN** the user changes the zoom and later opens the Worklog window again, even after restarting the application
+- **THEN** the timeline starts at the zoom the user last chose, clamped to the allowed range, and a missing or damaged remembered value means 100%
+
+#### Scenario: Remembering never blocks
+- **WHEN** the remembered zoom cannot be read or written
+- **THEN** the timeline still works at the current zoom and nothing else is affected
 
 #### Scenario: Short entries at a larger scale
 - **WHEN** two very short neighbouring entries shared lanes at the default scale and the user zooms in enough to separate them

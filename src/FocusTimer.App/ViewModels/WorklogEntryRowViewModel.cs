@@ -4,15 +4,18 @@ namespace FocusTimer.App.ViewModels
     using System.Globalization;
     using System.Linq;
     using FocusTimer.Core.Models;
+    using ReactiveUI;
 
     /// <summary>
     /// One stored worklog entry as shown in the Entries table. The wrapped entry carries the
     /// revision the user saw, so an edit or delete can detect that it changed meanwhile.
     /// </summary>
-    public sealed class WorklogEntryRowViewModel
+    public sealed class WorklogEntryRowViewModel : ReactiveObject
     {
         /// <summary>The text shown for an empty project or window.</summary>
         public const string EmptyValueText = "—";
+
+        private IReadOnlyList<string> _highlightTerms;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="WorklogEntryRowViewModel"/> class.
@@ -20,6 +23,7 @@ namespace FocusTimer.App.ViewModels
         /// <param name="entry">The stored entry.</param>
         public WorklogEntryRowViewModel(TimeEntry entry)
         {
+            this._highlightTerms = [];
             this.Entry = entry;
             this.StartText = entry.StartedAt.ToString("HH:mm", CultureInfo.InvariantCulture);
             this.EndText = entry.EndedAt.ToString("HH:mm", CultureInfo.InvariantCulture);
@@ -36,6 +40,15 @@ namespace FocusTimer.App.ViewModels
 
         /// <summary>Gets the stored entry.</summary>
         public TimeEntry Entry { get; }
+
+        /// <summary>
+        /// Gets or sets the search words to highlight in the table's text cells; empty when no search is active.
+        /// </summary>
+        public IReadOnlyList<string> HighlightTerms
+        {
+            get => this._highlightTerms;
+            set => this.RaiseAndSetIfChanged(ref this._highlightTerms, value);
+        }
 
         /// <summary>Gets the start, end, and duration down to the second, shown in the details of the selected row.</summary>
         public string ExactTimeText { get; }

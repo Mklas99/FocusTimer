@@ -86,6 +86,7 @@ public sealed class ProgramCompositionTests : IDisposable
         var sp = this.Build(null, isWindows);
 
         Assert.IsType<WorklogEditingService>(sp.GetRequiredService<IWorklogEditingService>());
+        Assert.IsType<FocusTimer.Persistence.JsonWorklogViewStateStore>(sp.GetRequiredService<IWorklogViewStateStore>());
         var window = sp.GetRequiredService<Func<FocusTimer.App.ViewModels.WorklogWindowViewModel>>()();
         Assert.NotNull(window.Entries);
         Assert.NotNull(window.Summary);

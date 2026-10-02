@@ -1,6 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:FocusTimer.App.ViewModels"
+             xmlns:controls="using:FocusTimer.App.Controls"
              x:DataType="vm:WorklogEntriesViewModel"
              x:Class="FocusTimer.App.Views.WorklogEntriesView">
 
@@ -294,12 +295,12 @@
                 <ListBox.ItemTemplate>
                     <DataTemplate x:DataType="vm:WorklogEntryRowViewModel">
                         <Grid ColumnDefinitions="56,56,76,150,*,130" MinHeight="{StaticResource MinHitTargetSize}">
-                            <TextBlock Grid.Column="0" Text="{Binding StartText}" FontFamily="{StaticResource TabularTimerFontFamily}" VerticalAlignment="Center" />
-                            <TextBlock Grid.Column="1" Text="{Binding EndText}" FontFamily="{StaticResource TabularTimerFontFamily}" VerticalAlignment="Center" />
-                            <TextBlock Grid.Column="2" Text="{Binding DurationText}" FontFamily="{StaticResource TabularTimerFontFamily}" VerticalAlignment="Center" />
-                            <TextBlock Grid.Column="3" Text="{Binding ApplicationText}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" ToolTip.Tip="{Binding ApplicationText}" Classes.worklog-manual="{Binding IsManual}" />
-                            <TextBlock Grid.Column="4" Text="{Binding WindowText}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" ToolTip.Tip="{Binding WindowText}" Margin="0,0,8,0" />
-                            <TextBlock Grid.Column="5" Text="{Binding ProjectText}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" ToolTip.Tip="{Binding ProjectText}" />
+                            <controls:HighlightTextBlock Grid.Column="0" SourceText="{Binding StartText}" Terms="{Binding HighlightTerms}" FontFamily="{StaticResource TabularTimerFontFamily}" VerticalAlignment="Center" />
+                            <controls:HighlightTextBlock Grid.Column="1" SourceText="{Binding EndText}" Terms="{Binding HighlightTerms}" FontFamily="{StaticResource TabularTimerFontFamily}" VerticalAlignment="Center" />
+                            <controls:HighlightTextBlock Grid.Column="2" SourceText="{Binding DurationText}" Terms="{Binding HighlightTerms}" FontFamily="{StaticResource TabularTimerFontFamily}" VerticalAlignment="Center" />
+                            <controls:HighlightTextBlock Grid.Column="3" SourceText="{Binding ApplicationText}" Terms="{Binding HighlightTerms}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" ToolTip.Tip="{Binding ApplicationText}" Classes.worklog-manual="{Binding IsManual}" />
+                            <controls:HighlightTextBlock Grid.Column="4" SourceText="{Binding WindowText}" Terms="{Binding HighlightTerms}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" ToolTip.Tip="{Binding WindowText}" Margin="0,0,8,0" />
+                            <controls:HighlightTextBlock Grid.Column="5" SourceText="{Binding ProjectText}" Terms="{Binding HighlightTerms}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" ToolTip.Tip="{Binding ProjectText}" />
                         </Grid>
                     </DataTemplate>
                 </ListBox.ItemTemplate>

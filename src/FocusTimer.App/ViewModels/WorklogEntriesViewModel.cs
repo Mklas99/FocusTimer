@@ -527,6 +527,11 @@ namespace FocusTimer.App.ViewModels
         {
             var selectedId = this._selectedRow?.Entry.EntryId;
             var terms = this.SearchTerms();
+            foreach (var row in this._allRows)
+            {
+                row.HighlightTerms = terms;
+            }
+
             this.Rows = terms.Count == 0 ? this._allRows : this._allRows.Where(r => r.Matches(terms)).ToList();
             this.SelectedRow = selectedId is null ? null : this._rows.FirstOrDefault(r => r.Entry.EntryId == selectedId);
             this.RaisePropertyChanged(nameof(this.SearchResultText));

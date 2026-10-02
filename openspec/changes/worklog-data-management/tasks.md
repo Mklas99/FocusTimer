@@ -81,3 +81,10 @@
 - [x] 11.3 Add timeline zoom (Ctrl + wheel anchored on the pointer, Ctrl + plus/minus/0, buttons with a percentage, limits, lanes recomputed at the new scale); verify with view model tests, headless wheel and keyboard tests, and a render at 250%
 - [x] 11.4 Update `OpenIssues.md`, `ARCHITECTURE.md`, and the specs for these edits; verify `openspec validate worklog-data-management --strict` passes and the documents agree
 
+## 12. Remembered zoom and match highlighting
+
+- [x] 12.1 Add `IWorklogViewStateStore` / `WorklogViewState` (Core) and `JsonWorklogViewStateStore` (Persistence, `worklog-view.json` beside the settings file) and register it; verify with Persistence tests for a missing file, round trip, damaged content, an unwritable path, and concurrent saves, and a Host composition test
+- [x] 12.2 Load the remembered zoom when the window opens and save the last zoom after a short pause; verify with view model tests for clamping, NaN, no write-back on load, one save per burst, reset saved, no store, and a failing store
+- [x] 12.3 Highlight the matching parts of the six table columns with a color-independent bold underline; verify with match-finding tests, a view model test that rows carry the words, a headless test of the real table's runs, and renders in Light, Dark, and High Contrast on a selected row
+- [x] 12.4 Update the specs, `ARCHITECTURE.md`, and `OpenIssues.md`; verify `openspec validate worklog-data-management --strict` passes
+

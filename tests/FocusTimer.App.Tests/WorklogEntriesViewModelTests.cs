@@ -251,6 +251,41 @@ public class WorklogEntriesViewModelTests
     }
 
     [Fact]
+    public async Task Search_GivesEveryRowTheWordsToHighlight_AndClearingRemovesThem()
+    {
+        var store = new MemoryWorklogStore();
+        store.Add(
+            WorklogTestData.Tracked("a", new DateTimeOffset(2026, 5, 4, 9, 0, 0, TimeSpan.Zero), 30, "Code"),
+            WorklogTestData.Tracked("b", new DateTimeOffset(2026, 5, 4, 10, 0, 0, TimeSpan.Zero), 30, "Chrome"));
+        var vm = Create(store);
+        await vm.RefreshAsync();
+        Assert.All(vm.AllRows, r => Assert.Empty(r.HighlightTerms));
+
+        vm.SearchText = "  co  ode ";
+
+        Assert.All(vm.AllRows, r => Assert.Equal(["co", "ode"], r.HighlightTerms));
+        Assert.Single(vm.Rows);
+
+        vm.SearchText = string.Empty;
+        Assert.All(vm.AllRows, r => Assert.Empty(r.HighlightTerms));
+    }
+
+    [Fact]
+    public async Task Search_Words_AreAlsoAppliedToRowsLoadedAfterwards()
+    {
+        var store = new MemoryWorklogStore();
+        store.Add(WorklogTestData.Tracked("a", new DateTimeOffset(2026, 5, 4, 9, 0, 0, TimeSpan.Zero), 30, "Code"));
+        var vm = Create(store);
+        await vm.RefreshAsync();
+        vm.SearchText = "code";
+
+        store.Add(WorklogTestData.Tracked("b", new DateTimeOffset(2026, 5, 4, 10, 0, 0, TimeSpan.Zero), 30, "Code"));
+        await vm.RefreshAsync();
+
+        Assert.All(vm.AllRows, r => Assert.Equal(["code"], r.HighlightTerms));
+    }
+
+    [Fact]
     public async Task Search_WithNoMatch_ShowsAMessageAndClearingRestoresTheTable()
     {
         var store = new MemoryWorklogStore();

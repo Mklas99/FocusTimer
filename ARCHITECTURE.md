@@ -73,11 +73,11 @@ View (XAML)
 
 - **ViewModels & Views**
   - SettingsWindowViewModel: Settings state and validation (General, Logging, Appearance, Hotkeys, About tabs)
-  - WorklogWindowViewModel / WorklogWindow: the window opened from the tray. It owns one selected local day (never later than today, never before the retention window) and pushes it to its tabs: Entries (WorklogEntriesViewModel / WorklogEntriesView, a table of one day's stored entries to the minute with a search over the loaded day, exact times and source in the selected row's details, and read warnings), Timeline, and Summary. It does not depend on the Settings window or its draft
+  - WorklogWindowViewModel / WorklogWindow: the window opened from the tray. It owns one selected local day (never later than today, never before the retention window) and pushes it to its tabs: Entries (WorklogEntriesViewModel / WorklogEntriesView, a table of one day's stored entries to the minute with a search over the loaded day (matches shown bold and underlined by `HighlightTextBlock`), exact times and source in the selected row's details, and read warnings), Timeline, and Summary. It does not depend on the Settings window or its draft
   - WorklogSummaryViewModel / WorklogSummaryView: the day's time breakdown by application, project, or window. Both are host-independent (they never reference a window), so the Worklog window hosts them
   - TimerWidgetWindow: Compact timer display
   - Converters: Color opacity, angle rotation, play/pause icons
-  - WorklogEntryEditorViewModel: the add/edit form (inline in the Entries tab); it calls only `IWorklogEditingService`. The Timeline tab (WorklogTimelineViewModel / WorklogTimelineView, laid out by the custom `TimelinePanel`) reads all entries the Entries tab loaded (a search does not hide them), so the two never disagree; overlapping entries are drawn side by side in lanes, and Ctrl + mouse wheel changes the hour height (zoom), recomputing the lanes
+  - WorklogEntryEditorViewModel: the add/edit form (inline in the Entries tab); it calls only `IWorklogEditingService`. The Timeline tab (WorklogTimelineViewModel / WorklogTimelineView, laid out by the custom `TimelinePanel`) reads all entries the Entries tab loaded (a search does not hide them), so the two never disagree; overlapping entries are drawn side by side in lanes, and Ctrl + mouse wheel changes the hour height (zoom, remembered between runs), recomputing the lanes
 
 **Dependencies**: Core, Persistence
 
@@ -111,6 +111,7 @@ IIdleDetectionService // Poll OS idle state (Platform.Windows / Linux stub)
 IAutoStartService    // Register app in startup mechanisms (Platform.Windows / Linux stub)
 IThemeService        // Load/apply/import/export themes (implemented in Core: ThemeService)
 IWorklogSummaryService // Summarize worklog entries for a range into grouped rows (implemented in Core: WorklogSummaryService)
+IWorklogViewStateStore // Remembers the Worklog window's view preferences such as the timeline zoom (implemented in Persistence: JsonWorklogViewStateStore, `worklog-view.json` beside `settings.json`; never part of Settings)
 IWorklogEditingService // Add manual entries, edit (window title, project, duration), and delete entries with revision checks, overlap detection, and a WorklogChangedEvent (implemented in Core: WorklogEditingService)
 IWorklogGrouping     // Decides which row an entry belongs to; ApplicationGrouping, ProjectGrouping, and WindowGrouping (by window title; empty titles share a "No window title" row) are registered
 IProjectResolver     // Decides an entry's project when summarizing (default: StoredProjectResolver reads the stored tag)

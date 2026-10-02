@@ -24,6 +24,18 @@ namespace FocusTimer.Persistence
                 return new CsvSessionRepository(settingsProvider, logger);
             });
 
+            services.AddSingleton<IWorklogViewStateStore>(sp =>
+            {
+                // Beside the settings file, so the remembered view follows the same profile.
+                var settingsDirectory = sp.GetRequiredService<ISettingsProvider>() is JsonSettingsProvider json
+                    ? System.IO.Path.GetDirectoryName(json.SettingsFilePath)
+                    : null;
+                settingsDirectory ??= System.IO.Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "FocusTimer");
+                return new JsonWorklogViewStateStore(
+                    System.IO.Path.Combine(settingsDirectory, "worklog-view.json"), sp.GetService<IAppLogger>());
+            });
+
             return services;
         }
     }

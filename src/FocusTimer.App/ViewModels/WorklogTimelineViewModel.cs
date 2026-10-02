@@ -4,7 +4,10 @@ namespace FocusTimer.App.ViewModels
     using System.Collections.Generic;
     using System.ComponentModel;
     using System.Linq;
+    using System.Threading;
+    using System.Threading.Tasks;
     using System.Windows.Input;
+    using FocusTimer.Core.Interfaces;
     using FocusTimer.Core.Models;
     using ReactiveUI;
 
@@ -30,6 +33,10 @@ namespace FocusTimer.App.ViewModels
         public const double MinimumBlockHeight = 20;
 
         private readonly WorklogEntriesViewModel _entries;
+        private readonly IWorklogViewStateStore? _viewState;
+        private readonly TimeSpan _saveDelay;
+        private CancellationTokenSource? _saveCts;
+        private bool _remembering = true;
         private IReadOnlyList<TimelineBlockViewModel> _blocks = [];
         private double _scrollTargetMinute;
         private double _hourHeight = DefaultHourHeight;
@@ -38,15 +45,26 @@ namespace FocusTimer.App.ViewModels
         /// Initializes a new instance of the <see cref="WorklogTimelineViewModel"/> class.
         /// </summary>
         /// <param name="entries">The Entries tab whose loaded day is drawn.</param>
-        public WorklogTimelineViewModel(WorklogEntriesViewModel entries)
+        /// <param name="viewState">Remembers the zoom between runs; without it the zoom starts at 100% every time.</param>
+        /// <param name="saveDelay">How long the zoom must stay unchanged before it is saved; null means 400 ms.</param>
+        public WorklogTimelineViewModel(
+            WorklogEntriesViewModel entries,
+            IWorklogViewStateStore? viewState = null,
+            TimeSpan? saveDelay = null)
         {
             this._entries = entries;
+            this._viewState = viewState;
+            this._saveDelay = saveDelay ?? TimeSpan.FromMilliseconds(400);
+            this._remembering = viewState is null;
             this._entries.PropertyChanged += this.OnEntriesChanged;
             this.ZoomInCommand = ReactiveCommand.Create(this.ZoomIn);
             this.ZoomOutCommand = ReactiveCommand.Create(this.ZoomOut);
             this.ResetZoomCommand = ReactiveCommand.Create(this.ResetZoom);
             this.Rebuild();
         }
+
+        /// <summary>Gets the task of the most recent zoom save; used to await it.</summary>
+        public Task PendingSave { get; private set; } = Task.CompletedTask;
 
         /// <summary>Gets the command that makes an hour taller.</summary>
         public ICommand ZoomInCommand { get; }
@@ -73,6 +91,7 @@ namespace FocusTimer.App.ViewModels
                 }
 
                 this.RaiseAndSetIfChanged(ref this._hourHeight, clamped);
+                this.QueueSave();
                 this.RaisePropertyChanged(nameof(this.AxisHeight));
                 this.RaisePropertyChanged(nameof(this.ZoomText));
                 this.RaisePropertyChanged(nameof(this.CanZoomIn));
@@ -183,6 +202,34 @@ namespace FocusTimer.App.ViewModels
             return placed.Select(p => new TimelineBlockViewModel(p.Row, p.Lane, groupLaneCounts[p.Group])).ToList();
         }
 
+        /// <summary>
+        /// Applies the zoom remembered from the last run. Changes the user makes afterwards are saved; the applied
+        /// value itself is not written back.
+        /// </summary>
+        /// <returns>A task that completes when the remembered zoom has been applied.</returns>
+        public async Task LoadViewStateAsync()
+        {
+            if (this._viewState is null)
+            {
+                return;
+            }
+
+            try
+            {
+                var state = await this._viewState.LoadAsync().ConfigureAwait(true);
+                this._remembering = false;
+                if (state.TimelineHourHeight is { } remembered && double.IsFinite(remembered))
+                {
+                    this._remembering = true;
+                    this.HourHeight = remembered;
+                }
+            }
+            finally
+            {
+                this._remembering = false;
+            }
+        }
+
         /// <summary>Makes an hour one step taller.</summary>
         public void ZoomIn() => this.HourHeight *= ZoomStep;
 
@@ -191,6 +238,37 @@ namespace FocusTimer.App.ViewModels
 
         /// <summary>Returns to the default scale.</summary>
         public void ResetZoom() => this.HourHeight = DefaultHourHeight;
+
+        private void QueueSave()
+        {
+            if (this._viewState is null || this._remembering)
+            {
+                return;
+            }
+
+            this._saveCts?.Cancel();
+            this._saveCts?.Dispose();
+            var cts = new CancellationTokenSource();
+            this._saveCts = cts;
+            this.PendingSave = this.SaveAfterDelayAsync(cts.Token);
+        }
+
+        private async Task SaveAfterDelayAsync(CancellationToken cancellationToken)
+        {
+            try
+            {
+                await Task.Delay(this._saveDelay, cancellationToken).ConfigureAwait(false);
+                await this._viewState!.SaveAsync(new WorklogViewState(this._hourHeight), cancellationToken).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                // A newer zoom replaced this one; it will save instead.
+            }
+            catch (Exception)
+            {
+                // Remembering the zoom is a convenience; the store logs its own failure and the zoom still works.
+            }
+        }
 
         private void OnEntriesChanged(object? sender, PropertyChangedEventArgs e)
         {
