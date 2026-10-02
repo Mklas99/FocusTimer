@@ -226,7 +226,8 @@ System tray integration (`ITrayIconController`) is implemented in FocusTimer.App
 
 - **WindowsIdleDetectionService.cs**: Implements IIdleDetectionService
   - GetLastInputInfo API to detect idle periods
-  - Configurable idle timeout threshold
+  - Fixed 5-minute idle threshold, polled every 5 seconds
+  - Serializes state transitions with disposal so queued polls cannot publish events after shutdown
 
 - **WindowsAutoStartService.cs**: Implements IAutoStartService
   - Manages HKCU\Software\Microsoft\Windows\CurrentVersion\Run registry entry

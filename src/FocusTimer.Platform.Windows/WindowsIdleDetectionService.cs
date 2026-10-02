@@ -11,6 +11,7 @@ namespace FocusTimer.Platform.Windows
     {
         private readonly System.Timers.Timer _pollTimer;
         private readonly TimeSpan _idleThreshold = TimeSpan.FromMinutes(5);
+        private readonly object _stateLock = new();
         private bool _isIdle;
         private bool _disposed;
 
@@ -18,10 +19,20 @@ namespace FocusTimer.Platform.Windows
         /// Initializes a new instance of the <see cref="WindowsIdleDetectionService"/> class.
         /// </summary>
         public WindowsIdleDetectionService()
+            : this(startPolling: true)
+        {
+        }
+
+        /// <summary>Initializes a new instance of the <see cref="WindowsIdleDetectionService"/> class with optional automatic polling.</summary>
+        /// <param name="startPolling">Whether to start the native input polling timer.</param>
+        internal WindowsIdleDetectionService(bool startPolling)
         {
             this._pollTimer = new System.Timers.Timer(5000) { AutoReset = true };
             this._pollTimer.Elapsed += this.OnPollElapsed;
-            this._pollTimer.Start();
+            if (startPolling)
+            {
+                this._pollTimer.Start();
+            }
         }
 
         /// <summary>
@@ -47,25 +58,61 @@ namespace FocusTimer.Platform.Windows
             GC.SuppressFinalize(this);
         }
 
+        /// <summary>Processes one measured idle duration and emits state transitions.</summary>
+        /// <param name="idleDuration">Time since the most recent user input.</param>
+        internal void ProcessIdleDuration(TimeSpan idleDuration)
+        {
+            lock (this._stateLock)
+            {
+                if (this._disposed)
+                {
+                    return;
+                }
+
+                if (idleDuration >= this._idleThreshold)
+                {
+                    if (this._isIdle)
+                    {
+                        return;
+                    }
+
+                    this._isIdle = true;
+                    this.UserBecameIdle?.Invoke(this, new UserIdleEventArgs(DateTime.Now));
+                    return;
+                }
+
+                if (!this._isIdle)
+                {
+                    return;
+                }
+
+                this._isIdle = false;
+                this.UserReturned?.Invoke(this, new UserIdleEventArgs(DateTime.Now));
+            }
+        }
+
         /// <summary>
         /// Disposes the idle detection service and releases all resources.
         /// </summary>
         /// <param name="disposing">Whether the method is being called from Dispose (true) or the finalizer (false).</param>
         protected virtual void Dispose(bool disposing)
         {
-            if (this._disposed)
+            lock (this._stateLock)
             {
-                return;
-            }
+                if (this._disposed)
+                {
+                    return;
+                }
 
-            if (disposing)
-            {
-                this._pollTimer.Stop();
-                this._pollTimer.Elapsed -= this.OnPollElapsed;
-                this._pollTimer.Dispose();
-            }
+                if (disposing)
+                {
+                    this._pollTimer.Stop();
+                    this._pollTimer.Elapsed -= this.OnPollElapsed;
+                    this._pollTimer.Dispose();
+                }
 
-            this._disposed = true;
+                this._disposed = true;
+            }
         }
 
         [LibraryImport("user32.dll")]
@@ -94,26 +141,7 @@ namespace FocusTimer.Platform.Windows
 
         private void OnPollElapsed(object? sender, System.Timers.ElapsedEventArgs e)
         {
-            TimeSpan idleDuration = GetIdleDuration();
-            if (idleDuration >= this._idleThreshold)
-            {
-                if (this._isIdle)
-                {
-                    return;
-                }
-
-                this._isIdle = true;
-                this.UserBecameIdle?.Invoke(this, new UserIdleEventArgs(DateTime.Now));
-                return;
-            }
-
-            if (!this._isIdle)
-            {
-                return;
-            }
-
-            this._isIdle = false;
-            this.UserReturned?.Invoke(this, new UserIdleEventArgs(DateTime.Now));
+            this.ProcessIdleDuration(GetIdleDuration());
         }
 
         [StructLayout(LayoutKind.Sequential)]

@@ -31,7 +31,7 @@ The user's manual acceptance covers the remaining Windows backdrop, theme/restar
 
 - Release solution build succeeded with zero warnings and errors.
 - CI-equivalent Release coverage run passed: Core 202, Persistence 77, App 135, Windows platform 41, Host 20. Total: 475 passing tests; the ordinary App run intentionally skips one native fixture.
-- Every configured 60% line-coverage gate passed. Core: 90.83%; Persistence: 88.38%; selected App code: 92.34%; selected Windows code: 78.78%; Host: 97.43%. The App and Windows percentages apply to the CI script's configured filters, not their entire assemblies.
+- Every configured 60% line-coverage gate passed. Core: 90.83%; Persistence: 88.38%; selected App code: 92.34%; selected Windows code: 78.78%; Host: 97.43%. These are historical M03 results from the former App and Windows class filters; the coverage script now measures their full assemblies.
 - All four changes and all 18 main specifications passed strict OpenSpec validation before archive.
 - Spec synchronization preserves baseline scenarios and applies overlapping theming/settings deltas in implementation order. Later complete appearance-preview and save-presentation requirements remain authoritative.
 

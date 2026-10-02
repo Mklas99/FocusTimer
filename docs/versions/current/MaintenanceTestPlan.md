@@ -1,0 +1,60 @@
+# Maintenance test plan
+
+Improve line and condition coverage by testing observable behavior in the full assemblies. Keep coverage filters and the 60% line gate unchanged. Use Coverlet branch coverage as the local measure of exercised conditions; Sonar reports its own combined metric after CI analysis.
+
+| Area | Test type | Cases and expected behavior |
+| --- | --- | --- |
+| Settings commit and recovery | Unit | Reject concurrent commits; recover partial writes; release the commit gate after failure; restore file, registration, and runtime; keep recovery pending when any compensation stage fails; support providers without journals. |
+| Timer widget commands | Unit | Route start/pause/reset correctly, preserve idle-pause reason and project tag, route compact-mode changes to an open draft, persist only committed changes, log save failures and allow retry. |
+| Widget appearance | Unit | Preview an independent snapshot, discard without saving, preserve base opacity through cloning, clamp layer opacity, ignore insignificant changes, reflow at the scale boundary, preserve accessible button sizes, notify bindings and detach subscriptions on disposal. |
+| Theme application | Unit | Preserve valid brushes after invalid colors, continue applying unaffected resources, repair invalid resource types, switch to an opaque fallback when desktop transparency is lost and recover the tint when it returns. |
+| Durable worklog queue | Unit | Isolate permanently rejected entries, retry only transient failures, preserve entries after store or notification exceptions, avoid duplicate writes after callback errors, discard pending entries when logging is disabled, release the gate after cancellation. |
+| Windows hotkeys | Integration with invisible message-only windows | Deliver registered messages, ignore unknown IDs, detect registration conflicts, unregister and reuse IDs, move between windows, restore window procedures on disposal. Release all test registrations. |
+| Windows process lifetime | Integration | Reject invalid PIDs, keep an owned live handle, detect exit of a test-owned hidden process, release handles on repeated disposal. |
+| Windows idle state | Unit | Detect the exact five-minute threshold, suppress duplicate events, handle repeated idle/active cycles and absent subscribers, ignore polls after disposal, allow disposal from an event subscriber. |
+| Auto-start snapshots | Integration with isolated registry keys | Restore missing and empty commands exactly; reject non-string values and unsupported value kinds; report missing keys without overwriting existing commands. |
+
+Target improvements in both line and branch coverage for App and Windows, and all new tests passing alongside existing tests. The 60% gate remains a requirement for CI, but generated Avalonia code and untested window interactions may keep App below it after these focused additions. Do not add tests for generated code or trivial accessors just to reach a percentage.
+
+Release baseline before these additions: App line 38.94%, branch 44.38%; Windows line 57.37%, branch 46.22%. Existing tests: 476 passed, one native fixture skipped.
+
+Run focused tests first, then the full Release coverage script. Native Windows tests require Windows and permission to create invisible windows and a hidden test process. Do not emit user notifications or change the production auto-start registration.
+
+## First test pass
+
+The Release run on 2026-10-02 used `./scripts/run-unit-coverage.ps1 -Configuration Release -NoBuild` after building the changed test projects in Release. All 543 tests passed; one opt-in native appearance fixture was skipped. This adds 67 cases to the previous 476 passing tests. The script exits with failure only because App remains below the existing 60% line gate.
+
+| Scope | Line coverage before | Line coverage after | Branch coverage before | Branch coverage after |
+| --- | --- | --- | --- | --- |
+| App | 38.94% | 44.18% | 44.38% | 51.01% |
+| Windows platform | 57.37% | 71.22% | 46.22% | 58.01% |
+| All five assemblies | 57.54% | 61.88% | 58.36% | 63.21% |
+
+The overall percentages use covered/total lines and branches across the five reports, rather than an average of assembly percentages. Core, Persistence, and Host results are unchanged. These are local results; Sonar has not received this branch's reports.
+
+The targeted App classes, including their async state machines, now have line coverage of 98.94% for settings commits, 91.73% for the worklog queue, 97.28% for theme application, and 79.94% for the timer widget view model.
+
+Remaining App gaps are window interactions, controller lifecycles, and generated Avalonia code. The next useful work is a deterministic UI fixture for settings save/input/close behavior and controller startup, idle, and shutdown flows. Such tests should assert user-visible outcomes and clean up windows and dispatchers. The existing opt-in appearance fixture is not enabled by this change.
+
+## Review-driven branch tests
+
+The review examined the current maintenance diff, uncovered branches, nearby tests, and the Settings and idle contracts. Findings below are ordered by priority; all listed corrections are implemented.
+
+| Severity and location | Behavior or risk | Correction and evidence |
+| --- | --- | --- |
+| High coverage gap: `SettingsWindowViewModel.cs`, `RetryRecoveryAsync` | Startup must not continue when recovery or the following reload fails. A loaded draft must remain editable while commits and appearance previews are blocked during recovery. Existing tests did not exercise all of these outcomes. | Test failed recovery, failed reload, successful startup continuation, runtime recovery, blocked commit and preview, close warnings, and recovery retry during a running commit. `RetryRecoveryAsync` now has 100% line and branch coverage. |
+| Medium defect: `WindowsIdleDetectionService.cs`, idle transition processing and `Dispose` | The timer callback previously processed queued polls after disposal and could publish a shutdown-time idle or return event. Both regression cases failed before the fix. | Serialize transitions with disposal and ignore disposed polls. Test both previous states, threshold boundaries, repeated polls, missing subscribers, and subscriber-triggered disposal. Public polling behavior remains five seconds with a fixed five-minute threshold. An internal entry point allows deterministic state tests without manipulating actual user input. |
+| Medium coverage gap: `WindowsAutoStartService.cs`, `CaptureRegistration` and `RestoreRegistration` | Untested snapshot branches could lose an empty or absent command or overwrite an existing command after receiving malformed metadata. | Test absent/empty commands, non-string values, invalid and unsupported kinds, incomplete snapshots, and missing registry keys. All registry changes use unique test keys. |
+| Medium coverage gap: `AppController.cs`, `RegisterHotkeysCore` | Each hotkey's key and modifier comparison can cause re-registration. Invalid definitions and failed registration must preserve a usable retry path. | Test all four individual key/modifier changes, missing/invalid defaults, registration failure and retry, and cleanup failure before window creation. |
+
+Additional tests cover successful and disposed theme imports, invalid color-property requests, required directories, developer unlock and ignored log-level edits, and uncached process-name lookup after native lifetime access fails.
+
+The Release solution build passed with zero warnings and errors. The full Release coverage run passed 592 tests, with the same one native fixture skipped. This second pass adds 49 cases. The script still fails only the unchanged App line-coverage gate.
+
+| Scope | Line coverage before this pass | Line coverage after | Branch coverage before this pass | Branch coverage after |
+| --- | --- | --- | --- | --- |
+| App | 44.18% | 45.40% | 51.01% | 54.32% |
+| Windows platform | 71.22% | 75.26% | 58.01% | 67.12% |
+| All five assemblies | 61.88% | 63.00% | 63.21% | 65.98% |
+
+No further concrete defect was found in the reviewed branches. UI window interactions, controller flows with actual windows, native notification behavior, and native last-input API failures remain coverage gaps. No coverage filter or threshold was relaxed, and no report was submitted to Sonar.

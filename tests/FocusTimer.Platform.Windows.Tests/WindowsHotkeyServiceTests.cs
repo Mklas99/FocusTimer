@@ -195,6 +195,111 @@ public partial class WindowsHotkeyServiceTests
         Assert.Contains(logger.Warnings, w => w.Contains("Invalid hotkey definition"));
     }
 
+    [Theory]
+    [InlineData(HotkeyModifiers.Control | HotkeyModifiers.Alt | HotkeyModifiers.Shift)]
+    [InlineData(HotkeyModifiers.Control | HotkeyModifiers.Alt | HotkeyModifiers.Win)]
+    public void RegisteredHotkey_NativeMessageRaisesDefinitionAndUnregisterSuppressesIt(HotkeyModifiers modifiers)
+    {
+        using var window = new NativeMessageWindow();
+        using var service = new WindowsHotkeyService();
+        var definition = new HotkeyDefinition(modifiers, 0x87); // F24 avoids ordinary typing shortcuts.
+        var received = new List<HotkeyDefinition>();
+        service.HotkeyPressed += (_, args) => received.Add(args.Definition);
+        service.SetWindowHandle(window.Handle);
+        service.Register(definition);
+
+        window.SendHotkeyMessage(999);
+        Assert.Empty(received);
+        window.SendHotkeyMessage(1);
+        var actual = Assert.Single(received);
+        Assert.Equal(definition.KeyCode, actual.KeyCode);
+        Assert.Equal(definition.Modifiers, actual.Modifiers);
+
+        service.UnregisterAll();
+        window.SendHotkeyMessage(1);
+        Assert.Single(received);
+
+        // A new registration must work after cleanup and reuse the first ID.
+        service.Register(definition);
+        window.SendHotkeyMessage(1);
+        Assert.Equal(2, received.Count);
+    }
+
+    [Fact]
+    public void DuplicateNativeRegistration_LogsConflictWithoutDispatchingTheFailedDefinition()
+    {
+        using var firstWindow = new NativeMessageWindow();
+        using var secondWindow = new NativeMessageWindow();
+        using var first = new WindowsHotkeyService();
+        var logger = new RecordingLogger();
+        using var second = new WindowsHotkeyService(logger);
+        var definition = new HotkeyDefinition(HotkeyModifiers.Control | HotkeyModifiers.Alt | HotkeyModifiers.Shift, 0x87);
+        int firstEvents = 0;
+        int secondEvents = 0;
+        first.HotkeyPressed += (_, _) => firstEvents++;
+        second.HotkeyPressed += (_, _) => secondEvents++;
+        first.SetWindowHandle(firstWindow.Handle);
+        second.SetWindowHandle(secondWindow.Handle);
+        first.Register(definition);
+        second.Register(definition);
+
+        firstWindow.SendHotkeyMessage(1);
+        secondWindow.SendHotkeyMessage(1);
+
+        Assert.Equal(1, firstEvents);
+        Assert.Equal(0, secondEvents);
+        Assert.Contains(logger.Warnings, message => message.Contains("Failed to register hotkey"));
+    }
+
+    [Fact]
+    public void SwitchingWindow_DropsOldRegistrationsAndDeliversOnlyNewMessages()
+    {
+        using var firstWindow = new NativeMessageWindow();
+        using var secondWindow = new NativeMessageWindow();
+        using var service = new WindowsHotkeyService();
+        var definition = new HotkeyDefinition(HotkeyModifiers.Control | HotkeyModifiers.Alt | HotkeyModifiers.Shift, 0x87);
+        int events = 0;
+        service.HotkeyPressed += (_, _) => events++;
+        service.SetWindowHandle(firstWindow.Handle);
+        service.Register(definition);
+        firstWindow.SendHotkeyMessage(1);
+
+        service.SetWindowHandle(secondWindow.Handle);
+        firstWindow.SendHotkeyMessage(1);
+        secondWindow.SendHotkeyMessage(1);
+        Assert.Equal(1, events);
+        Assert.Equal(firstWindow.OriginalWndProc, firstWindow.GetCurrentWndProc());
+
+        service.Register(definition);
+        secondWindow.SendHotkeyMessage(1);
+        Assert.Equal(2, events);
+        service.Dispose();
+        Assert.Equal(secondWindow.OriginalWndProc, secondWindow.GetCurrentWndProc());
+    }
+
+    [Fact]
+    public void RegisteredHotkey_WithoutSubscribers_CanProcessAndReleaseItsRegistration()
+    {
+        using var window = new NativeMessageWindow();
+        using var service = new WindowsHotkeyService();
+        service.SetWindowHandle(window.Handle);
+        service.RegisterHotkey("Ctrl+Alt+Shift+F24", () => { });
+
+        window.SendHotkeyMessage(1);
+        service.UnregisterAll();
+
+        // Verify release using a second real service rather than inspecting private dictionaries.
+        var logger = new RecordingLogger();
+        using var replacement = new WindowsHotkeyService(logger);
+        replacement.SetWindowHandle(window.Handle);
+        replacement.Register(new HotkeyDefinition(HotkeyModifiers.Control | HotkeyModifiers.Alt | HotkeyModifiers.Shift, 0x87));
+        int events = 0;
+        replacement.HotkeyPressed += (_, _) => events++;
+        replacement.ProcessHotkeyMessage(1);
+        Assert.Equal(1, events);
+        Assert.Empty(logger.Warnings);
+    }
+
     private sealed class RecordingLogger : IAppLogger
     {
         public List<string> Warnings { get; } = new();
@@ -238,6 +343,8 @@ public partial class WindowsHotkeyServiceTests
         public IntPtr GetCurrentWndProc() => GetWindowLongPtrW(this.Handle, GwlWndProc);
 
         public void SendNullMessage() => SendMessageW(this.Handle, 0, IntPtr.Zero, IntPtr.Zero);
+
+        public void SendHotkeyMessage(int id) => SendMessageW(this.Handle, 0x0312, new IntPtr(id), IntPtr.Zero);
 
         public void Dispose() => DestroyWindow(this.Handle);
 

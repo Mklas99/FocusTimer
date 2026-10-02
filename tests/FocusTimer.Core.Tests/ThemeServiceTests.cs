@@ -29,6 +29,18 @@ public class ThemeServiceTests
     }
 
     [Fact]
+    public void Clone_PreservesWidgetBaseOpacityIndependently()
+    {
+        var theme = new Theme { WidgetBaseOpacity = 0.37 };
+
+        var clone = theme.Clone();
+
+        Assert.Equal(0.37, clone.WidgetBaseOpacity);
+        clone.WidgetBaseOpacity = 0.62;
+        Assert.Equal(0.37, theme.WidgetBaseOpacity);
+    }
+
+    [Fact]
     public void ApplyTheme_GivenTheme_StoresCloneNotOriginalReference()
     {
         var service = new ThemeService();

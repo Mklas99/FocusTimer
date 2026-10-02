@@ -1,6 +1,7 @@
 namespace FocusTimer.Platform.Windows.Tests;
 
 using FocusTimer.Core.Interfaces;
+using FocusTimer.Core.Models;
 using Microsoft.Win32;
 
 public class WindowsAutoStartServiceTests : IDisposable
@@ -95,6 +96,85 @@ public class WindowsAutoStartServiceTests : IDisposable
 
         Assert.Throws<UnauthorizedAccessException>(() => service.SetAutoStart(enabled: true));
         Assert.Throws<UnauthorizedAccessException>(() => service.IsAutoStartEnabled());
+    }
+
+    [Fact]
+    public void CaptureMissingRegistration_CanRestoreAbsenceAfterEnabling()
+    {
+        var previous = this._service.CaptureRegistration();
+        Assert.False(previous.Enabled);
+        Assert.Null(previous.Command);
+        this._service.SetAutoStart(true);
+
+        this._service.RestoreRegistration(previous);
+
+        using var key = Registry.CurrentUser.OpenSubKey(this._testKeyPath)!;
+        Assert.Null(key.GetValue("FocusTimer"));
+    }
+
+    [Fact]
+    public void CaptureEmptyCommand_RestoresTheExactEmptyValueRatherThanDeletingIt()
+    {
+        using (var key = Registry.CurrentUser.OpenSubKey(this._testKeyPath, writable: true)!)
+            key.SetValue("FocusTimer", string.Empty, RegistryValueKind.String);
+        var previous = this._service.CaptureRegistration();
+        Assert.False(previous.Enabled);
+        Assert.False(this._service.IsAutoStartEnabled());
+        this._service.SetAutoStart(true);
+
+        this._service.RestoreRegistration(previous);
+
+        using var restored = Registry.CurrentUser.OpenSubKey(this._testKeyPath)!;
+        Assert.Equal(string.Empty, restored.GetValue("FocusTimer"));
+    }
+
+    [Fact]
+    public void CaptureNonStringRegistration_RejectsItWithoutOverwritingTheValue()
+    {
+        using (var key = Registry.CurrentUser.OpenSubKey(this._testKeyPath, writable: true)!)
+            key.SetValue("FocusTimer", 123, RegistryValueKind.DWord);
+
+        Assert.Throws<IOException>(() => this._service.CaptureRegistration());
+        Assert.False(this._service.IsAutoStartEnabled());
+        using var restored = Registry.CurrentUser.OpenSubKey(this._testKeyPath)!;
+        Assert.Equal(123, restored.GetValue("FocusTimer"));
+    }
+
+    [Theory]
+    [InlineData("unknown kind")]
+    [InlineData("DWord")]
+    [InlineData("999")]
+    public void RestoreUnsupportedValueKind_DoesNotOverwriteTheExistingCommand(string kind)
+    {
+        const string original = "\"older.exe\" --start";
+        using (var key = Registry.CurrentUser.OpenSubKey(this._testKeyPath, writable: true)!)
+            key.SetValue("FocusTimer", original, RegistryValueKind.String);
+
+        Assert.Throws<IOException>(() => this._service.RestoreRegistration(new AutoStartRegistration(true, "new.exe", kind)));
+
+        using var restored = Registry.CurrentUser.OpenSubKey(this._testKeyPath)!;
+        Assert.Equal(original, restored.GetValue("FocusTimer"));
+    }
+
+    [Theory]
+    [InlineData(null, "String")]
+    [InlineData("ignored.exe", null)]
+    public void RestoreIncompleteSnapshot_UsesEnabledState(string? command, string? kind)
+    {
+        this._service.SetAutoStart(true);
+
+        this._service.RestoreRegistration(new AutoStartRegistration(false, command, kind));
+
+        Assert.False(this._service.IsAutoStartEnabled());
+    }
+
+    [Fact]
+    public void CaptureOrRestoreWithMissingRunKey_ReportsFailure()
+    {
+        Registry.CurrentUser.DeleteSubKeyTree(this._testKeyPath, throwOnMissingSubKey: false);
+
+        Assert.Throws<IOException>(() => this._service.CaptureRegistration());
+        Assert.Throws<IOException>(() => this._service.RestoreRegistration(new AutoStartRegistration(true, "test.exe", "String")));
     }
 
     private sealed class DeniedAutoStartService : WindowsAutoStartService

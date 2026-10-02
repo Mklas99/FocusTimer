@@ -617,6 +617,7 @@ namespace FocusTimer.Core.Models
                 TabHoverBackground = this.TabHoverBackground,
                 TabText = this.TabText,
                 TabSelectedText = this.TabSelectedText,
+                WidgetBaseOpacity = this.WidgetBaseOpacity,
                 BackgroundOpacity = this.BackgroundOpacity,
                 WidgetBlurMode = this.WidgetBlurMode,
                 TimerOpacity = this.TimerOpacity,

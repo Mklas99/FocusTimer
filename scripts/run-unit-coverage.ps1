@@ -13,8 +13,8 @@ Set-Location $repoRoot
 $projects = @(
     @{ TestProject = "tests/FocusTimer.Core.Tests/FocusTimer.Core.Tests.csproj"; Include = "[FocusTimer.Core]*" },
     @{ TestProject = "tests/FocusTimer.Persistence.Tests/FocusTimer.Persistence.Tests.csproj"; Include = "[FocusTimer.Persistence]*" },
-    @{ TestProject = "tests/FocusTimer.App.Tests/FocusTimer.App.Tests.csproj"; Include = "[FocusTimer.App]FocusTimer.App.ViewModels.ColorPickerWindowViewModel*" },
-    @{ TestProject = "tests/FocusTimer.Platform.Windows.Tests/FocusTimer.Platform.Windows.Tests.csproj"; Include = "[FocusTimer.Platform.Windows]FocusTimer.Platform.Windows.WindowsActiveWindowService*" },
+    @{ TestProject = "tests/FocusTimer.App.Tests/FocusTimer.App.Tests.csproj"; Include = "[FocusTimer.App]*" },
+    @{ TestProject = "tests/FocusTimer.Platform.Windows.Tests/FocusTimer.Platform.Windows.Tests.csproj"; Include = "[FocusTimer.Platform.Windows]*" },
     @{ TestProject = "tests/FocusTimer.Host.Tests/FocusTimer.Host.Tests.csproj"; Include = "[FocusTimer.Host]*" }
 )
 

@@ -546,6 +546,11 @@ This builds the solution, executes unit tests with OpenCover coverage collection
 ./scripts/run-unit-coverage.ps1 -Threshold 60
 ```
 Generates both OpenCover and Cobertura coverage reports in `artifacts/test-coverage/`.
+Measures the full Core, Persistence, App, Windows platform, and Host assemblies against each assembly's corresponding test project. The default 60% line-coverage gate applies to each assembly. To collect a baseline without enforcing a minimum, use `-Threshold 0`.
+
+The full-assembly Release baseline measured on 2026-10-02 was Core 90.84%, Persistence 88.38%, App 38.94%, Windows platform 57.37%, and Host 97.43%. All 476 tests passed, with one native App fixture skipped. App and Windows failed the unchanged 60% gate at that baseline.
+
+After the maintenance tests and review-driven branch tests, 592 tests pass and one native App fixture remains skipped. App coverage is 45.40% lines / 54.32% branches; Windows platform coverage is 75.26% lines / 67.12% branches. Core, Persistence, and Host coverage is unchanged. Overall local coverage is 63.00% lines / 65.98% branches. Windows passes the gate, while App still fails it, including in CI. See [the maintenance test plan](docs/versions/current/MaintenanceTestPlan.md) for tested behaviors, the idle shutdown fix, and remaining gaps.
 
 ### Naming Conventions
 
