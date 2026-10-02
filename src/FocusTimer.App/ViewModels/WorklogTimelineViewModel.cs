@@ -4,6 +4,7 @@ namespace FocusTimer.App.ViewModels
     using System.Collections.Generic;
     using System.ComponentModel;
     using System.Linq;
+    using System.Windows.Input;
     using FocusTimer.Core.Models;
     using ReactiveUI;
 
@@ -13,12 +14,25 @@ namespace FocusTimer.App.ViewModels
     /// </summary>
     public class WorklogTimelineViewModel : ReactiveObject
     {
-        /// <summary>Blocks shorter than this many minutes are laid out as if they were this long, so they stay visible.</summary>
-        public const double MinimumDisplayMinutes = 18;
+        /// <summary>The height of one hour at the default zoom.</summary>
+        public const double DefaultHourHeight = 60;
+
+        /// <summary>The smallest hour height the user can zoom out to.</summary>
+        public const double MinHourHeight = 30;
+
+        /// <summary>The largest hour height the user can zoom in to.</summary>
+        public const double MaxHourHeight = 480;
+
+        /// <summary>The factor one zoom step multiplies or divides the hour height by.</summary>
+        public const double ZoomStep = 1.25;
+
+        /// <summary>The height of the smallest block, so very short entries stay visible.</summary>
+        public const double MinimumBlockHeight = 20;
 
         private readonly WorklogEntriesViewModel _entries;
         private IReadOnlyList<TimelineBlockViewModel> _blocks = [];
         private double _scrollTargetMinute;
+        private double _hourHeight = DefaultHourHeight;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="WorklogTimelineViewModel"/> class.
@@ -28,8 +42,56 @@ namespace FocusTimer.App.ViewModels
         {
             this._entries = entries;
             this._entries.PropertyChanged += this.OnEntriesChanged;
+            this.ZoomInCommand = ReactiveCommand.Create(this.ZoomIn);
+            this.ZoomOutCommand = ReactiveCommand.Create(this.ZoomOut);
+            this.ResetZoomCommand = ReactiveCommand.Create(this.ResetZoom);
             this.Rebuild();
         }
+
+        /// <summary>Gets the command that makes an hour taller.</summary>
+        public ICommand ZoomInCommand { get; }
+
+        /// <summary>Gets the command that makes an hour shorter.</summary>
+        public ICommand ZoomOutCommand { get; }
+
+        /// <summary>Gets the command that returns to the default scale.</summary>
+        public ICommand ResetZoomCommand { get; }
+
+        /// <summary>
+        /// Gets or sets the height of one hour on the axis. The value is kept between <see cref="MinHourHeight"/> and
+        /// <see cref="MaxHourHeight"/>; a taller hour leaves more room for each entry's text.
+        /// </summary>
+        public double HourHeight
+        {
+            get => this._hourHeight;
+            set
+            {
+                var clamped = Math.Clamp(value, MinHourHeight, MaxHourHeight);
+                if (Math.Abs(clamped - this._hourHeight) < 0.001)
+                {
+                    return;
+                }
+
+                this.RaiseAndSetIfChanged(ref this._hourHeight, clamped);
+                this.RaisePropertyChanged(nameof(this.AxisHeight));
+                this.RaisePropertyChanged(nameof(this.ZoomText));
+                this.RaisePropertyChanged(nameof(this.CanZoomIn));
+                this.RaisePropertyChanged(nameof(this.CanZoomOut));
+                this.Blocks = Layout(this._entries.AllRows, this._hourHeight);
+            }
+        }
+
+        /// <summary>Gets the total height of the 24 hour axis.</summary>
+        public double AxisHeight => 24 * this._hourHeight;
+
+        /// <summary>Gets the zoom as a percentage of the default, such as "100%".</summary>
+        public string ZoomText => $"{Math.Round(this._hourHeight / DefaultHourHeight * 100):0}%";
+
+        /// <summary>Gets a value indicating whether the hour can be made taller.</summary>
+        public bool CanZoomIn => this._hourHeight < MaxHourHeight - 0.001;
+
+        /// <summary>Gets a value indicating whether the hour can be made shorter.</summary>
+        public bool CanZoomOut => this._hourHeight > MinHourHeight + 0.001;
 
         /// <summary>Gets the Entries tab; the view binds its load state and read warnings.</summary>
         public WorklogEntriesViewModel Entries => this._entries;
@@ -59,12 +121,31 @@ namespace FocusTimer.App.ViewModels
         }
 
         /// <summary>
+        /// Works out the scroll offset that keeps the moment under a point in place when the scale changes, so
+        /// zooming with the mouse wheel feels anchored to the pointer.
+        /// </summary>
+        /// <param name="offset">The current vertical scroll offset.</param>
+        /// <param name="pointerY">The pointer's distance from the top of the visible area.</param>
+        /// <param name="oldHourHeight">The hour height before the change.</param>
+        /// <param name="newHourHeight">The hour height after the change.</param>
+        /// <returns>The new vertical offset, never negative.</returns>
+        public static double AnchoredOffset(double offset, double pointerY, double oldHourHeight, double newHourHeight)
+        {
+            var minuteUnderPointer = (offset + pointerY) / oldHourHeight * 60;
+            return Math.Max(0, (minuteUnderPointer / 60 * newHourHeight) - pointerY);
+        }
+
+        /// <summary>
         /// Places entries into lanes: entries that overlap in time (at their displayed length) are drawn side by side.
         /// </summary>
         /// <param name="rows">The rows to place.</param>
+        /// <param name="hourHeight">The hour height; it decides how many minutes the smallest block covers.</param>
         /// <returns>The blocks in start order.</returns>
-        public static IReadOnlyList<TimelineBlockViewModel> Layout(IReadOnlyList<WorklogEntryRowViewModel> rows)
+        public static IReadOnlyList<TimelineBlockViewModel> Layout(
+            IReadOnlyList<WorklogEntryRowViewModel> rows,
+            double hourHeight = DefaultHourHeight)
         {
+            var minimumDisplayMinutes = MinimumBlockHeight / hourHeight * 60;
             var ordered = rows.OrderBy(r => r.Entry.StartedAt).ThenBy(r => r.Entry.EndedAt).ToList();
             var placed = new List<(WorklogEntryRowViewModel Row, int Lane, int Group)>();
             var groupLaneCounts = new List<int>();
@@ -74,7 +155,7 @@ namespace FocusTimer.App.ViewModels
             foreach (var row in ordered)
             {
                 var start = row.Entry.StartedAt.TimeOfDay.TotalMinutes;
-                var end = start + Math.Max(row.Entry.Duration.TotalMinutes, MinimumDisplayMinutes);
+                var end = start + Math.Max(row.Entry.Duration.TotalMinutes, minimumDisplayMinutes);
                 if (start >= groupEnd)
                 {
                     group++;
@@ -102,9 +183,18 @@ namespace FocusTimer.App.ViewModels
             return placed.Select(p => new TimelineBlockViewModel(p.Row, p.Lane, groupLaneCounts[p.Group])).ToList();
         }
 
+        /// <summary>Makes an hour one step taller.</summary>
+        public void ZoomIn() => this.HourHeight *= ZoomStep;
+
+        /// <summary>Makes an hour one step shorter.</summary>
+        public void ZoomOut() => this.HourHeight /= ZoomStep;
+
+        /// <summary>Returns to the default scale.</summary>
+        public void ResetZoom() => this.HourHeight = DefaultHourHeight;
+
         private void OnEntriesChanged(object? sender, PropertyChangedEventArgs e)
         {
-            if (e.PropertyName == nameof(WorklogEntriesViewModel.Rows))
+            if (e.PropertyName == nameof(WorklogEntriesViewModel.AllRows))
             {
                 this.Rebuild();
             }
@@ -112,7 +202,7 @@ namespace FocusTimer.App.ViewModels
 
         private void Rebuild()
         {
-            this.Blocks = Layout(this._entries.Rows);
+            this.Blocks = Layout(this._entries.AllRows, this._hourHeight);
             this.ScrollTargetMinute = this._blocks.Count == 0
                 ? 8 * 60
                 : Math.Max(0, this._blocks.Min(b => b.StartMinute) - 30);

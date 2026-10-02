@@ -1,7 +1,10 @@
 namespace FocusTimer.App.Views
 {
     using System;
+    using System.Linq;
     using Avalonia.Controls;
+    using Avalonia.Input;
+    using Avalonia.VisualTree;
     using FocusTimer.App.ViewModels;
 
     /// <summary>
@@ -18,6 +21,29 @@ namespace FocusTimer.App.Views
         {
             this.InitializeComponent();
             this.Activated += this.OnWindowActivated;
+            this.AddHandler(KeyDownEvent, this.OnWindowKeyDown, Avalonia.Interactivity.RoutingStrategies.Tunnel);
+        }
+
+        private void OnWindowKeyDown(object? sender, KeyEventArgs e)
+        {
+            // Ctrl + F goes to the search box of the Entries tab from anywhere in the window.
+            if (e.Key != Key.F || !e.KeyModifiers.HasFlag(KeyModifiers.Control) || this.DataContext is not WorklogWindowViewModel viewModel)
+            {
+                return;
+            }
+
+            e.Handled = true;
+            if (viewModel.SelectedTab != WorklogTab.Entries && this.FindControl<TabControl>("Tabs") is { } tabs)
+            {
+                tabs.SelectedIndex = 0;
+            }
+
+            this.UpdateLayout();
+            if (this.GetVisualDescendants().OfType<TextBox>().FirstOrDefault(t => t.Name == "SearchBox") is { } box)
+            {
+                box.Focus();
+                box.SelectAll();
+            }
         }
 
         private void OnWindowActivated(object? sender, EventArgs e)

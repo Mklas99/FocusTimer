@@ -73,3 +73,11 @@
 - [x] 10.3 Confirm no change in `FocusTimer.Platform.Windows` or the Linux stubs; verify with a search of the diff
 - [x] 10.4 Run the full test suite, the StyleCop/`dotnet format` check, and `openspec validate worklog-data-management --strict`; verify all pass and record any pre-existing failures separately
 - [ ] 10.5 Run the app and walk through, including the Summary tab in a light theme and in High Contrast (F-02 task 3.2 carried over): open from tray, add a manual entry that overlaps, dismiss the warning, edit duration, delete, change day, switch grouping to by window, press Refresh while tracking, watch the tray total; verify each behaves as specified NOT DONE on Linux (the Windows host cannot run here). Covered headlessly instead: opening from the tray item, add with overlap warning and dismiss, edit, delete with confirmation, day change, by-window grouping, refresh, tray total, and renders in Light, Dark, Nord, and High Contrast. Still to do by hand on Windows: run the app, walk through the list above while tracking is running, and check the Summary view in a light theme and High Contrast (F-02 task 3.2).
+
+## 11. Follow-up edits to the Entries table and the Timeline
+
+- [x] 11.1 Show start, end, and duration to the minute (duration rounded to the nearest minute, "<1m" below one), move the exact times and the capture source into the details of the selected row, and remove the Source column; verify with view model tests for rounding and seconds, a headless test of the six column headers and the details, and a render in Light and Dark
+- [x] 11.2 Add the Entries search field next to the buttons (all words, any searched column, count text, no-match message, clear button, Escape, Ctrl + F from any tab) with the Timeline unaffected; verify with view model tests and headless tests that type into the real box
+- [x] 11.3 Add timeline zoom (Ctrl + wheel anchored on the pointer, Ctrl + plus/minus/0, buttons with a percentage, limits, lanes recomputed at the new scale); verify with view model tests, headless wheel and keyboard tests, and a render at 250%
+- [x] 11.4 Update `OpenIssues.md`, `ARCHITECTURE.md`, and the specs for these edits; verify `openspec validate worklog-data-management --strict` passes and the documents agree
+

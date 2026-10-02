@@ -20,6 +20,10 @@ namespace FocusTimer.App.ViewModels
         private readonly TimeProvider _timeProvider;
         private readonly IWorklogEditingService? _editingService;
         private IReadOnlyList<WorklogEntryRowViewModel> _rows = [];
+        private IReadOnlyList<WorklogEntryRowViewModel> _allRows = [];
+        private string _searchText = string.Empty;
+        private string _statusMessageForDay = string.Empty;
+        private bool _dayHasEntries;
         private IReadOnlyList<TimeEntry> _loadedEntries = [];
         private WorklogEntryRowViewModel? _selectedRow;
         private SummaryViewStatus _status = SummaryViewStatus.Idle;
@@ -48,6 +52,7 @@ namespace FocusTimer.App.ViewModels
             this._editingService = editingService;
             this._day = DateOnly.FromDateTime(timeProvider.GetLocalNow().DateTime);
             this.RefreshCommand = ReactiveCommand.CreateFromTask(this.RefreshAsync);
+            this.ClearSearchCommand = ReactiveCommand.Create(() => { this.SearchText = string.Empty; });
             var canAdd = this.WhenAnyValue(x => x.IsEditingAvailable, x => x.IsDialogOpen, (available, open) => available && !open);
             var canChange = this.WhenAnyValue(x => x.IsEditingAvailable, x => x.IsDialogOpen, x => x.SelectedRow, (available, open, row) => available && !open && row is not null);
             this.AddCommand = ReactiveCommand.CreateFromTask(this.BeginAddAsync, canAdd);
@@ -61,6 +66,9 @@ namespace FocusTimer.App.ViewModels
 
         /// <summary>Gets the task of the most recent save or conflict follow-up (close the form, reload); used to await it.</summary>
         public Task PendingOperation { get; private set; } = Task.CompletedTask;
+
+        /// <summary>Gets the command that clears the search text.</summary>
+        public ICommand ClearSearchCommand { get; }
 
         /// <summary>Gets the command that opens the form for a new manual entry.</summary>
         public ICommand AddCommand { get; }
@@ -156,12 +164,46 @@ namespace FocusTimer.App.ViewModels
         /// <summary>Gets the local day that is shown.</summary>
         public DateOnly Day => this._day;
 
-        /// <summary>Gets the entries to display, in start order.</summary>
+        /// <summary>Gets the entries to display, in start order, after the search is applied.</summary>
         public IReadOnlyList<WorklogEntryRowViewModel> Rows
         {
             get => this._rows;
             private set => this.RaiseAndSetIfChanged(ref this._rows, value);
         }
+
+        /// <summary>Gets every entry of the day, in start order, ignoring the search; the Timeline draws these.</summary>
+        public IReadOnlyList<WorklogEntryRowViewModel> AllRows
+        {
+            get => this._allRows;
+            private set => this.RaiseAndSetIfChanged(ref this._allRows, value);
+        }
+
+        /// <summary>
+        /// Gets or sets the search text. Each word must be part of an entry's application, window, project, source,
+        /// start, end, or duration (ignoring case) for the entry to stay in <see cref="Rows"/>.
+        /// </summary>
+        public string SearchText
+        {
+            get => this._searchText;
+            set
+            {
+                this.RaiseAndSetIfChanged(ref this._searchText, value ?? string.Empty);
+                this.RaisePropertyChanged(nameof(this.IsSearchActive));
+                this.RaisePropertyChanged(nameof(this.SearchResultText));
+                if (this._status is SummaryViewStatus.Ready or SummaryViewStatus.NoData && this._dayHasEntries)
+                {
+                    this.ApplyFilter();
+                }
+            }
+        }
+
+        /// <summary>Gets a value indicating whether a search is active.</summary>
+        public bool IsSearchActive => this.SearchTerms().Count > 0;
+
+        /// <summary>Gets a short count such as "3 of 12 entries" while a search is active, otherwise an empty string.</summary>
+        public string SearchResultText => this.IsSearchActive && this._dayHasEntries
+            ? $"{this._rows.Count} of {this._allRows.Count} entries"
+            : string.Empty;
 
         /// <summary>Gets the entries from the most recent successful load; the Timeline uses the same list.</summary>
         public IReadOnlyList<TimeEntry> LoadedEntries
@@ -466,30 +508,50 @@ namespace FocusTimer.App.ViewModels
                 return;
             }
 
-            var selectedId = this._selectedRow?.Entry.EntryId;
             var ordered = read.Entries.OrderBy(e => e.StartedAt).ThenBy(e => e.EndedAt).ToList();
             this.LoadedEntries = ordered;
-            this.Rows = ordered.Select(e => new WorklogEntryRowViewModel(e)).ToList();
-            this.SelectedRow = selectedId is null ? null : this._rows.FirstOrDefault(r => r.Entry.EntryId == selectedId);
+            this.AllRows = ordered.Select(e => new WorklogEntryRowViewModel(e)).ToList();
+            this._dayHasEntries = ordered.Count > 0;
             var warnings = read.Outcome.Warnings?.Count ?? 0;
             this.WarningText = warnings == 0
                 ? string.Empty
                 : $"{warnings} worklog record(s) could not be read and are not shown.";
+            this._statusMessageForDay = warnings > 0 ? "No readable entries for this day." : "No entries for this day.";
+            this.ApplyFilter();
+        }
 
-            if (ordered.Count == 0)
+        private IReadOnlyList<string> SearchTerms() =>
+            this._searchText.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries);
+
+        private void ApplyFilter()
+        {
+            var selectedId = this._selectedRow?.Entry.EntryId;
+            var terms = this.SearchTerms();
+            this.Rows = terms.Count == 0 ? this._allRows : this._allRows.Where(r => r.Matches(terms)).ToList();
+            this.SelectedRow = selectedId is null ? null : this._rows.FirstOrDefault(r => r.Entry.EntryId == selectedId);
+            this.RaisePropertyChanged(nameof(this.SearchResultText));
+            if (!this._dayHasEntries)
             {
-                this.StatusMessage = warnings > 0 ? "No readable entries for this day." : "No entries for this day.";
+                this.StatusMessage = this._statusMessageForDay;
                 this.Status = SummaryViewStatus.NoData;
-                return;
             }
-
-            this.StatusMessage = string.Empty;
-            this.Status = SummaryViewStatus.Ready;
+            else if (this._rows.Count == 0)
+            {
+                this.StatusMessage = $"No entries match \"{this._searchText.Trim()}\".";
+                this.Status = SummaryViewStatus.NoData;
+            }
+            else
+            {
+                this.StatusMessage = string.Empty;
+                this.Status = SummaryViewStatus.Ready;
+            }
         }
 
         private void ShowError(string message)
         {
             this.Rows = [];
+            this.AllRows = [];
+            this._dayHasEntries = false;
             this.LoadedEntries = [];
             this.SelectedRow = null;
             this.WarningText = string.Empty;

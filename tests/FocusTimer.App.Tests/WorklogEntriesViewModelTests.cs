@@ -21,9 +21,10 @@ public class WorklogEntriesViewModelTests
         Assert.Equal(SummaryViewStatus.Ready, vm.Status);
         Assert.Equal(["early", "late"], vm.Rows.Select(r => r.Entry.EntryId));
         var first = vm.Rows[0];
-        Assert.Equal("09:00:00", first.StartText);
-        Assert.Equal("10:30:00", first.EndText);
-        Assert.Equal("1:30:00", first.DurationText);
+        Assert.Equal("09:00", first.StartText);
+        Assert.Equal("10:30", first.EndText);
+        Assert.Equal("1h 30m", first.DurationText);
+        Assert.Equal("09:00:00\u201310:30:00 (1:30:00)", first.ExactTimeText);
         Assert.Equal("Code", first.ApplicationText);
         Assert.Equal("Program.cs", first.WindowText);
         Assert.Equal("Tracked", first.SourceText);
@@ -182,6 +183,127 @@ public class WorklogEntriesViewModelTests
 
         Assert.Equal(SummaryViewStatus.Error, vm.Status);
         Assert.False(string.IsNullOrEmpty(vm.StatusMessage));
+    }
+
+    [Fact]
+    public async Task Rows_ShowTimesAndDurationWithoutSeconds_ButTheDetailsKeepThem()
+    {
+        var start = new DateTimeOffset(2026, 5, 4, 9, 0, 7, TimeSpan.Zero);
+        var store = new MemoryWorklogStore();
+        store.Add(WorklogTestData.Tracked("a", start, 30) with { EndedAt = start.AddMinutes(30).AddSeconds(12) });
+        store.Add(WorklogTestData.Tracked("short", start.AddHours(2), 0) with { EndedAt = start.AddHours(2).AddSeconds(20) });
+        var vm = Create(store);
+
+        await vm.RefreshAsync();
+
+        Assert.Equal(("09:00", "09:30", "0h 30m"), (vm.Rows[0].StartText, vm.Rows[0].EndText, vm.Rows[0].DurationText));
+        Assert.Equal("09:00:07\u201309:30:19 (0:30:12)", vm.Rows[0].ExactTimeText);
+        Assert.Equal("<1m", vm.Rows[1].DurationText);
+    }
+
+    [Theory]
+    [InlineData(1793, "0h 30m")]
+    [InlineData(1769, "0h 29m")]
+    [InlineData(5393, "1h 30m")]
+    [InlineData(59, "<1m")]
+    [InlineData(60, "0h 01m")]
+    public async Task DurationText_IsRoundedToTheNearestMinute_SoItAgreesWithTheShownTimes(int seconds, string expected)
+    {
+        var start = new DateTimeOffset(2026, 5, 4, 10, 0, 7, TimeSpan.Zero);
+        var store = new MemoryWorklogStore();
+        store.Add(WorklogTestData.Tracked("a", start, 1) with { EndedAt = start.AddSeconds(seconds) });
+        var vm = Create(store);
+
+        await vm.RefreshAsync();
+
+        Assert.Equal(expected, vm.Rows[0].DurationText);
+    }
+
+    [Fact]
+    public async Task Search_KeepsOnlyRowsWhereEveryWordMatchesAnyColumn_IgnoringCase()
+    {
+        var store = new MemoryWorklogStore();
+        store.Add(
+            WorklogTestData.Tracked("code", new DateTimeOffset(2026, 5, 4, 9, 0, 0, TimeSpan.Zero), 30, "Code", "Program.cs - FocusTimer") with { ProjectTag = "Alpha" },
+            WorklogTestData.Tracked("mail", new DateTimeOffset(2026, 5, 4, 10, 0, 0, TimeSpan.Zero), 30, "Chrome", "Inbox - Mail"),
+            WorklogTestData.Tracked("man", new DateTimeOffset(2026, 5, 4, 11, 0, 0, TimeSpan.Zero), 45, "Manual entry", "Planning") with { CaptureSource = CaptureSource.Manual, ProjectTag = "Alpha" });
+        var vm = Create(store);
+        await vm.RefreshAsync();
+
+        vm.SearchText = "ALPHA";
+        Assert.Equal(["code", "man"], vm.Rows.Select(r => r.Entry.EntryId));
+        Assert.True(vm.IsSearchActive);
+        Assert.Equal("2 of 3 entries", vm.SearchResultText);
+
+        vm.SearchText = "alpha plan";
+        Assert.Equal(["man"], vm.Rows.Select(r => r.Entry.EntryId));
+
+        vm.SearchText = "manual";
+        Assert.Equal(["man"], vm.Rows.Select(r => r.Entry.EntryId));
+
+        vm.SearchText = "10:00";
+        Assert.Equal(["mail"], vm.Rows.Select(r => r.Entry.EntryId));
+
+        vm.SearchText = "program focus";
+        Assert.Equal(["code"], vm.Rows.Select(r => r.Entry.EntryId));
+        Assert.Equal(3, vm.AllRows.Count);
+        Assert.Equal(3, vm.LoadedEntries.Count);
+    }
+
+    [Fact]
+    public async Task Search_WithNoMatch_ShowsAMessageAndClearingRestoresTheTable()
+    {
+        var store = new MemoryWorklogStore();
+        store.Add(WorklogTestData.Tracked("a", new DateTimeOffset(2026, 5, 4, 9, 0, 0, TimeSpan.Zero), 30));
+        var vm = Create(store);
+        await vm.RefreshAsync();
+
+        vm.SearchText = "nothing like this";
+
+        Assert.Empty(vm.Rows);
+        Assert.Equal(SummaryViewStatus.NoData, vm.Status);
+        Assert.Equal("No entries match \"nothing like this\".", vm.StatusMessage);
+        Assert.False(vm.IsReady);
+
+        vm.ClearSearchCommand.Execute(null);
+
+        Assert.Equal(string.Empty, vm.SearchText);
+        Assert.False(vm.IsSearchActive);
+        Assert.Single(vm.Rows);
+        Assert.Equal(SummaryViewStatus.Ready, vm.Status);
+        Assert.Equal(string.Empty, vm.SearchResultText);
+    }
+
+    [Fact]
+    public async Task Search_SurvivesAReloadAndDropsAHiddenSelection()
+    {
+        var store = new MemoryWorklogStore();
+        store.Add(
+            WorklogTestData.Tracked("a", new DateTimeOffset(2026, 5, 4, 9, 0, 0, TimeSpan.Zero), 30, "Code"),
+            WorklogTestData.Tracked("b", new DateTimeOffset(2026, 5, 4, 10, 0, 0, TimeSpan.Zero), 30, "Chrome"));
+        var vm = Create(store);
+        await vm.RefreshAsync();
+        vm.SelectedRow = vm.Rows[1];
+
+        vm.SearchText = "code";
+        Assert.Null(vm.SelectedRow);
+
+        store.Add(WorklogTestData.Tracked("c", new DateTimeOffset(2026, 5, 4, 11, 0, 0, TimeSpan.Zero), 30, "Code"));
+        await vm.RefreshAsync();
+
+        Assert.Equal(["a", "c"], vm.Rows.Select(r => r.Entry.EntryId));
+    }
+
+    [Fact]
+    public async Task Search_OnAnEmptyDay_KeepsTheEmptyDayMessage()
+    {
+        var vm = Create(new MemoryWorklogStore());
+        await vm.RefreshAsync();
+
+        vm.SearchText = "anything";
+
+        Assert.Equal("No entries for this day.", vm.StatusMessage);
+        Assert.Equal(string.Empty, vm.SearchResultText);
     }
 
     private static WorklogEntriesViewModel Create(MemoryWorklogStore store) => new(store, new MutableClock(Noon));

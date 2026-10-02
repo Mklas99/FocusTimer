@@ -12,16 +12,33 @@ namespace FocusTimer.App.Controls
     /// </summary>
     public class TimelinePanel : Panel
     {
-        /// <summary>The height of one hour on the axis, in device-independent pixels.</summary>
-        public const double HourHeight = 60;
+        /// <summary>The height of one hour on the axis at the default zoom, in device-independent pixels.</summary>
+        public const double DefaultHourHeight = 60;
 
         /// <summary>The smallest height of a block, so very short entries stay visible and clickable.</summary>
-        public const double MinimumBlockHeight = 20;
+        public const double MinimumBlockHeight = FocusTimer.App.ViewModels.WorklogTimelineViewModel.MinimumBlockHeight;
+
+        /// <summary>Identifies <see cref="HourHeight"/>.</summary>
+        public static readonly StyledProperty<double> HourHeightProperty =
+            AvaloniaProperty.Register<TimelinePanel, double>(nameof(HourHeight), DefaultHourHeight);
 
         private const double LaneGap = 4;
 
+        static TimelinePanel()
+        {
+            AffectsMeasure<TimelinePanel>(HourHeightProperty);
+            AffectsArrange<TimelinePanel>(HourHeightProperty);
+        }
+
+        /// <summary>Gets or sets the height of one hour on the axis; the user zooms by changing it.</summary>
+        public double HourHeight
+        {
+            get => this.GetValue(HourHeightProperty);
+            set => this.SetValue(HourHeightProperty, value);
+        }
+
         /// <summary>Gets the total height of the axis: 24 hours.</summary>
-        public static double AxisHeight => 24 * HourHeight;
+        public double AxisHeight => 24 * this.HourHeight;
 
         /// <inheritdoc/>
         protected override Size MeasureOverride(Size availableSize)
@@ -31,11 +48,11 @@ namespace FocusTimer.App.Controls
             {
                 if (child.DataContext is TimelineBlockViewModel block)
                 {
-                    child.Measure(new Size(LaneWidth(width, block), BlockHeight(block)));
+                    child.Measure(new Size(LaneWidth(width, block), this.BlockHeight(block)));
                 }
             }
 
-            return new Size(width, AxisHeight);
+            return new Size(width, this.AxisHeight);
         }
 
         /// <inheritdoc/>
@@ -51,8 +68,8 @@ namespace FocusTimer.App.Controls
 
                 var laneWidth = LaneWidth(finalSize.Width, block);
                 var x = block.Lane * (laneWidth + LaneGap);
-                var y = block.StartMinute / 60 * HourHeight;
-                child.Arrange(new Rect(x, y, laneWidth, BlockHeight(block)));
+                var y = block.StartMinute / 60 * this.HourHeight;
+                child.Arrange(new Rect(x, y, laneWidth, this.BlockHeight(block)));
             }
 
             return finalSize;
@@ -61,7 +78,7 @@ namespace FocusTimer.App.Controls
         private static double LaneWidth(double totalWidth, TimelineBlockViewModel block) =>
             Math.Max(0, (totalWidth - (LaneGap * (block.LaneCount - 1))) / Math.Max(1, block.LaneCount));
 
-        private static double BlockHeight(TimelineBlockViewModel block) =>
-            Math.Max(MinimumBlockHeight, block.LengthMinutes / 60 * HourHeight);
+        private double BlockHeight(TimelineBlockViewModel block) =>
+            Math.Max(MinimumBlockHeight, block.LengthMinutes / 60 * this.HourHeight);
     }
 }

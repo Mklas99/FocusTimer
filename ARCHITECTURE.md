@@ -73,11 +73,11 @@ View (XAML)
 
 - **ViewModels & Views**
   - SettingsWindowViewModel: Settings state and validation (General, Logging, Appearance, Hotkeys, About tabs)
-  - WorklogWindowViewModel / WorklogWindow: the window opened from the tray. It owns one selected local day (never later than today, never before the retention window) and pushes it to its tabs: Entries (WorklogEntriesViewModel / WorklogEntriesView, a read-only table of one day's stored entries with read warnings), Timeline, and Summary. It does not depend on the Settings window or its draft
+  - WorklogWindowViewModel / WorklogWindow: the window opened from the tray. It owns one selected local day (never later than today, never before the retention window) and pushes it to its tabs: Entries (WorklogEntriesViewModel / WorklogEntriesView, a table of one day's stored entries to the minute with a search over the loaded day, exact times and source in the selected row's details, and read warnings), Timeline, and Summary. It does not depend on the Settings window or its draft
   - WorklogSummaryViewModel / WorklogSummaryView: the day's time breakdown by application, project, or window. Both are host-independent (they never reference a window), so the Worklog window hosts them
   - TimerWidgetWindow: Compact timer display
   - Converters: Color opacity, angle rotation, play/pause icons
-  - WorklogEntryEditorViewModel: the add/edit form (inline in the Entries tab); it calls only `IWorklogEditingService`. The Timeline tab (WorklogTimelineViewModel / WorklogTimelineView, laid out by the custom `TimelinePanel`) reads the entries the Entries tab loaded, so the two never disagree; overlapping entries are drawn side by side in lanes
+  - WorklogEntryEditorViewModel: the add/edit form (inline in the Entries tab); it calls only `IWorklogEditingService`. The Timeline tab (WorklogTimelineViewModel / WorklogTimelineView, laid out by the custom `TimelinePanel`) reads all entries the Entries tab loaded (a search does not hide them), so the two never disagree; overlapping entries are drawn side by side in lanes, and Ctrl + mouse wheel changes the hour height (zoom), recomputing the lanes
 
 **Dependencies**: Core, Persistence
 

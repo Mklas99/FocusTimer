@@ -40,7 +40,10 @@
 14. **Retention bound.** A small `WorklogDayBounds` helper gives the earliest allowed day as today minus (`DataRetentionDays` - 1), or none when retention is 0 or less. The day selector and the editing service use it, so the selector and the add dialog cannot disagree.
 15. **Project input.** An editable combo box with the distinct, non-empty projects of the selected day and today; typed text is trimmed and limited to 100 characters.
 16. **Tray total.** After a successful add, edit, or delete that touches today, the editing service publishes a `WorklogChangedEvent` on the event bus; `TrayStateController` handles it with its existing `RefreshTodayAndUpdateTooltipAsync`. `EntriesLoggedEvent` stays as is for tracker output.
-17. **No platform work.** Everything is Core, Persistence, and App; the Windows project and the Linux stubs are untouched.
+17. **Table columns.** Start, end, and duration are shown to the minute (the duration rounded to the nearest minute so it agrees with the shown times; "<1m" below a minute). The exact times and the capture source move into the details of the selected row. The Source column is dropped because manual entries already read "Manual entry" in the application column (shown semi-bold).
+18. **Search.** A client-side filter over the loaded day (`WorklogEntriesViewModel.SearchText`): every word must be contained, ignoring case, in the application, window, project, source, start, end, or duration. `Rows` is the filtered list and `AllRows` the full one; the Timeline reads `AllRows` so it never changes with a search. Ctrl + F is handled at window level so it works from any tab.
+19. **Timeline zoom.** `HourHeight` on the timeline view model (60 px default, 30 to 480) drives a `TimelinePanel` styled property, the axis height, and the lane layout (the smallest block is 20 px, which covers fewer minutes when zoomed in). Ctrl + wheel is intercepted on the tunnelling phase so the scroll viewer does not scroll; the view keeps the moment under the pointer (or the middle of the viewport for buttons and keys) in place with `AnchoredOffset`. The zoom is not saved between sessions.
+20. **No platform work.** Everything is Core, Persistence, and App; the Windows project and the Linux stubs are untouched.
 
 ## Risks / Trade-offs
 

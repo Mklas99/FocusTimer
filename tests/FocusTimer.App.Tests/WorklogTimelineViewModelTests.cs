@@ -158,6 +158,100 @@ public class WorklogTimelineViewModelTests
     }
 
     [Fact]
+    public async Task Search_DoesNotRemoveBlocksFromTheTimeline()
+    {
+        var h = await Harness.CreateAsync(Entry("a", 9, 0, 30, "Code"), Entry("b", 10, 0, 30, "Chrome"));
+
+        h.Window.Entries.SearchText = "code";
+
+        Assert.Single(h.Window.Entries.Rows);
+        Assert.Equal(2, h.Timeline.Blocks.Count);
+    }
+
+    [Fact]
+    public async Task Zoom_StepsBetweenTheLimitsAndShowsAPercentage()
+    {
+        var h = await Harness.CreateAsync(Entry("a", 9, 0, 30));
+        Assert.Equal(60, h.Timeline.HourHeight);
+        Assert.Equal("100%", h.Timeline.ZoomText);
+        Assert.Equal(24 * 60, h.Timeline.AxisHeight);
+
+        h.Timeline.ZoomIn();
+        Assert.Equal(75, h.Timeline.HourHeight, 3);
+        Assert.Equal("125%", h.Timeline.ZoomText);
+        Assert.Equal(24 * 75, h.Timeline.AxisHeight, 3);
+
+        h.Timeline.ZoomOut();
+        h.Timeline.ZoomOut();
+        Assert.Equal(48, h.Timeline.HourHeight, 3);
+
+        h.Timeline.ResetZoom();
+        Assert.Equal(60, h.Timeline.HourHeight);
+
+        for (var i = 0; i < 30; i++)
+        {
+            h.Timeline.ZoomIn();
+        }
+
+        Assert.Equal(WorklogTimelineViewModel.MaxHourHeight, h.Timeline.HourHeight);
+        Assert.False(h.Timeline.CanZoomIn);
+        Assert.True(h.Timeline.CanZoomOut);
+
+        for (var i = 0; i < 40; i++)
+        {
+            h.Timeline.ZoomOut();
+        }
+
+        Assert.Equal(WorklogTimelineViewModel.MinHourHeight, h.Timeline.HourHeight);
+        Assert.False(h.Timeline.CanZoomOut);
+    }
+
+    [Fact]
+    public async Task Zoom_CommandsDriveTheSameScale()
+    {
+        var h = await Harness.CreateAsync(Entry("a", 9, 0, 30));
+
+        h.Timeline.ZoomInCommand.Execute(null);
+        h.Timeline.ZoomInCommand.Execute(null);
+        await Task.Delay(1);
+
+        Assert.True(h.Timeline.HourHeight > 60);
+        h.Timeline.ResetZoomCommand.Execute(null);
+        await Task.Delay(1);
+        Assert.Equal(60, h.Timeline.HourHeight);
+    }
+
+    [Fact]
+    public async Task Zoom_SeparatesVeryShortNeighboursThatOverlappedAtTheDefaultScale()
+    {
+        var h = await Harness.CreateAsync(Entry("a", 9, 0, 2), Entry("b", 9, 8, 2));
+        Assert.Equal([0, 1], h.Timeline.Blocks.Select(b => b.Lane));
+
+        h.Timeline.HourHeight = 240;
+
+        Assert.Equal([0, 0], h.Timeline.Blocks.Select(b => b.Lane));
+        Assert.All(h.Timeline.Blocks, b => Assert.Equal(1, b.LaneCount));
+    }
+
+    [Theory]
+    [InlineData(0, 100, 60, 120, 100)]
+    [InlineData(600, 50, 60, 120, 1250)]
+    [InlineData(0, 0, 60, 30, 0)]
+    public void AnchoredOffset_KeepsTheMomentUnderThePointerInPlace(double offset, double pointerY, double oldH, double newH, double expected)
+    {
+        var next = WorklogTimelineViewModel.AnchoredOffset(offset, pointerY, oldH, newH);
+
+        Assert.Equal(expected, next, 3);
+        Assert.Equal(((offset + pointerY) / oldH) * 60, ((next + pointerY) / newH) * 60, 3);
+    }
+
+    [Fact]
+    public void AnchoredOffset_NeverGoesNegative()
+    {
+        Assert.Equal(0, WorklogTimelineViewModel.AnchoredOffset(10, 200, 120, 30));
+    }
+
+    [Fact]
     public async Task ChangingTheDay_RedrawsTheTimelineForThatDay()
     {
         var h = await Harness.CreateAsync(Entry("today", 9, 0, 30));

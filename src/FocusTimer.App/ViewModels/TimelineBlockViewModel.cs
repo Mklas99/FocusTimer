@@ -22,7 +22,7 @@ namespace FocusTimer.App.ViewModels
             var entry = row.Entry;
             this.StartMinute = entry.StartedAt.TimeOfDay.TotalMinutes;
             this.LengthMinutes = entry.Duration.TotalMinutes;
-            this.TimeText = $"{row.StartText[..5]}–{row.EndText[..5]}";
+            this.TimeText = $"{row.StartText}–{row.EndText}";
             this.TitleText = row.IsManual ? $"Manual · {row.WindowText}" : row.ApplicationText;
             this.DetailText = row.IsManual ? row.DurationText : row.WindowText;
             this.ToolTipText = $"{row.Summary}\n{row.WindowText}\nProject: {row.ProjectText}\nDuration {row.DurationText} ({row.SourceText})";

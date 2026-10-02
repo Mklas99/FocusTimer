@@ -1,6 +1,8 @@
 namespace FocusTimer.App.ViewModels
 {
+    using System.Collections.Generic;
     using System.Globalization;
+    using System.Linq;
     using FocusTimer.Core.Models;
 
     /// <summary>
@@ -19,9 +21,12 @@ namespace FocusTimer.App.ViewModels
         public WorklogEntryRowViewModel(TimeEntry entry)
         {
             this.Entry = entry;
-            this.StartText = entry.StartedAt.ToString("HH:mm:ss", CultureInfo.InvariantCulture);
-            this.EndText = entry.EndedAt.ToString("HH:mm:ss", CultureInfo.InvariantCulture);
+            this.StartText = entry.StartedAt.ToString("HH:mm", CultureInfo.InvariantCulture);
+            this.EndText = entry.EndedAt.ToString("HH:mm", CultureInfo.InvariantCulture);
             this.DurationText = FormatDuration(entry.Duration);
+            this.ExactTimeText = string.Create(
+                CultureInfo.InvariantCulture,
+                $"{entry.StartedAt:HH:mm:ss}\u2013{entry.EndedAt:HH:mm:ss} ({FormatExactDuration(entry.Duration)})");
             this.ApplicationText = entry.AppName;
             this.WindowText = string.IsNullOrEmpty(entry.WindowTitle) ? EmptyValueText : entry.WindowTitle;
             this.ProjectText = string.IsNullOrWhiteSpace(entry.ProjectTag) ? EmptyValueText : entry.ProjectTag;
@@ -32,13 +37,16 @@ namespace FocusTimer.App.ViewModels
         /// <summary>Gets the stored entry.</summary>
         public TimeEntry Entry { get; }
 
-        /// <summary>Gets the start time of day.</summary>
+        /// <summary>Gets the start, end, and duration down to the second, shown in the details of the selected row.</summary>
+        public string ExactTimeText { get; }
+
+        /// <summary>Gets the start time of day, to the minute.</summary>
         public string StartText { get; }
 
-        /// <summary>Gets the end time of day.</summary>
+        /// <summary>Gets the end time of day, to the minute.</summary>
         public string EndText { get; }
 
-        /// <summary>Gets the duration as hours, minutes, and seconds.</summary>
+        /// <summary>Gets the duration as hours and minutes, or "&lt;1m" under a minute.</summary>
         public string DurationText { get; }
 
         /// <summary>Gets the application name.</summary>
@@ -83,7 +91,38 @@ namespace FocusTimer.App.ViewModels
         /// <summary>Gets a one-line description used in warnings and confirmations.</summary>
         public string Summary => $"{this.StartText}–{this.EndText} {this.ApplicationText}";
 
+        /// <summary>
+        /// Tells whether the row matches every search term (a case-insensitive part of its application, window,
+        /// project, source, or times). No terms match everything.
+        /// </summary>
+        /// <param name="terms">The search terms; all must match.</param>
+        /// <returns>True when every term is found.</returns>
+        public bool Matches(IReadOnlyList<string> terms)
+        {
+            if (terms.Count == 0)
+            {
+                return true;
+            }
+
+            var haystack = string.Join(
+                '\n',
+                this.Entry.AppName,
+                this.Entry.WindowTitle,
+                this.Entry.ProjectTag ?? string.Empty,
+                this.SourceText,
+                this.StartText,
+                this.EndText,
+                this.DurationText);
+            return terms.All(term => haystack.Contains(term, System.StringComparison.OrdinalIgnoreCase));
+        }
+
+        // Rounded to the nearest minute (not cut off), so it agrees with the start and end shown to the minute.
         private static string FormatDuration(System.TimeSpan duration) =>
+            SummaryFormatting.Duration(duration < System.TimeSpan.FromMinutes(1)
+                ? duration
+                : System.TimeSpan.FromMinutes(System.Math.Round(duration.TotalMinutes, System.MidpointRounding.AwayFromZero)));
+
+        private static string FormatExactDuration(System.TimeSpan duration) =>
             string.Create(CultureInfo.InvariantCulture, $"{(int)duration.TotalHours}:{duration.Minutes:D2}:{duration.Seconds:D2}");
     }
 }

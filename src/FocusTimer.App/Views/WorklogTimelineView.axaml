@@ -33,10 +33,46 @@
         </Style>
     </UserControl.Styles>
 
-    <Grid RowDefinitions="Auto,*">
+    <Grid RowDefinitions="Auto,Auto,*">
+
+        <!-- Zoom: Ctrl + mouse wheel works too (Ctrl + plus, Ctrl + minus, Ctrl + 0 on the keyboard) -->
+        <StackPanel Grid.Row="0"
+                    Orientation="Horizontal"
+                    Spacing="{StaticResource SpacingSm}"
+                    Margin="0,0,0,8">
+            <TextBlock Classes="SettingLabel" Text="Zoom" VerticalAlignment="Center" />
+            <Button Content="&#8722;"
+                    MinWidth="{StaticResource MinHitTargetSize}"
+                    MinHeight="{StaticResource MinHitTargetSize}"
+                    Command="{Binding ZoomOutCommand}"
+                    IsEnabled="{Binding CanZoomOut}"
+                    AutomationProperties.Name="Zoom out"
+                    ToolTip.Tip="Zoom out (Ctrl + minus)" />
+            <TextBlock Text="{Binding ZoomText}"
+                       MinWidth="48"
+                       TextAlignment="Center"
+                       VerticalAlignment="Center"
+                       AutomationProperties.Name="Current zoom" />
+            <Button Content="+"
+                    MinWidth="{StaticResource MinHitTargetSize}"
+                    MinHeight="{StaticResource MinHitTargetSize}"
+                    Command="{Binding ZoomInCommand}"
+                    IsEnabled="{Binding CanZoomIn}"
+                    AutomationProperties.Name="Zoom in"
+                    ToolTip.Tip="Zoom in (Ctrl + plus)" />
+            <Button Content="Reset"
+                    MinHeight="{StaticResource MinHitTargetSize}"
+                    Command="{Binding ResetZoomCommand}"
+                    AutomationProperties.Name="Reset zoom"
+                    ToolTip.Tip="Back to 100% (Ctrl + 0)" />
+            <TextBlock Text="Ctrl + mouse wheel zooms the hours"
+                       VerticalAlignment="Center"
+                       Foreground="{DynamicResource SecondaryTextBrush}"
+                       FontSize="{StaticResource FontSizeCaption}" />
+        </StackPanel>
 
         <!-- Read states and warnings are the same as on the Entries tab -->
-        <StackPanel Grid.Row="0" Spacing="{StaticResource SpacingSm}">
+        <StackPanel Grid.Row="1" Spacing="{StaticResource SpacingSm}">
             <TextBlock Text="{Binding Entries.WarningText}"
                        TextWrapping="Wrap"
                        Margin="0,0,0,8"
@@ -52,16 +88,22 @@
         </StackPanel>
 
         <ScrollViewer x:Name="Scroller"
-                      Grid.Row="1"
+                      Grid.Row="2"
                       Classes="settings-scroll"
+                      Focusable="True"
                       IsVisible="{Binding HasBlocks}"
                       AutomationProperties.Name="Timeline of the day">
-            <Grid ColumnDefinitions="48,*" Height="1440">
-                <!-- Hour grid and labels -->
+            <Grid ColumnDefinitions="48,*" Height="{Binding AxisHeight}">
+                <!-- Hour grid and labels: 24 equal rows that follow the zoom -->
                 <ItemsControl Grid.ColumnSpan="2" ItemsSource="{Binding HourLabels}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <UniformGrid Columns="1" Rows="24" />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
                     <ItemsControl.ItemTemplate>
                         <DataTemplate x:DataType="x:String">
-                            <Border Classes="timeline-hour" Height="60">
+                            <Border Classes="timeline-hour">
                                 <TextBlock Text="{Binding}"
                                            FontFamily="{StaticResource TabularTimerFontFamily}"
                                            FontSize="{StaticResource FontSizeCaption}"
@@ -77,7 +119,7 @@
                 <ItemsControl Grid.Column="1" Margin="0,0,16,0" ItemsSource="{Binding Blocks}">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
-                            <controls:TimelinePanel />
+                            <controls:TimelinePanel HourHeight="{Binding $parent[UserControl].((vm:WorklogTimelineViewModel)DataContext).HourHeight}" />
                         </ItemsPanelTemplate>
                     </ItemsControl.ItemsPanel>
                     <ItemsControl.ItemTemplate>

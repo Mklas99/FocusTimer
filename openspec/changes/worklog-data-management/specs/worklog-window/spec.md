@@ -50,11 +50,23 @@ The system SHALL show exactly one local calendar day at a time across all Worklo
 - **THEN** each tab shows an explicit empty state, not an error
 
 ### Requirement: Entries Table
-The system SHALL list each stored entry of the selected day in start-time order with start, end, duration, application, window title, project, and capture source, and SHALL make entry ID, revision, and last-modified time available as details of a selected row.
+The system SHALL list each stored entry of the selected day in start-time order with start, end, duration, application, window title, and project, SHALL show start and end to the minute and the duration in hours and minutes (rounded to the nearest minute, "<1m" under one minute), and SHALL make the exact start, end, and duration to the second, the capture source, entry ID, session ID, revision, last-modified time, end reason, project source, platform, and device available as details of a selected row. The table SHALL NOT have a separate capture source column; manual entries are recognizable by their application "Manual entry".
 
 #### Scenario: Entries are listed
 - **WHEN** the selected day has stored entries
-- **THEN** each entry appears once with its stored values and a duration equal to end minus start
+- **THEN** each entry appears once with its stored values, with times to the minute and a duration that agrees with them
+
+#### Scenario: Times without seconds
+- **WHEN** an entry runs from 10:00:07 to 11:30:00
+- **THEN** the table shows 10:00, 11:30, and 1h 30m, and the details of the selected row show 10:00:07 to 11:30:00 with its exact duration
+
+#### Scenario: Very short entry
+- **WHEN** an entry lasts less than one minute
+- **THEN** its duration is shown as "<1m"
+
+#### Scenario: Manual entry in the table
+- **WHEN** the day contains a manual entry
+- **THEN** its application column reads "Manual entry" and the details of the selected row name the source as Manual
 
 #### Scenario: Entry fields contain special characters
 - **WHEN** a window title contains commas, quotes, or line breaks
@@ -67,6 +79,33 @@ The system SHALL list each stored entry of the selected day in start-time order 
 #### Scenario: Read failure
 - **WHEN** the day's file cannot be read or has an unsupported schema
 - **THEN** an error message is shown and the table is not presented as empty
+
+### Requirement: Entries Search
+The system SHALL provide a search field next to the Entries action buttons that keeps only the entries in which every typed word appears, ignoring case, in the application, window title, project, source, start, end, or duration, SHALL show how many of the day's entries match while a search is active, SHALL keep the search when the day is reloaded, and SHALL let the user clear it with a button, with Escape, and focus it with Ctrl + F from anywhere in the Worklog window.
+
+#### Scenario: Words must all match
+- **WHEN** the user types "alpha plan"
+- **THEN** only entries that contain both "alpha" and "plan" in any of the searched columns are listed
+
+#### Scenario: Result count
+- **WHEN** a search keeps 2 of 5 entries
+- **THEN** the text "2 of 5 entries" is shown beside the search field
+
+#### Scenario: Nothing matches
+- **WHEN** no entry matches the search
+- **THEN** the table is replaced by the message that no entries match, not by the empty-day message, and clearing the search restores the table
+
+#### Scenario: Selection hidden by the search
+- **WHEN** the selected entry no longer matches
+- **THEN** the selection is cleared
+
+#### Scenario: Search does not change other tabs
+- **WHEN** a search is active
+- **THEN** the Timeline and Summary still show every entry of the day
+
+#### Scenario: Keyboard
+- **WHEN** the user presses Ctrl + F on any tab of the Worklog window
+- **THEN** the Entries tab opens and the search field has focus with its text selected
 
 ### Requirement: Refresh Behavior
 The system SHALL reload the selected day when the user selects a tab, presses Refresh, changes the day, activates the window (unless an add or edit dialog is open), or after a successful add, edit, or delete, and a newer reload SHALL supersede an older one.
@@ -86,6 +125,29 @@ The system SHALL reload the selected day when the user selects a tab, presses Re
 #### Scenario: Slow reload superseded
 - **WHEN** the user changes the day while a previous reload is still running
 - **THEN** only the result for the latest selected day is shown
+
+### Requirement: Timeline Zoom
+The system SHALL let the user change the vertical scale of the timeline so an hour has more or less height, with Ctrl + mouse wheel (up zooms in), with Ctrl + plus, Ctrl + minus, and Ctrl + 0, and with zoom out, zoom in, and reset buttons that show the current zoom as a percentage of the default, SHALL limit the scale to a minimum and a maximum, SHALL keep the moment under the mouse pointer (or the middle of the visible area for buttons and keys) in place while zooming, and SHALL redraw overlapping entries at the new scale.
+
+#### Scenario: Zoom in with the wheel
+- **WHEN** the user turns the mouse wheel up while holding Ctrl over the timeline
+- **THEN** every hour becomes taller, the zoom text increases, and the moment under the pointer stays under the pointer
+
+#### Scenario: Plain wheel scrolls
+- **WHEN** the user turns the mouse wheel without Ctrl
+- **THEN** the timeline scrolls and the scale does not change
+
+#### Scenario: Limits
+- **WHEN** the user keeps zooming in or out
+- **THEN** the scale stops at the maximum or minimum and the matching button is disabled
+
+#### Scenario: Reset
+- **WHEN** the user presses Reset or Ctrl + 0
+- **THEN** the scale returns to the default of 100%
+
+#### Scenario: Short entries at a larger scale
+- **WHEN** two very short neighbouring entries shared lanes at the default scale and the user zooms in enough to separate them
+- **THEN** they are drawn in one lane at full width
 
 ### Requirement: Timeline View
 The system SHALL show the selected day's entries in chronological order along a time axis, SHALL distinguish manual entries from tracked entries without relying on color alone, SHALL show gaps between entries as empty space, and SHALL show the same read warnings as the Entries tab.

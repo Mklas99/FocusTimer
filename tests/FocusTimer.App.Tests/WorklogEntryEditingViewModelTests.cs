@@ -39,7 +39,7 @@ public class WorklogEntryEditingViewModelTests
         Assert.Equal("Planning", stored.WindowTitle);
         var row = Assert.Single(h.Vm.Rows);
         Assert.True(row.IsManual);
-        Assert.Equal("14:00:00", row.StartText);
+        Assert.Equal("14:00", row.StartText);
         Assert.Equal("Alpha", row.ProjectText);
     }
 
@@ -252,7 +252,7 @@ public class WorklogEntryEditingViewModelTests
         Assert.Equal(start, stored.StartedAt);
         Assert.Equal(start.AddMinutes(20), stored.EndedAt);
         Assert.Equal(2, stored.Revision);
-        Assert.Equal("0:20:00", Assert.Single(h.Vm.Rows).DurationText);
+        Assert.Equal("0h 20m", Assert.Single(h.Vm.Rows).DurationText);
     }
 
     [Fact]
@@ -291,7 +291,7 @@ public class WorklogEntryEditingViewModelTests
         await h.Run(h.Vm.DeleteCommand);
         Assert.True(h.Vm.IsDeleteConfirmOpen);
         Assert.True(h.Vm.IsDialogOpen);
-        Assert.Contains("09:00:00", h.Vm.DeletePrompt);
+        Assert.Contains("09:00", h.Vm.DeletePrompt);
         Assert.Equal(2, h.Store.Entries.Count);
 
         await h.Run(h.Vm.CancelDeleteCommand);
@@ -323,7 +323,7 @@ public class WorklogEntryEditingViewModelTests
 
         Assert.Equal(2, h.Store.Entries.Count);
         Assert.True(h.Vm.HasOverlapWarning);
-        Assert.Contains("14:30:00", h.Vm.OverlapWarning);
+        Assert.Contains("14:30", h.Vm.OverlapWarning);
         Assert.Contains("counted twice", h.Vm.OverlapWarning);
 
         await h.Run(h.Vm.DismissOverlapWarningCommand);

@@ -61,6 +61,32 @@
                     MinHeight="{StaticResource MinHitTargetSize}"
                     Command="{Binding RefreshCommand}"
                     ToolTip.Tip="Reload the entries for this day" />
+
+            <!-- Search: every word must be part of the application, window, project, source, or times -->
+            <Grid ColumnDefinitions="*,Auto" Width="280" Margin="8,0,0,0">
+                <TextBox x:Name="SearchBox"
+                         Grid.ColumnSpan="2"
+                         MinHeight="{StaticResource MinHitTargetSize}"
+                         Text="{Binding SearchText, Mode=TwoWay}"
+                         Watermark="Search entries (Ctrl + F)"
+                         AutomationProperties.Name="Search entries"
+                         ToolTip.Tip="Words must all appear in the application, window, project, source, or times" />
+                <Button Grid.Column="1"
+                        Content="&#10005;"
+                        Margin="0,0,4,0"
+                        Padding="6,0"
+                        MinWidth="{StaticResource MinHitTargetSize}"
+                        MinHeight="{StaticResource MinHitTargetSize}"
+                        VerticalAlignment="Center"
+                        Command="{Binding ClearSearchCommand}"
+                        IsVisible="{Binding IsSearchActive}"
+                        AutomationProperties.Name="Clear search"
+                        ToolTip.Tip="Clear the search (Esc)" />
+            </Grid>
+            <TextBlock Text="{Binding SearchResultText}"
+                       VerticalAlignment="Center"
+                       Foreground="{DynamicResource SecondaryTextBrush}"
+                       IsVisible="{Binding IsSearchActive}" />
         </StackPanel>
 
         <!-- Warnings: overlap and action errors can be dismissed by click or with the keyboard-reachable button -->
@@ -252,14 +278,13 @@
 
         <!-- Table: header row and rows share the same column widths -->
         <Grid Grid.Row="5" RowDefinitions="Auto,*" MinHeight="120" IsVisible="{Binding IsReady}">
-            <Grid Grid.Row="0" ColumnDefinitions="76,76,84,140,*,120,72" Margin="12,0,12,4">
+            <Grid Grid.Row="0" ColumnDefinitions="56,56,76,150,*,130" Margin="12,0,12,4">
                 <TextBlock Grid.Column="0" Classes="SettingLabel" Text="Start" />
                 <TextBlock Grid.Column="1" Classes="SettingLabel" Text="End" />
                 <TextBlock Grid.Column="2" Classes="SettingLabel" Text="Duration" />
                 <TextBlock Grid.Column="3" Classes="SettingLabel" Text="Application" />
                 <TextBlock Grid.Column="4" Classes="SettingLabel" Text="Window" />
                 <TextBlock Grid.Column="5" Classes="SettingLabel" Text="Project" />
-                <TextBlock Grid.Column="6" Classes="SettingLabel" Text="Source" />
             </Grid>
             <ListBox Grid.Row="1"
                      Classes="worklog-table"
@@ -268,14 +293,13 @@
                      AutomationProperties.Name="Worklog entries">
                 <ListBox.ItemTemplate>
                     <DataTemplate x:DataType="vm:WorklogEntryRowViewModel">
-                        <Grid ColumnDefinitions="76,76,84,140,*,120,72" MinHeight="{StaticResource MinHitTargetSize}">
+                        <Grid ColumnDefinitions="56,56,76,150,*,130" MinHeight="{StaticResource MinHitTargetSize}">
                             <TextBlock Grid.Column="0" Text="{Binding StartText}" FontFamily="{StaticResource TabularTimerFontFamily}" VerticalAlignment="Center" />
                             <TextBlock Grid.Column="1" Text="{Binding EndText}" FontFamily="{StaticResource TabularTimerFontFamily}" VerticalAlignment="Center" />
                             <TextBlock Grid.Column="2" Text="{Binding DurationText}" FontFamily="{StaticResource TabularTimerFontFamily}" VerticalAlignment="Center" />
-                            <TextBlock Grid.Column="3" Text="{Binding ApplicationText}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" ToolTip.Tip="{Binding ApplicationText}" />
+                            <TextBlock Grid.Column="3" Text="{Binding ApplicationText}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" ToolTip.Tip="{Binding ApplicationText}" Classes.worklog-manual="{Binding IsManual}" />
                             <TextBlock Grid.Column="4" Text="{Binding WindowText}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" ToolTip.Tip="{Binding WindowText}" Margin="0,0,8,0" />
                             <TextBlock Grid.Column="5" Text="{Binding ProjectText}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" ToolTip.Tip="{Binding ProjectText}" />
-                            <TextBlock Grid.Column="6" Text="{Binding SourceText}" VerticalAlignment="Center" Classes.worklog-manual="{Binding IsManual}" />
                         </Grid>
                     </DataTemplate>
                 </ListBox.ItemTemplate>
@@ -290,7 +314,7 @@
             <Grid x:DataType="vm:WorklogEntryRowViewModel"
                   DataContext="{Binding SelectedRow}"
                   ColumnDefinitions="Auto,*,Auto,*"
-                  RowDefinitions="Auto,Auto,Auto,Auto">
+                  RowDefinitions="Auto,Auto,Auto,Auto,Auto">
                 <Grid.Styles>
                     <Style Selector="TextBlock.SettingLabel">
                         <Setter Property="Margin" Value="0,2,12,2" />
@@ -315,6 +339,10 @@
                 <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding PlatformText}" />
                 <TextBlock Grid.Row="3" Grid.Column="2" Classes="SettingLabel" Text="Device" />
                 <SelectableTextBlock Grid.Row="3" Grid.Column="3" Text="{Binding DeviceText}" TextTrimming="CharacterEllipsis" />
+                <TextBlock Grid.Row="4" Grid.Column="0" Classes="SettingLabel" Text="Exact time" />
+                <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding ExactTimeText}" />
+                <TextBlock Grid.Row="4" Grid.Column="2" Classes="SettingLabel" Text="Source" />
+                <TextBlock Grid.Row="4" Grid.Column="3" Text="{Binding SourceText}" />
             </Grid>
         </Border>
     </Grid>

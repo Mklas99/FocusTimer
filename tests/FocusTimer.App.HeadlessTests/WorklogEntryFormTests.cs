@@ -3,6 +3,7 @@ namespace FocusTimer.App.HeadlessTests;
 using Avalonia;
 using Avalonia.Automation;
 using Avalonia.Controls;
+using Avalonia.Headless;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using FocusTimer.App.Services;
@@ -56,6 +57,81 @@ public sealed class WorklogEntryFormTests
         h.Pump();
         Assert.False(banner.IsEffectivelyVisible);
         Assert.Equal(2, h.Vm.Entries.Rows.Count);
+    }
+
+    [Fact]
+    public async Task SearchBox_FiltersTheTableAsYouType_AndTheClearButtonRestoresIt()
+    {
+        using var h = await Harness.OpenAsync();
+        h.Store.Seed(h.Day.AddHours(9), 30);
+        h.Store.Seed(h.Day.AddHours(11), 30, "seed2", "Chrome");
+        await h.Vm.Entries.RefreshAsync();
+        h.Pump();
+        Assert.Equal(2, h.Window.GetVisualDescendants().OfType<ListBoxItem>().Count());
+
+        h.Find<TextBox>(t => AutomationProperties.GetName(t) == "Search entries").Text = "chrome";
+        h.Pump();
+
+        Assert.Equal("chrome", h.Vm.Entries.SearchText);
+        var listBox = h.Find<ListBox>(l => l.Classes.Contains("worklog-table"));
+        Assert.Equal(1, listBox.ItemCount);
+        Assert.Single(h.Window.GetVisualDescendants().OfType<ListBoxItem>(), i => i.IsEffectivelyVisible && i.Bounds.Height > 0);
+        Assert.True(h.Find<TextBlock>(t => t.Text == "1 of 2 entries").IsEffectivelyVisible);
+        var clear = h.Find<Button>(b => AutomationProperties.GetName(b) == "Clear search");
+        Assert.True(clear.IsEffectivelyVisible);
+
+        clear.Command!.Execute(null);
+        h.Pump();
+
+        Assert.Equal(string.Empty, h.Find<TextBox>(t => AutomationProperties.GetName(t) == "Search entries").Text);
+        Assert.Equal(2, h.Find<ListBox>(l => l.Classes.Contains("worklog-table")).ItemCount);
+        Assert.Equal(2, h.Window.GetVisualDescendants().OfType<ListBoxItem>().Count(i => i.IsEffectivelyVisible && i.Bounds.Height > 0));
+    }
+
+    [Fact]
+    public async Task CtrlF_FocusesTheSearchBox_AndEscapeClearsTheSearch()
+    {
+        using var h = await Harness.OpenAsync();
+        h.Store.Seed(h.Day.AddHours(9), 30);
+        await h.Vm.Entries.RefreshAsync();
+        h.Pump();
+        var box = h.Find<TextBox>(t => AutomationProperties.GetName(t) == "Search entries");
+        await h.Vm.SelectTabAsync(WorklogTab.Summary);
+        h.Window.FindControl<TabControl>("Tabs")!.SelectedIndex = 2;
+        h.Pump();
+
+        h.Window.KeyPress(Avalonia.Input.Key.F, Avalonia.Input.RawInputModifiers.Control, Avalonia.Input.PhysicalKey.F, "f");
+        h.Pump();
+        Assert.True(box.IsFocused);
+        Assert.Equal(0, h.Window.FindControl<TabControl>("Tabs")!.SelectedIndex);
+
+        box.Text = "code";
+        h.Pump();
+        h.Window.KeyPress(Avalonia.Input.Key.Escape, Avalonia.Input.RawInputModifiers.None, Avalonia.Input.PhysicalKey.Escape, null);
+        h.Pump();
+
+        Assert.Equal(string.Empty, h.Vm.Entries.SearchText);
+    }
+
+    [Fact]
+    public async Task TableShowsNoSourceColumn_AndTheDetailsShowExactTimeAndSource()
+    {
+        using var h = await Harness.OpenAsync();
+        h.Store.Seed(h.Day.AddHours(9), 30);
+        await h.Vm.Entries.RefreshAsync();
+        h.Vm.Entries.SelectedRow = h.Vm.Entries.Rows[0];
+        h.Pump();
+
+        var headers = h.Window.GetVisualDescendants().OfType<TextBlock>()
+            .Where(t => t.Classes.Contains("SettingLabel") && t.Parent is Grid { ColumnDefinitions.Count: 6 })
+            .Select(t => t.Text)
+            .ToList();
+
+        Assert.Equal(["Start", "End", "Duration", "Application", "Window", "Project"], headers);
+        Assert.DoesNotContain(headers, text => text == "Source");
+        Assert.True(h.Find<TextBlock>(t => t.Text == "Exact time").IsEffectivelyVisible);
+        Assert.True(h.Find<TextBlock>(t => t.Text == "Tracked").IsEffectivelyVisible);
+        Assert.Contains(":00", h.Find<TextBlock>(t => t.Text?.Contains('(') == true && t.Text.Contains('\u2013')).Text);
     }
 
     [Fact]
@@ -153,8 +229,12 @@ public sealed class WorklogEntryFormTests
 
         public void Pump()
         {
-            Dispatcher.UIThread.RunJobs();
-            this.Window.UpdateLayout();
+            // Two passes: new list items are realized on the layout pass that follows a binding update.
+            for (var pass = 0; pass < 2; pass++)
+            {
+                Dispatcher.UIThread.RunJobs();
+                this.Window.UpdateLayout();
+            }
         }
 
         public T Find<T>(Func<T, bool> match)
@@ -198,8 +278,8 @@ public sealed class WorklogEntryFormTests
 
         public IReadOnlyList<TimeEntry> Entries => this._entries;
 
-        public void Seed(DateTimeOffset start, int minutes) => this._entries.Add(new TimeEntry(
-            "seed", "seed-session", start, start.AddMinutes(minutes), "Code", "Program.cs", null, ProjectAssignmentSource.Unassigned,
+        public void Seed(DateTimeOffset start, int minutes, string id = "seed", string app = "Code") => this._entries.Add(new TimeEntry(
+            id, id + "-session", start, start.AddMinutes(minutes), app, "Program.cs", null, ProjectAssignmentSource.Unassigned,
             null, ActivityKind.Active, EndReason.ApplicationChange, CaptureSource.ActiveWindow, SourcePlatform.Windows, "device-1", 1,
             DateTimeOffset.UtcNow));
 
