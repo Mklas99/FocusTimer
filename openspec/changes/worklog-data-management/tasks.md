@@ -17,14 +17,14 @@
 
 ## 3. Editing service (Core)
 
-- [ ] 3.1 Add `DurationParser` ("2h 30m", "45m", "1h", "2.5h"; whole minutes; error with example) and `WorklogDayBounds` (earliest day = today minus (retention days minus one), none when retention is 0 or less); verify with unit tests for each accepted format, rejects, and the bound at retention 1, 90, and 0
-- [ ] 3.2 Add `IWorklogEditingService`, result types (storage outcome, user message, overlapping entries), and `WorklogChangedEvent` with XML docs; verify the project builds
-- [ ] 3.3 Implement `AddManualAsync` (fixed "Manual entry" label, Manual source, new IDs, project Editor/Unassigned, trimmed 100-character project, optional window text, 23:59:59 limit, zero, future-time, retention-bound, DST gap rejection, ambiguous time earlier occurrence, allowed when work logging is off); verify with unit tests using a fake store for every scenario in `worklog-entry-management`
-- [ ] 3.4 Implement `UpdateAsync` (window title, project, duration; end changes only if duration changed; project source rules; 23:59:59 limit); verify with tests for duration up and down, title-only edit of an entry with seconds keeps the exact end, project changed/cleared/unchanged, and passing the day limit
-- [ ] 3.5 Implement `DeleteAsync` with the loaded revision; verify with tests for success, stale revision, and missing entry
-- [ ] 3.6 Implement overlap detection (strict overlap, touching is not overlap, self excluded on edit, running segment ignored); verify with tests for overlap, touching, and no entries
-- [ ] 3.7 Publish `WorklogChangedEvent` after a successful change touching today; verify with tests that today's changes publish and other days do not
-- [ ] 3.8 Add a Persistence test with the real CSV store: edit with a stale revision conflicts, and an append between load and edit leaves a valid file with both changes; verify it passes (covers editing today's file while tracking)
+- [x] 3.1 Add `DurationParser` ("2h 30m", "45m", "1h", "2.5h"; whole minutes; error with example) and `WorklogDayBounds` (earliest day = today minus (retention days minus one), none when retention is 0 or less); verify with unit tests for each accepted format, rejects, and the bound at retention 1, 90, and 0
+- [x] 3.2 Add `IWorklogEditingService`, result types (storage outcome, user message, overlapping entries), and `WorklogChangedEvent` with XML docs; verify the project builds
+- [x] 3.3 Implement `AddManualAsync` (fixed "Manual entry" label, Manual source, new IDs, project Editor/Unassigned, trimmed 100-character project, optional window text, 23:59:59 limit, zero, future-time, retention-bound, DST gap rejection, ambiguous time earlier occurrence, allowed when work logging is off); verify with unit tests using a fake store for every scenario in `worklog-entry-management`
+- [x] 3.4 Implement `UpdateAsync` (window title, project, duration; end changes only if duration changed; project source rules; 23:59:59 limit); verify with tests for duration up and down, title-only edit of an entry with seconds keeps the exact end, project changed/cleared/unchanged, and passing the day limit
+- [x] 3.5 Implement `DeleteAsync` with the loaded revision; verify with tests for success, stale revision, and missing entry
+- [x] 3.6 Implement overlap detection (strict overlap, touching is not overlap, self excluded on edit, running segment ignored); verify with tests for overlap, touching, and no entries
+- [x] 3.7 Publish `WorklogChangedEvent` after a successful change touching today; verify with tests that today's changes publish and other days do not
+- [x] 3.8 Add a Persistence test with the real CSV store: edit with a stale revision conflicts, and an append between load and edit leaves a valid file with both changes; verify it passes (covers editing today's file while tracking)
 
 ## 4. By-window grouping (Core)
 

@@ -118,6 +118,61 @@ public class ManualEntryStorageTests
         finally { Directory.Delete(root, true); }
     }
 
+    [Fact]
+    public async Task PatchAsync_GivenStaleRevisionAfterEarlierEdit_ConflictsAndLeavesFileUnchanged()
+    {
+        var root = TestHelpers.CreateTempDirectory();
+        try
+        {
+            var store = CreateStore(root);
+            var entry = Entry("e", Day, CaptureSource.ActiveWindow);
+            Assert.True((await store.AppendAsync([entry])).IsSuccess);
+            Assert.True((await store.PatchAsync("e", 1, ToPatch(entry with { WindowTitle = "First" }))).IsSuccess);
+            var path = Path.Combine(root, "2026", "03", "2026-03-31-worklog.csv");
+            var before = await File.ReadAllBytesAsync(path);
+
+            var stale = await store.PatchAsync("e", 1, ToPatch(entry with { WindowTitle = "Second" }));
+            var staleDelete = await store.DeleteAsync("e", 1);
+
+            Assert.Equal(WorklogOutcomeKind.Conflict, stale.Kind);
+            Assert.Equal(WorklogOutcomeKind.Conflict, staleDelete.Kind);
+            Assert.Equal(before, await File.ReadAllBytesAsync(path));
+        }
+        finally { Directory.Delete(root, true); }
+    }
+
+    [Fact]
+    public async Task Store_GivenTrackerAppendsWhileUserEditsAndDeletes_KeepsEveryChangeAndAValidFile()
+    {
+        var root = TestHelpers.CreateTempDirectory();
+        try
+        {
+            var store = CreateStore(root);
+            var edited = Entry("edited", Day, CaptureSource.ActiveWindow);
+            var deleted = Entry("deleted", Day.AddHours(1), CaptureSource.ActiveWindow);
+            Assert.True((await store.AppendAsync([edited, deleted])).IsSuccess);
+
+            var appends = Enumerable.Range(0, 20)
+                .Select(i => store.AppendAsync([Entry("tracked-" + i, Day.AddHours(2).AddMinutes(i * 31), CaptureSource.ActiveWindow)]));
+            var patch = store.PatchAsync("edited", 1, ToPatch(edited with { WindowTitle = "User edit" }));
+            var delete = store.DeleteAsync("deleted", 1);
+
+            var outcomes = await Task.WhenAll(appends.Append(patch).Append(delete));
+
+            Assert.All(outcomes, outcome => Assert.True(outcome.IsSuccess || outcome.Kind == WorklogOutcomeKind.Conflict, outcome.Message));
+            Assert.True(outcomes[^2].IsSuccess);
+            Assert.True(outcomes[^1].IsSuccess);
+            var read = await store.QueryAsync(new WorklogQuery(
+                new DateTimeOffset(2026, 3, 31, 0, 0, 0, TimeSpan.Zero), new DateTimeOffset(2026, 4, 1, 0, 0, 0, TimeSpan.Zero)));
+            Assert.True(read.Outcome.IsSuccess);
+            Assert.Empty(read.Outcome.Warnings ?? []);
+            Assert.Equal("User edit", read.Entries.Single(e => e.EntryId == "edited").WindowTitle);
+            Assert.DoesNotContain(read.Entries, e => e.EntryId == "deleted");
+            Assert.Equal(outcomes.Take(20).Count(o => o.IsSuccess), read.Entries.Count(e => e.EntryId.StartsWith("tracked-")));
+        }
+        finally { Directory.Delete(root, true); }
+    }
+
     private static CsvSessionRepository CreateStore(string root) =>
         new(new StubSettingsProvider(new Settings { WorklogDirectory = root }), NullLogger.Instance);
 
