@@ -12,6 +12,49 @@ namespace FocusTimer.App.Tests
     public class SettingsThemeColorTests
     {
         [Fact]
+        public async System.Threading.Tasks.Task PlayPauseAndReservedColors_ImportExportPreservesValues()
+        {
+            string path = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"focus-theme-{Guid.NewGuid():N}.fttheme");
+            var service = new ThemeService();
+            var theme = new Theme
+            {
+                PlayPauseColor = "#123456", SuccessColor = "#234567", DangerColor = "#345678", TimerBackground = "#456789",
+            };
+            try
+            {
+                await service.SaveThemeToFileAsync(theme, path);
+                Theme loaded = await service.LoadThemeFromFileAsync(path);
+                Assert.Equal(theme.PlayPauseColor, loaded.PlayPauseColor);
+                Assert.Equal(theme.SuccessColor, loaded.SuccessColor);
+                Assert.Equal(theme.DangerColor, loaded.DangerColor);
+                Assert.Equal(theme.TimerBackground, loaded.TimerBackground);
+            }
+            finally
+            {
+                System.IO.File.Delete(path);
+            }
+        }
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("#123456")]
+        public void PlayPauseColor_ClonesAndRoundTripsWithoutRepurposingTimerBackground(string? explicitColor)
+        {
+            var theme = new Theme { ButtonNormal = "#ABCDEF", PlayPauseColor = explicitColor, TimerBackground = "#654321" };
+            Theme clone = theme.Clone();
+            Theme reloaded = System.Text.Json.JsonSerializer.Deserialize<Theme>(System.Text.Json.JsonSerializer.Serialize(clone))!;
+            Assert.Equal(explicitColor, reloaded.PlayPauseColor);
+            Assert.Equal("#654321", reloaded.TimerBackground);
+            var resources = new ResourceDictionary();
+            var manager = new ThemeManager();
+            manager.ApplyTheme(reloaded, resources);
+            Assert.Equal(Color.Parse(explicitColor ?? theme.ButtonNormal), Assert.IsType<SolidColorBrush>(resources["PlayPauseBrush"]).Color);
+            reloaded.ButtonNormal = "#FEDCBA";
+            manager.ApplyTheme(reloaded, resources);
+            Assert.Equal(Color.Parse(explicitColor ?? "#FEDCBA"), Assert.IsType<SolidColorBrush>(resources["PlayPauseBrush"]).Color);
+        }
+
+        [Fact]
         public void ApplyTheme_UpdatesSettingsTextInputAndTabResourcesIndependently()
         {
             var manager = new ThemeManager();

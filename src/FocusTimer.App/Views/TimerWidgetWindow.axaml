@@ -67,12 +67,12 @@
                     Margin="{DynamicResource WidgetContentMargin}"
                     VerticalAlignment="Center"
                     HorizontalAlignment="Center"
-                    IsVisible="{Binding Settings.UseCompactMode, Converter={StaticResource BooleanNegationConverter}}" />
+                    IsVisible="{Binding UseCompactMode, Converter={StaticResource BooleanNegationConverter}}" />
                     <views:CompactModeView
                     Margin="{DynamicResource WidgetContentMargin}"
                     VerticalAlignment="Center"
                     HorizontalAlignment="Center"
-                    IsVisible="{Binding Settings.UseCompactMode}" />
+                    IsVisible="{Binding UseCompactMode}" />
                 </Grid>
             </Grid>
         </Border>

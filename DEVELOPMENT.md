@@ -40,7 +40,7 @@ FocusTimer.Host (entry point, DI setup)
 2. **Interface-Based Contracts**: All external integrations (logging, persistence, OS features) are defined as interfaces in Core
 3. **Event Bus**: Decouples publishers (ViewModels) from subscribers (AppController) via a single, non-generic `IEventBus`
 4. **MVVM Pattern**: Avalonia ViewModels expose properties and commands; Views bind to them
-5. **Immutable Models**: Domain entities such as `TimeEntry` and `Settings` are immutable or init-only POCOs
+5. **Models**: `TimeEntry` is immutable. `Settings` and `Theme` are observable mutable models; use independent clones for editable drafts, appearance previews, and committed snapshots.
 
 ### Persistence dependency
 
@@ -624,6 +624,25 @@ public class MyService
 
 ## Debugging Tips
 
+### Live XAML editing
+
+Debug builds include HotAvalonia in Host and App. Start the app from the repo root:
+
+```powershell
+dotnet run --project src/FocusTimer.Host -c Debug
+```
+
+Save changes to `.axaml` files, including `Styles/Tokens.axaml`, to reload the running UI.
+Use `DynamicResource` for tokens that should update when their resource values change.
+Restart any debug session that was already running when HotAvalonia was installed.
+These packages are excluded from Release builds.
+
+For C# hot reload alongside XAML editing, use:
+
+```powershell
+dotnet watch --project src/FocusTimer.Host run -c Debug
+```
+
 ### Enable Verbose Logging
 
 There's no environment variable for log level today. Two options:
@@ -738,3 +757,11 @@ In Settings → About, click the version seven times to unlock Developer Options
 Foreground capture occurs immediately when tracking starts, then at the configured interval. Longer intervals reduce polling work but can miss short app visits; changes are attributed when observed. Timer display and day-boundary maintenance still run every second. Changing the interval preserves elapsed time and does not split the active segment.
 
 Measurements and reproduction instructions: [Activity polling performance](docs/versions/current/ActivityPollingPerformance.md). The isolated Windows smoke driver is `tools/FocusTimer.PollingSmoke`; pass an absolute synthetic-data directory when launching it. It uses platform stubs and does not register global hotkeys or change autostart.
+
+## Settings save presentation and icon colors
+
+Settings uses IsDraftVisible for visual availability and CanEdit for mutation guards. During IsCommitting, a transparent shield blocks pointer edits, focus moves to the reserved Saving... status, dropdowns/context menus close, and window handlers consume keyboard, text, wheel, paste, and cut input. Handlers detach on close; Apply restores valid editor focus, while successful OK closes. Imports begun before a commit are rejected even if they finish after it. Commit start clears active preedit text through Avalonia's text-input-method client before focus movement releases the editor. The native fixture verifies preedit clearing; individual Windows IME language implementations are not exercised with physical keyboard input.
+
+Theme.playPauseColor is optional. Missing/null inherits ButtonNormal; an explicit valid color is cloned and serialized. TimerBackground remains preserved for legacy theme files but has no editor. Shared widget icon styles override normal foreground with Hover, Pressed, or Disabled colors in both modes; existing background highlights remain. Success and Danger remain reserved for future status displays.
+
+The native appearance regression runs in a separate process because Avalonia platform initialization is global. In PowerShell, set FOCUSTIMER_NATIVE_APPEARANCE_TESTS=1 for that process and run dotnet test tests/FocusTimer.App.Tests --filter AppearanceNativeTests. Normal runs skip this Windows-only fixture. Its rendered saving/applied/error/recovery screenshots are written under the test output's appearance-evidence directory.

@@ -8,6 +8,8 @@ using FocusTimer.App.ViewModels;
 using FocusTimer.Core.Interfaces;
 using FocusTimer.Core.Models;
 using FocusTimer.Core.Services;
+using FocusTimer.Core.Stubs;
+using FocusTimer.Persistence;
 using ReactiveUI;
 
 public class SettingsWindowSummaryTabTests
@@ -19,6 +21,7 @@ public class SettingsWindowSummaryTabTests
         var vm = Create(new CountingSummaryService(), provider: provider);
 
         Assert.False(vm.IsSettingsLoaded);
+        Assert.False(vm.IsDraftVisible);
         await ((ReactiveCommand<Unit, Unit>)vm.ApplyCommand).Execute().ToTask();
         Assert.Equal(0, provider.SaveCalls);
 
@@ -55,8 +58,10 @@ public class SettingsWindowSummaryTabTests
         vm.Dispose();
     }
 
-    [Fact]
-    public async Task ThemeImportFinishingDuringApply_DoesNotChangeCommittedPreview()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ThemeImportFinishingDuringApply_DoesNotChangeCommittedPreview(bool finishAfterApply)
     {
         var themes = new DelayedImportThemeService();
         var activation = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -67,9 +72,15 @@ public class SettingsWindowSummaryTabTests
         Task import = vm.ImportThemeFileAsync("delayed.fttheme");
         Task apply = ((ReactiveCommand<Unit, Unit>)vm.ApplyCommand).Execute().ToTask();
         await WaitUntilAsync(() => vm.IsCommitting);
+        if (finishAfterApply)
+        {
+            activation.SetResult();
+            await apply;
+        }
+
         themes.CompleteImport(new Theme { ThemeName = "Imported" });
         await import;
-        activation.SetResult();
+        activation.TrySetResult();
         await apply;
 
         Assert.True(vm.LastApplySucceeded);
@@ -150,6 +161,11 @@ public class SettingsWindowSummaryTabTests
         Assert.False(vm.CanClose);
         Assert.False(vm.CanCommit);
         Assert.False(vm.CanEdit);
+        Assert.True(vm.IsDraftVisible);
+        Assert.Equal("Saving...", vm.SavingStatus);
+        bool committedMode = vm.Settings.UseCompactMode;
+        vm.ToggleCompactModePreview();
+        Assert.Equal(committedMode, vm.Settings.UseCompactMode);
         string originalAccent = vm.Settings.Theme.AccentPrimary;
         vm.SetThemeColor(nameof(Theme.AccentPrimary), "#123456");
         Assert.Equal(originalAccent, vm.Settings.Theme.AccentPrimary);
@@ -159,6 +175,8 @@ public class SettingsWindowSummaryTabTests
         activation.SetResult();
         await commit;
         Assert.True(vm.CanClose);
+        Assert.Equal(string.Empty, vm.SavingStatus);
+        Assert.True(vm.IsDraftVisible);
         Assert.True(vm.LastApplySucceeded);
         vm.Dispose();
     }
@@ -211,6 +229,7 @@ public class SettingsWindowSummaryTabTests
         await ((ReactiveCommand<Unit, Unit>)vm.ApplyCommand).Execute().ToTask();
         Assert.False(vm.LastApplySucceeded);
         Assert.True(vm.HasCommitError);
+        Assert.Equal(string.Empty, vm.SavingStatus);
         Assert.Equal(25, vm.Settings.BreakIntervalMinutes);
         Assert.Equal(50, provider.Saved.BreakIntervalMinutes);
 
@@ -391,6 +410,209 @@ public class SettingsWindowSummaryTabTests
         Assert.Contains("Requested: Off | Active: None | Surface: solid fallback", vm.TransparencyDiagnostics);
         vm.Dispose();
     }
+
+    [Fact]
+    public void DiscardAfterLoadingMismatchedTheme_KeepsSolarizedForSliderPreview()
+    {
+        var themes = new ThemeService();
+        var manager = new ThemeManager();
+        var saved = new Settings
+        {
+            ActiveThemeName = "Solarized Dark",
+            Theme = themes.GetBuiltInTheme("Monokai")!,
+        };
+        var vm = Create(new CountingSummaryService(), manager, saved);
+
+        Assert.Equal("Solarized Dark", vm.Settings.Theme.ThemeName);
+        vm.RestoreAppearancePreview();
+        vm.BackgroundOpacityPercent = 25;
+        vm.ClockOpacityPercent = 50;
+
+        Assert.Equal("Solarized Dark", vm.Settings.Theme.ThemeName);
+        Assert.Equal("Solarized Dark", manager.ActiveTheme!.ThemeName);
+        Assert.Equal(themes.GetBuiltInTheme("Solarized Dark")!.WindowBackground, manager.ActiveTheme.WindowBackground);
+        Assert.Equal(0.25, manager.ActiveTheme.BackgroundOpacity);
+        Assert.Equal(0.5, manager.ActiveTheme.TimerOpacity);
+        vm.Dispose();
+    }
+
+    [Fact]
+    public void RebindingSelectedTheme_DoesNotResetSliderEdits()
+    {
+        var themes = new ThemeService();
+        var manager = new ThemeManager();
+        var vm = Create(new CountingSummaryService(), manager, new Settings
+        {
+            ActiveThemeName = "Solarized Dark",
+            Theme = themes.GetBuiltInTheme("Solarized Dark")!,
+        });
+        vm.BackgroundOpacityPercent = 25;
+        vm.ClockOpacityPercent = 50;
+
+        vm.SelectedThemeName = "Solarized Dark";
+
+        Assert.Equal(0.25, vm.Settings.Theme.BackgroundOpacity);
+        Assert.Equal(0.5, vm.Settings.Theme.TimerOpacity);
+        Assert.Equal("Solarized Dark", manager.ActiveTheme!.ThemeName);
+        vm.Dispose();
+    }
+
+    [Theory]
+    [InlineData("Apply")]
+    [InlineData("OK")]
+    [InlineData("SaveFailure")]
+    [InlineData("ActivationFailure")]
+    public async Task AppearanceLifecycle_PreviewsWholeDraftAndRestoresLastSuccessfulCommit(string action)
+    {
+        var saved = new Settings
+        {
+            WorkLoggingEnabled = false,
+            Theme = new ThemeService().GetBuiltInTheme("Solarized Dark")!,
+            ActiveThemeName = "Solarized Dark",
+        };
+        var provider = new StubSettingsProvider(saved);
+        var manager = new ThemeManager();
+        var notifications = new LinuxNotificationServiceStub();
+        var tracker = new SessionTracker(new LinuxActiveWindowServiceStub(), NullAppLogger.Instance);
+        using var timer = new TimerService(tracker);
+        using var reminders = new BreakReminderService(notifications, provider);
+        using var widget = new TimerWidgetViewModel(
+            provider, NullAppLogger.Instance, new CsvSessionRepository(provider), notifications,
+            tracker, reminders, timer, null, new EventBus());
+        widget.ApplySettings(saved.Clone());
+        double originalFontSize = widget.MainTimerFontSize;
+        var vm = Create(new CountingSummaryService(), manager, provider: provider);
+        vm.SetAppearancePreview(widget.PreviewAppearance);
+        widget.SetCompactModeDraftToggle(() =>
+        {
+            vm.ToggleCompactModePreview();
+            return true;
+        });
+        bool failActivation = action == "ActivationFailure";
+        vm.SetRuntimeActivator(async candidate =>
+        {
+            manager.ApplyTheme(candidate.Theme);
+            await widget.ActivateSettingsAsync(candidate);
+            if (failActivation)
+            {
+                failActivation = false;
+                throw new IOException("Synthetic activation failure.");
+            }
+        });
+
+        vm.BackgroundOpacityPercent = 25;
+        vm.ClockOpacityPercent = 50;
+        vm.ButtonsOpacityPercent = 60;
+        vm.OverallFadePercent = 40;
+        vm.Settings.WidgetScale = 1.5;
+        await ((ReactiveCommand<Unit, Unit>)widget.ToggleCompactModeCommand).Execute().ToTask();
+        Assert.True(vm.Settings.UseCompactMode);
+        vm.Settings.BreakIntervalMinutes = 25;
+        vm.Settings.Theme.TimerText = "#123456";
+        vm.PlayPauseColor = "#112233";
+        vm.Settings.Theme.ButtonHover = "#223344";
+        vm.Settings.Theme.ButtonPressed = "#334455";
+        vm.Settings.Theme.ButtonDisabled = "#445566";
+        vm.Settings.Theme.SuccessColor = "#556677";
+        vm.Settings.Theme.DangerColor = "#667788";
+
+        Assert.Equal(originalFontSize * 1.5, widget.MainTimerFontSize);
+        Assert.True(widget.UseCompactMode);
+        Assert.Equal(0.4, widget.OverallOpacity);
+        Assert.Equal(0.5, widget.EffectiveClockOpacity);
+        Assert.Equal(0.6, widget.EffectiveControlsOpacity);
+        Assert.False(widget.Settings.UseCompactMode);
+        Assert.Equal(saved.BreakIntervalMinutes, widget.Settings.BreakIntervalMinutes);
+        Assert.Equal(0, provider.SaveCalls);
+        Assert.Equal(1, provider.Saved.WidgetScale);
+        Assert.Equal("#123456", manager.ActiveTheme!.TimerText);
+
+        provider.FailSave = action == "SaveFailure";
+        var command = (ReactiveCommand<Unit, Unit>)(action == "OK" ? vm.OkCommand : vm.ApplyCommand);
+        await command.Execute().ToTask();
+        bool success = action is "Apply" or "OK";
+        Assert.Equal(success, vm.LastApplySucceeded);
+        Assert.Equal(originalFontSize * 1.5, widget.MainTimerFontSize);
+        Assert.Equal(0.4, widget.OverallOpacity);
+        Assert.True(widget.UseCompactMode);
+        Assert.Equal("#123456", manager.ActiveTheme!.TimerText);
+        if (success)
+        {
+            Assert.Equal(1.5, provider.Saved.WidgetScale);
+            Assert.Equal(0.4, provider.Saved.WidgetOpacity);
+            Assert.Equal(0.5, provider.Saved.Theme.TimerOpacity);
+            Assert.Equal(0.6, provider.Saved.Theme.ButtonOpacity);
+            Assert.Equal("#123456", provider.Saved.Theme.TimerText);
+            Assert.Equal("#112233", provider.Saved.Theme.PlayPauseColor);
+            Assert.Equal("#223344", provider.Saved.Theme.ButtonHover);
+            Assert.Equal("#334455", provider.Saved.Theme.ButtonPressed);
+            Assert.Equal("#445566", provider.Saved.Theme.ButtonDisabled);
+            Assert.Equal("#556677", provider.Saved.Theme.SuccessColor);
+            Assert.Equal("#667788", provider.Saved.Theme.DangerColor);
+            Assert.True(provider.Saved.UseCompactMode);
+        }
+        else
+        {
+            Assert.True(vm.HasCommitError);
+            Assert.Equal(1, provider.Saved.WidgetScale);
+            Assert.False(provider.Saved.UseCompactMode);
+        }
+
+        vm.Settings.WidgetScale = 2;
+        vm.PlayPauseColor = "#FFFFFF";
+        await ((ReactiveCommand<Unit, Unit>)widget.ToggleCompactModeCommand).Execute().ToTask();
+        Assert.False(vm.Settings.UseCompactMode);
+        vm.OverallFadePercent = 70;
+        vm.ClockOpacityPercent = 20;
+        Assert.True(vm.TryDiscardAndClose());
+        widget.ClearAppearancePreview();
+
+        Assert.Equal(originalFontSize * (success ? 1.5 : 1), widget.MainTimerFontSize);
+        Assert.Equal(success, widget.UseCompactMode);
+        Assert.Equal(success ? 0.4 : saved.WidgetOpacity, widget.OverallOpacity);
+        Assert.Equal(success ? 0.5 : saved.Theme.TimerOpacity, widget.EffectiveClockOpacity);
+        Assert.Equal(success ? 25 : saved.BreakIntervalMinutes, widget.Settings.BreakIntervalMinutes);
+        Assert.Equal(success ? "#123456" : saved.Theme.TimerText, manager.ActiveTheme!.TimerText);
+        Assert.Equal(success ? "#112233" : saved.Theme.PlayPauseColor, manager.ActiveTheme.PlayPauseColor);
+        vm.Dispose();
+
+        widget.SetCompactModeDraftToggle(() => false);
+        var reopened = Create(new CountingSummaryService(), provider: provider);
+        Assert.Equal(success ? "#112233" : saved.Theme.PlayPauseColor, reopened.Settings.Theme.PlayPauseColor);
+        Assert.Equal(success ? "#556677" : saved.Theme.SuccessColor, reopened.Settings.Theme.SuccessColor);
+        Assert.Equal(success ? "#667788" : saved.Theme.DangerColor, reopened.Settings.Theme.DangerColor);
+        reopened.Dispose();
+        provider.FailSave = false;
+        int savesBeforeWidgetToggle = provider.SaveCalls;
+        await ((ReactiveCommand<Unit, Unit>)widget.ToggleCompactModeCommand).Execute().ToTask();
+        Assert.Equal(!success, widget.UseCompactMode);
+        Assert.Equal(!success, provider.Saved.UseCompactMode);
+        Assert.Equal(savesBeforeWidgetToggle + 1, provider.SaveCalls);
+    }
+
+    [Theory]
+    [InlineData(nameof(Theme.TimerText))]
+    [InlineData(nameof(Theme.PlayPauseColor))]
+    public async Task InvalidThemeColor_LeavesLastValidPreviewAndCannotBeSaved(string colorProperty)
+    {
+        var manager = new ThemeManager();
+        var provider = new StubSettingsProvider(new Settings());
+        var vm = Create(new CountingSummaryService(), manager, provider: provider);
+        vm.SetAppearancePreview(_ => { });
+        string originalColor = manager.ActiveTheme!.TimerText;
+        vm.SetThemeColor(colorProperty, "#12");
+        Assert.Equal(originalColor, manager.ActiveTheme.TimerText);
+
+        await ((ReactiveCommand<Unit, Unit>)vm.ApplyCommand).Execute().ToTask();
+
+        Assert.False(vm.LastApplySucceeded);
+        Assert.Contains(colorProperty, vm.CommitError);
+        Assert.Equal(string.Empty, vm.SavingStatus);
+        Assert.Equal(0, provider.SaveCalls);
+        vm.Dispose();
+    }
+
+    internal static SettingsWindowViewModel CreateAppearanceEditor() => Create(new CountingSummaryService());
 
     private static SettingsWindowViewModel Create(
         CountingSummaryService summary,

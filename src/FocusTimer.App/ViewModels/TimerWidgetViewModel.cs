@@ -48,6 +48,8 @@ namespace FocusTimer.App.ViewModels
         private double _compactTimerFontSize = DesignMetrics.BaseCompactTimerFontSize;
         private double _mainTimerTextWidth = DesignMetrics.BaseMainTimerTextWidth;
         private double _compactTimerTextWidth = DesignMetrics.BaseCompactTimerTextWidth;
+        private Settings? _appearancePreview;
+        private Func<bool>? _tryToggleCompactModeDraft;
         private double _projectFontSize = DesignMetrics.BaseProjectFontSize;
         private double _buttonSize = DesignMetrics.BaseButtonSize;
         private double _iconSize = DesignMetrics.BaseIconSize;
@@ -117,6 +119,11 @@ namespace FocusTimer.App.ViewModels
             this.ToggleCompactModeCommand = ReactiveCommand.CreateFromTask(
                 async () =>
                 {
+                    if (this._tryToggleCompactModeDraft?.Invoke() == true)
+                    {
+                        return;
+                    }
+
                     // Flip the compact mode flag
                     this.Settings.UseCompactMode = !this.Settings.UseCompactMode;
 
@@ -229,7 +236,7 @@ namespace FocusTimer.App.ViewModels
         {
             get
             {
-                string colorStr = this.Settings?.Theme?.WindowBackground ?? "#FF000000";
+                string colorStr = this.AppearanceSettings.Theme.WindowBackground;
                 try
                 {
                     var color = Avalonia.Media.Color.Parse(colorStr);
@@ -257,7 +264,7 @@ namespace FocusTimer.App.ViewModels
         /// </summary>
         public double BackgroundOpacity
         {
-            get => this.Settings?.Theme?.BackgroundOpacity ?? 1.0;
+            get => this.AppearanceSettings.Theme.BackgroundOpacity;
             set
             {
                 if (this.Settings?.Theme is null)
@@ -281,7 +288,7 @@ namespace FocusTimer.App.ViewModels
         /// </summary>
         public double ClockOpacity
         {
-            get => this.Settings?.Theme?.TimerOpacity ?? 1.0;
+            get => this.AppearanceSettings.Theme.TimerOpacity;
             set
             {
                 if (this.Settings?.Theme is null)
@@ -304,7 +311,7 @@ namespace FocusTimer.App.ViewModels
         /// </summary>
         public double ControlsOpacity
         {
-            get => this.Settings?.Theme?.ButtonOpacity ?? 1.0;
+            get => this.AppearanceSettings.Theme.ButtonOpacity;
             set
             {
                 if (this.Settings?.Theme is null)
@@ -328,7 +335,7 @@ namespace FocusTimer.App.ViewModels
         /// </summary>
         public double OverallOpacity
         {
-            get => this.Settings?.WidgetOpacity ?? 1.0;
+            get => this.AppearanceSettings.WidgetOpacity;
             set
             {
                 if (this.Settings is null)
@@ -356,7 +363,7 @@ namespace FocusTimer.App.ViewModels
         /// <summary>
         /// Gets the effective opacity for the rear widget shell (base layer) with the overall multiplier applied.
         /// </summary>
-        public double EffectiveWidgetBaseOpacity => this.Settings?.Theme?.WidgetBaseOpacity ?? 1.0;
+        public double EffectiveWidgetBaseOpacity => this.AppearanceSettings.Theme.WidgetBaseOpacity;
 
         /// <summary>
         /// Gets a value indicating whether the controls layer accepts pointer input.
@@ -450,6 +457,8 @@ namespace FocusTimer.App.ViewModels
                     this.RaisePropertyChanged(nameof(this.EffectiveBackgroundOpacity));
                     this.RaisePropertyChanged(nameof(this.EffectiveClockOpacity));
                     this.RaisePropertyChanged(nameof(this.EffectiveControlsOpacity));
+                    this.RaisePropertyChanged(nameof(this.EffectiveWidgetBaseOpacity));
+                    this.RaisePropertyChanged(nameof(this.UseCompactMode));
                 }
             }
         }
@@ -486,6 +495,11 @@ namespace FocusTimer.App.ViewModels
         /// </summary>
         public ICommand ToggleCompactModeCommand { get; }
 
+        /// <summary>Gets a value indicating whether compact mode is currently shown, including an unsaved appearance preview.</summary>
+        public bool UseCompactMode => this.AppearanceSettings.UseCompactMode;
+
+        private Settings AppearanceSettings => this._appearancePreview ?? this.Settings;
+
         /// <summary>
         /// Initialize settings asynchronously. Should be called from Window.Loaded or similar event.
         /// </summary>
@@ -516,11 +530,45 @@ namespace FocusTimer.App.ViewModels
             }
         }
 
+        /// <summary>Routes compact-mode actions to an open settings draft when available.</summary>
+        /// <param name="tryToggle">Returns true when the editor owns the action, including while editing is blocked.</param>
+        public void SetCompactModeDraftToggle(Func<bool> tryToggle)
+        {
+            this._tryToggleCompactModeDraft = tryToggle ?? throw new ArgumentNullException(nameof(tryToggle));
+        }
+
+        /// <summary>Previews appearance without changing committed settings or tracking behavior.</summary>
+        /// <param name="settings">Appearance draft to display.</param>
+        public void PreviewAppearance(Settings settings)
+        {
+            this._appearancePreview = settings.Clone();
+            this.RaiseAppearanceProperties();
+        }
+
+        /// <summary>Returns the widget to its committed appearance.</summary>
+        public void ClearAppearancePreview()
+        {
+            if (this._appearancePreview == null)
+            {
+                return;
+            }
+
+            this._appearancePreview = null;
+            this.RaiseAppearanceProperties();
+        }
+
         /// <summary>Applies already loaded settings without reading the settings file.</summary>
         /// <param name="settings">Settings loaded by the controller.</param>
         public void ApplySettings(Settings settings)
         {
+            bool sameSettings = ReferenceEquals(this.Settings, settings);
+            this._appearancePreview = null;
             this.Settings = settings;
+            if (sameSettings)
+            {
+                this.RaiseAppearanceProperties();
+            }
+
             this._sessionTracker.SetPollingInterval(settings.ActivityPollingIntervalSeconds);
             this._sessionTracker.SetTrackingEnabled(settings.WorkLoggingEnabled);
         }
@@ -611,10 +659,25 @@ namespace FocusTimer.App.ViewModels
             }
         }
 
+        private void RaiseAppearanceProperties()
+        {
+            this.UpdateResponsiveLayout();
+            this.RaisePropertyChanged(nameof(this.UseCompactMode));
+            this.RaisePropertyChanged(nameof(this.BackgroundBrush));
+            this.RaisePropertyChanged(nameof(this.BackgroundOpacity));
+            this.RaisePropertyChanged(nameof(this.ClockOpacity));
+            this.RaisePropertyChanged(nameof(this.ControlsOpacity));
+            this.RaisePropertyChanged(nameof(this.OverallOpacity));
+            this.RaisePropertyChanged(nameof(this.EffectiveBackgroundOpacity));
+            this.RaisePropertyChanged(nameof(this.EffectiveWidgetBaseOpacity));
+            this.RaisePropertyChanged(nameof(this.EffectiveClockOpacity));
+            this.RaisePropertyChanged(nameof(this.EffectiveControlsOpacity));
+        }
+
         // Call this method whenever WidgetScale changes
         private void UpdateResponsiveLayout()
         {
-            double scale = this.Settings?.WidgetScale ?? 1.0;
+            double scale = this.AppearanceSettings.WidgetScale;
             this.MainTimerFontSize = DesignMetrics.BaseMainTimerFontSize * scale;
             this.CompactTimerFontSize = DesignMetrics.BaseCompactTimerFontSize * scale;
             this.MainTimerTextWidth = DesignMetrics.BaseMainTimerTextWidth * scale;
@@ -755,15 +818,7 @@ namespace FocusTimer.App.ViewModels
             if (newSettings is System.ComponentModel.INotifyPropertyChanged notifier)
             {
                 this._settingsNotifier = notifier;
-                this._settingsNotifier.PropertyChanged += (s, e) =>
-                {
-                    if (e.PropertyName == nameof(this.Settings.WidgetScale))
-                    {
-                        this.UpdateResponsiveLayout();
-                    }
-
-                    this.Settings_PropertyChanged(s, e);
-                };
+                this._settingsNotifier.PropertyChanged += this.Settings_PropertyChanged;
             }
 
             // Initial call
@@ -772,6 +827,15 @@ namespace FocusTimer.App.ViewModels
 
         private void Settings_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
         {
+            if (e.PropertyName == nameof(this.Settings.WidgetScale))
+            {
+                this.UpdateResponsiveLayout();
+            }
+            else if (e.PropertyName == nameof(this.Settings.UseCompactMode))
+            {
+                this.RaisePropertyChanged(nameof(this.UseCompactMode));
+            }
+
             if (e.PropertyName == nameof(this.Settings.WidgetOpacity))
             {
                 this.RaisePropertyChanged(nameof(this.OverallOpacity));

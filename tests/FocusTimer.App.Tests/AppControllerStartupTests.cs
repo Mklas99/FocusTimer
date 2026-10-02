@@ -80,6 +80,39 @@ public sealed class AppControllerStartupTests
     }
 
     [Fact]
+    public async Task RuntimeActivation_AppearanceOnlyApplyKeepsHotkeyRegistrations()
+    {
+        var hotkeys = new CountingHotkeys();
+        var controller = new AppController(
+            new FixedSettingsProvider(new Settings()),
+            hotkeys,
+            new LinuxIdleDetectionServiceStub(),
+            null!,
+            new ThemeService(),
+            new ThemeManager(),
+            () => throw new InvalidOperationException("Window creation is unavailable in this test."),
+            null!,
+            null!,
+            null!,
+            new NullLogger(),
+            null,
+            new InstallationIdentity());
+        var activationMethod = typeof(AppController)
+            .GetMethod("ActivateSettingsAsync", BindingFlags.Instance | BindingFlags.NonPublic)!;
+        var candidate = new Settings { HotkeyShowHide = "Ctrl+Alt+K" };
+        await (Task)activationMethod.Invoke(controller, [candidate])!;
+        Assert.Equal(2, hotkeys.RegisterCount);
+
+        candidate.Theme.BackgroundOpacity = 0.25;
+        await (Task)activationMethod.Invoke(controller, [candidate])!;
+        Assert.Equal(2, hotkeys.RegisterCount);
+
+        candidate.HotkeyShowHide = "Ctrl+Alt+J";
+        await (Task)activationMethod.Invoke(controller, [candidate])!;
+        Assert.Equal(4, hotkeys.RegisterCount);
+    }
+
+    [Fact]
     public async Task InitializeAsync_RetriesPendingRecoveryBeforeLoadingCandidate()
     {
         var provider = new RecoverySettingsProvider();

@@ -43,6 +43,20 @@ public class TimerWidgetSettingsActivationTests
         Assert.Equal(5, typeof(SessionTracker)
             .GetField("_pollingIntervalSeconds", BindingFlags.Instance | BindingFlags.NonPublic)!
             .GetValue(tracker));
+
+        var previous = vm.Settings;
+        await vm.ActivateSettingsAsync(candidate.Clone());
+        int staleNotifications = 0;
+        vm.PropertyChanged += (_, args) =>
+        {
+            if (args.PropertyName == nameof(vm.UseCompactMode))
+            {
+                staleNotifications++;
+            }
+        };
+        previous.UseCompactMode = false;
+        Assert.Equal(0, staleNotifications);
+        Assert.True(vm.UseCompactMode);
     }
 
     private sealed class NullLogger : IAppLogger

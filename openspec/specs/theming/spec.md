@@ -5,6 +5,17 @@ Defines built-in and custom theme support for the widget and settings UI.
 
 ## Requirements
 
+### Requirement: Optional Play/Pause color compatibility
+Theme JSON SHALL support an optional playPauseColor for the normal Start/Pause icon. Missing or null values SHALL inherit ButtonNormal, including later edits to ButtonNormal. Explicit values SHALL be preserved by theme cloning, settings persistence, and theme import/export. Legacy TimerBackground values SHALL remain preserved without being reinterpreted as icon colors.
+
+#### Scenario: Older theme is imported and edited
+- **WHEN** the user imports a theme without playPauseColor and edits ButtonNormal
+- **THEN** the normal Start/Pause icon follows ButtonNormal until the user supplies an explicit Play/Pause color
+
+#### Scenario: Explicit Play/Pause color is saved
+- **WHEN** the user applies an explicit valid Play/Pause color and exports or reloads the theme
+- **THEN** that value and the existing Success, Danger, and legacy TimerBackground values remain intact
+
 ### Requirement: Built-In Themes
 The system SHALL provide 7 built-in themes (Dark, Light, Monokai, Solarized Dark, Nord, Dracula, High Contrast), selectable in Settings and applied live. Each SHALL provide a default widget backdrop choice; High Contrast SHALL use a solid shell.
 

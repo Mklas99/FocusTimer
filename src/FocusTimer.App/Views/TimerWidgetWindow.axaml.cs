@@ -1,6 +1,7 @@
 namespace FocusTimer.App.Views
 {
     using System;
+    using System.Linq;
     using System.Runtime.InteropServices;
     using Avalonia;
     using Avalonia.Controls;
@@ -120,7 +121,12 @@ namespace FocusTimer.App.Views
 
         private void ApplyBackdrop(Theme theme)
         {
-            this.TransparencyLevelHint = WidgetBackdropLevels.ForTheme(theme);
+            var levels = WidgetBackdropLevels.ForTheme(theme);
+            if (!this.TransparencyLevelHint.SequenceEqual(levels))
+            {
+                this.TransparencyLevelHint = levels;
+            }
+
             this._themeManager.ReportActualWidgetTransparency(this.ActualTransparencyLevel);
         }
 

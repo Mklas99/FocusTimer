@@ -68,7 +68,7 @@ The system SHALL NOT report a successful commit or advance the restore point unt
 
 #### Scenario: Failure after the file was replaced
 - **WHEN** auto-start reconciliation or runtime activation fails and restoration succeeds
-- **THEN** the previous saved and active values are restored, the draft remains available in the open window, and the commit is reported as failed
+- **THEN** the previous saved and nonappearance active values are restored, the retained appearance draft is previewed in the open window, and the commit is reported as failed
 
 #### Scenario: Restoration fails
 - **WHEN** a commit fails after replacement and restoration cannot complete
@@ -81,3 +81,26 @@ The system SHALL NOT report a successful commit or advance the restore point unt
 #### Scenario: User retries after failure
 - **WHEN** the user corrects the cause of an ordinary failed commit, or completes required recovery, and retries Apply or OK
 - **THEN** the same draft can be committed without reopening Settings
+
+### Requirement: Complete live appearance preview
+Every Appearance control SHALL preview immediately, including presets, imported themes, colors, background choice, background tint, clock and button opacity, overall fade, widget scale, and compact mode. Preview SHALL remain separate from committed settings and SHALL NOT persist draft edits or activate nonappearance behavior. Clock and button opacity SHALL be applied once to their widget layers.
+
+#### Scenario: User previews appearance and applies
+- **WHEN** the user edits appearance controls and successfully presses Apply or OK
+- **THEN** the persisted and active appearance matches the preview exactly, and those values become the new restore point
+
+#### Scenario: User toggles compact mode from the widget during preview
+- **WHEN** Settings is open and editable and the user activates the widget compact-mode toggle
+- **THEN** the Settings checkbox and widget update from the same unsaved draft, Apply or OK commits that value, and Cancel restores the last successful commit
+
+#### Scenario: User cancels after an earlier Apply
+- **WHEN** Apply succeeds and the user makes further appearance edits before Cancel or title-bar close
+- **THEN** every appearance value returns to that successful Apply, and unsaved edits on other tabs are discarded
+
+#### Scenario: Appearance commit fails
+- **WHEN** persistence or activation fails and compensation succeeds
+- **THEN** committed settings and nonappearance behavior remain at the previous successful commit, while the retained draft remains previewed for correction or retry and Cancel still restores the previous commit
+
+#### Scenario: User enters an invalid color
+- **WHEN** an appearance color cannot be parsed
+- **THEN** the last valid appearance remains displayed, Apply/OK shows a validation error without saving, and the user can correct the draft

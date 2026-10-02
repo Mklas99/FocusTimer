@@ -22,7 +22,7 @@
 
     <Grid RowDefinitions="*,Auto,Auto" Margin="20">
         <!-- Settings Content -->
-        <TabControl Grid.Row="0" SelectedIndex="{Binding SelectedTabIndex}" IsEnabled="{Binding CanEdit}">
+        <TabControl x:Name="DraftPanel" Grid.Row="0" SelectedIndex="{Binding SelectedTabIndex}" IsEnabled="{Binding IsDraftVisible}">
             <!-- General Tab -->
             <TabItem Header="General">
                 <ScrollViewer Classes="settings-scroll">
@@ -142,9 +142,9 @@
                                     <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding Settings.Theme.TimerText}" Watermark="#FFFFFF" Margin="0,6,8,0" />
                                     <Button Grid.Row="2" Grid.Column="2" Classes="color-swatch" Background="{Binding Settings.Theme.TimerText}" Tag="TimerText" Click="OnColorPreviewClicked" ToolTip.Tip="Open color picker" Margin="0,6,0,0" />
 
-                                    <TextBlock Grid.Row="3" Grid.Column="0" Classes="SettingLabel" Text="Timer Background:" Margin="0,6,0,0" />
-                                    <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding Settings.Theme.TimerBackground}" Watermark="#00000000" Margin="0,6,8,0" />
-                                    <Button Grid.Row="3" Grid.Column="2" Classes="color-swatch" Background="{Binding Settings.Theme.TimerBackground}" Tag="TimerBackground" Click="OnColorPreviewClicked" ToolTip.Tip="Open color picker" Margin="0,6,0,0" />
+                                    <TextBlock Grid.Row="3" Grid.Column="0" Classes="SettingLabel" Text="Play/Pause color:" Margin="0,6,0,0" />
+                                    <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding PlayPauseColor}" Watermark="#RRGGBB" Margin="0,6,8,0" />
+                                    <Button Grid.Row="3" Grid.Column="2" Classes="color-swatch" Background="{Binding PlayPauseColor}" Tag="PlayPauseColor" Click="OnColorPreviewClicked" ToolTip.Tip="Open color picker" Margin="0,6,0,0" />
 
                                     <TextBlock Grid.Row="4" Grid.Column="0" Classes="SettingLabel" Text="Button Normal:" Margin="0,6,0,0" />
                                     <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding Settings.Theme.ButtonNormal}" Watermark="#4CDEFFBD" Margin="0,6,8,0" />
@@ -166,6 +166,7 @@
 
                                 <StackPanel Grid.Column="2" Spacing="8">
                                     <TextBlock Classes="SectionHeader" Text="Dialogs &amp; Notifications" />
+                                    <TextBlock Classes="settings-body" TextWrapping="Wrap" Text="Success and Danger are reserved for future status displays; they currently do not change notifications." />
                                     <Grid ColumnDefinitions="126,*,Auto" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
                                     <TextBlock Grid.Row="0" Grid.Column="0" Classes="SettingLabel" Text="Background:" />
                                     <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Settings.Theme.SettingsBackground}" Watermark="#2D2D30" Margin="0,0,8,0" />
@@ -312,7 +313,7 @@
 
                         <CheckBox IsChecked="{Binding Settings.UseCompactMode}" Content="Use compact mode" ToolTip.Tip="Switches the timer widget into a minimal mode" />
                         <TextBlock TextWrapping="Wrap" FontSize="12" Foreground="{DynamicResource SettingsLabelTextBrush}"
-                                   Text="Note: Color changes apply immediately. Use hex format (#RRGGBBAA or #RRGGBB). Import/export .fttheme files to share themes." />
+                                   Text="Appearance changes preview immediately. Apply saves and keeps this window open; OK saves and closes. Cancel restores the last applied appearance. Use #AARRGGBB or #RRGGBB colors. Import/export .fttheme files to share themes." />
                     </StackPanel>
                 </ScrollViewer>
             </TabItem>
@@ -414,13 +415,17 @@
                         </Grid>
 
                         <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource SettingsLabelTextBrush}" FontSize="11" Margin="0,10,0,0"
-                                   Text="Tip: Hotkeys are registered when the app starts. Changes require restart." />
+                                   Text="Hotkey changes take effect after a successful Apply or OK." />
                     </StackPanel>
                 </ScrollViewer>
             </TabItem>
         </TabControl>
 
+        <Border Grid.Row="0" Background="Transparent" IsVisible="{Binding IsCommitting}" />
+
         <StackPanel Grid.Row="1" Spacing="6" Margin="0,10,0,0">
+            <TextBlock x:Name="SaveStatus" Height="20" Focusable="True"
+                       Text="{Binding SavingStatus}" AutomationProperties.LiveSetting="Polite" />
             <Grid ColumnDefinitions="*,Auto" IsVisible="{Binding HasLoadError}">
                 <TextBlock Grid.Column="0" Text="{Binding LoadError}" TextWrapping="Wrap" VerticalAlignment="Center" Margin="0,0,10,0" />
                 <Button Grid.Column="1" Content="Retry load" Command="{Binding RetryLoadCommand}" />

@@ -28,7 +28,7 @@
 | Linux feature parity | Linux receives real implementations for the platform integrations that currently use stubs. | OI-06 | Long-term candidate |
 | Product reliability and delivery | Smaller installer choices, measured performance work, and a reproducible F5 launch make releases and development builds more dependable. Test isolation and SonarQube coverage reporting are delivered by M02. | OI-16, OI-17, OI-26 (OI-18, OI-19 completed by M02) | Improvement collection (partly delivered) |
 | Data evolution and compatibility | Future compatibility-sensitive releases have an explicit backup, migration, rollback, and legacy-retirement strategy before persistent formats must be preserved. | OI-20 | Investigation |
-| Settings experience and theme consistency | Settings controls, theme colors, and Save/Apply/Cancel behavior work consistently across all pages, with a documented widget and menu theme boundary. | OI-21 | Candidate |
+| Settings experience and theme consistency | Settings controls, theme colors, and Save/Apply/Cancel behavior work consistently across all pages, with a documented widget and menu theme boundary. Imported themes retain a visible selection when Settings reopens. | OI-21, OI-29 | Candidate |
 
 ## Feature branch and release-note convention
 

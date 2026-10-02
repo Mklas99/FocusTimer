@@ -88,7 +88,7 @@ View (XAML)
 **Purpose**: Domain models, service interfaces, and business logic (framework-agnostic).
 
 **Key Responsibilities**:
-- Domain models (immutable TimeEntry and Settings)
+- Domain models (immutable TimeEntry; observable mutable Settings and Theme with independent snapshot clones)
 - Service interfaces (contracts for all external integrations)
 - Concrete, platform-agnostic business logic services (see below) that App/Host wire up via DI
 - Event infrastructure (IEventBus, EventBus, domain events)

@@ -37,6 +37,7 @@ namespace FocusTimer.App.Services
         private HotkeyDefinition _toggleTimerHotkeyDefinition;
         private bool _pausedByIdle;
         private bool _initialized;
+        private bool _hotkeysConfigured;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AppController"/> class.
@@ -192,6 +193,7 @@ namespace FocusTimer.App.Services
                 if (this._timerWindow == null)
                 {
                     TimerWidgetViewModel viewModel = this._timerViewModelFactory();
+                    viewModel.SetCompactModeDraftToggle(this.TryToggleCompactModeDraft);
                     viewModel.ApplySettings(this.CurrentSettings);
                     this._timerWindow = new TimerWidgetWindow(this._themeManager)
                     {
@@ -244,6 +246,7 @@ namespace FocusTimer.App.Services
                     if (this._timerWindow == null)
                     {
                         TimerWidgetViewModel viewModel = this._timerViewModelFactory();
+                        viewModel.SetCompactModeDraftToggle(this.TryToggleCompactModeDraft);
                         this._timerWindow = new TimerWidgetWindow(this._themeManager)
                         {
                             DataContext = viewModel,
@@ -256,6 +259,10 @@ namespace FocusTimer.App.Services
                         }
 
                         viewModel.ApplySettings(this.CurrentSettings);
+                        if (this._settingsWindow?.DataContext is SettingsWindowViewModel { CanEdit: true } editor)
+                        {
+                            viewModel.PreviewAppearance(editor.Settings);
+                        }
                     }
 
                     if (this._timerWindow.WindowState == WindowState.Minimized)
@@ -365,11 +372,16 @@ namespace FocusTimer.App.Services
                     };
 
                     viewModel.SetRuntimeActivator(this.ActivateSettingsAsync);
+                    viewModel.SetAppearancePreview(settings =>
+                    {
+                        (this._timerWindow?.DataContext as TimerWidgetViewModel)?.PreviewAppearance(settings);
+                    });
                     viewModel.SetRecoveryCompleted(this.ContinueAfterRecoveryAsync);
 
                     // Handle window closed event
                     this._settingsWindow.Closed += (s, e) =>
                     {
+                        (this._timerWindow?.DataContext as TimerWidgetViewModel)?.ClearAppearancePreview();
                         this._settingsWindow = null;
                     };
                 }
@@ -518,15 +530,37 @@ namespace FocusTimer.App.Services
             this._logWriter.LogInformation($"User activity resumed at {e.Timestamp:O}");
         }
 
-        private void RegisterHotkeysCore()
+        private bool TryToggleCompactModeDraft()
         {
+            if (this._settingsWindow?.DataContext is not SettingsWindowViewModel editor)
+            {
+                return false;
+            }
+
+            editor.ToggleCompactModePreview();
+            return true;
+        }
+
+        private void RegisterHotkeysCore(bool force = true)
+        {
+            HotkeyDefinition showHide = this.ParseHotkeyOrDefault(this.CurrentSettings.HotkeyShowHide ?? "Ctrl+Alt+T", "Ctrl+Alt+T");
+            HotkeyDefinition toggleTimer = this.ParseHotkeyOrDefault(this.CurrentSettings.HotkeyToggleTimer ?? "Ctrl+Alt+P", "Ctrl+Alt+P");
+            if (!force && this._hotkeysConfigured &&
+                showHide.Modifiers == this._showHideHotkeyDefinition.Modifiers &&
+                showHide.KeyCode == this._showHideHotkeyDefinition.KeyCode &&
+                toggleTimer.Modifiers == this._toggleTimerHotkeyDefinition.Modifiers &&
+                toggleTimer.KeyCode == this._toggleTimerHotkeyDefinition.KeyCode)
+            {
+                return;
+            }
+
+            this._hotkeysConfigured = false;
             this._hotkeyService.UnregisterAll();
-            string showHideHotkey = this.CurrentSettings.HotkeyShowHide ?? "Ctrl+Alt+T";
-            this._showHideHotkeyDefinition = this.ParseHotkeyOrDefault(showHideHotkey, "Ctrl+Alt+T");
+            this._showHideHotkeyDefinition = showHide;
             this._hotkeyService.Register(this._showHideHotkeyDefinition);
-            string toggleTimerHotkey = this.CurrentSettings.HotkeyToggleTimer ?? "Ctrl+Alt+P";
-            this._toggleTimerHotkeyDefinition = this.ParseHotkeyOrDefault(toggleTimerHotkey, "Ctrl+Alt+P");
+            this._toggleTimerHotkeyDefinition = toggleTimer;
             this._hotkeyService.Register(this._toggleTimerHotkeyDefinition);
+            this._hotkeysConfigured = true;
             this._logWriter.LogInformation(
                 $"Hotkeys registered: {this._showHideHotkeyDefinition}, {this._toggleTimerHotkeyDefinition}");
         }
@@ -572,7 +606,7 @@ namespace FocusTimer.App.Services
                 this._timerWindow.Topmost = this.CurrentSettings.AlwaysOnTop;
             }
 
-            this.RegisterHotkeysCore();
+            this.RegisterHotkeysCore(force: false);
         }
     }
 }

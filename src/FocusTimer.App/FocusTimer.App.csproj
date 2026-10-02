@@ -32,4 +32,8 @@
     <ProjectReference Include="..\FocusTimer.Core\FocusTimer.Core.csproj" />
     <ProjectReference Include="..\FocusTimer.Persistence\FocusTimer.Persistence.csproj" />
   </ItemGroup>
+  <ItemGroup Condition="'$(Configuration)' == 'Debug'">
+    <PackageReference Include="Avalonia.Markup.Xaml.Loader" Version="11.2.0" PrivateAssets="All" />
+    <PackageReference Include="HotAvalonia" Version="3.1.5" PrivateAssets="All" />
+  </ItemGroup>
 </Project>

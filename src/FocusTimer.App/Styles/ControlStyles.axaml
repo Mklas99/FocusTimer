@@ -1,5 +1,6 @@
 <Styles xmlns="https://github.com/avaloniaui"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:icons="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia">
 
     <!--
       FocusTimer Unified Component Styles
@@ -36,6 +37,22 @@
     </Style>
 
     <!-- Style for the hero timer display text (tabular digits, high legibility) -->
+    <Style Selector="Button.icon-button icons|MaterialIcon.widget-icon">
+        <Setter Property="Foreground" Value="{DynamicResource ButtonNormalBrush}" />
+    </Style>
+    <Style Selector="Button.icon-button icons|MaterialIcon.play-pause-icon">
+        <Setter Property="Foreground" Value="{DynamicResource PlayPauseBrush}" />
+    </Style>
+    <Style Selector="Button.icon-button:pointerover icons|MaterialIcon.widget-icon">
+        <Setter Property="Foreground" Value="{DynamicResource ButtonHoverBrush}" />
+    </Style>
+    <Style Selector="Button.icon-button:pressed icons|MaterialIcon.widget-icon">
+        <Setter Property="Foreground" Value="{DynamicResource ButtonPressedBrush}" />
+    </Style>
+    <Style Selector="Button.icon-button:disabled icons|MaterialIcon.widget-icon">
+        <Setter Property="Foreground" Value="{DynamicResource ButtonDisabledBrush}" />
+    </Style>
+
     <Style Selector="TextBlock.timer-text">
         <Setter Property="FontFamily" Value="{DynamicResource TabularTimerFontFamily}" />
         <Setter Property="FontWeight" Value="Bold" />

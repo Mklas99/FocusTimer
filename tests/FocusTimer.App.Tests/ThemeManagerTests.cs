@@ -9,6 +9,47 @@ namespace FocusTimer.App.Tests
     public class ThemeManagerTests
     {
         [Fact]
+        public void ApplyTheme_SameAppearancePreservesBrushInstances()
+        {
+            var manager = new ThemeManager();
+            var resources = new ResourceDictionary();
+            var theme = new Core.Services.ThemeService().GetBuiltInTheme("Solarized Dark")!;
+            manager.ApplyTheme(theme, resources);
+            string[] keys = ["WindowBackgroundBrush", "WidgetShellTintBrush", "WidgetShellFallbackBrush",
+                "TimerTextBrush", "SystemAccentColorBrush", "SettingsBackgroundBrush", "FocusRingBrush",
+                "SettingsAccordionHeaderBrush", "WidgetShellActiveBrush"];
+            object?[] brushes = keys.Select(key => resources[key]).ToArray();
+
+            manager.ApplyTheme(theme.Clone(), resources);
+
+            for (int index = 0; index < keys.Length; index++)
+            {
+                Assert.Same(brushes[index], resources[keys[index]]);
+            }
+        }
+
+        [Fact]
+        public void ApplyTheme_ClockOpacityPreservesUnchangedBrushes()
+        {
+            var manager = new ThemeManager();
+            var resources = new ResourceDictionary();
+            var theme = new Core.Services.ThemeService().GetBuiltInTheme("Solarized Dark")!;
+            manager.ApplyTheme(theme, resources);
+            object? background = resources["WidgetShellTintBrush"];
+            object? accent = resources["SystemAccentColorBrush"];
+            object? timer = resources["TimerTextBrush"];
+
+            theme.TimerOpacity = 0.25;
+            manager.ApplyTheme(theme, resources);
+
+            Assert.Same(background, resources["WidgetShellTintBrush"]);
+            Assert.Same(accent, resources["SystemAccentColorBrush"]);
+            Assert.Same(timer, resources["TimerTextBrush"]);
+            Assert.Equal(1, Assert.IsType<SolidColorBrush>(resources["TimerTextBrush"]).Opacity);
+            Assert.Equal(0.25, resources["TimerOpacity"]);
+        }
+
+        [Fact]
         public void ApplyTheme_BackgroundOpacityDoesNotChangeForegroundBrushes()
         {
             var manager = new ThemeManager();

@@ -30,6 +30,7 @@ namespace FocusTimer.Core.Models
 
         // Buttons & Controls
         private string _buttonNormal = "#4CDEFFBD";
+        private string? _playPauseColor;
         private string _buttonHover = "#5DEFFCE7";
         private string _buttonPressed = "#3BBD99AC";
         private string _buttonDisabled = "#40FFFFFF";
@@ -560,6 +561,14 @@ namespace FocusTimer.Core.Models
             }
         }
 
+        /// <summary>Gets or sets the normal Play/Pause icon color; null inherits ButtonNormal.</summary>
+        [JsonPropertyName("playPauseColor")]
+        public string? PlayPauseColor
+        {
+            get => this._playPauseColor;
+            set => this.SetField(ref this._playPauseColor, value);
+        }
+
         /// <summary>
         /// Creates a deep copy of this theme.
         /// </summary>
@@ -580,6 +589,7 @@ namespace FocusTimer.Core.Models
                 TimerText = this.TimerText,
                 TimerBackground = this.TimerBackground,
                 ButtonNormal = this.ButtonNormal,
+                PlayPauseColor = this.PlayPauseColor,
                 ButtonHover = this.ButtonHover,
                 ButtonPressed = this.ButtonPressed,
                 ButtonDisabled = this.ButtonDisabled,

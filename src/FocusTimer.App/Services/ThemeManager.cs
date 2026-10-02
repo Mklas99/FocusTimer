@@ -100,21 +100,19 @@ namespace FocusTimer.App.Services
             }
 
             // Store opacity values as resources
-            resources["BackgroundOpacity"] = theme.BackgroundOpacity;
-            resources["TimerOpacity"] = theme.TimerOpacity;
-            resources["ButtonOpacity"] = theme.ButtonOpacity;
-            resources["WidgetBaseOpacity"] = theme.WidgetBaseOpacity;
+            SetResourceIfChanged(resources, "BackgroundOpacity", theme.BackgroundOpacity);
+            SetResourceIfChanged(resources, "TimerOpacity", theme.TimerOpacity);
+            SetResourceIfChanged(resources, "ButtonOpacity", theme.ButtonOpacity);
+            SetResourceIfChanged(resources, "WidgetBaseOpacity", theme.WidgetBaseOpacity);
 
             // Window Colors (with background opacity applied to brush, but transparent if opacity is 0)
             if (theme.BackgroundOpacity <= 0)
             {
-                this.UpdateColorResource(resources, "WindowBackgroundColor", theme.WindowBackground, 0);
-                resources["WindowBackgroundBrush"] = Avalonia.Media.Brushes.Transparent;
+                this.UpdateColorResource(resources, "WindowBackgroundColor", theme.WindowBackground, 0, useTransparentBrush: true);
             }
             else
             {
                 this.UpdateColorResource(resources, "WindowBackgroundColor", theme.WindowBackground, theme.BackgroundOpacity);
-                resources["WindowBackgroundBrush"] = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse(theme.WindowBackground), theme.BackgroundOpacity);
             }
 
             try
@@ -122,8 +120,8 @@ namespace FocusTimer.App.Services
                 Color baseColor = Color.Parse(theme.WindowBackground);
                 Color opaqueColor = Color.FromArgb(255, baseColor.R, baseColor.G, baseColor.B);
                 double tintOpacity = theme.ThemeName == "High Contrast" ? 1.0 : theme.BackgroundOpacity;
-                resources["WidgetShellTintBrush"] = new SolidColorBrush(opaqueColor, tintOpacity);
-                resources["WidgetShellFallbackBrush"] = new SolidColorBrush(opaqueColor);
+                SetBrushIfChanged(resources, "WidgetShellTintBrush", opaqueColor, tintOpacity);
+                SetBrushIfChanged(resources, "WidgetShellFallbackBrush", opaqueColor);
                 this.UpdateWidgetShellActiveBrush();
             }
             catch (Exception ex)
@@ -139,14 +137,15 @@ namespace FocusTimer.App.Services
             this.UpdateColorResource(resources, "SecondaryTextColor", theme.SecondaryText);
             this.UpdateColorResource(resources, "DisabledTextColor", theme.DisabledText);
 
-            // Timer Display (with timer opacity applied to text brush)
-            this.UpdateColorResource(resources, "TimerTextColor", theme.TimerText, theme.TimerOpacity);
+            // Widget layers apply clock and controls opacity once, including during preview.
+            this.UpdateColorResource(resources, "TimerTextColor", theme.TimerText);
             this.UpdateColorResource(resources, "TimerBackgroundColor", theme.TimerBackground);
 
-            // Buttons & Controls (with button opacity applied to brushes)
-            this.UpdateColorResource(resources, "ButtonNormalColor", theme.ButtonNormal, theme.ButtonOpacity);
-            this.UpdateColorResource(resources, "ButtonHoverColor", theme.ButtonHover, theme.ButtonOpacity);
-            this.UpdateColorResource(resources, "ButtonPressedColor", theme.ButtonPressed, theme.ButtonOpacity);
+            // Buttons & Controls
+            this.UpdateColorResource(resources, "ButtonNormalColor", theme.ButtonNormal);
+            this.UpdateColorResource(resources, "PlayPauseColor", theme.PlayPauseColor ?? theme.ButtonNormal);
+            this.UpdateColorResource(resources, "ButtonHoverColor", theme.ButtonHover);
+            this.UpdateColorResource(resources, "ButtonPressedColor", theme.ButtonPressed);
             this.UpdateColorResource(resources, "ButtonDisabledColor", theme.ButtonDisabled);
 
             // Accents
@@ -189,17 +188,17 @@ namespace FocusTimer.App.Services
             // Settings shell chrome and semantic tokens
             try
             {
-                resources["SettingsAccordionHeaderBrush"] = new SolidColorBrush(Color.Parse(theme.SettingsBackground), 0.7);
-                resources["SettingsAccordionBorderBrush"] = new SolidColorBrush(Color.Parse(theme.AccentPrimary), 0.4);
-                resources["SettingsAccordionHeaderHoverBrush"] = new SolidColorBrush(Colors.White, 0.06);
+                SetBrushIfChanged(resources, "SettingsAccordionHeaderBrush", Color.Parse(theme.SettingsBackground), 0.7);
+                SetBrushIfChanged(resources, "SettingsAccordionBorderBrush", Color.Parse(theme.AccentPrimary), 0.4);
+                SetBrushIfChanged(resources, "SettingsAccordionHeaderHoverBrush", Colors.White, 0.06);
 
                 var accentColor = Color.Parse(theme.AccentPrimary);
-                resources["FocusRingBrush"] = new SolidColorBrush(accentColor);
-                resources["BorderSubtleBrush"] = new SolidColorBrush(Color.Parse(theme.InputBorder));
-                resources["SurfaceSubtleBrush"] = new SolidColorBrush(Color.Parse(theme.InputBackground));
-                resources["ActionPrimaryBrush"] = resources["ButtonNormalBrush"] ?? new SolidColorBrush(Color.Parse(theme.ButtonNormal));
-                resources["ActionPrimaryHoverBrush"] = resources["ButtonHoverBrush"] ?? new SolidColorBrush(Color.Parse(theme.ButtonHover));
-                resources["ActionPrimaryPressedBrush"] = resources["ButtonPressedBrush"] ?? new SolidColorBrush(Color.Parse(theme.ButtonPressed));
+                SetBrushIfChanged(resources, "FocusRingBrush", accentColor);
+                SetBrushIfChanged(resources, "BorderSubtleBrush", Color.Parse(theme.InputBorder));
+                SetBrushIfChanged(resources, "SurfaceSubtleBrush", Color.Parse(theme.InputBackground));
+                SetResourceIfChanged(resources, "ActionPrimaryBrush", resources["ButtonNormalBrush"] ?? new SolidColorBrush(Color.Parse(theme.ButtonNormal)));
+                SetResourceIfChanged(resources, "ActionPrimaryHoverBrush", resources["ButtonHoverBrush"] ?? new SolidColorBrush(Color.Parse(theme.ButtonHover)));
+                SetResourceIfChanged(resources, "ActionPrimaryPressedBrush", resources["ButtonPressedBrush"] ?? new SolidColorBrush(Color.Parse(theme.ButtonPressed)));
             }
             catch (Exception ex)
             {
@@ -211,8 +210,27 @@ namespace FocusTimer.App.Services
 
         private static void SetColorAndBrush(IResourceDictionary resources, string key, Color color)
         {
-            resources[key] = color;
-            resources[$"{key}Brush"] = new SolidColorBrush(color);
+            SetResourceIfChanged(resources, key, color);
+            SetBrushIfChanged(resources, $"{key}Brush", color);
+        }
+
+        private static void SetResourceIfChanged(IResourceDictionary resources, string key, object value)
+        {
+            if (!resources.TryGetValue(key, out object? current) || !Equals(current, value))
+            {
+                resources[key] = value;
+            }
+        }
+
+        private static void SetBrushIfChanged(IResourceDictionary resources, string key, Color color, double opacity = 1.0)
+        {
+            if (resources.TryGetValue(key, out object? current) && current is SolidColorBrush brush &&
+                brush.Color == color && brush.Opacity == opacity)
+            {
+                return;
+            }
+
+            resources[key] = new SolidColorBrush(color, opacity);
         }
 
         private static Color Mix(Color source, Color target, double amount)
@@ -234,7 +252,10 @@ namespace FocusTimer.App.Services
             }
 
             string key = this.IsWidgetShellFallbackActive ? "WidgetShellFallbackBrush" : "WidgetShellTintBrush";
-            this._activeResources["WidgetShellActiveBrush"] = this._activeResources[key];
+            if (this._activeResources[key] is object brush)
+            {
+                SetResourceIfChanged(this._activeResources, "WidgetShellActiveBrush", brush);
+            }
         }
 
         private void UpdateFluentAccentResources(IResourceDictionary resources, string accentHex)
@@ -263,16 +284,23 @@ namespace FocusTimer.App.Services
             }
         }
 
-        private void UpdateColorResource(IResourceDictionary resources, string key, string colorHex, double opacity = 1.0)
+        private void UpdateColorResource(IResourceDictionary resources, string key, string colorHex, double opacity = 1.0, bool useTransparentBrush = false)
         {
             try
             {
                 var color = Color.Parse(colorHex);
-                resources[key] = color;
+                SetResourceIfChanged(resources, key, color);
 
                 // Also update the corresponding brush with opacity baked in
                 string brushKey = key.Replace("Color", "Brush");
-                resources[brushKey] = new SolidColorBrush(color, opacity);
+                if (useTransparentBrush)
+                {
+                    SetResourceIfChanged(resources, brushKey, Brushes.Transparent);
+                }
+                else
+                {
+                    SetBrushIfChanged(resources, brushKey, color, opacity);
+                }
             }
             catch (Exception ex)
             {

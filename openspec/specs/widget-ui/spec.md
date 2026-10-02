@@ -19,9 +19,24 @@ The system SHALL provide a draggable, always-on-top full-mode window showing the
 ### Requirement: Compact Mode
 The system SHALL provide a narrow-bar compact mode showing the same timer data, state brushes, and theme as full mode as a density-adjusted variant of the shared component system, toggleable from the widget or Settings, and SHALL persist the selected mode across restarts. Compact mode SHALL show Start/Pause and Expand controls; Reset remains available after expanding to full mode.
 
-#### Scenario: User toggles compact mode
-- **WHEN** the user toggles compact mode from the widget or Settings
+#### Scenario: User toggles compact mode with Settings closed
+- **WHEN** the user toggles compact mode from the widget with Settings closed
 - **THEN** the widget switches display mode immediately, preserving identical semantic control roles (including Start/Pause styling) and the app remembers that mode on next launch
+
+#### Scenario: User toggles compact mode with Settings open
+- **WHEN** the user toggles compact mode from the widget or Settings while the Settings draft is editable
+- **THEN** the widget and Settings checkbox immediately reflect the same draft value without saving; Apply or OK persists it, and Cancel or title-bar close restores the last successful commit
+
+#### Scenario: User toggles compact mode while Settings is blocked
+- **WHEN** the user activates the widget compact-mode toggle during a Settings commit or required recovery
+- **THEN** neither the draft nor committed mode changes and no separate save occurs
+
+### Requirement: Widget icon colors
+Widget icons SHALL use Button Normal for their normal state, with an optional dedicated Play/Pause color for Start/Pause. Shared Hover, Pressed, and Disabled colors SHALL override the corresponding icon foreground in both modes, with Disabled taking precedence over Pressed and Pressed over Hover. Existing background highlights and focus indicators SHALL remain.
+
+#### Scenario: User previews a widget icon color
+- **WHEN** the user edits the normal Play/Pause color or a shared interaction-state color
+- **THEN** the corresponding icon state updates immediately in both widget modes, Apply/OK saves it, and Cancel restores the last successful commit
 
 ### Requirement: Scale and Opacity
 The system SHALL provide a `WidgetScale` setting that resizes fonts and controls responsively anchored to canonical design-system base dimensions, and independent background, clock, and controls opacity settings plus an overall opacity multiplier. Background opacity SHALL affect only the widget shell tint.
@@ -39,7 +54,7 @@ The system SHALL provide a `WidgetScale` setting that resizes fonts and controls
 - **THEN** the shell tint changes without changing clock, button, or project-field opacity
 
 #### Scenario: User cancels an appearance preview
-- **WHEN** the user previews blur or tint changes in Settings and closes without applying
+- **WHEN** the user previews colors, background choice, opacity, overall fade, scale, or compact mode in Settings and closes without applying
 - **THEN** the last successfully applied widget appearance is restored
 
 ### Requirement: Material Layering and Fallback

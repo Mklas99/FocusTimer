@@ -10,6 +10,7 @@ namespace FocusTimer.App.ViewModels
     using System.Threading.Tasks;
     using System.Windows.Input;
     using Avalonia.Controls;
+    using Avalonia.Media;
     using Avalonia.Platform.Storage;
     using FocusTimer.App.Services;
     using FocusTimer.Core.Interfaces;
@@ -35,6 +36,7 @@ namespace FocusTimer.App.ViewModels
         private readonly SettingsCommitCoordinator _commitCoordinator;
         private Func<Settings, Task> _activateRuntime = _ => Task.CompletedTask;
         private Func<Task>? _recoveryCompleted;
+        private Action<Settings>? _previewAppearance;
         private Settings? _attachedSettings;
         private Theme? _attachedTheme;
         private Settings _settings;
@@ -53,6 +55,7 @@ namespace FocusTimer.App.ViewModels
         private bool _recoveryRequired;
         private bool _recoveryCloseWarned;
         private bool _isDisposed;
+        private int _editGeneration;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SettingsWindowViewModel"/> class.
@@ -159,6 +162,8 @@ namespace FocusTimer.App.ViewModels
                 this.RaisePropertyChanged(nameof(this.CanCommit));
                 this.RaisePropertyChanged(nameof(this.CanClose));
                 this.RaisePropertyChanged(nameof(this.CanEdit));
+                this.RaisePropertyChanged(nameof(this.IsDraftVisible));
+                this.RaisePropertyChanged(nameof(this.SavingStatus));
             }
         }
 
@@ -178,6 +183,12 @@ namespace FocusTimer.App.ViewModels
 
         /// <summary>Gets a value indicating whether draft fields can be edited.</summary>
         public bool CanEdit => this.IsSettingsLoaded && !this.IsCommitting && !this._isDisposed;
+
+        /// <summary>Gets a value indicating whether the draft can be displayed with its normal visual states.</summary>
+        public bool IsDraftVisible => this.IsSettingsLoaded && !this._isDisposed;
+
+        /// <summary>Gets the reserved footer save status.</summary>
+        public string SavingStatus => this.IsCommitting ? "Saving..." : string.Empty;
 
         /// <summary>Gets a value indicating whether Cancel can close the window.</summary>
         public bool CanClose => !this.IsCommitting;
@@ -205,6 +216,8 @@ namespace FocusTimer.App.ViewModels
                 this.RaiseAndSetIfChanged(ref this._isSettingsLoaded, value);
                 this.RaisePropertyChanged(nameof(this.CanCommit));
                 this.RaisePropertyChanged(nameof(this.CanEdit));
+                this.RaisePropertyChanged(nameof(this.IsDraftVisible));
+                this.RaisePropertyChanged(nameof(this.SavingStatus));
             }
         }
 
@@ -280,6 +293,7 @@ namespace FocusTimer.App.ViewModels
                 this.DetachSettings(this._settings);
                 this.RaiseAndSetIfChanged(ref this._settings, value);
                 this.AttachSettings(value);
+                this.RaisePropertyChanged(nameof(this.PlayPauseColor));
                 this.ActivityPollingIntervalInput = value.ActivityPollingIntervalSeconds;
                 this.RaisePropertyChanged(nameof(this.IsDeveloperModeVisible));
                 this.RaisePropertyChanged(nameof(this.SelectedDeveloperLogLevel));
@@ -290,6 +304,13 @@ namespace FocusTimer.App.ViewModels
         /// Gets list of available theme names for the ComboBox.
         /// </summary>
         public List<string> AvailableThemes => [.. this._themeService.BuiltInThemes.Select(t => t.ThemeName)];
+
+        /// <summary>Gets or sets the explicit or inherited normal Play/Pause color.</summary>
+        public string PlayPauseColor
+        {
+            get => this.Settings.Theme.PlayPauseColor ?? this.Settings.Theme.ButtonNormal;
+            set => this.SetThemeColor(nameof(Theme.PlayPauseColor), value);
+        }
 
         /// <summary>
         /// Gets available developer log levels.
@@ -371,11 +392,13 @@ namespace FocusTimer.App.ViewModels
             get => this._selectedThemeName;
             set
             {
-                this.RaiseAndSetIfChanged(ref this._selectedThemeName, value);
-                if (!string.IsNullOrEmpty(value))
+                if (!this.CanEdit || string.IsNullOrEmpty(value) || string.Equals(this._selectedThemeName, value, StringComparison.Ordinal))
                 {
-                    this.LoadThemeByName(value);
+                    return;
                 }
+
+                this.RaiseAndSetIfChanged(ref this._selectedThemeName, value);
+                this.LoadThemeByName(value);
             }
         }
 
@@ -536,6 +559,9 @@ namespace FocusTimer.App.ViewModels
         public string OpacityDiagnosticsSummary =>
             $"BG={(this.SelectedBlurMode == WidgetBlurModes.Solid ? "solid" : this.NormalizedBackgroundOpacity.ToString("F2"))} | Clock={this.NormalizedClockOpacity:F2} | Controls={this.NormalizedButtonsOpacity:F2} | Overall={this.NormalizedOverallFade:F2}";
 
+        /// <summary>Gets the generation used to reject appearance results from before a commit.</summary>
+        internal int AppearanceEditGeneration => this._editGeneration;
+
         /// <summary>
         /// Gets the current value of a theme color property.
         /// </summary>
@@ -543,6 +569,11 @@ namespace FocusTimer.App.ViewModels
         /// <returns>The current color value, or an empty string if the property is unknown.</returns>
         public string GetThemeColor(string propertyName)
         {
+            if (propertyName == nameof(Theme.PlayPauseColor))
+            {
+                return this.PlayPauseColor;
+            }
+
             PropertyInfo? property = typeof(Theme).GetProperty(propertyName);
             if (property?.PropertyType != typeof(string))
             {
@@ -599,9 +630,34 @@ namespace FocusTimer.App.ViewModels
                 this._appearancePreviewChanged = false;
             }
 
-            this.Settings = this._lastAppliedSettings.Clone();
+            Settings restoredSettings = this._lastAppliedSettings.Clone();
+
+            // The loaded theme may have been resolved from a preset when the saved names differed.
+            restoredSettings.Theme = this._lastAppliedTheme.Clone();
+            this.Settings = restoredSettings;
             this._selectedThemeName = this.Settings.ActiveThemeName;
             this.RaisePropertyChanged(nameof(this.SelectedThemeName));
+            this._previewAppearance?.Invoke(restoredSettings);
+        }
+
+        /// <summary>Toggles the draft's compact mode when appearance editing is available.</summary>
+        public void ToggleCompactModePreview()
+        {
+            if (this.CanEdit && !this.RecoveryRequired)
+            {
+                this.Settings.UseCompactMode = !this.Settings.UseCompactMode;
+            }
+        }
+
+        /// <summary>Connects the widget's temporary appearance to the settings draft.</summary>
+        /// <param name="preview">Displays appearance without saving or activating nonappearance settings.</param>
+        public void SetAppearancePreview(Action<Settings> preview)
+        {
+            this._previewAppearance = preview ?? throw new ArgumentNullException(nameof(preview));
+            if (this.CanEdit)
+            {
+                this.ApplyThemeChanges();
+            }
         }
 
         /// <summary>Sets the App-owned awaited runtime activation operation.</summary>
@@ -644,6 +700,9 @@ namespace FocusTimer.App.ViewModels
         public void Dispose()
         {
             this._isDisposed = true;
+            this._editGeneration++;
+            this.RaisePropertyChanged(nameof(this.IsDraftVisible));
+            this._previewAppearance = null;
             this._themeManager.ActualWidgetTransparencyChanged -= this.OnActualWidgetTransparencyChanged;
             this.DetachTheme();
             if (this._attachedSettings != null)
@@ -662,8 +721,9 @@ namespace FocusTimer.App.ViewModels
                 return;
             }
 
+            int generation = this._editGeneration;
             Theme theme = await this._themeService.LoadThemeFromFileAsync(filePath);
-            if (!this.CanEdit)
+            if (!this.CanEdit || generation != this._editGeneration)
             {
                 return;
             }
@@ -674,6 +734,26 @@ namespace FocusTimer.App.ViewModels
             this._selectedThemeName = "Custom";
             this.RaisePropertyChanged(nameof(this.SelectedThemeName));
             this._logger.LogInformation($"Theme '{theme.ThemeName}' imported successfully");
+        }
+
+        private static string? FindInvalidThemeColor(Theme theme)
+        {
+            foreach (PropertyInfo property in typeof(Theme).GetProperties())
+            {
+                if (property.Name == nameof(Theme.PlayPauseColor) && theme.PlayPauseColor == null)
+                {
+                    continue;
+                }
+
+                if (property.PropertyType == typeof(string) &&
+                    property.Name is not (nameof(Theme.ThemeName) or nameof(Theme.Author) or nameof(Theme.Version) or nameof(Theme.WidgetBlurMode)) &&
+                    !Color.TryParse(property.GetValue(theme) as string, out _))
+                {
+                    return property.Name;
+                }
+            }
+
+            return null;
         }
 
         private static double ToPercent(double normalized)
@@ -712,6 +792,7 @@ namespace FocusTimer.App.ViewModels
             }
 
             this.IsCommitting = true;
+            this._editGeneration++;
             this.CommitError = string.Empty;
             try
             {
@@ -748,6 +829,10 @@ namespace FocusTimer.App.ViewModels
             finally
             {
                 this.IsCommitting = false;
+                if (this.IsSettingsLoaded && !this.RecoveryRequired)
+                {
+                    this.ApplyThemeChanges();
+                }
             }
         }
 
@@ -776,6 +861,10 @@ namespace FocusTimer.App.ViewModels
                 {
                     await this._recoveryCompleted();
                 }
+            }
+            else if (recovered)
+            {
+                this.ApplyThemeChanges();
             }
         }
 
@@ -807,11 +896,18 @@ namespace FocusTimer.App.ViewModels
                 return "The selected theme contains invalid colors or appearance values.";
             }
 
+            string? invalidColor = FindInvalidThemeColor(this.Settings.Theme);
+            if (invalidColor != null)
+            {
+                return $"The theme color '{invalidColor}' is invalid. Enter a valid color before saving.";
+            }
+
             return string.Empty;
         }
 
         private async Task BrowseWorklogDirectoryAsync(Window window)
         {
+            int generation = this._editGeneration;
             try
             {
                 IStorageProvider storageProvider = window.StorageProvider;
@@ -826,7 +922,7 @@ namespace FocusTimer.App.ViewModels
 
                 if (result.Count > 0)
                 {
-                    if (this.CanEdit)
+                    if (this.CanEdit && generation == this._editGeneration)
                     {
                         this.Settings.WorklogDirectory = result[0].Path.LocalPath;
                     }
@@ -856,6 +952,7 @@ namespace FocusTimer.App.ViewModels
                     this.Settings.Theme = selectedPreset;
                 }
 
+                this._lastAppliedSettings = this.Settings.Clone();
                 this._lastAppliedTheme = this.Settings.Theme.Clone();
                 this._appearancePreviewChanged = false;
                 this._selectedThemeName = this.Settings.ActiveThemeName;
@@ -867,6 +964,11 @@ namespace FocusTimer.App.ViewModels
 
                 this.RaiseOpacityDiagnostics();
                 this.IsSettingsLoaded = true;
+                if (this._previewAppearance != null)
+                {
+                    this.ApplyThemeChanges();
+                }
+
                 this.RaisePropertyChanged(nameof(this.AutoStartDriftWarning));
                 this.RaisePropertyChanged(nameof(this.HasAutoStartDrift));
             }
@@ -902,6 +1004,7 @@ namespace FocusTimer.App.ViewModels
 
         private async Task ImportThemeAsync(Window window)
         {
+            int generation = this._editGeneration;
             try
             {
                 IStorageProvider storageProvider = window.StorageProvider;
@@ -919,7 +1022,7 @@ namespace FocusTimer.App.ViewModels
                     },
                 };
                 IReadOnlyList<IStorageFile> result = await storageProvider.OpenFilePickerAsync(options);
-                if (result.Count > 0 && this.CanEdit)
+                if (result.Count > 0 && this.CanEdit && generation == this._editGeneration)
                 {
                     string filePath = result[0].Path.LocalPath;
                     await this.ImportThemeFileAsync(filePath);
@@ -1037,6 +1140,7 @@ namespace FocusTimer.App.ViewModels
 
             if (e.PropertyName == nameof(this.Settings.Theme))
             {
+                this.RaisePropertyChanged(nameof(this.PlayPauseColor));
                 this.AttachTheme(this.Settings.Theme);
                 this._appearancePreviewChanged = true;
                 this.ApplyThemeChanges();
@@ -1050,10 +1154,20 @@ namespace FocusTimer.App.ViewModels
                 this.RaisePropertyChanged(nameof(this.NormalizedOverallFade));
                 this.RaisePropertyChanged(nameof(this.OpacityDiagnosticsSummary));
             }
+
+            if (e.PropertyName is nameof(this.Settings.WidgetOpacity) or nameof(this.Settings.WidgetScale) or nameof(this.Settings.UseCompactMode))
+            {
+                this.ApplyThemeChanges();
+            }
         }
 
         private void OnThemePropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
+            if (e.PropertyName is nameof(Theme.ButtonNormal) or nameof(Theme.PlayPauseColor))
+            {
+                this.RaisePropertyChanged(nameof(this.PlayPauseColor));
+            }
+
             if (!this.RecoveryRequired)
             {
                 this.CommitError = string.Empty;
@@ -1108,7 +1222,19 @@ namespace FocusTimer.App.ViewModels
 
         private void ApplyThemeChanges()
         {
+            if (!this.IsSettingsLoaded || this.RecoveryRequired || this._isDisposed)
+            {
+                return;
+            }
+
+            if (FindInvalidThemeColor(this.Settings.Theme) != null)
+            {
+                return;
+            }
+
+            this._appearancePreviewChanged = true;
             this._themeManager.ApplyTheme(this.Settings.Theme);
+            this._previewAppearance?.Invoke(this.Settings);
             this._logger.LogInformation($"Applied theme: {this.Settings.Theme.ThemeName}");
         }
 

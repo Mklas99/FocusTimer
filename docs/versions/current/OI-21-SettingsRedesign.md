@@ -12,7 +12,7 @@ The shared draft, full Apply/OK commit, Cancel/title-bar discard, temporary appe
 
 - Treat edits on every Settings tab as one draft. Changing tabs must not save or apply that draft.
 - Keep the existing distinction between Save/OK and Apply: Save/OK persists the full draft and closes the window; Apply persists the full draft and keeps it open. The last successful Save/Apply becomes the new restore point.
-- Add a Settings option for immediate changes. When off, edits remain a draft and do not change running behavior or appearance until Save/OK or Apply succeeds. When on, eligible edits may preview in the running app immediately, but they are not persisted until Save/OK or Apply succeeds. Document any setting that cannot preview safely.
+- Every Appearance control previews immediately by default, including theme colors, background choice, all opacity controls, scale, and compact mode. Preview does not persist the draft or activate reminders, logging, hotkeys, or polling changes. Any future immediate-change option applies only to eligible nonappearance settings.
 - Cancel discards all edits since the last successful Save/OK or Apply, across every tab. It restores any immediate previews to that restore point before closing. Closing the window through its title-bar control follows the same discard behavior, including when there are new edits after an earlier Apply.
 - A failed save does not advance the restore point or close the window. Show a useful error, and keep the draft available for correction or retry.
 - Smaller window sizes are not a priority for this redesign. Avoid new clipping at the current minimum size, but prioritize the normal desktop window size and do not spend this task on a compact settings layout.
@@ -38,14 +38,14 @@ The shared draft, full Apply/OK commit, Cancel/title-bar discard, temporary appe
 
 1. A theme color's name matches what it changes. Settings text and controls use consistent roles across all tabs. Editing widget button colors does not recolor Settings action buttons unless an explicit shared accent role calls for it.
 2. Each control type has consistent sizing, alignment, and interaction states throughout Settings, including keyboard focus and disabled states.
-3. Edits on any mix of tabs are persisted only by a successful Save/OK or Apply. The immediate-change option controls runtime preview, not persistence.
+3. Edits on any mix of tabs are persisted only by a successful Save/OK or Apply. All Appearance controls preview immediately; the committed appearance matches that preview. A future nonappearance immediate-change option must not control persistence.
 4. Cancel and title-bar close restore the state from the last successful Save/OK or Apply, including any previewed theme or behavior changes. Apply sets a new restore point without closing.
 5. Invalid values and save failures are visible. They do not close the window or replace the last successful restore point.
 6. Both widget modes retain their layout and remain legible under built-in and imported themes. The actual context menu follows the documented native or themeable behavior.
 
 ## Verification
 
-- Exercise draft edits across multiple tabs, then Cancel; repeat after Apply and after a failed save. Check both immediate-change modes and title-bar close.
+- Exercise draft edits across multiple tabs, then Cancel; repeat after Apply and after a failed save. Check all Appearance controls and title-bar close; check both nonappearance immediate-change modes if that future option is implemented.
 - Check all Settings control states with pointer and keyboard input, including focus order, disabled controls, and invalid input.
 - Check each built-in theme and an imported custom theme in Settings, both widget modes, and the actual context menu. Record any native menu styling that remains controlled by the operating system.
 - Check the normal window size and current minimum size for clipping or unreachable actions.
