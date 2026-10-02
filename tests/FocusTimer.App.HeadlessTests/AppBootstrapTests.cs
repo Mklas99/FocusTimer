@@ -248,11 +248,7 @@ public sealed class AppBootstrapTests
                 new LinuxAutoStartServiceStub(),
                 themeService,
                 themeManager,
-                this.Logger,
-                new WorklogSummaryViewModel(
-                    new EmptySummaryService(),
-                    new WorklogGroupingRegistry([new ApplicationGrouping(), new ProjectGrouping()]),
-                    TimeProvider.System));
+                this.Logger);
 
             this.Controller = new AppController(
                 provider,

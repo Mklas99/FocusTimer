@@ -98,11 +98,6 @@
                 </ScrollViewer>
             </TabItem>
 
-            <!-- Summary Tab: tab order must match SettingsWindowViewModel.SummaryTabIndex -->
-            <TabItem Header="Summary">
-                <views:WorklogSummaryView Margin="0,12,0,0" DataContext="{Binding WorklogSummary}" />
-            </TabItem>
-
             <!-- Appearance Tab -->
             <TabItem Header="Appearance">
                 <ScrollViewer Classes="settings-scroll">

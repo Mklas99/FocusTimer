@@ -12,13 +12,13 @@ using FocusTimer.Core.Stubs;
 using FocusTimer.Persistence;
 using ReactiveUI;
 
-public class SettingsWindowSummaryTabTests
+public class SettingsWindowViewModelTests
 {
     [Fact]
     public async Task DelayedLoad_BlocksEditingAndCommitUntilSettingsArrive()
     {
         var provider = new ControlledSettingsProvider();
-        var vm = Create(new CountingSummaryService(), provider: provider);
+        var vm = Create(provider: provider);
 
         Assert.False(vm.IsSettingsLoaded);
         Assert.False(vm.IsDraftVisible);
@@ -35,7 +35,7 @@ public class SettingsWindowSummaryTabTests
     public async Task FailedLoad_RetryPreservesExistingFileAndEnablesCommitOnlyAfterSuccess()
     {
         var provider = new ControlledSettingsProvider();
-        var vm = Create(new CountingSummaryService(), provider: provider);
+        var vm = Create(provider: provider);
         int startupContinued = 0;
         vm.SetRecoveryCompleted(() =>
         {
@@ -66,7 +66,7 @@ public class SettingsWindowSummaryTabTests
         var themes = new DelayedImportThemeService();
         var activation = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var manager = new ThemeManager();
-        var vm = Create(new CountingSummaryService(), themeManager: manager, themeService: themes);
+        var vm = Create(themeManager: manager, themeService: themes);
         vm.SetRuntimeActivator(_ => activation.Task);
 
         Task import = vm.ImportThemeFileAsync("delayed.fttheme");
@@ -94,7 +94,6 @@ public class SettingsWindowSummaryTabTests
     {
         var autoStart = new StubAutoStartService();
         var vm = Create(
-            new CountingSummaryService(),
             settings: new Settings { AutoStartOnLogin = true },
             autoStart: autoStart);
 
@@ -113,7 +112,6 @@ public class SettingsWindowSummaryTabTests
     {
         var autoStart = new StubAutoStartService();
         var vm = Create(
-            new CountingSummaryService(),
             settings: new Settings { AutoStartOnLogin = true },
             autoStart: autoStart);
         vm.Settings.BreakIntervalMinutes = 25;
@@ -131,7 +129,6 @@ public class SettingsWindowSummaryTabTests
     {
         var autoStart = new StubAutoStartService { FailWhenEnabled = true };
         var vm = Create(
-            new CountingSummaryService(),
             settings: new Settings { AutoStartOnLogin = true },
             autoStart: autoStart);
         vm.Settings.BreakIntervalMinutes = 25;
@@ -151,7 +148,7 @@ public class SettingsWindowSummaryTabTests
     public async Task DelayedCommit_PreventsDiscardUntilApplyOrOkFinishes(bool useOk)
     {
         var activation = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        var vm = Create(new CountingSummaryService(), settings: new Settings());
+        var vm = Create(settings: new Settings());
         vm.SetRuntimeActivator(_ => activation.Task);
         vm.Settings.BreakIntervalMinutes = 25;
         var command = (ReactiveCommand<Unit, Unit>)(useOk ? vm.OkCommand : vm.ApplyCommand);
@@ -185,7 +182,7 @@ public class SettingsWindowSummaryTabTests
     public async Task RecoveryRequired_CloseWarnsBeforeLeavingPendingState()
     {
         var provider = new ControlledSettingsProvider();
-        var vm = Create(new CountingSummaryService(), provider: provider);
+        var vm = Create(provider: provider);
         provider.FailLoad(new SettingsRecoveryRequiredException());
         await WaitUntilAsync(() => vm.RecoveryRequired);
 
@@ -200,7 +197,7 @@ public class SettingsWindowSummaryTabTests
     {
         var provider = new StubSettingsProvider(new Settings());
         var manager = new ThemeManager();
-        var vm = Create(new CountingSummaryService(), manager, provider: provider);
+        var vm = Create(manager, provider: provider);
         vm.Settings.BreakIntervalMinutes = 25;
         vm.ActivityPollingIntervalInput = 5;
         vm.SelectedBlurMode = WidgetBlurModes.Solid;
@@ -223,7 +220,7 @@ public class SettingsWindowSummaryTabTests
     public async Task FailedSave_KeepsDraftVisibleAndAllowsRetry()
     {
         var provider = new StubSettingsProvider(new Settings()) { FailSave = true };
-        var vm = Create(new CountingSummaryService(), provider: provider);
+        var vm = Create(provider: provider);
         vm.Settings.BreakIntervalMinutes = 25;
 
         await ((ReactiveCommand<Unit, Unit>)vm.ApplyCommand).Execute().ToTask();
@@ -245,7 +242,7 @@ public class SettingsWindowSummaryTabTests
     public async Task RecoveryRetry_ReenablesEditingAfterPendingLoadIsResolved()
     {
         var provider = new ControlledSettingsProvider();
-        var vm = Create(new CountingSummaryService(), provider: provider);
+        var vm = Create(provider: provider);
         provider.FailLoad(new SettingsRecoveryRequiredException());
         await WaitUntilAsync(() => vm.RecoveryRequired);
         Assert.False(vm.CanCommit);
@@ -266,7 +263,7 @@ public class SettingsWindowSummaryTabTests
         var provider = new StubSettingsProvider(new Settings());
         var themeService = new ThemeService();
         var manager = new ThemeManager();
-        var vm = Create(new CountingSummaryService(), manager, provider: provider, themeService: themeService);
+        var vm = Create(manager, provider: provider, themeService: themeService);
 
         vm.SelectedThemeName = "Light";
         Assert.Equal("Light", manager.ActiveTheme!.ThemeName);
@@ -283,10 +280,10 @@ public class SettingsWindowSummaryTabTests
     public void Discard_RestoresFullDraftAndIsIdempotent()
     {
         var saved = new Settings { BreakIntervalMinutes = 25, AutoStartOnLogin = true };
-        var vm = Create(new CountingSummaryService(), settings: saved);
+        var vm = Create(settings: saved);
         vm.Settings.BreakIntervalMinutes = 35;
         vm.Settings.AutoStartOnLogin = false;
-        vm.SelectedTabIndex = SettingsWindowViewModel.SummaryTabIndex;
+        vm.SelectedTabIndex = 1;
 
         vm.RestoreAppearancePreview();
         vm.RestoreAppearancePreview();
@@ -295,42 +292,6 @@ public class SettingsWindowSummaryTabTests
         Assert.True(vm.Settings.AutoStartOnLogin);
         Assert.Equal(25, saved.BreakIntervalMinutes);
         vm.Dispose();
-    }
-
-    [Fact]
-    public void SelectingTheSummaryTab_ReloadsTheBreakdownOnce()
-    {
-        var summary = new CountingSummaryService();
-        var vm = Create(summary);
-
-        vm.SelectedTabIndex = SettingsWindowViewModel.SummaryTabIndex;
-        vm.SelectedTabIndex = SettingsWindowViewModel.SummaryTabIndex;
-
-        Assert.Equal(1, summary.Calls);
-    }
-
-    [Fact]
-    public void SelectingAnotherTab_DoesNotReloadTheBreakdown()
-    {
-        var summary = new CountingSummaryService();
-        var vm = Create(summary);
-
-        vm.SelectedTabIndex = 1;
-
-        Assert.Equal(0, summary.Calls);
-    }
-
-    [Fact]
-    public void ReturningToTheSummaryTab_ReloadsAgain()
-    {
-        var summary = new CountingSummaryService();
-        var vm = Create(summary);
-
-        vm.SelectedTabIndex = SettingsWindowViewModel.SummaryTabIndex;
-        vm.SelectedTabIndex = 0;
-        vm.SelectedTabIndex = SettingsWindowViewModel.SummaryTabIndex;
-
-        Assert.Equal(2, summary.Calls);
     }
 
     [Fact]
@@ -346,7 +307,7 @@ public class SettingsWindowSummaryTabTests
                 WidgetBlurMode = WidgetBlurModes.Off,
             },
         };
-        var vm = Create(new CountingSummaryService(), themeManager, savedSettings);
+        var vm = Create(themeManager, savedSettings);
 
         vm.BackgroundOpacityPercent = 25;
         vm.SelectedBlurMode = WidgetBlurModes.Solid;
@@ -365,7 +326,7 @@ public class SettingsWindowSummaryTabTests
     public async Task WidgetAppearancePreview_ApplyAdvancesRestorePoint()
     {
         var themeManager = new ThemeManager();
-        var vm = Create(new CountingSummaryService(), themeManager, new Settings());
+        var vm = Create(themeManager, new Settings());
 
         vm.SelectedBlurMode = WidgetBlurModes.Solid;
         await ((ReactiveCommand<Unit, Unit>)vm.ApplyCommand).Execute().ToTask();
@@ -381,7 +342,7 @@ public class SettingsWindowSummaryTabTests
     [Fact]
     public void FirstRunSettings_UsesTheSameDarkPresetAsTheWidget()
     {
-        var vm = Create(new CountingSummaryService(), new ThemeManager(), new Settings());
+        var vm = Create(new ThemeManager(), new Settings());
 
         Assert.Equal("Dark", vm.Settings.Theme.ThemeName);
         Assert.Equal(0.8, vm.Settings.Theme.BackgroundOpacity);
@@ -394,7 +355,7 @@ public class SettingsWindowSummaryTabTests
     public void TransparencyDiagnostics_ReportsAchievedLevelAndSolidFallback()
     {
         var manager = new ThemeManager();
-        var vm = Create(new CountingSummaryService(), manager, new Settings());
+        var vm = Create(manager, new Settings());
 
         manager.ReportActualWidgetTransparency(WindowTransparencyLevel.Transparent);
         Assert.Contains("Requested: Off | Active: Transparent | Surface: transparent backdrop", vm.TransparencyDiagnostics);
@@ -421,7 +382,7 @@ public class SettingsWindowSummaryTabTests
             ActiveThemeName = "Solarized Dark",
             Theme = themes.GetBuiltInTheme("Monokai")!,
         };
-        var vm = Create(new CountingSummaryService(), manager, saved);
+        var vm = Create(manager, saved);
 
         Assert.Equal("Solarized Dark", vm.Settings.Theme.ThemeName);
         vm.RestoreAppearancePreview();
@@ -441,7 +402,7 @@ public class SettingsWindowSummaryTabTests
     {
         var themes = new ThemeService();
         var manager = new ThemeManager();
-        var vm = Create(new CountingSummaryService(), manager, new Settings
+        var vm = Create(manager, new Settings
         {
             ActiveThemeName = "Solarized Dark",
             Theme = themes.GetBuiltInTheme("Solarized Dark")!,
@@ -481,7 +442,7 @@ public class SettingsWindowSummaryTabTests
             tracker, reminders, timer, null, new EventBus());
         widget.ApplySettings(saved.Clone());
         double originalFontSize = widget.MainTimerFontSize;
-        var vm = Create(new CountingSummaryService(), manager, provider: provider);
+        var vm = Create(manager, provider: provider);
         vm.SetAppearancePreview(widget.PreviewAppearance);
         widget.SetCompactModeDraftToggle(() =>
         {
@@ -577,7 +538,7 @@ public class SettingsWindowSummaryTabTests
         vm.Dispose();
 
         widget.SetCompactModeDraftToggle(() => false);
-        var reopened = Create(new CountingSummaryService(), provider: provider);
+        var reopened = Create(provider: provider);
         Assert.Equal(success ? "#112233" : saved.Theme.PlayPauseColor, reopened.Settings.Theme.PlayPauseColor);
         Assert.Equal(success ? "#556677" : saved.Theme.SuccessColor, reopened.Settings.Theme.SuccessColor);
         Assert.Equal(success ? "#667788" : saved.Theme.DangerColor, reopened.Settings.Theme.DangerColor);
@@ -597,7 +558,7 @@ public class SettingsWindowSummaryTabTests
     {
         var manager = new ThemeManager();
         var provider = new StubSettingsProvider(new Settings());
-        var vm = Create(new CountingSummaryService(), manager, provider: provider);
+        var vm = Create(manager, provider: provider);
         vm.SetAppearancePreview(_ => { });
         string originalColor = manager.ActiveTheme!.TimerText;
         vm.SetThemeColor(colorProperty, "#12");
@@ -619,7 +580,7 @@ public class SettingsWindowSummaryTabTests
     public async Task MissingLogDirectory_BlocksSavingWithoutChangingThePersistedSettings(string? directory)
     {
         var provider = new StubSettingsProvider(new Settings());
-        var vm = Create(new CountingSummaryService(), provider: provider);
+        var vm = Create(provider: provider);
         try
         {
             vm.Settings.LogDirectory = directory!;
@@ -638,7 +599,7 @@ public class SettingsWindowSummaryTabTests
     public async Task MissingWorklogDirectory_BlocksSaving(string directory)
     {
         var provider = new StubSettingsProvider(new Settings());
-        var vm = Create(new CountingSummaryService(), provider: provider);
+        var vm = Create(provider: provider);
         try
         {
             vm.Settings.WorklogDirectory = directory;
@@ -655,7 +616,7 @@ public class SettingsWindowSummaryTabTests
     public async Task StartupRecovery_ContinuesOnlyAfterRecoveryAndReloadBothSucceed()
     {
         var provider = new RecoveryJournalProvider { Pending = true, FailRestore = true };
-        var vm = Create(new CountingSummaryService(), provider: provider);
+        var vm = Create(provider: provider);
         int continuations = 0;
         vm.SetRecoveryCompleted(() => { continuations++; return Task.CompletedTask; });
         try
@@ -696,7 +657,7 @@ public class SettingsWindowSummaryTabTests
         var provider = new RecoveryJournalProvider { FailRestore = true };
         var autoStart = new StubAutoStartService { FailWhenEnabled = true };
         var manager = new ThemeManager();
-        var vm = Create(new CountingSummaryService(), manager, provider: provider, autoStart: autoStart);
+        var vm = Create(manager, provider: provider, autoStart: autoStart);
         int previews = 0;
         vm.SetAppearancePreview(_ => previews++);
         try
@@ -737,7 +698,7 @@ public class SettingsWindowSummaryTabTests
     public async Task CommitInProgress_BlocksCloseAndRecoveryRetry()
     {
         var provider = new StubSettingsProvider(new Settings());
-        var vm = Create(new CountingSummaryService(), provider: provider);
+        var vm = Create(provider: provider);
         var activation = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         vm.SetRuntimeActivator(_ => activation.Task);
         var commit = ((ReactiveCommand<Unit, Unit>)vm.ApplyCommand).Execute().ToTask();
@@ -762,7 +723,7 @@ public class SettingsWindowSummaryTabTests
     {
         var provider = new StubSettingsProvider(new Settings());
         var themeService = new DelayedImportThemeService();
-        var vm = Create(new CountingSummaryService(), provider: provider, themeService: themeService);
+        var vm = Create(provider: provider, themeService: themeService);
         try
         {
             Task import = vm.ImportThemeFileAsync("custom-theme.json");
@@ -783,7 +744,7 @@ public class SettingsWindowSummaryTabTests
     public async Task ImportCompletedAfterDisposal_IsIgnored()
     {
         var themeService = new DelayedImportThemeService();
-        var vm = Create(new CountingSummaryService(), themeService: themeService);
+        var vm = Create(themeService: themeService);
         string initialName = vm.Settings.ActiveThemeName;
         Task import = vm.ImportThemeFileAsync("late.json");
         vm.Dispose();
@@ -801,7 +762,7 @@ public class SettingsWindowSummaryTabTests
     [InlineData(nameof(Theme.BackgroundOpacity))]
     public void UnknownOrNonColorProperty_DoesNotMutateTheTheme(string property)
     {
-        var vm = Create(new CountingSummaryService());
+        var vm = Create();
         try
         {
             string original = vm.Settings.Theme.TimerText;
@@ -816,7 +777,7 @@ public class SettingsWindowSummaryTabTests
     [Fact]
     public void InheritedPlayPauseColor_UsesTheNormalButtonColorUntilOverridden()
     {
-        var vm = Create(new CountingSummaryService());
+        var vm = Create();
         try
         {
             vm.Settings.Theme.PlayPauseColor = null;
@@ -833,7 +794,7 @@ public class SettingsWindowSummaryTabTests
     [Fact]
     public void UnknownEmptyOrRepeatedPresetSelection_DoesNotReplaceTheEditableTheme()
     {
-        var vm = Create(new CountingSummaryService());
+        var vm = Create();
         try
         {
             var initialTheme = vm.Settings.Theme;
@@ -850,7 +811,7 @@ public class SettingsWindowSummaryTabTests
     public void DeveloperUnlock_RequiresSevenClicksAndNeverRelocksOrSavesTheDraft()
     {
         var provider = new StubSettingsProvider(new Settings());
-        var vm = Create(new CountingSummaryService(), provider: provider);
+        var vm = Create(provider: provider);
         try
         {
             for (int click = 0; click < 6; click++) vm.RegisterVersionInfoClick();
@@ -872,7 +833,7 @@ public class SettingsWindowSummaryTabTests
     [InlineData("Debug")]
     public void EmptyOrUnchangedDeveloperLevel_DoesNotNotifyOrOverwriteTheDraft(string? level)
     {
-        var vm = Create(new CountingSummaryService());
+        var vm = Create();
         try
         {
             var notifications = new List<string?>();
@@ -916,10 +877,9 @@ public class SettingsWindowSummaryTabTests
         public Task CompleteCommitAsync() { this.Pending = false; return Task.CompletedTask; }
     }
 
-    internal static SettingsWindowViewModel CreateAppearanceEditor() => Create(new CountingSummaryService());
+    internal static SettingsWindowViewModel CreateAppearanceEditor() => Create();
 
     private static SettingsWindowViewModel Create(
-        CountingSummaryService summary,
         ThemeManager? themeManager = null,
         Settings? settings = null,
         ISettingsProvider? provider = null,
@@ -929,11 +889,7 @@ public class SettingsWindowSummaryTabTests
         autoStart ?? new StubAutoStartService(),
         themeService ?? new ThemeService(),
         themeManager ?? new ThemeManager(),
-        NullAppLogger.Instance,
-        new WorklogSummaryViewModel(
-            summary,
-            new WorklogGroupingRegistry([new ApplicationGrouping(), new ProjectGrouping()]),
-            TimeProvider.System));
+        NullAppLogger.Instance);
 
     private static async Task WaitUntilAsync(Func<bool> condition)
     {
@@ -993,19 +949,6 @@ public class SettingsWindowSummaryTabTests
         public void ResetToDefault() => this._inner.ResetToDefault();
 
         public bool ValidateTheme(Theme theme) => this._inner.ValidateTheme(theme);
-    }
-
-    private sealed class CountingSummaryService : IWorklogSummaryService
-    {
-        public int Calls { get; private set; }
-
-        public Task<WorklogSummary> SummarizeAsync(
-            WorklogSummaryRequest request,
-            CancellationToken cancellationToken = default)
-        {
-            this.Calls++;
-            return Task.FromResult(new WorklogSummary(request, WorklogOutcome.Success(), [], TimeSpan.Zero, []));
-        }
     }
 
     private sealed class StubSettingsProvider(Settings? settings) : ISettingsProvider

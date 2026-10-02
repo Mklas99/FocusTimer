@@ -55,10 +55,10 @@
 
 ## 8. Summary in the Worklog window (App)
 
-- [ ] 8.1 Move the Summary tab to the Worklog window and remove it from `SettingsWindow.axaml`, from `SettingsWindowViewModel` (constructor parameter, `WorklogSummary` property, refresh on tab selection near line 129), from the `Program.cs` wiring for Settings, and from the `ActivityPollingEditorTests` helper that builds the view model; verify the Settings tabs are General, Logging, Appearance, Hotkeys, About and the test projects build
-- [ ] 8.2 Drive the summary `RangeSelector` and `RangeLabel` from the selected day and keep the grouping across day changes; add by window to the grouping switch; verify with view model tests for day change, grouping kept, and empty previous day
-- [ ] 8.3 Confirm and test refresh: selecting the Summary or Entries tab reloads, Refresh picks up a newly persisted entry, and an added manual entry appears in the totals; verify the Summary total for today equals the tray total after an add, an edit, and a delete
-- [ ] 8.4 Update the Summary and Settings descriptions in `ARCHITECTURE.md` (line about `SettingsWindowViewModel` hosting the Summary view model); verify no document still says Summary lives in Settings
+- [x] 8.1 Move the Summary tab to the Worklog window and remove it from `SettingsWindow.axaml`, from `SettingsWindowViewModel` (constructor parameter, `WorklogSummary` property, refresh on tab selection near line 129), from the `Program.cs` wiring for Settings, and from the `ActivityPollingEditorTests` helper that builds the view model; verify the Settings tabs are General, Logging, Appearance, Hotkeys, About and the test projects build
+- [x] 8.2 Drive the summary `RangeSelector` and `RangeLabel` from the selected day and keep the grouping across day changes; add by window to the grouping switch; verify with view model tests for day change, grouping kept, and empty previous day
+- [x] 8.3 Confirm and test refresh: selecting the Summary or Entries tab reloads, Refresh picks up a newly persisted entry, and an added manual entry appears in the totals; verify the Summary total for today equals the tray total after an add, an edit, and a delete
+- [x] 8.4 Update the Summary and Settings descriptions in `ARCHITECTURE.md` (line about `SettingsWindowViewModel` hosting the Summary view model); verify no document still says Summary lives in Settings
 
 ## 9. Timeline tab (App) - separable, can move to its own branch
 

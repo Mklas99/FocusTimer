@@ -72,12 +72,7 @@ public sealed class SettingsFileDialogTests
         new LinuxAutoStartServiceStub(),
         new ThemeService(),
         new ThemeManager(),
-        logger ?? new RecordingLogger(),
-        new WorklogSummaryViewModel(
-            new EmptySummaryService(),
-            new FocusTimer.Core.Services.WorklogGroupingRegistry(
-                [new FocusTimer.Core.Services.ApplicationGrouping(), new FocusTimer.Core.Services.ProjectGrouping()]),
-            TimeProvider.System));
+        logger ?? new RecordingLogger());
 
     private sealed class RecordingLogger : IAppLogger
     {

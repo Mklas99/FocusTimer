@@ -84,7 +84,7 @@ public class AppearanceNativeTests
 
                 foreach (string preset in new[] { "Light", "Monokai", "Solarized Dark" })
                 {
-                    var editor = SettingsWindowSummaryTabTests.CreateAppearanceEditor();
+                    var editor = SettingsWindowViewModelTests.CreateAppearanceEditor();
                     editor.SelectedThemeName = preset;
                     editor.SelectedTabIndex = 3;
                     var gate = new TaskCompletionSource();
@@ -162,7 +162,7 @@ public class AppearanceNativeTests
                     settings.Close();
                     settings.Close();
 
-                    var reopenedEditor = SettingsWindowSummaryTabTests.CreateAppearanceEditor();
+                    var reopenedEditor = SettingsWindowViewModelTests.CreateAppearanceEditor();
                     reopenedEditor.SelectedThemeName = preset;
                     reopenedEditor.SelectedTabIndex = 3;
                     var reopenedWindow = new SettingsWindow { DataContext = reopenedEditor, ShowActivated = false, Position = new PixelPoint(-3000, -3000) };

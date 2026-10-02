@@ -75,7 +75,7 @@ public sealed class ProgramCompositionTests : IDisposable
         Assert.IsType<StoredProjectResolver>(sp.GetRequiredService<IProjectResolver>());
         Assert.Equal(["app", "project", "window"], sp.GetRequiredService<WorklogGroupingRegistry>().All.Select(g => g.Id));
         Assert.NotNull(sp.GetRequiredService<FocusTimer.App.ViewModels.WorklogSummaryViewModel>());
-        Assert.NotNull(sp.GetRequiredService<FocusTimer.App.ViewModels.SettingsWindowViewModel>().WorklogSummary);
+        Assert.NotNull(sp.GetRequiredService<FocusTimer.App.ViewModels.SettingsWindowViewModel>());
     }
 
     [Theory]
