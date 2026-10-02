@@ -6,6 +6,10 @@ using FocusTimer.Core.Models;
 
 public class SettingsCommitCoordinatorTests
 {
+    private static readonly int[] FiftyOnly = [50];
+    private static readonly int[] TwentyFiveThenFifty = [25, 50];
+    private static readonly int[] TwentyFiveOnly = [25];
+
     [Fact]
     public async Task Commit_AwaitsActivationBeforeReportingSuccess()
     {
@@ -159,7 +163,7 @@ public class SettingsCommitCoordinatorTests
         Assert.Equal(50, store.Saved.BreakIntervalMinutes);
         Assert.False(store.Pending);
         Assert.False(autoStart.Enabled);
-        Assert.Equal(partialWrite ? new[] { 50 } : Array.Empty<int>(), activations);
+        Assert.Equal(partialWrite ? FiftyOnly : Array.Empty<int>(), activations);
         Assert.Equal(partialWrite ? 1 : 0, store.RestoreCalls);
     }
 
@@ -208,7 +212,7 @@ public class SettingsCommitCoordinatorTests
 
         Assert.Equal(SettingsCommitStatus.RecoveryRequired, await coordinator.CommitAsync(
             new Settings { BreakIntervalMinutes = 25, AutoStartOnLogin = true }, previous));
-        Assert.Equal(new[] { 25, 50 }, activations);
+        Assert.Equal(TwentyFiveThenFifty, activations);
         Assert.Equal(1, autoStart.RestoreCalls);
         Assert.Equal(1, store.RestoreCalls);
         Assert.True(store.Pending);
@@ -239,7 +243,7 @@ public class SettingsCommitCoordinatorTests
 
         Assert.Equal(SettingsCommitStatus.Failed, await coordinator.CommitAsync(
             new Settings { BreakIntervalMinutes = 25, AutoStartOnLogin = true }, store.Saved.Clone()));
-        Assert.Equal(new[] { 25, 50 }, activations);
+        Assert.Equal(TwentyFiveThenFifty, activations);
         Assert.False(store.Pending);
         Assert.False(autoStart.Enabled);
         Assert.Equal(50, store.Saved.BreakIntervalMinutes);
@@ -274,7 +278,7 @@ public class SettingsCommitCoordinatorTests
         Assert.Equal(failRollbackSave ? SettingsCommitStatus.RecoveryRequired : SettingsCommitStatus.Failed,
             await coordinator.CommitAsync(new Settings { BreakIntervalMinutes = 25, AutoStartOnLogin = true },
                 provider.Saved.Clone()));
-        Assert.Equal(new[] { 25, 50 }, provider.SaveAttempts);
+        Assert.Equal(TwentyFiveThenFifty, provider.SaveAttempts);
         Assert.False(autoStart.Enabled);
         Assert.Equal(failRollbackSave ? 25 : 50, provider.Saved.BreakIntervalMinutes);
     }
@@ -294,7 +298,7 @@ public class SettingsCommitCoordinatorTests
         Assert.True(await coordinator.RecoverAsync());
         Assert.Equal(SettingsCommitStatus.Success, await coordinator.CommitAsync(
             new Settings { BreakIntervalMinutes = 25, AutoStartOnLogin = true }, provider.Saved.Clone()));
-        Assert.Equal(new[] { 25 }, provider.SaveAttempts);
+        Assert.Equal(TwentyFiveOnly, provider.SaveAttempts);
     }
 
     private sealed class PlainProvider : ISettingsProvider

@@ -249,7 +249,7 @@ public class TimerWidgetBehaviorTests
         Assert.Equal(EndReason.ApplicationExit, Assert.Single(fixture.Timer.Stops));
     }
 
-    private static Task ExecuteAsync(System.Windows.Input.ICommand command) =>
+    private static Task<Unit> ExecuteAsync(System.Windows.Input.ICommand command) =>
         ((ReactiveCommand<Unit, Unit>)command).Execute().ToTask();
 
     private sealed class Fixture : IDisposable

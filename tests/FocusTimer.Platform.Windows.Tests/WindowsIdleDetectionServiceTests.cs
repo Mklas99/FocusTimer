@@ -2,6 +2,8 @@ namespace FocusTimer.Platform.Windows.Tests;
 
 public class WindowsIdleDetectionServiceTests
 {
+    private static readonly string[] IdleActiveIdleActive = ["idle", "active", "idle", "active"];
+
     [Theory]
     [InlineData(299999, false)]
     [InlineData(300000, true)]
@@ -38,7 +40,7 @@ public class WindowsIdleDetectionServiceTests
         service.ProcessIdleDuration(TimeSpan.FromMinutes(5));
         service.ProcessIdleDuration(TimeSpan.FromMinutes(4));
 
-        Assert.Equal(new[] { "idle", "active", "idle", "active" }, transitions);
+        Assert.Equal(IdleActiveIdleActive, transitions);
     }
 
     [Fact]
