@@ -36,12 +36,13 @@ public class WindowMatchingTests
     }
 
     [Fact]
-    public void WildcardOnlyExeStemIsNotCollapsedToMatchEverything()
+    public void ExtensionIsOptionalSoWindowsNamesWithoutExeStillMatchExePatterns()
     {
-        Assert.True(new WindowMatchRule("*.exe", null).Matches(W("notepad.exe")));
-        Assert.False(new WindowMatchRule("*.exe", null).Matches(W("bash")));
-        Assert.False(new WindowMatchRule("?.exe", null).Matches(W("notepad")));
+        Assert.True(new WindowMatchRule("*.exe", null).Matches(W("notepad")));
         Assert.True(new WindowMatchRule("note*.exe", null).Matches(W("notepad")));
+        Assert.True(new WindowMatchRule("notepad.exe", null).Matches(W("notepad")));
+        Assert.False(new WindowMatchRule("notepad.exe", null).Matches(W("notepad2")));
+        Assert.False(new WindowMatchRule("?.exe", null).Matches(W("notepad")));
     }
 
     [Fact]
@@ -134,6 +135,41 @@ public class AppExclusionTrackerTests
         clock.Advance(30);
         await t.OnTimerTickAsync();
         Assert.Empty(t.CollectAndResetSegments());
+    }
+
+    [Fact]
+    public async Task FailedFirstSampleWithRulesRecordsNothingUntilASampleSucceeds()
+    {
+        var (t, clock, win) = Create();
+        t.SetExclusionRules(new[] { new WindowMatchRule("secret", null) });
+        win.Fail = true;
+        await t.StartAsync(null);
+        Assert.Equal(0, t.CompletedEntryCount);
+        win.Fail = false;
+        clock.Advance(10);
+        await t.OnTimerTickAsync();
+        Assert.Equal(1, t.CompletedEntryCount);
+    }
+
+    [Fact]
+    public async Task FailedFirstSampleWithoutRulesStillRecordsUnknown()
+    {
+        var (t, clock, win) = Create();
+        win.Fail = true;
+        await t.StartAsync(null);
+        Assert.Equal(1, t.CompletedEntryCount);
+    }
+
+    [Fact]
+    public async Task RulesAppliedWhileNotTrackingDoNotForceAnExtraSampleAfterStart()
+    {
+        var (t, clock, win) = Create();
+        t.SetPollingInterval(60);
+        t.SetExclusionRules(new[] { new WindowMatchRule("zzz", null) });
+        await t.StartAsync(null);
+        clock.Advance(1);
+        await t.OnTimerTickAsync();
+        Assert.Equal(1, win.Calls);
     }
 
     [Fact]

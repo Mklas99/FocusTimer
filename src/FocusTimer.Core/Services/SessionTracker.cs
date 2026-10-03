@@ -115,7 +115,7 @@ public sealed class SessionTracker
         {
             if (_exclusionRules.SequenceEqual(valid)) return;
             _exclusionRules = valid;
-            _captureDue = true;
+            _captureDue = _tracking;
         }
     }
 
@@ -174,9 +174,11 @@ public sealed class SessionTracker
                     {
                         var now = _clock.GetLocalNow();
                         SplitAtMidnight(now);
-                        var excluded = initial is not null
-                            ? succeeded && WindowRuleMatcher.FindFirst(_exclusionRules, window) is not null
-                            : succeeded ? WindowRuleMatcher.FindFirst(_exclusionRules, window) is not null : _excluded;
+                        // With exclusion rules configured, a window that could not be identified at session start
+                        // cannot be shown to be allowed, so nothing is recorded until a sample succeeds.
+                        var excluded = succeeded
+                            ? WindowRuleMatcher.FindFirst(_exclusionRules, window) is not null
+                            : initial is not null ? _exclusionRules.Length > 0 : _excluded;
                         if (excluded)
                         {
                             CloseCurrentEntry(now, EndReason.ApplicationChange);
@@ -274,6 +276,7 @@ public sealed class SessionTracker
     {
         _tracking = false;
         _excluded = false;
+        _captureDue = false;
         _sessionId = null;
         _sessionGeneration++;
         _pendingStart?.Completion.TrySetResult();

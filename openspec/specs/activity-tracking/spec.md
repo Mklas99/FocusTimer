@@ -142,6 +142,10 @@ start at that observation time. Excluded time SHALL NOT be attributed to the pre
 - **WHEN** an excluded window remains in front across local midnight
 - **THEN** no entry is written for that time on either day
 
+#### Scenario: First lookup fails while rules exist
+- **WHEN** tracking starts, at least one exclusion rule is configured, and the first foreground lookup fails
+- **THEN** no segment opens until a later lookup succeeds and shows a non-excluded window
+
 #### Scenario: Lookup fails while excluded
 - **WHEN** a foreground lookup fails after an excluded window was observed
 - **THEN** no segment opens and the system remains in the excluded state

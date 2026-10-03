@@ -29,19 +29,13 @@ public sealed record WindowMatchRule(string? AppPattern, string? TitlePattern)
                     window.WindowTitle));
     }
 
-    // The extension is optional on both sides. It is only dropped from a pattern whose stem names something
-    // (so "keepass.exe" matches "KeePass"), never from a wildcard-only stem, so "*.exe" stays "any .exe".
+    // The ".exe" extension is optional on both sides: Windows reports process names without it, so a pattern is
+    // tried against the bare name and against the name with ".exe" appended ("keepass" and "keepass.exe" both
+    // match KeePass, and "*.exe" matches every executable).
     private static bool MatchesApplication(string pattern, string processName)
     {
         var name = StripExecutableExtension(processName);
-        if (GlobMatcher.IsMatch(pattern, processName) || GlobMatcher.IsMatch(pattern, name))
-        {
-            return true;
-        }
-
-        var stem = StripExecutableExtension(pattern);
-        return stem.Length != pattern.Length && stem.Any(c => c is not '*' and not '?')
-            && GlobMatcher.IsMatch(stem, name);
+        return GlobMatcher.IsMatch(pattern, name) || GlobMatcher.IsMatch(pattern, name + ".exe");
     }
 
     private static string StripExecutableExtension(string name) =>
