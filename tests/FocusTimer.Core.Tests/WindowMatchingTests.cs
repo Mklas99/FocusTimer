@@ -280,3 +280,143 @@ public class AppExclusionTrackerTests
         }
     }
 }
+
+public class SegmentationRuleTrackerTests
+{
+    private static ActiveWindowInfo Win(string app, string title) => new() { ProcessName = app, WindowTitle = title };
+
+    [Fact]
+    public async Task TitleChangeInMatchedApplicationKeepsSegmentAndFirstTitle()
+    {
+        var (t, clock, win) = Create();
+        t.SetSegmentationRules(new[] { new WindowMatchRule("browser", null) });
+        win.Window = Win("browser", "tab one");
+        await t.StartAsync(null);
+        win.Window = Win("browser", "tab two");
+        clock.Advance(10);
+        await t.OnTimerTickAsync();
+        Assert.Empty(t.DrainCompletedSegments());
+        clock.Advance(10);
+        var entry = Assert.Single(t.CollectAndResetSegments());
+        Assert.Equal("tab one", entry.WindowTitle);
+        Assert.Equal(20, (entry.EndedAt - entry.StartedAt).TotalSeconds);
+    }
+
+    [Fact]
+    public async Task ApplicationChangeStillSplitsEvenWhenBothMatchRules()
+    {
+        var (t, clock, win) = Create();
+        t.SetSegmentationRules(new[] { new WindowMatchRule("*", null) });
+        win.Window = Win("a", "t");
+        await t.StartAsync(null);
+        win.Window = Win("b", "t");
+        clock.Advance(10);
+        await t.OnTimerTickAsync();
+        Assert.Single(t.DrainCompletedSegments());
+    }
+
+    [Fact]
+    public async Task TitleChangeInUnmatchedApplicationSplits()
+    {
+        var (t, clock, win) = Create();
+        t.SetSegmentationRules(new[] { new WindowMatchRule("browser", null) });
+        win.Window = Win("editor", "one");
+        await t.StartAsync(null);
+        win.Window = Win("editor", "two");
+        clock.Advance(10);
+        await t.OnTimerTickAsync();
+        Assert.Single(t.DrainCompletedSegments());
+    }
+
+    [Fact]
+    public async Task NoRulesSplitsOnAnyTitleChange()
+    {
+        var (t, clock, win) = Create();
+        win.Window = Win("browser", "one");
+        await t.StartAsync(null);
+        win.Window = Win("browser", "two");
+        clock.Advance(10);
+        await t.OnTimerTickAsync();
+        Assert.Single(t.DrainCompletedSegments());
+    }
+
+    [Fact]
+    public async Task TitleOnlyRuleRequiresBothTitlesToMatch()
+    {
+        var (t, clock, win) = Create();
+        t.SetSegmentationRules(new[] { new WindowMatchRule(null, "Doc*") });
+        win.Window = Win("app", "Doc A");
+        await t.StartAsync(null);
+        win.Window = Win("app", "Doc B");
+        clock.Advance(10);
+        await t.OnTimerTickAsync();
+        Assert.Empty(t.DrainCompletedSegments());
+        win.Window = Win("app", "Settings");
+        clock.Advance(10);
+        await t.OnTimerTickAsync();
+        Assert.Single(t.DrainCompletedSegments());
+    }
+
+    [Fact]
+    public async Task ExclusionWinsOverSegmentation()
+    {
+        var (t, clock, win) = Create();
+        t.SetSegmentationRules(new[] { new WindowMatchRule("browser", null) });
+        t.SetExclusionRules(new[] { new WindowMatchRule(null, "*bank*") });
+        win.Window = Win("browser", "news");
+        await t.StartAsync(null);
+        win.Window = Win("browser", "my bank");
+        clock.Advance(10);
+        await t.OnTimerTickAsync();
+        Assert.Single(t.DrainCompletedSegments());
+        Assert.Equal(0, t.CompletedEntryCount);
+    }
+
+    [Fact]
+    public async Task RuleAddedMidSessionDoesNotSplitExistingSegmentsAndAppliesPromptly()
+    {
+        var (t, clock, win) = Create();
+        t.SetPollingInterval(60);
+        win.Window = Win("browser", "one");
+        await t.StartAsync(null);
+        t.SetSegmentationRules(new[] { new WindowMatchRule("browser", null) });
+        Assert.Equal(1, t.CompletedEntryCount);
+        win.Window = Win("browser", "two");
+        clock.Advance(1);
+        await t.OnTimerTickAsync();
+        Assert.Equal(2, win.Calls);
+        Assert.Empty(t.DrainCompletedSegments());
+        t.SetSegmentationRules(new[] { new WindowMatchRule(null, null), new WindowMatchRule("browser", null) });
+        clock.Advance(1);
+        await t.OnTimerTickAsync();
+        Assert.Equal(2, win.Calls);
+    }
+
+    private static (SessionTracker, Clock, Windows) Create()
+    {
+        var clock = new Clock(); var windows = new Windows();
+        return (new SessionTracker(windows, NullLogger.Instance, clock, new SourcePlatformProvider(), () => "device"), clock, windows);
+    }
+
+    private sealed class Clock : TimeProvider
+    {
+        public DateTimeOffset Now = new(2026, 9, 27, 9, 0, 0, TimeSpan.Zero);
+        private long timestamp;
+        public override DateTimeOffset GetUtcNow() => Now;
+        public override TimeZoneInfo LocalTimeZone => TimeZoneInfo.Utc;
+        public override long TimestampFrequency => 1;
+        public override long GetTimestamp() => timestamp;
+        public void Advance(int seconds) { timestamp += seconds; Now = Now.AddSeconds(seconds); }
+    }
+
+    private sealed class Windows : IActiveWindowService
+    {
+        public int Calls;
+        public ActiveWindowInfo Window = Win("app", "title");
+        public Task<ActiveWindowInfo?> GetForegroundWindowAsync()
+        {
+            Calls++;
+            return Task.FromResult<ActiveWindowInfo?>(Window);
+        }
+    }
+}

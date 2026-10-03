@@ -25,6 +25,7 @@ namespace FocusTimer.Core.Models
         private string _developerLogLevel = "Debug";
         private int _activityPollingIntervalSeconds = 10;
         private List<WindowMatchRule> _exclusionRules = new();
+        private List<WindowMatchRule> _segmentationRules = new();
         private string? _hotkeyShowHide;
         private string? _hotkeyToggleTimer;
         private Theme _theme = new();
@@ -223,6 +224,16 @@ namespace FocusTimer.Core.Models
             set => this.SetField(ref this._exclusionRules, value ?? new List<WindowMatchRule>());
         }
 
+        /// <summary>
+        /// Gets or sets the ordered rules for windows whose title changes must not start a new segment.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonConverter(typeof(WindowMatchRuleListConverter))]
+        public List<WindowMatchRule> SegmentationRules
+        {
+            get => this._segmentationRules;
+            set => this.SetField(ref this._segmentationRules, value ?? new List<WindowMatchRule>());
+        }
+
         // Future: Hotkey settings (placeholders)
 
         /// <summary>
@@ -304,6 +315,7 @@ namespace FocusTimer.Core.Models
             DeveloperLogLevel = this.DeveloperLogLevel,
             ActivityPollingIntervalSeconds = this.ActivityPollingIntervalSeconds,
             ExclusionRules = new List<WindowMatchRule>(this.ExclusionRules),
+            SegmentationRules = new List<WindowMatchRule>(this.SegmentationRules),
             HotkeyShowHide = this.HotkeyShowHide,
             HotkeyToggleTimer = this.HotkeyToggleTimer,
             Theme = this.Theme.Clone(),

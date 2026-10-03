@@ -67,6 +67,31 @@ public class ExclusionRuleEditorTests
     }
 
     [Fact]
+    public async Task SegmentationListIsIndependentValidatedAndCommitted()
+    {
+        var provider = new Provider(); var vm = Create(provider);
+        vm.ExclusionList.AddCommand.Execute(null);
+        vm.ExclusionRules[0].AppPattern = "keepass";
+        vm.SegmentationList.AddCommand.Execute(null);
+        Assert.NotEmpty(vm.SegmentationList.Error);
+        Assert.Empty(vm.ExclusionList.Error);
+        await Apply(vm);
+        Assert.False(vm.LastApplySucceeded); Assert.Equal(0, provider.Saves);
+        vm.SegmentationList.Rules[0].AppPattern = "chrome";
+        vm.SegmentationList.Rules[0].TitlePattern = " * ";
+        await Apply(vm);
+        Assert.True(vm.LastApplySucceeded);
+        Assert.Equal(new[] { new WindowMatchRule("keepass", null) }, provider.Saved.ExclusionRules);
+        Assert.Equal(new[] { new WindowMatchRule("chrome", "*") }, provider.Saved.SegmentationRules);
+        vm.SegmentationList.AddCommand.Execute(null);
+        vm.SegmentationList.Rules[1].AppPattern = "draft";
+        var reopened = Create(provider);
+        Assert.Equal(new[] { "chrome" }, reopened.SegmentationList.Rules.Select(r => r.AppPattern));
+        vm.TryDiscardAndClose();
+        Assert.Equal(new[] { "chrome" }, vm.SegmentationList.Rules.Select(r => r.AppPattern));
+    }
+
+    [Fact]
     public async Task DraftEditsDoNotReachTrackerButAppliedSettingsDo()
     {
         var provider = new Provider();
@@ -83,8 +108,11 @@ public class ExclusionRuleEditorTests
         draft.ExclusionRules.Add(new WindowMatchRule("x", null));
         Assert.Empty((WindowMatchRule[])field.GetValue(tracker)!);
 
+        draft.SegmentationRules.Add(new WindowMatchRule("y", null));
         await vm.ActivateSettingsAsync(draft);
         Assert.Equal(new[] { new WindowMatchRule("x", null) }, (WindowMatchRule[])field.GetValue(tracker)!);
+        Assert.Equal(new[] { new WindowMatchRule("y", null) }, (WindowMatchRule[])typeof(SessionTracker)
+            .GetField("_segmentationRules", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(tracker)!);
     }
 
     private static SettingsWindowViewModel Create(Provider p) => new(

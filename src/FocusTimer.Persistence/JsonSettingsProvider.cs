@@ -117,13 +117,8 @@ namespace FocusTimer.Persistence
                     throw new JsonException("The settings file does not contain a settings object.");
                 }
 
-                if (document.RootElement.TryGetProperty("exclusionRules", out JsonElement savedRules)
-                    && savedRules.ValueKind == JsonValueKind.Array
-                    && savedRules.GetArrayLength() != settings.ExclusionRules.Count)
-                {
-                    this._logger?.LogWarning(
-                        $"Ignored {savedRules.GetArrayLength() - settings.ExclusionRules.Count} malformed exclusion rule(s) in {this.SettingsFilePath}.");
-                }
+                this.WarnAboutDroppedRules(document.RootElement, "exclusionRules", "exclusion", settings.ExclusionRules.Count);
+                this.WarnAboutDroppedRules(document.RootElement, "segmentationRules", "segmentation", settings.SegmentationRules.Count);
 
                 if (!document.RootElement.TryGetProperty("deviceId", out JsonElement deviceId)
                     || deviceId.ValueKind != JsonValueKind.String
@@ -290,6 +285,17 @@ namespace FocusTimer.Persistence
             finally
             {
                 this._fileGate.Release();
+            }
+        }
+
+        private void WarnAboutDroppedRules(JsonElement root, string property, string kind, int keptCount)
+        {
+            if (root.TryGetProperty(property, out JsonElement saved)
+                && saved.ValueKind == JsonValueKind.Array
+                && saved.GetArrayLength() != keptCount)
+            {
+                this._logger?.LogWarning(
+                    $"Ignored {saved.GetArrayLength() - keptCount} malformed {kind} rule(s) in {this.SettingsFilePath}.");
             }
         }
 

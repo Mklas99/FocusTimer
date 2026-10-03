@@ -87,6 +87,32 @@ public class ExclusionRuleSettingsTests
         Assert.Empty(new Settings().ExclusionRules);
     }
 
+    [Fact]
+    public async Task SegmentationRulesRoundTripMissingAndMalformed()
+    {
+        var path = Temp();
+        try
+        {
+            await File.WriteAllTextAsync(path, "{\"breakIntervalMinutes\":37}");
+            Assert.Empty((await new JsonSettingsProvider(path).LoadAsync()).SegmentationRules);
+            await File.WriteAllTextAsync(path,
+                "{\"segmentationRules\":[{\"appPattern\":\"chrome\"},7,{}],\"exclusionRules\":[{\"appPattern\":\"x\"}],\"breakIntervalMinutes\":37}");
+            var logger = new CapturingLogger();
+            var provider = new JsonSettingsProvider(path, logger);
+            var loaded = await provider.LoadAsync();
+            Assert.Equal(new[] { new WindowMatchRule("chrome", null) }, loaded.SegmentationRules);
+            Assert.Equal(new[] { new WindowMatchRule("x", null) }, loaded.ExclusionRules);
+            Assert.Equal(37, loaded.BreakIntervalMinutes);
+            Assert.Contains(logger.Warnings, w => w.Contains("segmentation"));
+            await provider.SaveAsync(loaded);
+            Assert.Equal(loaded.SegmentationRules, (await new JsonSettingsProvider(path).LoadAsync()).SegmentationRules);
+            var clone = loaded.Clone();
+            clone.SegmentationRules.Add(new WindowMatchRule("b", null));
+            Assert.Single(loaded.SegmentationRules);
+        }
+        finally { File.Delete(path); }
+    }
+
     private static string Temp() => Path.Combine(Path.GetTempPath(), $"exclusions-{Guid.NewGuid():N}.json");
 
     private sealed class CapturingLogger : IAppLogger

@@ -29,6 +29,7 @@ public sealed class SessionTracker
     private bool _tracking;
     private bool _trackingEnabled = true;
     private WindowMatchRule[] _exclusionRules = Array.Empty<WindowMatchRule>();
+    private WindowMatchRule[] _segmentationRules = Array.Empty<WindowMatchRule>();
     private bool _excluded;
     private bool _captureDue;
 
@@ -115,6 +116,18 @@ public sealed class SessionTracker
         {
             if (_exclusionRules.SequenceEqual(valid)) return;
             _exclusionRules = valid;
+            _captureDue = _tracking;
+        }
+    }
+
+    /// <summary>Sets rules whose title changes do not split a segment; requests a prompt foreground sample.</summary>
+    public void SetSegmentationRules(IEnumerable<WindowMatchRule>? rules)
+    {
+        var valid = (rules ?? Enumerable.Empty<WindowMatchRule>()).Where(r => r is { IsValid: true }).ToArray();
+        lock (_stateLock)
+        {
+            if (_segmentationRules.SequenceEqual(valid)) return;
+            _segmentationRules = valid;
             _captureDue = _tracking;
         }
     }
@@ -283,10 +296,16 @@ public sealed class SessionTracker
         _pendingStart = null;
     }
 
-    private static bool HasWindowChanged(ActiveWindowInfo? previous, ActiveWindowInfo? current) =>
-        previous is null || current is null
-            ? previous != current
-            : previous.ProcessName != current.ProcessName || previous.WindowTitle != current.WindowTitle;
+    private bool HasWindowChanged(ActiveWindowInfo? previous, ActiveWindowInfo? current)
+    {
+        if (previous is null || current is null) return previous != current;
+        if (previous.ProcessName != current.ProcessName) return true;
+        if (previous.WindowTitle == current.WindowTitle) return false;
+
+        // A title-only change keeps the segment when both windows match a segmentation rule.
+        return WindowRuleMatcher.FindFirst(_segmentationRules, previous) is null
+            || WindowRuleMatcher.FindFirst(_segmentationRules, current) is null;
+    }
 
     private void SplitAtMidnight(DateTimeOffset now)
     {

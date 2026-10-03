@@ -41,8 +41,13 @@ public sealed class ExclusionEditorViewTests
         Assert.True(expander.IsVisible);
         expander.IsExpanded = true;
         Dispatcher.UIThread.RunJobs();
-        var list = window.GetVisualDescendants().OfType<ItemsControl>().Single(c => c.Name == "ExclusionRuleList");
-        Assert.Same(vm.ExclusionRules, list.ItemsSource);
+        var editors = window.GetVisualDescendants().OfType<FocusTimer.App.Controls.WindowRuleListEditor>().ToList();
+        Assert.Equal(2, editors.Count);
+        Assert.Same(vm.ExclusionList, editors[0].DataContext);
+        Assert.Same(vm.SegmentationList, editors[1].DataContext);
+        var lists = editors.Select(e => e.GetVisualDescendants().OfType<ItemsControl>().Single(c => c.Name == "RuleList")).ToList();
+        Assert.Same(vm.ExclusionRules, lists[0].ItemsSource);
+        Assert.Same(vm.SegmentationList.Rules, lists[1].ItemsSource);
         window.Close();
     }
 

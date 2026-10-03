@@ -4,14 +4,14 @@ namespace FocusTimer.App.ViewModels
     using ReactiveUI;
 
     /// <summary>One editable row of the exclusion rule draft.</summary>
-    public sealed class ExclusionRuleItemViewModel : ReactiveObject
+    public sealed class WindowRuleItemViewModel : ReactiveObject
     {
         private string _appPattern;
         private string _titlePattern;
 
-        /// <summary>Initializes a new instance of the <see cref="ExclusionRuleItemViewModel"/> class.</summary>
+        /// <summary>Initializes a new instance of the <see cref="WindowRuleItemViewModel"/> class.</summary>
         /// <param name="rule">The rule to edit, or null for a blank row.</param>
-        public ExclusionRuleItemViewModel(WindowMatchRule? rule = null)
+        public WindowRuleItemViewModel(WindowMatchRule? rule = null)
         {
             this._appPattern = rule?.AppPattern ?? string.Empty;
             this._titlePattern = rule?.TitlePattern ?? string.Empty;
