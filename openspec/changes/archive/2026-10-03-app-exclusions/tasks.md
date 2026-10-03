@@ -26,4 +26,4 @@ All tasks are in `FocusTimer.Core`, `FocusTimer.Persistence`, and `FocusTimer.Ap
 ## 5. Docs and integration
 
 - [x] 5.1 Update `OpenIssues.md` (OI-32 status), `Features.md`, and the tracker description in `ARCHITECTURE.md`, then check `openspec/` and root docs for contradictions; verify by re-reading the three files.
-- [ ] 5.2 Manual Windows walkthrough: exclude one application by name, confirm the Timeline shows a gap and the next application starts fresh, restart and confirm rules persist; record the result in the change notes. Run `openspec validate app-exclusions` and the full test suite.
+- [ ] 5.2 (OPEN at archive time; tracked in OpenIssues.md under OI-32) Manual Windows walkthrough: exclude one application by name, confirm the Timeline shows a gap and the next application starts fresh, restart and confirm rules persist; record the result in the change notes. Run `openspec validate app-exclusions` and the full test suite.
