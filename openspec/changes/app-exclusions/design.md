@@ -53,10 +53,12 @@ exclusion therefore starts at the first sample that observes it.
 A failed lookup keeps the current behavior (the open segment continues, or `Unknown` at initial capture). If the
 tracker is in the excluded state, a failure keeps it excluded.
 
-### 4. Rules apply from the next sample after Apply
+### 4. A rule change triggers one prompt sample
 
 Rules are stored in `Settings` and pushed to the tracker by the same path as the polling interval. Applying a new
-list takes effect on the next sample, does not close segments by itself, and re-evaluates the current window then.
+list does not close segments by itself; it marks one foreground sample as due, taken at the next one-second
+maintenance tick (still at most one lookup in flight, no catch-up bursts), and the current window is re-evaluated
+then. Waiting for the regular interval would let a newly excluded window be recorded for up to 60 seconds.
 Setting an identical list is a no-op. Draft edits do not reach the tracker; Cancel restores the last applied list.
 
 ### 5. Persistence is tolerant

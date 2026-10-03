@@ -36,6 +36,15 @@ public class WindowMatchingTests
     }
 
     [Fact]
+    public void WildcardOnlyExeStemIsNotCollapsedToMatchEverything()
+    {
+        Assert.True(new WindowMatchRule("*.exe", null).Matches(W("notepad.exe")));
+        Assert.False(new WindowMatchRule("*.exe", null).Matches(W("bash")));
+        Assert.False(new WindowMatchRule("?.exe", null).Matches(W("notepad")));
+        Assert.True(new WindowMatchRule("note*.exe", null).Matches(W("notepad")));
+    }
+
+    [Fact]
     public void AppAndTitleBothMustMatch()
     {
         var rule = new WindowMatchRule("chrome", "*bank*");
@@ -142,19 +151,25 @@ public class AppExclusionTrackerTests
     }
 
     [Fact]
-    public async Task RuleAddedWhileWindowInFrontTakesEffectAtNextSampleOnly()
+    public async Task RuleChangeRequestsAnImmediateSampleWithoutWaitingForTheInterval()
     {
         var (t, clock, win) = Create();
+        t.SetPollingInterval(60);
         await t.StartAsync(null);
         clock.Advance(5);
+        Assert.Equal(1, win.Calls);
         t.SetExclusionRules(new[] { new WindowMatchRule("app", null) });
         Assert.Equal(1, t.CompletedEntryCount);
         Assert.Empty(t.DrainCompletedSegments());
-        clock.Advance(5);
+        clock.Advance(1);
         await t.OnTimerTickAsync();
+        Assert.Equal(2, win.Calls);
         var entry = Assert.Single(t.DrainCompletedSegments());
-        Assert.Equal(10, (entry.EndedAt - entry.StartedAt).TotalSeconds);
+        Assert.Equal(6, (entry.EndedAt - entry.StartedAt).TotalSeconds);
         Assert.Equal(0, t.CompletedEntryCount);
+        clock.Advance(1);
+        await t.OnTimerTickAsync();
+        Assert.Equal(2, win.Calls);
     }
 
     [Fact]

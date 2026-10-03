@@ -23,12 +23,25 @@ public sealed record WindowMatchRule(string? AppPattern, string? TitlePattern)
             return false;
         }
 
-        return (string.IsNullOrWhiteSpace(this.AppPattern) || GlobMatcher.IsMatch(
-                    StripExecutableExtension(this.AppPattern.Trim()),
-                    StripExecutableExtension(window.ProcessName)))
+        return (string.IsNullOrWhiteSpace(this.AppPattern) || MatchesApplication(this.AppPattern.Trim(), window.ProcessName))
             && (string.IsNullOrWhiteSpace(this.TitlePattern) || GlobMatcher.IsMatch(
                     this.TitlePattern.Trim(),
                     window.WindowTitle));
+    }
+
+    // The extension is optional on both sides. It is only dropped from a pattern whose stem names something
+    // (so "keepass.exe" matches "KeePass"), never from a wildcard-only stem, so "*.exe" stays "any .exe".
+    private static bool MatchesApplication(string pattern, string processName)
+    {
+        var name = StripExecutableExtension(processName);
+        if (GlobMatcher.IsMatch(pattern, processName) || GlobMatcher.IsMatch(pattern, name))
+        {
+            return true;
+        }
+
+        var stem = StripExecutableExtension(pattern);
+        return stem.Length != pattern.Length && stem.Any(c => c is not '*' and not '?')
+            && GlobMatcher.IsMatch(stem, name);
     }
 
     private static string StripExecutableExtension(string name) =>

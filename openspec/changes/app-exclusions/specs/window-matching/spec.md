@@ -26,7 +26,8 @@ blank patterns, SHALL be invalid. A rule with both patterns SHALL match a window
 ### Requirement: Pattern semantics
 Patterns SHALL be matched case-insensitively against the whole value, where `*` matches any run of characters and `?`
 matches exactly one. All other characters SHALL match literally. An application pattern SHALL match the process name
-with or without a trailing `.exe`.
+with or without a trailing `.exe`, except that a pattern whose text before `.exe` is only wildcards (such as `*.exe`)
+SHALL be matched literally.
 
 #### Scenario: Wildcard match
 - **WHEN** the title pattern is `*Inbox*` and the title is `Inbox (3) - Mail`
@@ -35,6 +36,10 @@ with or without a trailing `.exe`.
 #### Scenario: Case and extension
 - **WHEN** the application pattern is `KeePass` and the process name is `keepass.exe`
 - **THEN** the pattern matches
+
+#### Scenario: Wildcard-only executable pattern
+- **WHEN** the application pattern is `*.exe`
+- **THEN** it matches only process names ending in `.exe`, not every process
 
 #### Scenario: Literal characters
 - **WHEN** a pattern contains characters such as `(`, `[`, or `.`

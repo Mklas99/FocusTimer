@@ -40,14 +40,15 @@ continue to count on the running timer and SHALL NOT change break-reminder timin
 - **WHEN** an excluded window is in the foreground while the timer is Running
 - **THEN** the timer display keeps counting and the worklog total does not increase for that time
 
-### Requirement: Exclusion rule changes apply from the next sample
-A changed exclusion list SHALL take effect at the first foreground sample after it is applied. Applying it SHALL NOT
+### Requirement: Exclusion rule changes apply promptly
+A changed exclusion list SHALL cause a foreground sample at the next one-second maintenance opportunity, without waiting
+for the configured polling interval, and take effect at that sample. Applying it SHALL NOT
 by itself close a segment, reset elapsed time, or start a session. Applying an identical list SHALL have no effect.
 
 #### Scenario: Rule applied while the matching window is in front
 - **WHEN** the user applies a rule matching the current foreground window
-- **THEN** the open segment closes at the next sample and no new segment opens for that window
+- **THEN** within one maintenance tick, even with a 60-second polling interval, the open segment closes and no new segment opens for that window
 
 #### Scenario: Rule removed while its window is in front
 - **WHEN** the user removes the rule for the current excluded window
-- **THEN** a segment starts at the next sample that observes that window
+- **THEN** a segment starts at the next maintenance tick that observes that window

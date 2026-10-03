@@ -10,7 +10,7 @@ All tasks are in `FocusTimer.Core`, `FocusTimer.Persistence`, and `FocusTimer.Ap
 ## 2. Tracker exclusion (Core)
 
 - [x] 2.1 Add the excluded state and `SetExclusionRules` to `SessionTracker`: close the open segment on an excluded sample, open nothing while excluded, start a fresh segment on the next non-excluded sample; verify tests with a fake clock cover switch to and from an excluded app, start on an excluded window, midnight while excluded, and lookup failure while excluded.
-- [x] 2.2 Make rule changes apply from the next sample without closing segments, and identical lists a no-op; verify tests for rule added and removed while the window is in front and for existing entries staying unchanged.
+- [x] 2.2 Make a rule change trigger one prompt foreground sample (not the full interval) without closing segments by itself, and identical lists a no-op; verify tests for rule added and removed while the window is in front and for existing entries staying unchanged.
 - [x] 2.3 Verify the timer, break reminders, and polling-interval behavior are unchanged by running the existing `SessionTracker` and `ActivityPolling` test suites.
 
 ## 3. Settings persistence

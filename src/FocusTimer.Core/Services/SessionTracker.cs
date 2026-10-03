@@ -30,6 +30,7 @@ public sealed class SessionTracker
     private bool _trackingEnabled = true;
     private WindowMatchRule[] _exclusionRules = Array.Empty<WindowMatchRule>();
     private bool _excluded;
+    private bool _captureDue;
 
     /// <summary>Initializes a tracker using system time and unknown device identity.</summary>
     public SessionTracker(IActiveWindowService activeWindowService, IAppLogger logger)
@@ -106,13 +107,15 @@ public sealed class SessionTracker
         return request.Completion.Task;
     }
 
-    /// <summary>Sets the ordered exclusion rules; they apply from the next foreground sample.</summary>
+    /// <summary>Sets the ordered exclusion rules and requests a foreground sample at the next maintenance tick.</summary>
     public void SetExclusionRules(IEnumerable<WindowMatchRule>? rules)
     {
         var valid = (rules ?? Enumerable.Empty<WindowMatchRule>()).Where(r => r is { IsValid: true }).ToArray();
         lock (_stateLock)
         {
-            if (!_exclusionRules.SequenceEqual(valid)) _exclusionRules = valid;
+            if (_exclusionRules.SequenceEqual(valid)) return;
+            _exclusionRules = valid;
+            _captureDue = true;
         }
     }
 
@@ -138,9 +141,10 @@ public sealed class SessionTracker
         {
             if (!_trackingEnabled || !_tracking || (_current is null && !_excluded)) return Task.CompletedTask;
             SplitAtMidnight(_clock.GetLocalNow());
-            if (_captureRunning || _clock.GetElapsedTime(_lastCaptureTimestamp) < TimeSpan.FromSeconds(_pollingIntervalSeconds))
+            if (_captureRunning || (!_captureDue && _clock.GetElapsedTime(_lastCaptureTimestamp) < TimeSpan.FromSeconds(_pollingIntervalSeconds)))
                 return Task.CompletedTask;
             _captureRunning = true;
+            _captureDue = false;
             generation = _sessionGeneration;
             revision = _scheduleRevision;
         }
