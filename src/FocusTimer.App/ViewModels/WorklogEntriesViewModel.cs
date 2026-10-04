@@ -17,6 +17,7 @@ namespace FocusTimer.App.ViewModels
     public class WorklogEntriesViewModel : ReactiveObject
     {
         private readonly IWorklogStore _store;
+        private readonly IProjectResolver? _projectResolver;
         private readonly TimeProvider _timeProvider;
         private readonly IWorklogEditingService? _editingService;
         private IReadOnlyList<WorklogEntryRowViewModel> _rows = [];
@@ -45,8 +46,14 @@ namespace FocusTimer.App.ViewModels
         /// <param name="store">The worklog to read.</param>
         /// <param name="timeProvider">The clock and time zone that decide the local day.</param>
         /// <param name="editingService">Adds, edits, and deletes entries; without it the table is read-only.</param>
-        public WorklogEntriesViewModel(IWorklogStore store, TimeProvider timeProvider, IWorklogEditingService? editingService = null)
+        /// <param name="projectResolver">Decides the project shown for each entry; the stored project when omitted.</param>
+        public WorklogEntriesViewModel(
+            IWorklogStore store,
+            TimeProvider timeProvider,
+            IWorklogEditingService? editingService = null,
+            IProjectResolver? projectResolver = null)
         {
+            this._projectResolver = projectResolver;
             this._store = store;
             this._timeProvider = timeProvider;
             this._editingService = editingService;
@@ -472,7 +479,7 @@ namespace FocusTimer.App.ViewModels
 
         private async Task<IReadOnlyList<string>> LoadProjectSuggestionsAsync()
         {
-            var projects = this._loadedEntries.Select(e => e.ProjectTag).ToList();
+            var projects = this._loadedEntries.Select(e => this._projectResolver?.Resolve(e) ?? e.ProjectTag).ToList();
             if (this._day != this.GetToday())
             {
                 try
@@ -481,7 +488,7 @@ namespace FocusTimer.App.ViewModels
                     var read = await this._store.QueryAsync(new WorklogQuery(range.StartInclusive, range.EndExclusive));
                     if (read.Outcome.IsSuccess)
                     {
-                        projects.AddRange(read.Entries.Select(e => e.ProjectTag));
+                        projects.AddRange(read.Entries.Select(e => this._projectResolver?.Resolve(e) ?? e.ProjectTag));
                     }
                 }
                 catch (Exception)
@@ -510,7 +517,7 @@ namespace FocusTimer.App.ViewModels
 
             var ordered = read.Entries.OrderBy(e => e.StartedAt).ThenBy(e => e.EndedAt).ToList();
             this.LoadedEntries = ordered;
-            this.AllRows = ordered.Select(e => new WorklogEntryRowViewModel(e)).ToList();
+            this.AllRows = ordered.Select(e => new WorklogEntryRowViewModel(e, this._projectResolver?.Resolve(e))).ToList();
             this._dayHasEntries = ordered.Count > 0;
             var warnings = read.Outcome.Warnings?.Count ?? 0;
             this.WarningText = warnings == 0

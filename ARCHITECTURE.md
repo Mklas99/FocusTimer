@@ -114,7 +114,7 @@ IWorklogSummaryService // Summarize worklog entries for a range into grouped row
 IWorklogViewStateStore // Remembers the Worklog window's view preferences such as the timeline zoom (timeline zoom and grouping; implemented in Persistence: JsonWorklogViewStateStore, `worklog-view.json` beside `settings.json`; never part of Settings)
 IWorklogEditingService // Add manual entries, edit (window title, project, duration), and delete entries with revision checks, overlap detection, and a WorklogChangedEvent (implemented in Core: WorklogEditingService)
 IWorklogGrouping     // Decides which row an entry belongs to; ApplicationGrouping, ProjectGrouping, and WindowGrouping (by window title; empty titles share a "No window title" row) are registered
-IProjectResolver     // Decides an entry's project when summarizing (default: StoredProjectResolver reads the stored tag)
+IProjectResolver     // Decides an entry's project when summarizing (RuleProjectResolver: explicit tag, else first matching project rule; StoredProjectResolver reads only the stored tag)
 ITimerService        // Timer state and elapsed-time tracking (implemented in Core: TimerService)
 ```
 
@@ -125,7 +125,9 @@ ITimerService        // Timer state and elapsed-time tracking (implemented in Co
 - `DurationParser` — reads typed durations ("2h 30m", "2.5h") in whole minutes; `WorklogDayBounds` — the earliest day retention keeps (today minus retention days minus one)
 - `WorklogGroupingRegistry` — the ordered set of `IWorklogGrouping` implementations a summary can use
 
-**Worklog summary seams** (OI-04): a `WorklogSummaryRequest` (a `SummaryRange`, a grouping id, an optional `SummaryFilter`) goes to `IWorklogSummaryService`, which queries `IWorklogStore`, clips entries to the range, resolves each entry's project through `IProjectResolver`, groups it with the chosen `IWorklogGrouping`, and returns rows with duration, share, and entry count plus read warnings. A failed read is reported as a failure, never as zero time. Adding a time range, a filter field, a grouping (register another `IWorklogGrouping`), or rule-based project detection (replace `IProjectResolver`, OI-08) does not change the service.
+**Worklog summary seams** (OI-04): a `WorklogSummaryRequest` (a `SummaryRange`, a grouping id, an optional `SummaryFilter`) goes to `IWorklogSummaryService`, which queries `IWorklogStore`, clips entries to the range, resolves each entry's project through `IProjectResolver`, groups it with the chosen `IWorklogGrouping`, and returns rows with duration, share, and entry count plus read warnings. A failed read is reported as a failure, never as zero time. Adding a time range, a filter field, a grouping (register another `IWorklogGrouping`), or rule-based project detection (replace `IProjectResolver`, OI-08, now `RuleProjectResolver`) does not change the service.
+
+**Rule-based projects (OI-08).** `Settings.ProjectRules` is an ordered list of `ProjectRule` (application and/or title pattern plus a project name, same glob semantics as `window-matching`). `RuleProjectResolver` keeps an entry's explicit project, otherwise labels automatically captured (`CaptureSource.ActiveWindow`) entries with the first matching rule; manual entries are never matched. Resolution happens at read time through the applied rules held in `ProjectRuleStore` (updated by `AppController` on startup and on Apply), so a rule edit re-labels existing entries on the next refresh and nothing stored is rewritten; `ProjectRuleId` stays unused. Summary, Timeline grouping, Entries table (display, search, and project suggestions) all use the resolver; the entry editor still edits the stored project. Rules are edited on Settings → Logging (`ProjectRuleListViewModel`, built on the shared `RuleListViewModelBase` also used by the exclusion and segmentation lists).
 - `EventBus` — implements `IEventBus`
 
 **Event Bus Pattern**:
@@ -308,7 +310,9 @@ services.AddSingleton<IWorklogGrouping, ApplicationGrouping>();
 services.AddSingleton<IWorklogGrouping, ProjectGrouping>();
 services.AddSingleton<IWorklogGrouping, WindowGrouping>();
 services.AddSingleton<WorklogGroupingRegistry>();
-services.AddSingleton<IProjectResolver, StoredProjectResolver>();
+services.AddSingleton<ProjectRuleStore>();
+services.AddSingleton<IProjectRuleProvider>(sp => sp.GetRequiredService<ProjectRuleStore>());
+services.AddSingleton<IProjectResolver, RuleProjectResolver>();
 services.AddSingleton<IWorklogSummaryService, WorklogSummaryService>();
 services.AddSingleton<IWorklogEditingService, WorklogEditingService>();
 services.AddSingleton<AppController>();

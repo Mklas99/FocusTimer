@@ -92,6 +92,32 @@ public class ExclusionRuleEditorTests
     }
 
     [Fact]
+    public async Task ProjectRulesAreValidatedCommittedReorderedAndCancelled()
+    {
+        var provider = new Provider(); var vm = Create(provider);
+        vm.ProjectList.AddCommand.Execute(null);
+        Assert.NotEmpty(vm.ProjectList.Error);
+        await Apply(vm);
+        Assert.False(vm.LastApplySucceeded); Assert.Equal(0, provider.Saves);
+        vm.ProjectList.Rules[0].AppPattern = "code";
+        Assert.NotEmpty(vm.ProjectList.Error); // project name still missing
+        vm.ProjectList.Rules[0].ProjectName = "  Alpha ";
+        Assert.Empty(vm.ProjectList.Error);
+        vm.ProjectList.AddCommand.Execute(null);
+        vm.ProjectList.Rules[1].TitlePattern = "*repo*";
+        vm.ProjectList.Rules[1].ProjectName = "Beta";
+        vm.ProjectList.MoveUpCommand.Execute(vm.ProjectList.Rules[1]);
+        Assert.Empty(provider.Saved.ProjectRules);
+        await Apply(vm);
+        Assert.True(vm.LastApplySucceeded);
+        Assert.Equal(new[] { new ProjectRule(null, "*repo*", "Beta"), new ProjectRule("code", null, "Alpha") }, provider.Saved.ProjectRules);
+        vm.ProjectList.RemoveCommand.Execute(vm.ProjectList.Rules[0]);
+        vm.TryDiscardAndClose();
+        Assert.Equal(new[] { "Beta", "Alpha" }, vm.ProjectList.Rules.Select(r => r.ProjectName));
+        Assert.Equal(new[] { "Beta", "Alpha" }, Create(provider).ProjectList.Rules.Select(r => r.ProjectName));
+    }
+
+    [Fact]
     public async Task DraftEditsDoNotReachTrackerButAppliedSettingsDo()
     {
         var provider = new Provider();

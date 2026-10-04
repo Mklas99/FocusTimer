@@ -4,25 +4,25 @@ namespace FocusTimer.App.ViewModels
     using System.Linq;
     using FocusTimer.Core.Models;
 
-    /// <summary>The editable draft of an ordered list of window rules (application and/or title patterns).</summary>
-    public sealed class WindowRuleListViewModel : RuleListViewModelBase<WindowRuleItemViewModel>
+    /// <summary>The editable draft of the ordered project rules (patterns plus a project name).</summary>
+    public sealed class ProjectRuleListViewModel : RuleListViewModelBase<ProjectRuleItemViewModel>
     {
-        /// <summary>Initializes a new instance of the <see cref="WindowRuleListViewModel"/> class.</summary>
+        /// <summary>Initializes a new instance of the <see cref="ProjectRuleListViewModel"/> class.</summary>
         /// <param name="title">The heading shown above the list.</param>
         /// <param name="description">Help text shown under the heading.</param>
         /// <param name="errorText">The validation message shown while any row is invalid.</param>
-        public WindowRuleListViewModel(string title, string description, string errorText)
+        public ProjectRuleListViewModel(string title, string description, string errorText)
             : base(title, description, errorText)
         {
         }
 
         /// <summary>Replaces the draft rows with the given rules.</summary>
         /// <param name="rules">The rules to show.</param>
-        public void Load(IEnumerable<WindowMatchRule> rules) =>
-            this.LoadItems(rules.Select(r => new WindowRuleItemViewModel(r)));
+        public void Load(IEnumerable<ProjectRule> rules) =>
+            this.LoadItems(rules.Select(r => new ProjectRuleItemViewModel(r)));
 
         /// <summary>Converts the draft rows to rules in order.</summary>
         /// <returns>The rules.</returns>
-        public List<WindowMatchRule> ToRules() => this.Rules.Select(r => r.ToRule()).ToList();
+        public List<ProjectRule> ToRules() => this.Rules.Select(r => r.ToRule()).ToList();
     }
 }

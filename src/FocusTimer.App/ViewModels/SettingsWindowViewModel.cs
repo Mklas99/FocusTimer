@@ -101,6 +101,11 @@ namespace FocusTimer.App.ViewModels
                 "Keep one entry per application",
                 "When only the window title changes in a matching application (for example browser tabs), the current entry continues instead of splitting. The entry keeps the title it started with. Same pattern rules as above; excluded windows are never recorded.",
                 "Every segmentation rule needs an application pattern, a window title pattern, or both.");
+            this.ProjectList = new ProjectRuleListViewModel(
+                "Project rules",
+                "Label tracked time with a project by application and/or window title. The first matching rule wins. Rules only label entries that have no project of their own, apply to existing entries too, and never change the stored worklog. Patterns are case-insensitive; * matches any text and ? one character.",
+                "Every project rule needs an application and/or window title pattern, and a project name.");
+            this.ProjectList.DraftChanged += this.OnRuleListChanged;
             this.ExclusionList.DraftChanged += this.OnRuleListChanged;
             this.SegmentationList.DraftChanged += this.OnRuleListChanged;
 
@@ -291,6 +296,7 @@ namespace FocusTimer.App.ViewModels
                 this.ActivityPollingIntervalInput = value.ActivityPollingIntervalSeconds;
                 this.ExclusionList.Load(value.ExclusionRules);
                 this.SegmentationList.Load(value.SegmentationRules);
+                this.ProjectList.Load(value.ProjectRules);
                 this.RaisePropertyChanged(nameof(this.IsDeveloperModeVisible));
                 this.RaisePropertyChanged(nameof(this.SelectedDeveloperLogLevel));
             }
@@ -338,6 +344,9 @@ namespace FocusTimer.App.ViewModels
 
         /// <summary>Gets the segmentation rule list draft.</summary>
         public WindowRuleListViewModel SegmentationList { get; }
+
+        /// <summary>Gets the project rule list draft.</summary>
+        public ProjectRuleListViewModel ProjectList { get; }
 
         /// <summary>Gets the exclusion rule draft in evaluation order.</summary>
         public ObservableCollection<WindowRuleItemViewModel> ExclusionRules => this.ExclusionList.Rules;
@@ -820,6 +829,7 @@ namespace FocusTimer.App.ViewModels
                 candidate.ActivityPollingIntervalSeconds = (int)this.ActivityPollingIntervalInput!.Value;
                 candidate.ExclusionRules = this.ExclusionList.ToRules();
                 candidate.SegmentationRules = this.SegmentationList.ToRules();
+                candidate.ProjectRules = this.ProjectList.ToRules();
                 SettingsCommitStatus result = await this._commitCoordinator.CommitAsync(
                     candidate, this._lastAppliedSettings);
                 if (result == SettingsCommitStatus.Success)
@@ -913,6 +923,11 @@ namespace FocusTimer.App.ViewModels
             if (!string.IsNullOrEmpty(this.SegmentationList.Error))
             {
                 return this.SegmentationList.Error;
+            }
+
+            if (!string.IsNullOrEmpty(this.ProjectList.Error))
+            {
+                return this.ProjectList.Error;
             }
 
             if (this.Settings.BreakIntervalMinutes <= 0)
