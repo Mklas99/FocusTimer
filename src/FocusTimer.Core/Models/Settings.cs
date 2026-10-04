@@ -24,8 +24,11 @@ namespace FocusTimer.Core.Models
         private bool _developerModeEnabled;
         private string _developerLogLevel = "Debug";
         private int _activityPollingIntervalSeconds = 10;
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0032:Use auto property", Justification = "The backing field is passed by ref to SetField for change notification.")]
         private List<WindowMatchRule> _exclusionRules = [];
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0032:Use auto property", Justification = "The backing field is passed by ref to SetField for change notification.")]
         private List<WindowMatchRule> _segmentationRules = [];
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0032:Use auto property", Justification = "The backing field is passed by ref to SetField for change notification.")]
         private List<ProjectRule> _projectRules = [];
         private string? _hotkeyShowHide;
         private string? _hotkeyToggleTimer;
@@ -325,9 +328,9 @@ namespace FocusTimer.Core.Models
             DeveloperModeEnabled = this.DeveloperModeEnabled,
             DeveloperLogLevel = this.DeveloperLogLevel,
             ActivityPollingIntervalSeconds = this.ActivityPollingIntervalSeconds,
-            ExclusionRules = new List<WindowMatchRule>(this._exclusionRules),
-            SegmentationRules = new List<WindowMatchRule>(this._segmentationRules),
-            ProjectRules = new List<ProjectRule>(this._projectRules),
+            ExclusionRules = new List<WindowMatchRule>(this.ExclusionRules),
+            SegmentationRules = new List<WindowMatchRule>(this.SegmentationRules),
+            ProjectRules = new List<ProjectRule>(this.ProjectRules),
             HotkeyShowHide = this.HotkeyShowHide,
             HotkeyToggleTimer = this.HotkeyToggleTimer,
             Theme = this.Theme.Clone(),
