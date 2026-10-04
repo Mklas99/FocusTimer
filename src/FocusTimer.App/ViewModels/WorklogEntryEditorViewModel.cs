@@ -28,7 +28,6 @@ namespace FocusTimer.App.ViewModels
         private string _projectText;
         private string _errorText = string.Empty;
         private bool _isSaving;
-        private string? _ruleProject;
 
         private WorklogEntryEditorViewModel(
             IWorklogEditingService service,
@@ -99,9 +98,9 @@ namespace FocusTimer.App.ViewModels
         public IReadOnlyList<string> ProjectSuggestions { get; }
 
         /// <summary>Gets the hint shown in an empty Project field; names the rule project when a rule labels the entry.</summary>
-        public string ProjectWatermark => string.IsNullOrWhiteSpace(this._ruleProject)
+        public string ProjectWatermark => string.IsNullOrWhiteSpace(this.RuleProject)
             ? "Optional (type or pick a project)"
-            : $"{this._ruleProject} (from a project rule; leave empty to keep it)";
+            : $"{this.RuleProject} (from a project rule; leave empty to keep it)";
 
         /// <summary>Gets or sets the chosen date when adding.</summary>
         public DateTime? Date
@@ -159,6 +158,8 @@ namespace FocusTimer.App.ViewModels
             private set => this.RaiseAndSetIfChanged(ref this._isSaving, value);
         }
 
+        private string? RuleProject { get; init; }
+
         /// <summary>Creates the form for a new manual entry.</summary>
         /// <param name="service">The editing service.</param>
         /// <param name="day">The day to start with.</param>
@@ -197,7 +198,7 @@ namespace FocusTimer.App.ViewModels
                 null,
                 today)
             {
-                _ruleProject = ruleProject,
+                RuleProject = ruleProject,
             };
 
         /// <summary>Validates the form and stores the entry.</summary>

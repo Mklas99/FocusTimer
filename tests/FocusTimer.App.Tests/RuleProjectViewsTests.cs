@@ -58,7 +58,7 @@ public class RuleProjectViewsTests
     {
         var clock = new MutableClock(Noon);
         var store = new MemoryWorklogStore();
-        var tagged = WorklogTestData.Tracked("t", new DateTimeOffset(2026, 5, 4, 8, 0, 0, TimeSpan.Zero), 30, app: "code") with
+        TimeEntry tagged = WorklogTestData.Tracked("t", new DateTimeOffset(2026, 5, 4, 8, 0, 0, TimeSpan.Zero), 30, app: "code") with
         {
             ProjectTag = "Mine",
             ProjectAssignmentSource = ProjectAssignmentSource.Session,
@@ -73,7 +73,7 @@ public class RuleProjectViewsTests
         Assert.Equal("Mine", entries.AllRows.Single(r => r.Entry.EntryId == "t").ProjectText);
         Assert.Equal("Alpha", entries.AllRows.Single(r => r.Entry.EntryId == "u").ProjectText);
         entries.SearchText = "alpha";
-        Assert.Equal(new[] { "u" }, entries.Rows.Select(r => r.Entry.EntryId));
+        Assert.Equal("u", Assert.Single(entries.Rows).Entry.EntryId);
     }
 
     [Fact]
@@ -91,13 +91,13 @@ public class RuleProjectViewsTests
 
         rules.Update(new[] { new ProjectRule("code", null, "Alpha") });
 
-        var row = entries.AllRows.Single(r => r.Entry.EntryId == "a");
+        WorklogEntryRowViewModel row = entries.AllRows.Single(r => r.Entry.EntryId == "a");
         Assert.Equal("Alpha", row.ProjectText);
         Assert.True(row.ProjectFromRule);
         Assert.Equal("rule", row.ProjectSourceText);
         Assert.Equal("a", entries.SelectedRow?.Entry.EntryId);
         entries.SearchText = "alpha";
-        Assert.Equal(new[] { "a" }, entries.Rows.Select(r => r.Entry.EntryId));
+        Assert.Equal("a", Assert.Single(entries.Rows).Entry.EntryId);
 
         rules.Update(Array.Empty<ProjectRule>());
         entries.SearchText = string.Empty;
@@ -120,7 +120,7 @@ public class RuleProjectViewsTests
         await entries.RefreshAsync();
         entries.SelectedRow = entries.AllRows.Single();
         entries.EditCommand.Execute(null);
-        for (var i = 0; i < 50 && entries.Editor is null; i++) await Task.Delay(20);
+        for (int i = 0; i < 50 && entries.Editor is null; i++) await Task.Delay(20);
 
         Assert.NotNull(entries.Editor);
         Assert.Equal(string.Empty, entries.Editor.ProjectText);

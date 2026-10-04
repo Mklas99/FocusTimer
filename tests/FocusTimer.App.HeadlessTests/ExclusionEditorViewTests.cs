@@ -21,22 +21,22 @@ public sealed class ExclusionEditorViewTests
         var manager = new ThemeManager();
         manager.InitializeThemeResources();
         var provider = new SettingsProviderStub();
-        var settings = await provider.LoadAsync();
+        Settings settings = await provider.LoadAsync();
         settings.ExclusionRules.Add(new WindowMatchRule("keepass", null));
         await provider.SaveAsync(settings);
         var vm = new SettingsWindowViewModel(
             provider, new LinuxAutoStartServiceStub(), new ThemeService(), manager, new StubLogger());
-        for (var i = 0; i < 20 && !vm.IsSettingsLoaded; i++) await Task.Delay(25);
+        for (int i = 0; i < 20 && !vm.IsSettingsLoaded; i++) await Task.Delay(25);
         var window = new SettingsWindow { DataContext = vm };
         window.Show();
         vm.SelectedTabIndex = 3; // About
         Dispatcher.UIThread.RunJobs();
 
-        var expander = window.GetVisualDescendants().OfType<Expander>().Single(e => (string?)e.Header == "Developer Options");
+        Expander expander = window.GetVisualDescendants().OfType<Expander>().Single(e => (string?)e.Header == "Developer Options");
         Assert.False(expander.IsVisible);
         Assert.Single(vm.ExclusionRules);
 
-        for (var i = 0; i < 7; i++) vm.RegisterVersionInfoClick();
+        for (int i = 0; i < 7; i++) vm.RegisterVersionInfoClick();
         Dispatcher.UIThread.RunJobs();
         Assert.True(expander.IsVisible);
         expander.IsExpanded = true;
@@ -57,22 +57,22 @@ public sealed class ExclusionEditorViewTests
         var manager = new ThemeManager();
         manager.InitializeThemeResources();
         var provider = new SettingsProviderStub();
-        var settings = await provider.LoadAsync();
+        Settings settings = await provider.LoadAsync();
         settings.ProjectRules.Add(new ProjectRule("code", null, "Alpha"));
         await provider.SaveAsync(settings);
         var vm = new SettingsWindowViewModel(
             provider, new LinuxAutoStartServiceStub(), new ThemeService(), manager, new StubLogger());
-        for (var i = 0; i < 20 && !vm.IsSettingsLoaded; i++) await Task.Delay(25);
+        for (int i = 0; i < 20 && !vm.IsSettingsLoaded; i++) await Task.Delay(25);
         var window = new SettingsWindow { DataContext = vm };
         window.Show();
         vm.SelectedTabIndex = 1; // Logging
         Dispatcher.UIThread.RunJobs();
 
         Assert.False(vm.IsDeveloperModeVisible);
-        var editor = window.GetVisualDescendants().OfType<FocusTimer.App.Controls.ProjectRuleListEditor>().Single();
+        FocusTimer.App.Controls.ProjectRuleListEditor editor = window.GetVisualDescendants().OfType<FocusTimer.App.Controls.ProjectRuleListEditor>().Single();
         Assert.True(editor.IsVisible);
         Assert.Same(vm.ProjectList, editor.DataContext);
-        var list = editor.GetVisualDescendants().OfType<ItemsControl>().Single(c => c.Name == "RuleList");
+        ItemsControl list = editor.GetVisualDescendants().OfType<ItemsControl>().Single(c => c.Name == "RuleList");
         Assert.Same(vm.ProjectList.Rules, list.ItemsSource);
         Assert.Single(vm.ProjectList.Rules);
         window.Close();

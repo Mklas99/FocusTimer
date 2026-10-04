@@ -19,7 +19,7 @@ namespace FocusTimer.Core.Models
                 return rules;
             }
 
-            foreach (var element in value.RootElement.EnumerateArray())
+            foreach (JsonElement element in value.RootElement.EnumerateArray())
             {
                 if (element.ValueKind != JsonValueKind.Object)
                 {
@@ -40,7 +40,7 @@ namespace FocusTimer.Core.Models
         public override void Write(Utf8JsonWriter writer, List<WindowMatchRule> value, JsonSerializerOptions options)
         {
             writer.WriteStartArray();
-            foreach (var rule in value)
+            foreach (WindowMatchRule rule in value)
             {
                 writer.WriteStartObject();
                 writer.WriteString("appPattern", rule.AppPattern);
@@ -54,7 +54,7 @@ namespace FocusTimer.Core.Models
         private static string? ReadText(JsonElement element, string name)
         {
             // A missing property yields the default JsonProperty, whose value has kind Undefined.
-            var property = element.EnumerateObject()
+            JsonProperty property = element.EnumerateObject()
                 .FirstOrDefault(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase));
             return property.Value.ValueKind == JsonValueKind.String ? property.Value.GetString() : null;
         }

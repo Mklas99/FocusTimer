@@ -523,7 +523,7 @@ namespace FocusTimer.App.ViewModels
             EventHandler? handler = null;
             handler = (sender, _) =>
             {
-                if (self.TryGetTarget(out var target))
+                if (self.TryGetTarget(out WorklogEntriesViewModel? target))
                 {
                     target.RebuildRows();
                 }

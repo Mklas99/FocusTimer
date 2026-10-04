@@ -13,8 +13,6 @@ namespace FocusTimer.App.ViewModels
     public abstract class RuleListViewModelBase<TItem> : ReactiveObject
         where TItem : ReactiveObject, IRuleRow, new()
     {
-        private readonly string _errorText;
-
         /// <summary>Initializes a new instance of the <see cref="RuleListViewModelBase{TItem}"/> class.</summary>
         /// <param name="title">The heading shown above the list.</param>
         /// <param name="description">Help text shown under the heading.</param>
@@ -23,7 +21,7 @@ namespace FocusTimer.App.ViewModels
         {
             this.Title = title;
             this.Description = description;
-            this._errorText = errorText;
+            this.ErrorText = errorText;
             this.AddCommand = ReactiveCommand.Create(this.Add);
             this.RemoveCommand = ReactiveCommand.Create<TItem>(this.Remove);
             this.MoveUpCommand = ReactiveCommand.Create<TItem>(rule => this.Move(rule, -1));
@@ -40,7 +38,7 @@ namespace FocusTimer.App.ViewModels
         public string Description { get; }
 
         /// <summary>Gets the rows in evaluation order.</summary>
-        public ObservableCollection<TItem> Rules { get; } = new();
+        public ObservableCollection<TItem> Rules { get; } = [];
 
         /// <summary>Gets the command that appends a blank row.</summary>
         public ICommand AddCommand { get; }
@@ -55,7 +53,9 @@ namespace FocusTimer.App.ViewModels
         public ICommand MoveDownCommand { get; }
 
         /// <summary>Gets validation feedback for the list, empty when every row is valid.</summary>
-        public string Error => this.Rules.Any(r => !string.IsNullOrEmpty(r.Error)) ? this._errorText : string.Empty;
+        public string Error => this.Rules.Any(r => !string.IsNullOrEmpty(r.Error)) ? this.ErrorText : string.Empty;
+
+        private string ErrorText { get; }
 
         /// <summary>Replaces the draft rows.</summary>
         /// <param name="items">The rows to show.</param>

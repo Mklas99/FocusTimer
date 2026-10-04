@@ -27,7 +27,7 @@ public sealed class RuleProjectResolver : IProjectResolver
         }
 
         var window = new ActiveWindowInfo { ProcessName = entry.AppName ?? string.Empty, WindowTitle = entry.WindowTitle ?? string.Empty };
-        var match = this._rules.Rules.FirstOrDefault(rule => rule.Matches(window));
+        ProjectRule? match = this._rules.Rules.FirstOrDefault(rule => rule.Matches(window));
         return match is null ? entry.ProjectTag : match.ProjectName!.Trim();
     }
 }

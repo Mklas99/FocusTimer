@@ -9,10 +9,10 @@ public static class GlobMatcher
     /// <returns>True when the pattern matches the entire value.</returns>
     public static bool IsMatch(string pattern, string value)
     {
-        var p = 0;
-        var v = 0;
-        var starIndex = -1;
-        var resumeValue = 0;
+        int p = 0;
+        int v = 0;
+        int starIndex = -1;
+        int resumeValue = 0;
         while (v < value.Length)
         {
             if (p < pattern.Length && pattern[p] == '*')

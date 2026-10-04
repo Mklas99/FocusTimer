@@ -23,10 +23,10 @@ public sealed record WindowMatchRule(string? AppPattern, string? TitlePattern)
             return false;
         }
 
-        return (string.IsNullOrWhiteSpace(this.AppPattern) || MatchesApplication(this.AppPattern.Trim(), window.ProcessName ?? string.Empty))
-            && (string.IsNullOrWhiteSpace(this.TitlePattern) || GlobMatcher.IsMatch(
-                    this.TitlePattern.Trim(),
-                    window.WindowTitle ?? string.Empty));
+        bool appMatches = string.IsNullOrWhiteSpace(this.AppPattern)
+            || MatchesApplication(this.AppPattern.Trim(), window.ProcessName ?? string.Empty);
+        return appMatches && (string.IsNullOrWhiteSpace(this.TitlePattern)
+            || GlobMatcher.IsMatch(this.TitlePattern.Trim(), window.WindowTitle ?? string.Empty));
     }
 
     // The ".exe" extension is optional on both sides: Windows reports process names without it, so a pattern is
@@ -34,7 +34,7 @@ public sealed record WindowMatchRule(string? AppPattern, string? TitlePattern)
     // match KeePass, and "*.exe" matches every executable).
     private static bool MatchesApplication(string pattern, string processName)
     {
-        var name = StripExecutableExtension(processName);
+        string name = StripExecutableExtension(processName);
         return GlobMatcher.IsMatch(pattern, name) || GlobMatcher.IsMatch(pattern, name + ".exe");
     }
 

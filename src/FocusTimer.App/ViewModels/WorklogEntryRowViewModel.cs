@@ -25,7 +25,7 @@ namespace FocusTimer.App.ViewModels
         /// <param name="resolvedProject">The project after applying project rules; the stored project when null.</param>
         public WorklogEntryRowViewModel(TimeEntry entry, string? resolvedProject = null)
         {
-            var project = string.IsNullOrWhiteSpace(resolvedProject) ? entry.ProjectTag : resolvedProject;
+            string? project = string.IsNullOrWhiteSpace(resolvedProject) ? entry.ProjectTag : resolvedProject;
             this._projectForSearch = project ?? string.Empty;
             this._highlightTerms = [];
             this.Entry = entry;

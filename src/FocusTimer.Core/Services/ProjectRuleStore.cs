@@ -18,7 +18,7 @@ public sealed class ProjectRuleStore : IProjectRuleProvider
     /// <param name="rules">The rules, invalid ones are dropped.</param>
     public void Update(IEnumerable<ProjectRule>? rules)
     {
-        var valid = (rules ?? Enumerable.Empty<ProjectRule>()).Where(r => r is { IsValid: true }).ToArray();
+        ProjectRule[] valid = (rules ?? Enumerable.Empty<ProjectRule>()).Where(r => r is { IsValid: true }).ToArray();
         if (this._rules.SequenceEqual(valid))
         {
             return;

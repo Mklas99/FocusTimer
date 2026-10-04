@@ -24,9 +24,12 @@ namespace FocusTimer.Core.Models
         private bool _developerModeEnabled;
         private string _developerLogLevel = "Debug";
         private int _activityPollingIntervalSeconds = 10;
-        private List<WindowMatchRule> _exclusionRules = new();
-        private List<WindowMatchRule> _segmentationRules = new();
-        private List<ProjectRule> _projectRules = new();
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0032:Use auto property", Justification = "The backing field is passed by ref to SetField for change notification.")]
+        private List<WindowMatchRule> _exclusionRules = [];
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0032:Use auto property", Justification = "The backing field is passed by ref to SetField for change notification.")]
+        private List<WindowMatchRule> _segmentationRules = [];
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0032:Use auto property", Justification = "The backing field is passed by ref to SetField for change notification.")]
+        private List<ProjectRule> _projectRules = [];
         private string? _hotkeyShowHide;
         private string? _hotkeyToggleTimer;
         private Theme _theme = new();
@@ -222,7 +225,7 @@ namespace FocusTimer.Core.Models
         public List<WindowMatchRule> ExclusionRules
         {
             get => this._exclusionRules;
-            set => this.SetField(ref this._exclusionRules, value ?? new List<WindowMatchRule>());
+            set => this.SetField(ref this._exclusionRules, value ?? []);
         }
 
         /// <summary>
@@ -232,7 +235,7 @@ namespace FocusTimer.Core.Models
         public List<WindowMatchRule> SegmentationRules
         {
             get => this._segmentationRules;
-            set => this.SetField(ref this._segmentationRules, value ?? new List<WindowMatchRule>());
+            set => this.SetField(ref this._segmentationRules, value ?? []);
         }
 
         /// <summary>
@@ -242,7 +245,7 @@ namespace FocusTimer.Core.Models
         public List<ProjectRule> ProjectRules
         {
             get => this._projectRules;
-            set => this.SetField(ref this._projectRules, value ?? new List<ProjectRule>());
+            set => this.SetField(ref this._projectRules, value ?? []);
         }
 
         // Future: Hotkey settings (placeholders)
