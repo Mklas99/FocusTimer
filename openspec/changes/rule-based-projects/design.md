@@ -32,7 +32,7 @@ and title text is user-written.
 
 The resolver reads the current rule list through a small provider interface fed by `AppController.CurrentSettings`, so a
 changed list is visible to the next read without recreating services. Summary, Entries, and Timeline view models call
-the same resolver; the Entries tab currently displays the raw tag and must switch to the resolver.
+the same resolver; the Entries tab displayed the raw tag and now uses the resolver. The Entries view model also listens (weakly, so a closed window is not kept alive) to a rules-changed event and rebuilds its rows, and the Timeline follows the Entries rows; the Summary picks rules up on its next refresh. The entry editor leaves the stored project empty and only hints the rule's project, so editing an entry never freezes a rule label by accident.
 
 ### 4. Where the editor lives
 
@@ -52,5 +52,5 @@ Project names are trimmed on commit. Case-insensitive grouping already exists in
 
 ## Open Questions
 
-- Should the Entries editor show whether a project came from a rule (read-only marker)? Not required by the specs; decide at implementation.
+- (Resolved) The entry details show "rule" as the project source, and the editor hints the rule project.
 - Rule count limit: none for now.

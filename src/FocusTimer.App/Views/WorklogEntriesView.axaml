@@ -210,7 +210,7 @@
                                      MaxLength="100"
                                      ItemsSource="{Binding ProjectSuggestions}"
                                      Text="{Binding ProjectText, Mode=TwoWay}"
-                                     Watermark="Optional (type or pick a project)"
+                                     Watermark="{Binding ProjectWatermark}"
                                      AutomationProperties.Name="Project" />
                     <Button Grid.Column="1"
                             Content="&#9662;"

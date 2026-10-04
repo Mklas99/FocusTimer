@@ -23,10 +23,10 @@ public sealed record WindowMatchRule(string? AppPattern, string? TitlePattern)
             return false;
         }
 
-        return (string.IsNullOrWhiteSpace(this.AppPattern) || MatchesApplication(this.AppPattern.Trim(), window.ProcessName))
+        return (string.IsNullOrWhiteSpace(this.AppPattern) || MatchesApplication(this.AppPattern.Trim(), window.ProcessName ?? string.Empty))
             && (string.IsNullOrWhiteSpace(this.TitlePattern) || GlobMatcher.IsMatch(
                     this.TitlePattern.Trim(),
-                    window.WindowTitle));
+                    window.WindowTitle ?? string.Empty));
     }
 
     // The ".exe" extension is optional on both sides: Windows reports process names without it, so a pattern is

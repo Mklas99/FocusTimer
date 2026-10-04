@@ -38,6 +38,7 @@ namespace FocusTimer.App.ViewModels
             this.ApplicationText = entry.AppName;
             this.WindowText = string.IsNullOrEmpty(entry.WindowTitle) ? EmptyValueText : entry.WindowTitle;
             this.ProjectText = string.IsNullOrWhiteSpace(project) ? EmptyValueText : project;
+            this.ProjectFromRule = string.IsNullOrWhiteSpace(entry.ProjectTag) && !string.IsNullOrWhiteSpace(project);
             this.IsManual = entry.CaptureSource == CaptureSource.Manual;
             this.SourceText = this.IsManual ? "Manual" : "Tracked";
         }
@@ -97,7 +98,12 @@ namespace FocusTimer.App.ViewModels
         public string EndReasonText => WorklogValueCodec.ToStoredValue(this.Entry.EndReason);
 
         /// <summary>Gets how the project was assigned.</summary>
-        public string ProjectSourceText => WorklogValueCodec.ToStoredValue(this.Entry.ProjectAssignmentSource);
+        public string ProjectSourceText => this.ProjectFromRule
+            ? "rule"
+            : WorklogValueCodec.ToStoredValue(this.Entry.ProjectAssignmentSource);
+
+        /// <summary>Gets a value indicating whether the shown project comes from a project rule, not from the stored entry.</summary>
+        public bool ProjectFromRule { get; }
 
         /// <summary>Gets the platform the entry came from.</summary>
         public string PlatformText => WorklogValueCodec.ToStoredValue(this.Entry.SourcePlatform);

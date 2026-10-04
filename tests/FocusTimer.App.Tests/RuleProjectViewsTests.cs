@@ -76,6 +76,61 @@ public class RuleProjectViewsTests
         Assert.Equal(new[] { "u" }, entries.Rows.Select(r => r.Entry.EntryId));
     }
 
+    [Fact]
+    public async Task OpenEntriesTableFollowsRuleEditsWithoutReload_KeepingSearchAndSelection()
+    {
+        var clock = new MutableClock(Noon);
+        var store = new MemoryWorklogStore();
+        store.Add(WorklogTestData.Tracked("a", new DateTimeOffset(2026, 5, 4, 8, 0, 0, TimeSpan.Zero), 30, app: "code"));
+        store.Add(WorklogTestData.Tracked("b", new DateTimeOffset(2026, 5, 4, 9, 0, 0, TimeSpan.Zero), 10, app: "mail"));
+        var rules = new ProjectRuleStore();
+        var entries = new WorklogEntriesViewModel(store, clock, null, new RuleProjectResolver(rules), rules);
+        await entries.RefreshAsync();
+        entries.SelectedRow = entries.AllRows.Single(r => r.Entry.EntryId == "a");
+        Assert.False(entries.AllRows[0].ProjectFromRule);
+
+        rules.Update(new[] { new ProjectRule("code", null, "Alpha") });
+
+        var row = entries.AllRows.Single(r => r.Entry.EntryId == "a");
+        Assert.Equal("Alpha", row.ProjectText);
+        Assert.True(row.ProjectFromRule);
+        Assert.Equal("rule", row.ProjectSourceText);
+        Assert.Equal("a", entries.SelectedRow?.Entry.EntryId);
+        entries.SearchText = "alpha";
+        Assert.Equal(new[] { "a" }, entries.Rows.Select(r => r.Entry.EntryId));
+
+        rules.Update(Array.Empty<ProjectRule>());
+        entries.SearchText = string.Empty;
+        Assert.Equal(WorklogEntryRowViewModel.EmptyValueText, entries.AllRows.Single(r => r.Entry.EntryId == "a").ProjectText);
+        Assert.Equal("unassigned", entries.AllRows[0].ProjectSourceText);
+    }
+
+    [Fact]
+    public async Task EditorKeepsStoredProjectEmptyButHintsTheRuleProject()
+    {
+        var clock = new MutableClock(Noon);
+        var store = new MemoryWorklogStore();
+        store.Add(WorklogTestData.Tracked("a", new DateTimeOffset(2026, 5, 4, 8, 0, 0, TimeSpan.Zero), 30, app: "code"));
+        var rules = new ProjectRuleStore();
+        rules.Update(new[] { new ProjectRule("code", null, "Alpha") });
+        var identity = new InstallationIdentity();
+        identity.Initialize("device-1");
+        var editing = new WorklogEditingService(store, new SettingsStub(), identity, new SourcePlatformProvider(), clock, new EventBus(), new Log());
+        var entries = new WorklogEntriesViewModel(store, clock, editing, new RuleProjectResolver(rules), rules);
+        await entries.RefreshAsync();
+        entries.SelectedRow = entries.AllRows.Single();
+        entries.EditCommand.Execute(null);
+        for (var i = 0; i < 50 && entries.Editor is null; i++) await Task.Delay(20);
+
+        Assert.NotNull(entries.Editor);
+        Assert.Equal(string.Empty, entries.Editor!.ProjectText);
+        Assert.Contains("Alpha", entries.Editor.ProjectWatermark);
+        Assert.Contains("rule", entries.Editor.ProjectWatermark);
+
+        var plain = WorklogEntryEditorViewModel.ForEdit(editing, entries.AllRows.Single().Entry, new DateOnly(2026, 5, 4), []);
+        Assert.Equal("Optional (type or pick a project)", plain.ProjectWatermark);
+    }
+
     private sealed class Log : IAppLogger
     {
         public void LogCritical(string message, Exception? ex = null) { }

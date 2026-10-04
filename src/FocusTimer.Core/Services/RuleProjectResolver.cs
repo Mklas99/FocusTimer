@@ -26,7 +26,7 @@ public sealed class RuleProjectResolver : IProjectResolver
             return entry.ProjectTag;
         }
 
-        var window = new ActiveWindowInfo { ProcessName = entry.AppName, WindowTitle = entry.WindowTitle };
+        var window = new ActiveWindowInfo { ProcessName = entry.AppName ?? string.Empty, WindowTitle = entry.WindowTitle ?? string.Empty };
         foreach (var rule in this._rules.Rules)
         {
             if (rule.Matches(window))

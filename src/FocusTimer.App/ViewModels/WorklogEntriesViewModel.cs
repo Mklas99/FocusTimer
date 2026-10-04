@@ -47,13 +47,16 @@ namespace FocusTimer.App.ViewModels
         /// <param name="timeProvider">The clock and time zone that decide the local day.</param>
         /// <param name="editingService">Adds, edits, and deletes entries; without it the table is read-only.</param>
         /// <param name="projectResolver">Decides the project shown for each entry; the stored project when omitted.</param>
+        /// <param name="projectRules">Raises a change notification so shown projects follow rule edits; optional.</param>
         public WorklogEntriesViewModel(
             IWorklogStore store,
             TimeProvider timeProvider,
             IWorklogEditingService? editingService = null,
-            IProjectResolver? projectResolver = null)
+            IProjectResolver? projectResolver = null,
+            IProjectRuleProvider? projectRules = null)
         {
             this._projectResolver = projectResolver;
+            this.WatchProjectRules(projectRules);
             this._store = store;
             this._timeProvider = timeProvider;
             this._editingService = editingService;
@@ -402,7 +405,8 @@ namespace FocusTimer.App.ViewModels
             }
 
             var suggestions = await this.LoadProjectSuggestionsAsync();
-            this.OpenEditor(WorklogEntryEditorViewModel.ForEdit(this._editingService, row.Entry, this.GetToday(), suggestions));
+            this.OpenEditor(WorklogEntryEditorViewModel.ForEdit(
+                this._editingService, row.Entry, this.GetToday(), suggestions, row.ProjectFromRule ? row.ProjectText : null));
         }
 
         private void OpenEditor(WorklogEntryEditorViewModel editor)
@@ -505,6 +509,43 @@ namespace FocusTimer.App.ViewModels
                 .Select(g => g.First())
                 .OrderBy(p => p, StringComparer.OrdinalIgnoreCase)
                 .ToList();
+        }
+
+        // Holds this view model weakly so the long-lived rule store never keeps a closed window alive.
+        private void WatchProjectRules(IProjectRuleProvider? rules)
+        {
+            if (rules is null)
+            {
+                return;
+            }
+
+            var self = new WeakReference<WorklogEntriesViewModel>(this);
+            EventHandler? handler = null;
+            handler = (sender, _) =>
+            {
+                if (self.TryGetTarget(out var target))
+                {
+                    target.RebuildRows();
+                }
+                else if (sender is IProjectRuleProvider provider)
+                {
+                    provider.RulesChanged -= handler;
+                }
+            };
+            rules.RulesChanged += handler;
+        }
+
+        private void RebuildRows()
+        {
+            if (this._loadedEntries.Count == 0)
+            {
+                return;
+            }
+
+            this.AllRows = this._loadedEntries
+                .Select(e => new WorklogEntryRowViewModel(e, this._projectResolver?.Resolve(e)))
+                .ToList();
+            this.ApplyFilter();
         }
 
         private void Apply(WorklogReadResult read)

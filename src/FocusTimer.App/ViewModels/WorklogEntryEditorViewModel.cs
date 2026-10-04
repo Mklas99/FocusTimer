@@ -28,6 +28,7 @@ namespace FocusTimer.App.ViewModels
         private string _projectText;
         private string _errorText = string.Empty;
         private bool _isSaving;
+        private string? _ruleProject;
 
         private WorklogEntryEditorViewModel(
             IWorklogEditingService service,
@@ -96,6 +97,11 @@ namespace FocusTimer.App.ViewModels
 
         /// <summary>Gets the projects already used on the selected day and today.</summary>
         public IReadOnlyList<string> ProjectSuggestions { get; }
+
+        /// <summary>Gets the hint shown in an empty Project field; names the rule project when a rule labels the entry.</summary>
+        public string ProjectWatermark => string.IsNullOrWhiteSpace(this._ruleProject)
+            ? "Optional (type or pick a project)"
+            : $"{this._ruleProject} (from a project rule; leave empty to keep it)";
 
         /// <summary>Gets or sets the chosen date when adding.</summary>
         public DateTime? Date
@@ -173,12 +179,14 @@ namespace FocusTimer.App.ViewModels
         /// <param name="entry">The entry as loaded; its revision is sent with the change.</param>
         /// <param name="today">The current local day.</param>
         /// <param name="suggestions">The projects to offer.</param>
+        /// <param name="ruleProject">The project a project rule gives the entry, shown as a hint; null when none.</param>
         /// <returns>The form.</returns>
         public static WorklogEntryEditorViewModel ForEdit(
             IWorklogEditingService service,
             TimeEntry entry,
             DateOnly today,
-            IReadOnlyList<string> suggestions) =>
+            IReadOnlyList<string> suggestions,
+            string? ruleProject = null) =>
             new(
                 service,
                 entry,
@@ -187,7 +195,10 @@ namespace FocusTimer.App.ViewModels
                 DurationParser.Format(entry.Duration),
                 suggestions,
                 null,
-                today);
+                today)
+            {
+                _ruleProject = ruleProject,
+            };
 
         /// <summary>Validates the form and stores the entry.</summary>
         /// <returns>A task that completes when the attempt is finished.</returns>

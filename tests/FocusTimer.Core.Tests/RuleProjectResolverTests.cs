@@ -37,6 +37,17 @@ public class RuleProjectResolverTests
             .Resolve(E("code")));
 
     [Fact]
+    public void NullAppOrTitleDoesNotThrowAndSimplyDoesNotMatchLiteralRules()
+    {
+        var resolver = Resolver(new ProjectRule("code", null, "A"), new ProjectRule(null, "*x*", "B"), new ProjectRule("*", null, "Any"));
+        var t = new DateTimeOffset(2026, 9, 27, 9, 0, 0, TimeSpan.Zero);
+        var broken = new TimeEntry("id", "s", t, t.AddMinutes(1), null!, null!, null, ProjectAssignmentSource.Unassigned,
+            null, ActivityKind.Active, EndReason.Unknown, CaptureSource.ActiveWindow, SourcePlatform.Windows, "d", 1, t);
+        Assert.Equal("Any", resolver.Resolve(broken));
+        Assert.False(new WindowMatchRule("code", "*x*").Matches(new ActiveWindowInfo { ProcessName = null!, WindowTitle = null! }));
+    }
+
+    [Fact]
     public void NoMatchStaysUnassigned() => Assert.Null(Resolver(new ProjectRule("zzz", null, "No")).Resolve(E("code")));
 
     [Fact]

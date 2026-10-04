@@ -52,3 +52,11 @@ resolved project of existing matching entries everywhere they are shown, and SHA
 #### Scenario: Rule removed
 - **WHEN** the user removes a rule
 - **THEN** entries it had labeled return to their stored project, or to Unassigned
+
+#### Scenario: Editing a rule-labeled entry
+- **WHEN** the user edits an entry whose project comes from a rule
+- **THEN** the Project field stays empty (the stored project is unchanged) and a hint names the rule's project, so saving without typing a project keeps the entry rule-labeled; the entry details show the project as set by a rule
+
+#### Scenario: Entry without application or title text
+- **WHEN** a stored entry has no application name or window title
+- **THEN** resolution does not fail; the entry simply matches only rules whose pattern accepts empty text

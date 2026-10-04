@@ -18,7 +18,7 @@ rule wins and that rules only label entries without an explicit project.
 
 ### Requirement: Project rule persistence and commit
 Project rules SHALL belong to the shared Settings draft and follow Apply, OK, Cancel, and commit-failure behavior, SHALL
-survive a restart, and SHALL be applied to already open worklog views after Apply. A malformed saved rule SHALL be
+survive a restart, and SHALL be applied to already open worklog views after Apply (Entries and Timeline immediately, Summary on its next refresh). A malformed saved rule SHALL be
 ignored with a logged warning without resetting other settings, and a missing list SHALL mean no rules.
 
 #### Scenario: Cancel after editing
@@ -27,4 +27,4 @@ ignored with a logged warning without resetting other settings, and a missing li
 
 #### Scenario: Open Worklog window after Apply
 - **WHEN** the Worklog window is open and the user applies a changed rule list
-- **THEN** the next refresh of any tab shows the new resolved projects
+- **THEN** the Entries table and Timeline show the new resolved projects without reloading, and the Summary shows them on its next refresh
