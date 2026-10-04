@@ -15,4 +15,4 @@ No `FocusTimer.Platform.Windows` change; Linux stubs need nothing extra.
 ## 3. Docs and integration
 
 - [x] 3.1 Update `OpenIssues.md` (OI-14), `Features.md`, `ARCHITECTURE.md`, and `DEVELOPMENT.md`, then check `openspec/` and root docs for contradictions; verify by re-reading them.
-- [ ] 3.2 Manual Windows walkthrough: add a browser rule, switch tabs, confirm one entry in Entries and Timeline, switch application and confirm a split; run `openspec validate segmentation-rules` and the full suite.
+- [ ] 3.2 (OPEN at archive time; tracked in OpenIssues.md under OI-14) Manual Windows walkthrough: add a browser rule, switch tabs, confirm one entry in Entries and Timeline, switch application and confirm a split; run `openspec validate segmentation-rules` and the full suite.

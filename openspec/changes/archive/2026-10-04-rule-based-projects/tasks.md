@@ -17,4 +17,4 @@ No `FocusTimer.Platform.Windows` change; Linux stubs need nothing extra.
 
 - [x] 3.1 Add the Project rules editor to the Logging tab (pattern fields plus project name, validation, reorder) with Apply/OK/Cancel behavior; verify view-model tests and a headless test that it is visible without developer mode.
 - [x] 3.2 Update `OpenIssues.md` (OI-08), `Features.md`, `ARCHITECTURE.md`, and `DEVELOPMENT.md`; check `openspec/` and root docs for contradictions; verify by re-reading them.
-- [ ] 3.3 Manual Windows walkthrough: add a rule for an IDE, confirm yesterday's by-project summary changes, set a session project and confirm it wins, remove the rule and confirm reversion; run `openspec validate rule-based-projects` and the full suite.
+- [ ] 3.3 (OPEN at archive time; tracked in OpenIssues.md under OI-08) Manual Windows walkthrough: add a rule for an IDE, confirm yesterday's by-project summary changes, set a session project and confirm it wins, remove the rule and confirm reversion; run `openspec validate rule-based-projects` and the full suite.
