@@ -26,6 +26,7 @@ namespace FocusTimer.Core.Models
         private int _activityPollingIntervalSeconds = 10;
         private List<WindowMatchRule> _exclusionRules = new();
         private List<WindowMatchRule> _segmentationRules = new();
+        private List<ProjectRule> _projectRules = new();
         private string? _hotkeyShowHide;
         private string? _hotkeyToggleTimer;
         private Theme _theme = new();
@@ -234,6 +235,16 @@ namespace FocusTimer.Core.Models
             set => this.SetField(ref this._segmentationRules, value ?? new List<WindowMatchRule>());
         }
 
+        /// <summary>
+        /// Gets or sets the ordered rules that label automatically captured entries with a project.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonConverter(typeof(ProjectRuleListConverter))]
+        public List<ProjectRule> ProjectRules
+        {
+            get => this._projectRules;
+            set => this.SetField(ref this._projectRules, value ?? new List<ProjectRule>());
+        }
+
         // Future: Hotkey settings (placeholders)
 
         /// <summary>
@@ -316,6 +327,7 @@ namespace FocusTimer.Core.Models
             ActivityPollingIntervalSeconds = this.ActivityPollingIntervalSeconds,
             ExclusionRules = new List<WindowMatchRule>(this.ExclusionRules),
             SegmentationRules = new List<WindowMatchRule>(this.SegmentationRules),
+            ProjectRules = new List<ProjectRule>(this.ProjectRules),
             HotkeyShowHide = this.HotkeyShowHide,
             HotkeyToggleTimer = this.HotkeyToggleTimer,
             Theme = this.Theme.Clone(),

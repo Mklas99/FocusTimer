@@ -4,9 +4,9 @@ No `FocusTimer.Platform.Windows` change; Linux stubs need nothing extra.
 
 ## 1. Resolver (Core)
 
-- [ ] 1.1 Add the project rule model and `Settings.ProjectRules` (default empty, cloned, tolerant list converter) and verify Persistence tests for round trip, missing list, and malformed or nameless rules being dropped with a warning.
-- [ ] 1.2 Add `RuleProjectResolver` and a rule-list provider interface; verify tests for explicit-project-wins, first-match-wins, no match, manual entries never matching, and case or space normalization.
-- [ ] 1.3 Register the resolver in the Host in place of `StoredProjectResolver` and feed it the applied settings; verify a Host or App test that an applied rule list changes the next resolution.
+- [x] 1.1 Add the project rule model and `Settings.ProjectRules` (default empty, cloned, tolerant list converter) and verify Persistence tests for round trip, missing list, and malformed or nameless rules being dropped with a warning.
+- [x] 1.2 Add `RuleProjectResolver` and a rule-list provider interface; verify tests for explicit-project-wins, first-match-wins, no match, manual entries never matching, and case or space normalization.
+- [x] 1.3 Register the resolver in the Host in place of `StoredProjectResolver` and feed it the applied settings; verify a Host or App test that an applied rule list changes the next resolution.
 
 ## 2. Views (App)
 

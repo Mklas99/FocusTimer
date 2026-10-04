@@ -119,6 +119,7 @@ namespace FocusTimer.Persistence
 
                 this.WarnAboutDroppedRules(document.RootElement, "exclusionRules", "exclusion", settings.ExclusionRules.Count);
                 this.WarnAboutDroppedRules(document.RootElement, "segmentationRules", "segmentation", settings.SegmentationRules.Count);
+                this.WarnAboutDroppedRules(document.RootElement, "projectRules", "project", settings.ProjectRules.Count);
 
                 if (!document.RootElement.TryGetProperty("deviceId", out JsonElement deviceId)
                     || deviceId.ValueKind != JsonValueKind.String

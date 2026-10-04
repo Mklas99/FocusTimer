@@ -125,3 +125,43 @@ public class ExclusionRuleSettingsTests
         public void LogError(string message, Exception? ex = null) { }
     }
 }
+
+public class ProjectRuleSettingsTests
+{
+    [Fact]
+    public async Task ProjectRulesRoundTripMissingAndMalformed()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"projectrules-{Guid.NewGuid():N}.json");
+        try
+        {
+            await File.WriteAllTextAsync(path, "{\"breakIntervalMinutes\":37}");
+            Assert.Empty((await new JsonSettingsProvider(path).LoadAsync()).ProjectRules);
+            await File.WriteAllTextAsync(path,
+                "{\"projectRules\":[{\"appPattern\":\"code\",\"projectName\":\" Alpha \"},{\"appPattern\":\"x\"}," +
+                "{\"projectName\":\"NoPattern\"},{\"appPattern\":\"y\",\"projectName\":\"  \"},5,{\"titlePattern\":\"*t*\",\"projectName\":\"B\"}]," +
+                "\"breakIntervalMinutes\":37}");
+            var logger = new Logger();
+            var provider = new JsonSettingsProvider(path, logger);
+            var loaded = await provider.LoadAsync();
+            Assert.Equal(new[] { new ProjectRule("code", null, "Alpha"), new ProjectRule(null, "*t*", "B") }, loaded.ProjectRules);
+            Assert.Equal(37, loaded.BreakIntervalMinutes);
+            Assert.Contains(logger.Warnings, w => w.Contains("4 malformed project rule"));
+            await provider.SaveAsync(loaded);
+            Assert.Equal(loaded.ProjectRules, (await new JsonSettingsProvider(path).LoadAsync()).ProjectRules);
+            var clone = loaded.Clone();
+            clone.ProjectRules.Add(new ProjectRule("z", null, "Z"));
+            Assert.Equal(2, loaded.ProjectRules.Count);
+        }
+        finally { File.Delete(path); }
+    }
+
+    private sealed class Logger : FocusTimer.Core.Interfaces.IAppLogger
+    {
+        public List<string> Warnings = new();
+        public void LogCritical(string message, Exception? ex = null) { }
+        public void LogDebug(string message) { }
+        public void LogError(string message, Exception? ex = null) { }
+        public void LogInformation(string message) { }
+        public void LogWarning(string message) => Warnings.Add(message);
+    }
+}

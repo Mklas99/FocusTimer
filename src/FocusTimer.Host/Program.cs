@@ -153,7 +153,9 @@ namespace FocusTimer.Host
             services.AddSingleton<IWorklogGrouping, ProjectGrouping>();
             services.AddSingleton<IWorklogGrouping, WindowGrouping>();
             services.AddSingleton<WorklogGroupingRegistry>();
-            services.AddSingleton<IProjectResolver, StoredProjectResolver>();
+            services.AddSingleton<ProjectRuleStore>();
+            services.AddSingleton<IProjectRuleProvider>(sp => sp.GetRequiredService<ProjectRuleStore>());
+            services.AddSingleton<IProjectResolver, RuleProjectResolver>();
             services.AddSingleton<IWorklogSummaryService, WorklogSummaryService>();
             services.AddSingleton<IWorklogEditingService, WorklogEditingService>();
             services.AddSingleton<AppController>();
