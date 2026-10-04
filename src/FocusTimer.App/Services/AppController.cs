@@ -20,6 +20,7 @@ namespace FocusTimer.App.Services
     public class AppController
     {
         private readonly ISettingsProvider _settingsProvider;
+        private readonly ProjectRuleStore? _projectRuleStore;
         private readonly IAutoStartService? _autoStartService;
         private readonly IGlobalHotkeyService _hotkeyService;
         private readonly INotificationService _notificationService;
@@ -59,6 +60,7 @@ namespace FocusTimer.App.Services
         /// <param name="installationIdentity">Cached identity for worklog entries.</param>
         /// <param name="autoStartService">Optional start-on-login service for recovery.</param>
         /// <param name="worklogViewModelFactory">Optional factory for the Worklog window view model; without it the window cannot be opened.</param>
+        /// <param name="projectRuleStore">Optional holder that receives the applied project rules for read-time project resolution.</param>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Major Code Smell", "S107:Methods should not have too many parameters", Justification = "Constructor injection of dependencies.")]
         public AppController(
             ISettingsProvider settingsProvider,
@@ -75,8 +77,10 @@ namespace FocusTimer.App.Services
             IEventBus? eventBus,
             InstallationIdentity installationIdentity,
             IAutoStartService? autoStartService = null,
-            Func<WorklogWindowViewModel>? worklogViewModelFactory = null)
+            Func<WorklogWindowViewModel>? worklogViewModelFactory = null,
+            ProjectRuleStore? projectRuleStore = null)
         {
+            this._projectRuleStore = projectRuleStore;
             this._settingsProvider = settingsProvider;
             this._autoStartService = autoStartService;
             this._hotkeyService = hotkeyService;
@@ -146,6 +150,7 @@ namespace FocusTimer.App.Services
                 }
 
                 this.CurrentSettings = await this._settingsProvider.LoadAsync();
+                this._projectRuleStore?.Update(this.CurrentSettings.ProjectRules);
             }
             catch (Exception ex)
             {
@@ -641,6 +646,7 @@ namespace FocusTimer.App.Services
         private async Task ActivateSettingsAsync(Settings settings)
         {
             this.CurrentSettings = settings.Clone();
+            this._projectRuleStore?.Update(this.CurrentSettings.ProjectRules);
             this._themeService.ApplyTheme(this.CurrentSettings.Theme);
             this._themeManager.ApplyTheme(this.CurrentSettings.Theme);
             if (this._timerWindow?.DataContext is TimerWidgetViewModel vm)

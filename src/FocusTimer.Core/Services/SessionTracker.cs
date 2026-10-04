@@ -28,6 +28,10 @@ public sealed class SessionTracker
     private long _sessionGeneration;
     private bool _tracking;
     private bool _trackingEnabled = true;
+    private WindowMatchRule[] _exclusionRules = Array.Empty<WindowMatchRule>();
+    private WindowMatchRule[] _segmentationRules = Array.Empty<WindowMatchRule>();
+    private bool _excluded;
+    private bool _captureDue;
 
     /// <summary>Initializes a tracker using system time and unknown device identity.</summary>
     public SessionTracker(IActiveWindowService activeWindowService, IAppLogger logger)
@@ -104,6 +108,30 @@ public sealed class SessionTracker
         return request.Completion.Task;
     }
 
+    /// <summary>Sets the ordered exclusion rules and requests a foreground sample at the next maintenance tick.</summary>
+    public void SetExclusionRules(IEnumerable<WindowMatchRule>? rules)
+    {
+        var valid = (rules ?? Enumerable.Empty<WindowMatchRule>()).Where(r => r is { IsValid: true }).ToArray();
+        lock (_stateLock)
+        {
+            if (_exclusionRules.SequenceEqual(valid)) return;
+            _exclusionRules = valid;
+            _captureDue = _tracking;
+        }
+    }
+
+    /// <summary>Sets rules whose title changes do not split a segment; requests a prompt foreground sample.</summary>
+    public void SetSegmentationRules(IEnumerable<WindowMatchRule>? rules)
+    {
+        var valid = (rules ?? Enumerable.Empty<WindowMatchRule>()).Where(r => r is { IsValid: true }).ToArray();
+        lock (_stateLock)
+        {
+            if (_segmentationRules.SequenceEqual(valid)) return;
+            _segmentationRules = valid;
+            _captureDue = _tracking;
+        }
+    }
+
     /// <summary>Changes foreground sampling cadence without changing session boundaries.</summary>
     public void SetPollingInterval(int seconds)
     {
@@ -124,11 +152,12 @@ public sealed class SessionTracker
         long revision;
         lock (_stateLock)
         {
-            if (!_trackingEnabled || !_tracking || _current is null) return Task.CompletedTask;
+            if (!_trackingEnabled || !_tracking || (_current is null && !_excluded)) return Task.CompletedTask;
             SplitAtMidnight(_clock.GetLocalNow());
-            if (_captureRunning || _clock.GetElapsedTime(_lastCaptureTimestamp) < TimeSpan.FromSeconds(_pollingIntervalSeconds))
+            if (_captureRunning || (!_captureDue && _clock.GetElapsedTime(_lastCaptureTimestamp) < TimeSpan.FromSeconds(_pollingIntervalSeconds)))
                 return Task.CompletedTask;
             _captureRunning = true;
+            _captureDue = false;
             generation = _sessionGeneration;
             revision = _scheduleRevision;
         }
@@ -158,7 +187,22 @@ public sealed class SessionTracker
                     {
                         var now = _clock.GetLocalNow();
                         SplitAtMidnight(now);
-                        if (initial is not null) CreateNewEntry(window, now);
+                        // With exclusion rules configured, a window that could not be identified at session start
+                        // cannot be shown to be allowed, so nothing is recorded until a sample succeeds.
+                        var excluded = succeeded
+                            ? WindowRuleMatcher.FindFirst(_exclusionRules, window) is not null
+                            : initial is not null ? _exclusionRules.Length > 0 : _excluded;
+                        if (excluded)
+                        {
+                            CloseCurrentEntry(now, EndReason.ApplicationChange);
+                            _currentWindow = null;
+                            _excluded = true;
+                        }
+                        else if (initial is not null || (succeeded && _excluded))
+                        {
+                            _excluded = false;
+                            CreateNewEntry(window, now);
+                        }
                         else if (succeeded && _current is not null && HasWindowChanged(_currentWindow, window))
                         {
                             CloseCurrentEntry(now, EndReason.ApplicationChange);
@@ -244,16 +288,24 @@ public sealed class SessionTracker
     private void InvalidateSession()
     {
         _tracking = false;
+        _excluded = false;
+        _captureDue = false;
         _sessionId = null;
         _sessionGeneration++;
         _pendingStart?.Completion.TrySetResult();
         _pendingStart = null;
     }
 
-    private static bool HasWindowChanged(ActiveWindowInfo? previous, ActiveWindowInfo? current) =>
-        previous is null || current is null
-            ? previous != current
-            : previous.ProcessName != current.ProcessName || previous.WindowTitle != current.WindowTitle;
+    private bool HasWindowChanged(ActiveWindowInfo? previous, ActiveWindowInfo? current)
+    {
+        if (previous is null || current is null) return previous != current;
+        if (previous.ProcessName != current.ProcessName) return true;
+        if (previous.WindowTitle == current.WindowTitle) return false;
+
+        // A title-only change keeps the segment when both windows match a segmentation rule.
+        return WindowRuleMatcher.FindFirst(_segmentationRules, previous) is null
+            || WindowRuleMatcher.FindFirst(_segmentationRules, current) is null;
+    }
 
     private void SplitAtMidnight(DateTimeOffset now)
     {

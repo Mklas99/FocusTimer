@@ -1,0 +1,32 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:FocusTimer.App.ViewModels"
+             mc:Ignorable="d"
+             x:Class="FocusTimer.App.Controls.ProjectRuleListEditor"
+             x:DataType="vm:ProjectRuleListViewModel">
+    <StackPanel Spacing="10">
+        <TextBlock Classes="SectionHeader" Text="{Binding Title}" />
+        <TextBlock Text="{Binding Description}"
+                   TextWrapping="Wrap" Foreground="{DynamicResource SettingsLabelTextBrush}" />
+        <ItemsControl ItemsSource="{Binding Rules}" x:Name="RuleList">
+            <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:ProjectRuleItemViewModel">
+                    <StackPanel Spacing="4" Margin="0,0,0,8">
+                        <Grid ColumnDefinitions="*,*,*,Auto,Auto,Auto">
+                            <TextBox Grid.Column="0" Margin="0,0,6,0" Text="{Binding AppPattern}" Watermark="Application, e.g. code" />
+                            <TextBox Grid.Column="1" Margin="0,0,6,0" Text="{Binding TitlePattern}" Watermark="Window title, e.g. *my-repo*" />
+                            <TextBox Grid.Column="2" Margin="0,0,6,0" Text="{Binding ProjectName}" Watermark="Project name" />
+                            <Button Grid.Column="3" Margin="0,0,6,0" Content="Up" Command="{Binding #RuleList.((vm:ProjectRuleListViewModel)DataContext).MoveUpCommand}" CommandParameter="{Binding}" />
+                            <Button Grid.Column="4" Margin="0,0,6,0" Content="Down" Command="{Binding #RuleList.((vm:ProjectRuleListViewModel)DataContext).MoveDownCommand}" CommandParameter="{Binding}" />
+                            <Button Grid.Column="5" Content="Remove" Command="{Binding #RuleList.((vm:ProjectRuleListViewModel)DataContext).RemoveCommand}" CommandParameter="{Binding}" />
+                        </Grid>
+                        <TextBlock Text="{Binding Error}" TextWrapping="Wrap" Foreground="{DynamicResource SettingsLabelTextBrush}" />
+                    </StackPanel>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+        <Button Content="Add project rule" Command="{Binding AddCommand}" HorizontalAlignment="Left" />
+    </StackPanel>
+</UserControl>

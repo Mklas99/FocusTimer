@@ -114,7 +114,7 @@ IWorklogSummaryService // Summarize worklog entries for a range into grouped row
 IWorklogViewStateStore // Remembers the Worklog window's view preferences such as the timeline zoom (timeline zoom and grouping; implemented in Persistence: JsonWorklogViewStateStore, `worklog-view.json` beside `settings.json`; never part of Settings)
 IWorklogEditingService // Add manual entries, edit (window title, project, duration), and delete entries with revision checks, overlap detection, and a WorklogChangedEvent (implemented in Core: WorklogEditingService)
 IWorklogGrouping     // Decides which row an entry belongs to; ApplicationGrouping, ProjectGrouping, and WindowGrouping (by window title; empty titles share a "No window title" row) are registered
-IProjectResolver     // Decides an entry's project when summarizing (default: StoredProjectResolver reads the stored tag)
+IProjectResolver     // Decides an entry's project when summarizing (RuleProjectResolver: explicit tag, else first matching project rule; StoredProjectResolver reads only the stored tag)
 ITimerService        // Timer state and elapsed-time tracking (implemented in Core: TimerService)
 ```
 
@@ -125,7 +125,9 @@ ITimerService        // Timer state and elapsed-time tracking (implemented in Co
 - `DurationParser` — reads typed durations ("2h 30m", "2.5h") in whole minutes; `WorklogDayBounds` — the earliest day retention keeps (today minus retention days minus one)
 - `WorklogGroupingRegistry` — the ordered set of `IWorklogGrouping` implementations a summary can use
 
-**Worklog summary seams** (OI-04): a `WorklogSummaryRequest` (a `SummaryRange`, a grouping id, an optional `SummaryFilter`) goes to `IWorklogSummaryService`, which queries `IWorklogStore`, clips entries to the range, resolves each entry's project through `IProjectResolver`, groups it with the chosen `IWorklogGrouping`, and returns rows with duration, share, and entry count plus read warnings. A failed read is reported as a failure, never as zero time. Adding a time range, a filter field, a grouping (register another `IWorklogGrouping`), or rule-based project detection (replace `IProjectResolver`, OI-08) does not change the service.
+**Worklog summary seams** (OI-04): a `WorklogSummaryRequest` (a `SummaryRange`, a grouping id, an optional `SummaryFilter`) goes to `IWorklogSummaryService`, which queries `IWorklogStore`, clips entries to the range, resolves each entry's project through `IProjectResolver`, groups it with the chosen `IWorklogGrouping`, and returns rows with duration, share, and entry count plus read warnings. A failed read is reported as a failure, never as zero time. Adding a time range, a filter field, a grouping (register another `IWorklogGrouping`), or rule-based project detection (replace `IProjectResolver`, OI-08, now `RuleProjectResolver`) does not change the service.
+
+**Rule-based projects (OI-08).** `Settings.ProjectRules` is an ordered list of `ProjectRule` (application and/or title pattern plus a project name, same glob semantics as `window-matching`). `RuleProjectResolver` keeps an entry's explicit project, otherwise labels automatically captured (`CaptureSource.ActiveWindow`) entries with the first matching rule; manual entries are never matched. Resolution happens at read time through the applied rules held in `ProjectRuleStore` (updated by `AppController` on startup and on Apply), so a rule edit re-labels existing entries (Entries and Timeline immediately via a weakly held change event, Summary on its next refresh) and nothing stored is rewritten; `ProjectRuleId` stays unused. Summary, Timeline grouping, Entries table (display, search, and project suggestions) all use the resolver; the entry editor still edits the stored project and only hints a rule-given one. Rules are edited on Settings → Logging (`ProjectRuleListViewModel`, built on the shared `RuleListViewModelBase` also used by the exclusion and segmentation lists).
 - `EventBus` — implements `IEventBus`
 
 **Event Bus Pattern**:
@@ -308,7 +310,9 @@ services.AddSingleton<IWorklogGrouping, ApplicationGrouping>();
 services.AddSingleton<IWorklogGrouping, ProjectGrouping>();
 services.AddSingleton<IWorklogGrouping, WindowGrouping>();
 services.AddSingleton<WorklogGroupingRegistry>();
-services.AddSingleton<IProjectResolver, StoredProjectResolver>();
+services.AddSingleton<ProjectRuleStore>();
+services.AddSingleton<IProjectRuleProvider>(sp => sp.GetRequiredService<ProjectRuleStore>());
+services.AddSingleton<IProjectResolver, RuleProjectResolver>();
 services.AddSingleton<IWorklogSummaryService, WorklogSummaryService>();
 services.AddSingleton<IWorklogEditingService, WorklogEditingService>();
 services.AddSingleton<AppController>();
@@ -463,6 +467,10 @@ See `docs/versions/current/OpenIssues.md` for the full, current backlog of known
 ## Foreground capture cadence and ownership
 
 SessionTracker uses the injected TimeProvider's monotonic timestamps for foreground deadlines. TimerService keeps its one-second tick. Local-calendar maintenance runs before capture admission and before final closure, so midnight segmentation does not wait for the sampling deadline. A segment crossing local midnight is closed at 23:59:59 with the day-boundary end reason and its replacement starts at 00:00:00, so every persisted entry starts and ends on the same local date (a segment that began in the last second of a day is zero-length and is dropped). Foreground changes are attributed at observation time; longer intervals can miss intermediate visits.
+
+**Application exclusions (OI-32).** Developer Options holds an ordered list of `WindowMatchRule`s (application and/or title pattern; case-insensitive `*`/`?` globs, evaluated by `WindowRuleMatcher`, first match wins). `SessionTracker` applies them during capture: when a sample matches, the open segment closes at the observation time and no segment opens until a non-excluded window is observed, so excluded time belongs to no entry and is never attributed to a neighbouring application. Changing the list requests one prompt foreground sample (taken at the next one-second tick rather than after the full polling interval), never rewrites existing entries, and does not affect the timer. The same matcher drives segmentation rules (OI-14) and is intended for rule-based project detection (OI-08).
+
+**Segmentation rules (OI-14).** A second ordered `WindowMatchRule` list (`Settings.SegmentationRules`) stops title-only changes from splitting a segment. `SessionTracker.HasWindowChanged` still splits on any process-name change; for the same process it splits on a title change unless both the previous and the new window match a segmentation rule. The entry keeps the title it started with. Exclusion is evaluated first, so an excluded window never forms a segment. Changing the list requests the same prompt foreground sample as exclusions and never merges or rewrites existing entries. Minimum-duration merging is not implemented.
 
 One capture reservation covers both initial and periodic lookups. Busy periodic ticks return without queueing. Stop or disable invalidates the session generation; a stale result cannot create a segment. At most the latest restart waits behind an outstanding lookup. Deadlines advance after completion, preventing catch-up bursts; applying a changed interval reschedules from application time, while reapplying the same value preserves the deadline. TimerService observes tracking tasks and logs failures.
 

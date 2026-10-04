@@ -2,6 +2,7 @@ namespace FocusTimer.App.ViewModels
 {
     using System;
     using System.Collections.Generic;
+    using System.Collections.ObjectModel;
     using System.ComponentModel;
     using System.Diagnostics;
     using System.IO;
@@ -92,6 +93,21 @@ namespace FocusTimer.App.ViewModels
             this.VersionInfoClickedCommand = ReactiveCommand.Create(this.OnVersionInfoClicked);
             this.RetryLoadCommand = ReactiveCommand.CreateFromTask(this.RetryLoadAsync);
             this.RetryRecoveryCommand = ReactiveCommand.CreateFromTask(this.RetryRecoveryAsync);
+            this.ExclusionList = new WindowRuleListViewModel(
+                "Excluded applications",
+                "Activity in matching windows is not recorded. Patterns are case-insensitive; * matches any text and ? one character. The first matching rule applies.",
+                "Every exclusion rule needs an application pattern, a window title pattern, or both.");
+            this.SegmentationList = new WindowRuleListViewModel(
+                "Keep one entry per application",
+                "When only the window title changes in a matching application (for example browser tabs), the current entry continues instead of splitting. The entry keeps the title it started with. Same pattern rules as above; excluded windows are never recorded.",
+                "Every segmentation rule needs an application pattern, a window title pattern, or both.");
+            this.ProjectList = new ProjectRuleListViewModel(
+                "Project rules",
+                "Label tracked time with a project by application and/or window title. The first matching rule wins. Rules only label entries that have no project of their own, apply to existing entries too, and never change the stored worklog. Patterns are case-insensitive; * matches any text and ? one character.",
+                "Every project rule needs an application and/or window title pattern, and a project name.");
+            this.ProjectList.DraftChanged += this.OnRuleListChanged;
+            this.ExclusionList.DraftChanged += this.OnRuleListChanged;
+            this.SegmentationList.DraftChanged += this.OnRuleListChanged;
 
             // Load settings
             _ = this.LoadSettingsAsync();
@@ -278,6 +294,9 @@ namespace FocusTimer.App.ViewModels
                 this.AttachSettings(value);
                 this.RaisePropertyChanged(nameof(this.PlayPauseColor));
                 this.ActivityPollingIntervalInput = value.ActivityPollingIntervalSeconds;
+                this.ExclusionList.Load(value.ExclusionRules);
+                this.SegmentationList.Load(value.SegmentationRules);
+                this.ProjectList.Load(value.ProjectRules);
                 this.RaisePropertyChanged(nameof(this.IsDeveloperModeVisible));
                 this.RaisePropertyChanged(nameof(this.SelectedDeveloperLogLevel));
             }
@@ -319,6 +338,33 @@ namespace FocusTimer.App.ViewModels
         public string ActivityPollingIntervalError => this.ActivityPollingIntervalInput is decimal seconds &&
             seconds >= 1 && seconds <= 60 && seconds == decimal.Truncate(seconds)
                 ? string.Empty : "Enter a whole number from 1 to 60 seconds.";
+
+        /// <summary>Gets the exclusion rule list draft.</summary>
+        public WindowRuleListViewModel ExclusionList { get; }
+
+        /// <summary>Gets the segmentation rule list draft.</summary>
+        public WindowRuleListViewModel SegmentationList { get; }
+
+        /// <summary>Gets the project rule list draft.</summary>
+        public ProjectRuleListViewModel ProjectList { get; }
+
+        /// <summary>Gets the exclusion rule draft in evaluation order.</summary>
+        public ObservableCollection<WindowRuleItemViewModel> ExclusionRules => this.ExclusionList.Rules;
+
+        /// <summary>Gets the command that appends a blank exclusion rule.</summary>
+        public ICommand AddExclusionRuleCommand => this.ExclusionList.AddCommand;
+
+        /// <summary>Gets the command that removes an exclusion rule.</summary>
+        public ICommand RemoveExclusionRuleCommand => this.ExclusionList.RemoveCommand;
+
+        /// <summary>Gets the command that moves an exclusion rule earlier in the list.</summary>
+        public ICommand MoveExclusionRuleUpCommand => this.ExclusionList.MoveUpCommand;
+
+        /// <summary>Gets the command that moves an exclusion rule later in the list.</summary>
+        public ICommand MoveExclusionRuleDownCommand => this.ExclusionList.MoveDownCommand;
+
+        /// <summary>Gets validation feedback for the exclusion rule draft.</summary>
+        public string ExclusionRulesError => this.ExclusionList.Error;
 
         /// <summary>Gets a value indicating whether the most recent Apply/OK saved successfully.</summary>
         public bool LastApplySucceeded { get; private set; }
@@ -781,6 +827,9 @@ namespace FocusTimer.App.ViewModels
             {
                 Settings candidate = this.Settings.Clone();
                 candidate.ActivityPollingIntervalSeconds = (int)this.ActivityPollingIntervalInput!.Value;
+                candidate.ExclusionRules = this.ExclusionList.ToRules();
+                candidate.SegmentationRules = this.SegmentationList.ToRules();
+                candidate.ProjectRules = this.ProjectList.ToRules();
                 SettingsCommitStatus result = await this._commitCoordinator.CommitAsync(
                     candidate, this._lastAppliedSettings);
                 if (result == SettingsCommitStatus.Success)
@@ -851,11 +900,34 @@ namespace FocusTimer.App.ViewModels
             }
         }
 
+        private void OnRuleListChanged(object? sender, EventArgs e)
+        {
+            if (!this.RecoveryRequired)
+            {
+                this.CommitError = string.Empty;
+            }
+        }
+
         private string ValidateDraft()
         {
             if (!string.IsNullOrEmpty(this.ActivityPollingIntervalError))
             {
                 return this.ActivityPollingIntervalError;
+            }
+
+            if (!string.IsNullOrEmpty(this.ExclusionList.Error))
+            {
+                return this.ExclusionList.Error;
+            }
+
+            if (!string.IsNullOrEmpty(this.SegmentationList.Error))
+            {
+                return this.SegmentationList.Error;
+            }
+
+            if (!string.IsNullOrEmpty(this.ProjectList.Error))
+            {
+                return this.ProjectList.Error;
             }
 
             if (this.Settings.BreakIntervalMinutes <= 0)

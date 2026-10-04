@@ -320,6 +320,29 @@ public sealed class AppControllerStartupTests
         public void LogDebug(string message) { }
     }
 
+    [Fact]
+    public async Task ProjectRulesReachTheStoreOnStartupAndOnActivation()
+    {
+        var store = new ProjectRuleStore();
+        var loaded = new Settings();
+        loaded.ProjectRules.Add(new ProjectRule("code", null, "Alpha"));
+        var controller = new AppController(
+            new FixedSettingsProvider(loaded), new CountingHotkeys(), new LinuxIdleDetectionServiceStub(), null!,
+            new ThemeService(), new ThemeManager(),
+            () => throw new InvalidOperationException("Window creation is unavailable in this test."),
+            null!, null!, null!, new NullLogger(), null, new InstallationIdentity(),
+            projectRuleStore: store);
+
+        await controller.InitializeAsync();
+        Assert.Equal(new[] { new ProjectRule("code", null, "Alpha") }, store.Rules);
+
+        var candidate = new Settings();
+        candidate.ProjectRules.Add(new ProjectRule("rider", null, "Beta"));
+        await (Task)typeof(AppController).GetMethod("ActivateSettingsAsync", BindingFlags.Instance | BindingFlags.NonPublic)!
+            .Invoke(controller, [candidate])!;
+        Assert.Equal(new[] { new ProjectRule("rider", null, "Beta") }, store.Rules);
+    }
+
     private sealed class FixedSettingsProvider(Settings settings) : ISettingsProvider
     {
         public Task<Settings> LoadAsync() => Task.FromResult(settings);

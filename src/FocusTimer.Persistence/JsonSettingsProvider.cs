@@ -117,6 +117,10 @@ namespace FocusTimer.Persistence
                     throw new JsonException("The settings file does not contain a settings object.");
                 }
 
+                this.WarnAboutDroppedRules(document.RootElement, "exclusionRules", "exclusion", settings.ExclusionRules.Count);
+                this.WarnAboutDroppedRules(document.RootElement, "segmentationRules", "segmentation", settings.SegmentationRules.Count);
+                this.WarnAboutDroppedRules(document.RootElement, "projectRules", "project", settings.ProjectRules.Count);
+
                 if (!document.RootElement.TryGetProperty("deviceId", out JsonElement deviceId)
                     || deviceId.ValueKind != JsonValueKind.String
                     || string.IsNullOrWhiteSpace(deviceId.GetString()))
@@ -282,6 +286,17 @@ namespace FocusTimer.Persistence
             finally
             {
                 this._fileGate.Release();
+            }
+        }
+
+        private void WarnAboutDroppedRules(JsonElement root, string property, string kind, int keptCount)
+        {
+            if (root.TryGetProperty(property, out JsonElement saved)
+                && saved.ValueKind == JsonValueKind.Array
+                && saved.GetArrayLength() != keptCount)
+            {
+                this._logger?.LogWarning(
+                    $"Ignored {saved.GetArrayLength() - keptCount} malformed {kind} rule(s) in {this.SettingsFilePath}.");
             }
         }
 

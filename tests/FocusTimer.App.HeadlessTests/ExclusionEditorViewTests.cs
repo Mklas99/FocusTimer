@@ -1,0 +1,89 @@
+namespace FocusTimer.App.HeadlessTests;
+
+using Avalonia.Controls;
+using Avalonia.Threading;
+using Avalonia.VisualTree;
+using FocusTimer.App.Services;
+using FocusTimer.App.ViewModels;
+using FocusTimer.App.Views;
+using FocusTimer.Core.Models;
+using FocusTimer.Core.Services;
+using FocusTimer.Core.Stubs;
+
+/// <summary>The exclusion editor lives in Developer Options and is only reachable once developer mode is unlocked.</summary>
+public sealed class ExclusionEditorViewTests
+{
+    public ExclusionEditorViewTests() => HeadlessAvaloniaFixture.EnsureInitialized();
+
+    [Fact]
+    public async Task EditorIsHiddenWhileLockedAndBoundWhenUnlocked()
+    {
+        var manager = new ThemeManager();
+        manager.InitializeThemeResources();
+        var provider = new SettingsProviderStub();
+        Settings settings = await provider.LoadAsync();
+        settings.ExclusionRules.Add(new WindowMatchRule("keepass", null));
+        await provider.SaveAsync(settings);
+        var vm = new SettingsWindowViewModel(
+            provider, new LinuxAutoStartServiceStub(), new ThemeService(), manager, new StubLogger());
+        for (int i = 0; i < 20 && !vm.IsSettingsLoaded; i++) await Task.Delay(25);
+        var window = new SettingsWindow { DataContext = vm };
+        window.Show();
+        vm.SelectedTabIndex = 3; // About
+        Dispatcher.UIThread.RunJobs();
+
+        Expander expander = window.GetVisualDescendants().OfType<Expander>().Single(e => (string?)e.Header == "Developer Options");
+        Assert.False(expander.IsVisible);
+        Assert.Single(vm.ExclusionRules);
+
+        for (int i = 0; i < 7; i++) vm.RegisterVersionInfoClick();
+        Dispatcher.UIThread.RunJobs();
+        Assert.True(expander.IsVisible);
+        expander.IsExpanded = true;
+        Dispatcher.UIThread.RunJobs();
+        var editors = window.GetVisualDescendants().OfType<FocusTimer.App.Controls.WindowRuleListEditor>().ToList();
+        Assert.Equal(2, editors.Count);
+        Assert.Same(vm.ExclusionList, editors[0].DataContext);
+        Assert.Same(vm.SegmentationList, editors[1].DataContext);
+        var lists = editors.Select(e => e.GetVisualDescendants().OfType<ItemsControl>().Single(c => c.Name == "RuleList")).ToList();
+        Assert.Same(vm.ExclusionRules, lists[0].ItemsSource);
+        Assert.Same(vm.SegmentationList.Rules, lists[1].ItemsSource);
+        window.Close();
+    }
+
+    [Fact]
+    public async Task ProjectRulesEditorIsVisibleOnLoggingTabWithoutDeveloperMode()
+    {
+        var manager = new ThemeManager();
+        manager.InitializeThemeResources();
+        var provider = new SettingsProviderStub();
+        Settings settings = await provider.LoadAsync();
+        settings.ProjectRules.Add(new ProjectRule("code", null, "Alpha"));
+        await provider.SaveAsync(settings);
+        var vm = new SettingsWindowViewModel(
+            provider, new LinuxAutoStartServiceStub(), new ThemeService(), manager, new StubLogger());
+        for (int i = 0; i < 20 && !vm.IsSettingsLoaded; i++) await Task.Delay(25);
+        var window = new SettingsWindow { DataContext = vm };
+        window.Show();
+        vm.SelectedTabIndex = 1; // Logging
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.False(vm.IsDeveloperModeVisible);
+        FocusTimer.App.Controls.ProjectRuleListEditor editor = window.GetVisualDescendants().OfType<FocusTimer.App.Controls.ProjectRuleListEditor>().Single();
+        Assert.True(editor.IsVisible);
+        Assert.Same(vm.ProjectList, editor.DataContext);
+        ItemsControl list = editor.GetVisualDescendants().OfType<ItemsControl>().Single(c => c.Name == "RuleList");
+        Assert.Same(vm.ProjectList.Rules, list.ItemsSource);
+        Assert.Single(vm.ProjectList.Rules);
+        window.Close();
+    }
+
+    private sealed class StubLogger : FocusTimer.Core.Interfaces.IAppLogger
+    {
+        public void LogCritical(string message, Exception? ex = null) { }
+        public void LogDebug(string message) { }
+        public void LogError(string message, Exception? ex = null) { }
+        public void LogInformation(string message) { }
+        public void LogWarning(string message) { }
+    }
+}

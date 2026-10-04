@@ -24,6 +24,12 @@ namespace FocusTimer.Core.Models
         private bool _developerModeEnabled;
         private string _developerLogLevel = "Debug";
         private int _activityPollingIntervalSeconds = 10;
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0032:Use auto property", Justification = "The backing field is passed by ref to SetField for change notification.")]
+        private List<WindowMatchRule> _exclusionRules = [];
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0032:Use auto property", Justification = "The backing field is passed by ref to SetField for change notification.")]
+        private List<WindowMatchRule> _segmentationRules = [];
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0032:Use auto property", Justification = "The backing field is passed by ref to SetField for change notification.")]
+        private List<ProjectRule> _projectRules = [];
         private string? _hotkeyShowHide;
         private string? _hotkeyToggleTimer;
         private Theme _theme = new();
@@ -212,6 +218,36 @@ namespace FocusTimer.Core.Models
             set => this.SetField(ref this._activityPollingIntervalSeconds, value is >= 1 and <= 60 ? value : 10);
         }
 
+        /// <summary>
+        /// Gets or sets the ordered rules for windows whose activity must not be recorded.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonConverter(typeof(WindowMatchRuleListConverter))]
+        public List<WindowMatchRule> ExclusionRules
+        {
+            get => this._exclusionRules;
+            set => this.SetField(ref this._exclusionRules, value ?? []);
+        }
+
+        /// <summary>
+        /// Gets or sets the ordered rules for windows whose title changes must not start a new segment.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonConverter(typeof(WindowMatchRuleListConverter))]
+        public List<WindowMatchRule> SegmentationRules
+        {
+            get => this._segmentationRules;
+            set => this.SetField(ref this._segmentationRules, value ?? []);
+        }
+
+        /// <summary>
+        /// Gets or sets the ordered rules that label automatically captured entries with a project.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonConverter(typeof(ProjectRuleListConverter))]
+        public List<ProjectRule> ProjectRules
+        {
+            get => this._projectRules;
+            set => this.SetField(ref this._projectRules, value ?? []);
+        }
+
         // Future: Hotkey settings (placeholders)
 
         /// <summary>
@@ -292,6 +328,9 @@ namespace FocusTimer.Core.Models
             DeveloperModeEnabled = this.DeveloperModeEnabled,
             DeveloperLogLevel = this.DeveloperLogLevel,
             ActivityPollingIntervalSeconds = this.ActivityPollingIntervalSeconds,
+            ExclusionRules = new List<WindowMatchRule>(this.ExclusionRules),
+            SegmentationRules = new List<WindowMatchRule>(this.SegmentationRules),
+            ProjectRules = new List<ProjectRule>(this.ProjectRules),
             HotkeyShowHide = this.HotkeyShowHide,
             HotkeyToggleTimer = this.HotkeyToggleTimer,
             Theme = this.Theme.Clone(),

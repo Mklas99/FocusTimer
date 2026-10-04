@@ -3,6 +3,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="using:FocusTimer.App.ViewModels"
+        xmlns:controls="using:FocusTimer.App.Controls"
         xmlns:views="using:FocusTimer.App.Views"
         mc:Ignorable="d"
         x:Class="FocusTimer.App.Views.SettingsWindow"
@@ -94,6 +95,8 @@
                                            Width="120"
                                            HorizontalAlignment="Left" />
                         </Grid>
+
+                        <controls:ProjectRuleListEditor DataContext="{Binding ProjectList}" />
                     </StackPanel>
                 </ScrollViewer>
             </TabItem>
@@ -369,6 +372,8 @@
                                            TextWrapping="Wrap" Foreground="{DynamicResource SettingsLabelTextBrush}" />
                                 <TextBlock Text="Longer intervals reduce polling work but may miss short app visits. Default: 10 seconds. Range: 1–60."
                                            TextWrapping="Wrap" Foreground="{DynamicResource SettingsLabelTextBrush}" />
+                                <controls:WindowRuleListEditor DataContext="{Binding ExclusionList}" />
+                                <controls:WindowRuleListEditor DataContext="{Binding SegmentationList}" />
                                 <TextBlock TextWrapping="Wrap"
                                            Foreground="{DynamicResource SettingsLabelTextBrush}"
                                            FontSize="11"

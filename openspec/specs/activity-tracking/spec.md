@@ -6,7 +6,7 @@ Defines how FocusTimer records what the user worked on while the timer runs, per
 ## Requirements
 
 ### Requirement: Per-Application Time Segmentation
-While the timer is Running and work logging is enabled, the system SHALL sample the foreground application/window at the configured activity polling interval, defaulting to ten seconds. When a sample detects a changed application or window title, the system SHALL close the current segment with an application-change reason and start a replacement segment with a distinct entry ID and the same running-session ID at the observation time. Intervening time SHALL remain attributed to the last observed window; the system SHALL NOT reconstruct visits that occur entirely between samples.
+While the timer is Running and work logging is enabled, the system SHALL sample the foreground application/window at the configured activity polling interval, defaulting to ten seconds. When a sample detects a changed application or window title, the system SHALL close the current segment with an application-change reason and start a replacement segment with a distinct entry ID and the same running-session ID at the observation time. A window title change SHALL NOT close the segment when a segmentation rule applies (see the rule requirement below). Intervening time SHALL remain attributed to the last observed window; the system SHALL NOT reconstruct visits that occur entirely between samples.
 
 #### Scenario: User switches active application
 - **WHEN** a scheduled foreground sample detects a changed application while the timer is Running
@@ -14,7 +14,7 @@ While the timer is Running and work logging is enabled, the system SHALL sample 
 
 #### Scenario: Window title changes within one application
 - **WHEN** a scheduled sample detects a different window title within the same application
-- **THEN** a new segment starts with that title even if the application name has not changed
+- **THEN** a new segment starts with that title even if the application name has not changed, unless a segmentation rule applies to both windows
 
 #### Scenario: Existing configuration adopts the new default
 - **WHEN** the saved configuration has no activity polling interval
@@ -119,3 +119,92 @@ The system SHALL prevent a persisted entry from spanning more than one local cal
 #### Scenario: Timer remains running across midnight
 - **WHEN** an active segment reaches local midnight without an application/window change
 - **THEN** the segment ending at midnight and the replacement segment have different entry IDs, the same session ID, and are persisted to their respective daily worklogs
+
+### Requirement: Application exclusion during capture
+While the timer is Running and work logging is enabled, the system SHALL NOT record activity whose sampled foreground
+window matches an exclusion rule. When a sample observes an excluded window, the open segment SHALL close at the
+observation time and no segment SHALL open. When a later sample observes a non-excluded window, a new segment SHALL
+start at that observation time. Excluded time SHALL NOT be attributed to the preceding or following application.
+
+#### Scenario: Switch to an excluded application
+- **WHEN** a sample observes a window matching an exclusion rule while a segment is open
+- **THEN** the segment closes at the observation time and nothing is recorded for the excluded window
+
+#### Scenario: Return from an excluded application
+- **WHEN** the next sample observes a non-excluded window after an excluded interval
+- **THEN** a new segment starts at that observation time, and the excluded interval belongs to no segment
+
+#### Scenario: Tracking starts on an excluded window
+- **WHEN** tracking starts or resumes and the initial sample matches an exclusion rule
+- **THEN** no segment opens until a non-excluded window is observed
+
+#### Scenario: Excluded window across midnight
+- **WHEN** an excluded window remains in front across local midnight
+- **THEN** no entry is written for that time on either day
+
+#### Scenario: First lookup fails while rules exist
+- **WHEN** tracking starts, at least one exclusion rule is configured, and the first foreground lookup fails
+- **THEN** no segment opens until a later lookup succeeds and shows a non-excluded window
+
+#### Scenario: Lookup fails while excluded
+- **WHEN** a foreground lookup fails after an excluded window was observed
+- **THEN** no segment opens and the system remains in the excluded state
+
+### Requirement: Exclusions do not alter existing data or the timer
+Applying or editing exclusion rules SHALL NOT modify, delete, or hide entries already written. Excluded time SHALL
+continue to count on the running timer and SHALL NOT change break-reminder timing.
+
+#### Scenario: Rule added after work was recorded
+- **WHEN** the user adds a rule matching an application that already has entries today
+- **THEN** those entries remain unchanged and only subsequent samples are excluded
+
+#### Scenario: Timer during an excluded interval
+- **WHEN** an excluded window is in the foreground while the timer is Running
+- **THEN** the timer display keeps counting and the worklog total does not increase for that time
+
+### Requirement: Exclusion rule changes apply promptly
+A changed exclusion list SHALL cause a foreground sample at the next one-second maintenance opportunity, without waiting
+for the configured polling interval, and take effect at that sample. Applying it SHALL NOT
+by itself close a segment, reset elapsed time, or start a session. Applying an identical list SHALL have no effect.
+
+#### Scenario: Rule applied while the matching window is in front
+- **WHEN** the user applies a rule matching the current foreground window
+- **THEN** within one maintenance tick, even with a 60-second polling interval, the open segment closes and no new segment opens for that window
+
+#### Scenario: Rule removed while its window is in front
+- **WHEN** the user removes the rule for the current excluded window
+- **THEN** a segment starts at the next maintenance tick that observes that window
+
+### Requirement: Segmentation rules ignore title changes
+The system SHALL NOT start a new segment when only the window title changes, provided the previous and the newly observed
+window have the same process name and both match a segmentation rule. The segment SHALL keep the title observed when it
+started. A change of process name, or a title change in a window that matches no segmentation rule, SHALL start a new
+segment as usual. With no segmentation rules, segmentation SHALL behave as it did before the rules existed.
+
+#### Scenario: Browser tab changes
+- **WHEN** a rule matches the browser application and a sample observes a different title in the same browser
+- **THEN** the open segment continues and keeps its original title
+
+#### Scenario: Application changes
+- **WHEN** a sample observes a different process name, even if both windows match segmentation rules
+- **THEN** the open segment closes and a new one starts
+
+#### Scenario: Title change in an unmatched application
+- **WHEN** a title changes in an application no segmentation rule matches
+- **THEN** a new segment starts with the new title
+
+#### Scenario: Title-only rule
+- **WHEN** a rule has only a title pattern and the title changes from one matching title to another within the same process
+- **THEN** the open segment continues
+
+#### Scenario: Excluded window
+- **WHEN** a window matches both an exclusion rule and a segmentation rule
+- **THEN** it is excluded and no segment is formed
+
+### Requirement: Segmentation rule changes apply promptly and keep segments
+A changed segmentation list SHALL take effect at the next foreground sample, using the same prompt-sample behavior as
+exclusion changes. Applying it SHALL NOT close or merge existing segments. Applying an identical list SHALL have no effect.
+
+#### Scenario: Rule added mid-session
+- **WHEN** the user applies a rule matching the current application and the title then changes
+- **THEN** no new segment starts for that title change, and segments written before the rule are unchanged

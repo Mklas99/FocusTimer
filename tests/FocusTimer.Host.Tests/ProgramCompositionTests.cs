@@ -72,7 +72,8 @@ public sealed class ProgramCompositionTests : IDisposable
         var sp = this.Build(Path.Combine(this._root, "logs"), isWindows);
 
         Assert.IsType<WorklogSummaryService>(sp.GetRequiredService<IWorklogSummaryService>());
-        Assert.IsType<StoredProjectResolver>(sp.GetRequiredService<IProjectResolver>());
+        Assert.IsType<RuleProjectResolver>(sp.GetRequiredService<IProjectResolver>());
+        Assert.Same(sp.GetRequiredService<ProjectRuleStore>(), sp.GetRequiredService<IProjectRuleProvider>());
         Assert.Equal(["app", "project", "window"], sp.GetRequiredService<WorklogGroupingRegistry>().All.Select(g => g.Id));
         Assert.NotNull(sp.GetRequiredService<FocusTimer.App.ViewModels.WorklogSummaryViewModel>());
         Assert.NotNull(sp.GetRequiredService<FocusTimer.App.ViewModels.SettingsWindowViewModel>());

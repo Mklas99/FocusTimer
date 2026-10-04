@@ -236,19 +236,20 @@ public sealed class WorklogEntryFormTests
             var manager = new ThemeManager();
             manager.InitializeThemeResources();
             manager.ApplyTheme(new ThemeService().BuiltInThemes.First(t => t.ThemeName == "Light"));
+            var clock = new LateInTheDayClock();
             var store = new SeedStore();
             var identity = new InstallationIdentity();
             identity.Initialize("device-1");
             var service = new WorklogEditingService(
-                store, new Provider(), identity, new SourcePlatformProvider(), TimeProvider.System, new EventBus(), new Log());
+                store, new Provider(), identity, new SourcePlatformProvider(), clock, new EventBus(), new Log());
             var vm = new WorklogWindowViewModel(
-                new WorklogEntriesViewModel(store, TimeProvider.System, service),
+                new WorklogEntriesViewModel(store, clock, service),
                 new WorklogSummaryViewModel(
                     new EmptySummary(),
                     new WorklogGroupingRegistry([new ApplicationGrouping(), new ProjectGrouping(), new WindowGrouping()]),
-                    TimeProvider.System),
+                    clock),
                 new Provider(),
-                TimeProvider.System);
+                clock);
             var window = new WorklogWindow { DataContext = vm };
             window.Show();
             await vm.OpenAsync();
@@ -274,6 +275,21 @@ public sealed class WorklogEntryFormTests
             this.Window.GetVisualDescendants().OfType<T>().First(match);
 
         public void Dispose() => this.Window.Close();
+    }
+
+    /// <summary>
+    /// A clock fixed at 23:30 of the local day the test starts on, so a manual entry typed at any time of that day is
+    /// never "in the future", whatever the wall clock (and the CI runner's time zone) says when the test runs.
+    /// </summary>
+    private sealed class LateInTheDayClock : TimeProvider
+    {
+        private readonly DateTimeOffset _now = new(
+            DateTime.Today.AddHours(23).AddMinutes(30),
+            TimeZoneInfo.Local.GetUtcOffset(DateTime.Today.AddHours(23).AddMinutes(30)));
+
+        public override TimeZoneInfo LocalTimeZone => TimeZoneInfo.Local;
+
+        public override DateTimeOffset GetUtcNow() => this._now.ToUniversalTime();
     }
 
     private sealed class Log : IAppLogger
