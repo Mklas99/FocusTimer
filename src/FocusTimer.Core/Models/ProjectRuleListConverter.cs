@@ -56,15 +56,10 @@ namespace FocusTimer.Core.Models
 
         private static string? ReadText(JsonElement element, string name)
         {
-            foreach (var property in element.EnumerateObject())
-            {
-                if (string.Equals(property.Name, name, StringComparison.OrdinalIgnoreCase))
-                {
-                    return property.Value.ValueKind == JsonValueKind.String ? property.Value.GetString() : null;
-                }
-            }
-
-            return null;
+            // A missing property yields the default JsonProperty, whose value has kind Undefined.
+            var property = element.EnumerateObject()
+                .FirstOrDefault(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase));
+            return property.Value.ValueKind == JsonValueKind.String ? property.Value.GetString() : null;
         }
     }
 }

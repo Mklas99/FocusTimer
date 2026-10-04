@@ -123,7 +123,7 @@ public class RuleProjectViewsTests
         for (var i = 0; i < 50 && entries.Editor is null; i++) await Task.Delay(20);
 
         Assert.NotNull(entries.Editor);
-        Assert.Equal(string.Empty, entries.Editor!.ProjectText);
+        Assert.Equal(string.Empty, entries.Editor.ProjectText);
         Assert.Contains("Alpha", entries.Editor.ProjectWatermark);
         Assert.Contains("rule", entries.Editor.ProjectWatermark);
 

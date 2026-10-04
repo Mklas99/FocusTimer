@@ -11,19 +11,8 @@ public static class WindowRuleMatcher
     /// <returns>The first matching rule, or null.</returns>
     public static WindowMatchRule? FindFirst(IEnumerable<WindowMatchRule>? rules, ActiveWindowInfo? window)
     {
-        if (rules is null || window is null)
-        {
-            return null;
-        }
-
-        foreach (var rule in rules)
-        {
-            if (rule is not null && rule.Matches(window))
-            {
-                return rule;
-            }
-        }
-
-        return null;
+        return rules is null || window is null
+            ? null
+            : rules.FirstOrDefault(rule => rule is not null && rule.Matches(window));
     }
 }
