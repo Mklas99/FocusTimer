@@ -1,0 +1,465 @@
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Manrope:wght@400;500&display=swap">
+<div id="ft-ui-options">
+  <div class="nav nav-pills" role="tablist" aria-label="FocusTimer design categories">
+    <button class="nav-link active" id="ft-glass-tab" role="tab" aria-controls="ft-glass-panel" aria-selected="true" type="button">Glass</button>
+    <button class="nav-link" id="ft-layout-tab" role="tab" aria-controls="ft-layout-panel" aria-selected="false" type="button">Layout</button>
+    <button class="nav-link" id="ft-type-tab" role="tab" aria-controls="ft-type-panel" aria-selected="false" type="button">Typography</button>
+    <button class="nav-link" id="ft-nav-tab" role="tab" aria-controls="ft-nav-panel" aria-selected="false" type="button">Navigation</button>
+    <button class="nav-link" id="ft-controls-tab" role="tab" aria-controls="ft-controls-panel" aria-selected="false" type="button">Controls</button>
+  </div>
+
+  <div id="ft-glass-panel" role="tabpanel" aria-labelledby="ft-glass-tab">
+    <div class="viz-row ft-option-header"><span>Glass surfaces and depth</span><span class="text-small text-muted" data-choice-label="glass">Selected: none</span></div>
+    <div class="viz-carousel viz-dotted-background" aria-label="Glass treatments">
+      <section data-variant="Light frost" class="ft-variant" aria-label="Light frost glass preview">
+        <div class="ft-stage ft-desktop" data-preview="glass-light" data-page="general"></div>
+        <div class="viz-row ft-choice-row"><button class="btn" type="button" data-choose="glass" data-option="Light frost" aria-pressed="false">Choose Light frost</button><span class="text-small text-muted">More backdrop visible</span></div>
+      </section>
+      <section data-variant="Dense frost" class="ft-variant" aria-label="Dense frost glass preview" hidden>
+        <div class="ft-stage ft-desktop" data-preview="glass-dense" data-page="general"></div>
+        <div class="viz-row ft-choice-row"><button class="btn" type="button" data-choose="glass" data-option="Dense frost" aria-pressed="false">Choose Dense frost</button><span class="text-small text-muted">Stronger blur, firmer surface</span></div>
+      </section>
+      <section data-variant="Layered glass" class="ft-variant" aria-label="Layered glass preview" hidden>
+        <div class="ft-stage ft-desktop" data-preview="glass-layered" data-page="general"></div>
+        <div class="viz-row ft-choice-row"><button class="btn" type="button" data-choose="glass" data-option="Layered glass" aria-pressed="false">Choose Layered glass</button><span class="text-small text-muted">Glassy frame, quieter inner panels</span></div>
+      </section>
+    </div>
+  </div>
+
+  <div id="ft-layout-panel" role="tabpanel" aria-labelledby="ft-layout-tab" hidden>
+    <div class="viz-row ft-option-header"><span>Layout and spacing</span><span class="text-small text-muted" data-choice-label="layout">Selected: none</span></div>
+    <div class="viz-carousel viz-dotted-background" aria-label="Settings layouts">
+      <section data-variant="Compact rows" class="ft-variant" aria-label="Compact row settings preview">
+        <div class="ft-stage" data-preview="layout-compact" data-page="general"></div>
+        <div class="viz-row ft-choice-row"><button class="btn" type="button" data-choose="layout" data-option="Compact rows" aria-pressed="false">Choose Compact rows</button><span class="text-small text-muted">One column, quick scanning</span></div>
+      </section>
+      <section data-variant="Grouped cards" class="ft-variant" aria-label="Grouped card settings preview" hidden>
+        <div class="ft-stage" data-preview="layout-cards" data-page="general"></div>
+        <div class="viz-row ft-choice-row"><button class="btn" type="button" data-choose="layout" data-option="Grouped cards" aria-pressed="false">Choose Grouped cards</button><span class="text-small text-muted">Two distinct settings groups</span></div>
+      </section>
+      <section data-variant="Section columns" class="ft-variant" aria-label="Section column settings preview" hidden>
+        <div class="ft-stage" data-preview="layout-columns" data-page="general"></div>
+        <div class="viz-row ft-choice-row"><button class="btn" type="button" data-choose="layout" data-option="Section columns" aria-pressed="false">Choose Section columns</button><span class="text-small text-muted">Section titles beside their controls</span></div>
+      </section>
+    </div>
+  </div>
+
+  <div id="ft-type-panel" role="tabpanel" aria-labelledby="ft-type-tab" hidden>
+    <div class="viz-row ft-option-header"><span>Typography</span><span class="text-small text-muted" data-choice-label="type">Selected: none</span></div>
+    <div class="viz-carousel viz-dotted-background" aria-label="Typography systems">
+      <section data-variant="Native clarity" class="ft-variant" aria-label="Native clarity typography preview">
+        <div class="ft-stage" data-preview="type-native" data-page="general"></div>
+        <div class="viz-row ft-choice-row"><button class="btn" type="button" data-choose="type" data-option="Native clarity" aria-pressed="false">Choose Native clarity</button><span class="text-small text-muted">Segoe UI · familiar proportions</span></div>
+      </section>
+      <section data-variant="Soft geometric" class="ft-variant" aria-label="Soft geometric typography preview" hidden>
+        <div class="ft-stage" data-preview="type-soft" data-page="general"></div>
+        <div class="viz-row ft-choice-row"><button class="btn" type="button" data-choose="type" data-option="Soft geometric" aria-pressed="false">Choose Soft geometric</button><span class="text-small text-muted">Manrope · larger, rounded letterforms</span></div>
+      </section>
+      <section data-variant="Compact precision" class="ft-variant" aria-label="Compact precision typography preview" hidden>
+        <div class="ft-stage" data-preview="type-compact" data-page="general"></div>
+        <div class="viz-row ft-choice-row"><button class="btn" type="button" data-choose="type" data-option="Compact precision" aria-pressed="false">Choose Compact precision</button><span class="text-small text-muted">Inter · tighter type hierarchy</span></div>
+      </section>
+    </div>
+  </div>
+
+  <div id="ft-nav-panel" role="tabpanel" aria-labelledby="ft-nav-tab" hidden>
+    <div class="viz-row ft-option-header"><span>Navigation</span><span class="text-small text-muted" data-choice-label="navigation">Selected: none</span></div>
+    <div class="viz-carousel viz-dotted-background" aria-label="Settings navigation styles">
+      <section data-variant="Segmented tabs" class="ft-variant" aria-label="Segmented navigation preview">
+        <div class="ft-stage" data-preview="nav-segmented" data-page="general"></div>
+        <div class="viz-row ft-choice-row"><button class="btn" type="button" data-choose="navigation" data-option="Segmented tabs" aria-pressed="false">Choose Segmented tabs</button><span class="text-small text-muted">Compact tray with inset selection</span></div>
+      </section>
+      <section data-variant="Underline tabs" class="ft-variant" aria-label="Underline navigation preview" hidden>
+        <div class="ft-stage" data-preview="nav-underline" data-page="general"></div>
+        <div class="viz-row ft-choice-row"><button class="btn" type="button" data-choose="navigation" data-option="Underline tabs" aria-pressed="false">Choose Underline tabs</button><span class="text-small text-muted">Open layout with minimal chrome</span></div>
+      </section>
+      <section data-variant="Icon sidebar" class="ft-variant" aria-label="Sidebar navigation preview" hidden>
+        <div class="ft-stage" data-preview="nav-sidebar" data-page="general"></div>
+        <div class="viz-row ft-choice-row"><button class="btn" type="button" data-choose="navigation" data-option="Icon sidebar" aria-pressed="false">Choose Icon sidebar</button><span class="text-small text-muted">Persistent icon-and-label navigation</span></div>
+      </section>
+    </div>
+  </div>
+
+  <div id="ft-controls-panel" role="tabpanel" aria-labelledby="ft-controls-tab" hidden>
+    <div class="viz-row ft-option-header"><span>Buttons, inputs, and icons</span><span class="text-small text-muted" data-choice-label="controls">Selected: none</span></div>
+    <div class="viz-carousel viz-dotted-background" aria-label="Control families">
+      <section data-variant="Soft rounded" class="ft-variant" aria-label="Soft rounded controls preview">
+        <div class="ft-stage" data-preview="controls-soft" data-page="appearance"></div>
+        <div class="viz-row ft-choice-row"><button class="btn" type="button" data-choose="controls" data-option="Soft rounded" aria-pressed="false">Choose Soft rounded</button><span class="text-small text-muted">Soft fills, modest corners</span></div>
+      </section>
+      <section data-variant="Crisp outlined" class="ft-variant" aria-label="Crisp outlined controls preview" hidden>
+        <div class="ft-stage" data-preview="controls-outline" data-page="appearance"></div>
+        <div class="viz-row ft-choice-row"><button class="btn" type="button" data-choose="controls" data-option="Crisp outlined" aria-pressed="false">Choose Crisp outlined</button><span class="text-small text-muted">Fine outlines, squared geometry</span></div>
+      </section>
+      <section data-variant="Capsule controls" class="ft-variant" aria-label="Capsule controls preview" hidden>
+        <div class="ft-stage" data-preview="controls-capsule" data-page="appearance"></div>
+        <div class="viz-row ft-choice-row"><button class="btn" type="button" data-choose="controls" data-option="Capsule controls" aria-pressed="false">Choose Capsule controls</button><span class="text-small text-muted">Pill actions and rounded fields</span></div>
+      </section>
+    </div>
+  </div>
+  <div class="viz-row ft-picks text-small" aria-live="polite" id="ft-pick-summary"></div>
+
+  <template id="ft-window-template">
+    <div class="ft-product-window">
+      <header class="ft-titlebar"><i data-lucide="timer" aria-hidden="true"></i><span>FocusTimer</span><span class="ft-title-context">Settings</span></header>
+      <div class="ft-workspace">
+        <nav class="ft-product-nav" aria-label="Settings pages">
+          <button type="button" class="ft-nav-item cursor-interaction" data-page-link="general" aria-current="page"><i data-lucide="sliders-horizontal" aria-hidden="true"></i><span>General</span></button>
+          <button type="button" class="ft-nav-item cursor-interaction" data-page-link="logging"><i data-lucide="file-text" aria-hidden="true"></i><span>Logging</span></button>
+          <button type="button" class="ft-nav-item cursor-interaction" data-page-link="appearance"><i data-lucide="palette" aria-hidden="true"></i><span>Appearance</span></button>
+          <button type="button" class="ft-nav-item cursor-interaction" data-page-link="hotkeys"><i data-lucide="keyboard" aria-hidden="true"></i><span>Hotkeys</span></button>
+          <button type="button" class="ft-nav-item cursor-interaction" data-page-link="about"><i data-lucide="info" aria-hidden="true"></i><span>About</span></button>
+        </nav>
+        <main class="ft-body"></main>
+      </div>
+      <footer class="ft-footer"><span class="ft-save-state" aria-live="polite"></span><button type="button" class="ft-button ft-cancel cursor-interaction">Cancel</button><button type="button" class="ft-button ft-primary ft-save cursor-interaction">Save changes</button></footer>
+    </div>
+  </template>
+
+  <template id="ft-general-template">
+    <div class="ft-page-heading"><h2>General</h2><div class="ft-type-sample" hidden><span>Timer display</span><div class="ft-timer-digits">00:37:00</div></div></div>
+    <div class="ft-sections">
+      <section class="ft-section"><h3>Startup</h3><div class="ft-section-rows">
+        <label class="ft-setting"><span class="ft-setting-copy"><span class="ft-label">Start with Windows</span><span class="ft-detail">Launch when you sign in</span></span><input type="checkbox" class="ft-toggle cursor-interaction"></label>
+        <label class="ft-setting"><span class="ft-setting-copy"><span class="ft-label">Start in system tray</span><span class="ft-detail">Keep the widget hidden on launch</span></span><input type="checkbox" class="ft-toggle cursor-interaction"></label>
+      </div></section>
+      <section class="ft-section"><h3>Break reminders</h3><div class="ft-section-rows">
+        <label class="ft-setting"><span class="ft-setting-copy"><span class="ft-label">Enable reminders</span><span class="ft-detail">Pause regularly during focus time</span></span><input type="checkbox" class="ft-toggle cursor-interaction" checked></label>
+        <label class="ft-setting"><span class="ft-label">Remind every</span><span class="ft-inline-field"><input type="number" min="1" max="240" value="37" class="ft-field ft-number" aria-label="Reminder interval"><span class="ft-unit">minutes</span></span></label>
+        <label class="ft-setting"><span class="ft-setting-copy"><span class="ft-label">Keep open until dismissed</span></span><input type="checkbox" class="ft-toggle cursor-interaction"></label>
+      </div></section>
+    </div>
+  </template>
+
+  <template id="ft-appearance-template">
+    <div class="ft-page-heading"><h2>Appearance</h2></div>
+    <div class="ft-sections">
+      <section class="ft-section"><h3>Widget material</h3><div class="ft-section-rows">
+        <label class="ft-setting"><span class="ft-setting-copy"><span class="ft-label">Background</span><span class="ft-detail">Keep foreground text crisp</span></span><select class="ft-field cursor-interaction" aria-label="Background material"><option>Frosted</option><option>Solid</option><option>Transparent</option></select></label>
+        <label class="ft-range-setting"><span class="ft-range-heading"><span class="ft-label">Surface opacity</span><output>85%</output></span><input type="range" min="50" max="100" value="85" class="ft-range cursor-interaction" aria-label="Surface opacity"></label>
+      </div></section>
+      <section class="ft-section"><h3>Widget layout</h3><div class="ft-section-rows">
+        <label class="ft-setting"><span class="ft-setting-copy"><span class="ft-label">Compact mode</span><span class="ft-detail">Timer and essential controls</span></span><input type="checkbox" class="ft-toggle cursor-interaction" checked></label>
+        <label class="ft-setting"><span class="ft-label">Scale</span><span class="ft-inline-field"><input class="ft-field ft-number" type="number" min="0.5" max="3" step="0.1" value="1.5" aria-label="Widget scale"><span class="ft-unit">×</span><button class="ft-icon-button cursor-interaction" type="button" aria-label="Reset scale" data-reset-scale="true" data-tooltip="Reset size"><i data-lucide="rotate-ccw" aria-hidden="true"></i></button></span></label>
+      </div></section>
+    </div>
+  </template>
+
+  <template id="ft-logging-template">
+    <div class="ft-page-heading"><h2>Logging</h2></div>
+    <div class="ft-sections"><section class="ft-section"><h3>Work logging</h3><div class="ft-section-rows">
+      <label class="ft-setting"><span class="ft-label">Enable work logging</span><input class="ft-toggle cursor-interaction" type="checkbox" checked></label>
+      <label class="ft-stack-field"><span class="ft-label">Storage folder</span><input class="ft-field" type="text" value="C:\Users\mklas\Documents\FocusTimer\worklogs"></label>
+      <label class="ft-setting"><span class="ft-label">Keep logs for</span><span class="ft-inline-field"><input class="ft-field ft-number" type="number" value="90" min="1" aria-label="Retention period"><span class="ft-unit">days</span></span></label>
+    </div></section></div>
+  </template>
+
+  <template id="ft-hotkeys-template">
+    <div class="ft-page-heading"><h2>Keyboard shortcuts</h2></div>
+    <div class="ft-sections"><section class="ft-section"><h3>Global shortcuts</h3><div class="ft-section-rows">
+      <label class="ft-stack-field"><span class="ft-label">Show/hide widget</span><input class="ft-field" type="text" placeholder="Press shortcut" aria-label="Show or hide widget shortcut"></label>
+      <label class="ft-stack-field"><span class="ft-label">Start/pause timer</span><input class="ft-field" type="text" placeholder="Press shortcut" aria-label="Start or pause timer shortcut"></label>
+    </div></section></div>
+  </template>
+
+  <template id="ft-about-template">
+    <div class="ft-page-heading"><h2>FocusTimer</h2></div>
+    <div class="ft-sections"><section class="ft-section"><h3>Application</h3><div class="ft-section-rows">
+      <div class="ft-setting"><span class="ft-label">Version</span><span>1.0.0</span></div>
+      <div class="ft-setting"><span class="ft-label">Author</span><span>Mklas99</span></div>
+      <p class="ft-description">A desktop focus timer with break reminders and work logging.</p>
+    </div></section></div>
+  </template>
+</div>
+
+<style>
+  #ft-ui-options .ft-option-header { margin: 18px 0 12px; justify-content: space-between; }
+  #ft-ui-options .ft-choice-row { padding: 12px 4px 4px; }
+  #ft-ui-options .ft-picks { margin-top: 16px; }
+  #ft-ui-options .ft-stage {
+    --ft-ground: light-dark(#e4e6e9, #1b1d20);
+    --ft-panel: light-dark(#f9fafb, #292c30);
+    --ft-ink: light-dark(#202329, #f0f1f3);
+    --ft-muted: light-dark(#5b616a, #b8bdc5);
+    --ft-line: light-dark(#cdd1d7, #535961);
+    --ft-inset: light-dark(#eceef1, #353a41);
+    --ft-action: light-dark(#2d3239, #e3e6eb);
+    --ft-on-action: light-dark(#f9fafb, #242830);
+    --ft-shadow: light-dark(#242a3326, #00000050);
+    --ft-pattern: light-dark(#aeb6c0, #656e7b);
+    --ft-radius: 14px;
+    --ft-control-radius: 8px;
+    --ft-control-height: 34px;
+    --ft-row-gap: 12px;
+    --ft-body-size: 14px;
+    --ft-heading-size: 20px;
+    --ft-helper-size: 12px;
+    --ft-font: "Segoe UI Variable", "Segoe UI", sans-serif;
+    --ft-blur: 18px;
+    --ft-opacity: 88;
+    position: relative; isolation: isolate; min-height: 700px; padding: 20px; display: flex; align-items: center; justify-content: center;
+    background: var(--ft-ground); color: var(--ft-ink); overflow: clip; border-radius: 16px;
+  }
+  #ft-ui-options .ft-stage::before {
+    content: ""; position: absolute; inset: 0; z-index: -1;
+    background: radial-gradient(ellipse at 18% 22%, color-mix(in srgb, var(--ft-pattern) 42%, transparent) 0 17%, transparent 42%), radial-gradient(ellipse at 87% 82%, color-mix(in srgb, var(--ft-pattern) 65%, transparent) 0 16%, transparent 43%);
+  }
+  #ft-ui-options .ft-desktop::before {
+    background: repeating-linear-gradient(125deg, transparent 0 60px, color-mix(in srgb, var(--ft-pattern) 38%, transparent) 60px 82px, transparent 82px 148px), radial-gradient(ellipse at 85% 82%, var(--ft-pattern), transparent 58%);
+  }
+  #ft-ui-options .ft-product-window {
+    width: 100%; max-width: 620px; min-width: 0; font-family: var(--ft-font); font-size: var(--ft-body-size); line-height: 1.4;
+    color: var(--ft-ink); background: color-mix(in srgb, var(--ft-panel) calc(var(--ft-opacity) * 1%), transparent);
+    backdrop-filter: blur(var(--ft-blur)); -webkit-backdrop-filter: blur(var(--ft-blur));
+    border: 1px solid color-mix(in srgb, var(--ft-line) 62%, transparent); border-radius: var(--ft-radius);
+    box-shadow: 0 12px 36px var(--ft-shadow), inset 0 1px 0 color-mix(in srgb, var(--ft-panel) 70%, transparent); overflow: clip;
+  }
+  #ft-ui-options .ft-product-window * { box-sizing: border-box; }
+  #ft-ui-options .ft-titlebar { padding: 14px 20px; display: flex; gap: 8px; align-items: center; border-bottom: 1px solid color-mix(in srgb, var(--ft-line) 50%, transparent); font-weight: 500; }
+  #ft-ui-options .ft-titlebar > svg { width: 18px; height: 18px; }
+  #ft-ui-options .ft-title-context { margin-left: auto; color: var(--ft-muted); font-size: var(--ft-helper-size); font-weight: 400; }
+  #ft-ui-options .ft-product-nav { display: flex; flex-wrap: wrap; gap: 4px; padding: 4px; margin: 16px 20px 0; background: color-mix(in srgb, var(--ft-inset) 75%, transparent); border-radius: 9px; }
+  #ft-ui-options .ft-nav-item { border: 0; background: transparent; color: var(--ft-muted); padding: 7px 10px; border-radius: 6px; font: inherit; font-size: 13px; display: flex; gap: 8px; align-items: center; justify-content: center; }
+  #ft-ui-options .ft-nav-item > svg { display: none; width: 16px; height: 16px; }
+  #ft-ui-options .ft-nav-item[aria-current="page"] { background: var(--ft-panel); color: var(--ft-ink); font-weight: 500; box-shadow: 0 1px 4px var(--ft-shadow); }
+  #ft-ui-options .ft-nav-item:hover { background: color-mix(in srgb, var(--ft-panel) 85%, transparent); color: var(--ft-ink); }
+  #ft-ui-options .ft-body { padding: 18px 24px 20px; min-height: 0; min-width: 0; }
+  #ft-ui-options .ft-page-heading { margin-bottom: 18px; display: flex; flex-wrap: wrap; gap: 14px; align-items: center; justify-content: space-between; }
+  #ft-ui-options .ft-product-window h2 { margin: 0; font-size: var(--ft-heading-size); line-height: 1.25; font-weight: 500; color: var(--ft-ink); }
+  #ft-ui-options .ft-product-window h3 { margin: 0 0 5px; font-size: var(--ft-body-size); line-height: 1.4; font-weight: 500; color: var(--ft-ink); }
+  #ft-ui-options .ft-sections { display: grid; gap: 18px; }
+  #ft-ui-options .ft-setting { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 14px; padding: var(--ft-row-gap) 0; margin: 0; }
+  #ft-ui-options .ft-setting-copy { display: grid; gap: 2px; min-width: 0; }
+  #ft-ui-options .ft-label { color: var(--ft-ink); font-weight: 400; }
+  #ft-ui-options .ft-detail, #ft-ui-options .ft-unit { color: var(--ft-muted); font-size: var(--ft-helper-size); }
+  #ft-ui-options .ft-description { font-size: var(--ft-body-size); color: var(--ft-muted); margin: 12px 0; }
+  #ft-ui-options .ft-toggle { appearance: none; position: relative; width: 32px; height: 19px; border: 1px solid var(--ft-line); background: var(--ft-inset); border-radius: 12px; margin: 0; flex: 0 0 auto; }
+  #ft-ui-options .ft-toggle::before { content: ""; position: absolute; top: 2px; left: 2px; width: 13px; height: 13px; background: var(--ft-muted); border-radius: 50%; }
+  #ft-ui-options .ft-toggle:checked { border-color: var(--ft-action); background: var(--ft-action); }
+  #ft-ui-options .ft-toggle:checked::before { left: 15px; background: var(--ft-on-action); }
+  #ft-ui-options .ft-field { min-width: 0; height: var(--ft-control-height); padding: 5px 10px; border: 1px solid color-mix(in srgb, var(--ft-line) 75%, transparent); border-radius: var(--ft-control-radius); background: color-mix(in srgb, var(--ft-inset) 75%, var(--ft-panel)); color: var(--ft-ink); font: inherit; font-size: var(--ft-body-size); }
+  #ft-ui-options select.ft-field { width: 136px; padding-right: 8px; }
+  #ft-ui-options .ft-number { width: 68px; font-variant-numeric: tabular-nums; }
+  #ft-ui-options .ft-inline-field { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  #ft-ui-options .ft-stack-field { display: grid; gap: 8px; margin: 16px 0; }
+  #ft-ui-options .ft-button, #ft-ui-options .ft-icon-button { min-height: var(--ft-control-height); border: 1px solid var(--ft-line); border-radius: var(--ft-control-radius); background: var(--ft-panel); color: var(--ft-ink); font: inherit; padding: 6px 14px; }
+  #ft-ui-options .ft-button:hover, #ft-ui-options .ft-icon-button:hover { background: var(--ft-inset); }
+  #ft-ui-options .ft-primary { border-color: var(--ft-action); background: var(--ft-action); color: var(--ft-on-action); font-weight: 500; }
+  #ft-ui-options .ft-primary:hover { background: color-mix(in srgb, var(--ft-action) 85%, var(--ft-muted)); }
+  #ft-ui-options .ft-icon-button { padding: 6px; width: var(--ft-control-height); display: inline-flex; align-items: center; justify-content: center; }
+  #ft-ui-options .ft-icon-button svg { width: 16px; height: 16px; stroke-width: 1.75; }
+  #ft-ui-options .ft-footer { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 12px 20px; border-top: 1px solid color-mix(in srgb, var(--ft-line) 50%, transparent); background: color-mix(in srgb, var(--ft-panel) 75%, transparent); }
+  #ft-ui-options .ft-save-state { flex: 1; color: var(--ft-muted); font-size: var(--ft-helper-size); min-width: 20px; }
+  #ft-ui-options .ft-range-setting { display: grid; gap: 9px; padding: var(--ft-row-gap) 0; }
+  #ft-ui-options .ft-range-heading { display: flex; justify-content: space-between; gap: 8px; }
+  #ft-ui-options .ft-range-heading output { color: var(--ft-muted); font-variant-numeric: tabular-nums; }
+  #ft-ui-options .ft-range { width: 100%; accent-color: var(--ft-action); margin: 0; }
+  #ft-ui-options .ft-type-sample { text-align: right; color: var(--ft-muted); font-size: var(--ft-helper-size); }
+  #ft-ui-options .ft-timer-digits { font-size: 30px; line-height: 1.2; font-weight: 500; letter-spacing: -0.025em; font-variant-numeric: tabular-nums; color: var(--ft-ink); }
+  #ft-ui-options .ft-glass-light { --ft-opacity: 68; --ft-blur: 12px; box-shadow: 0 6px 20px var(--ft-shadow), inset 0 1px 0 var(--ft-panel); }
+  #ft-ui-options .ft-glass-dense { --ft-opacity: 92; --ft-blur: 28px; box-shadow: 0 16px 42px var(--ft-shadow), inset 0 1px 0 var(--ft-panel); }
+  #ft-ui-options .ft-glass-layered { --ft-opacity: 66; --ft-blur: 20px; }
+  #ft-ui-options .ft-glass-layered .ft-body { margin: 14px 14px 0; background: color-mix(in srgb, var(--ft-panel) 91%, transparent); border-radius: 10px; padding: 16px 18px; }
+  #ft-ui-options .ft-glass-layered .ft-footer { border-top: 0; background: transparent; }
+  #ft-ui-options .ft-layout-compact { --ft-row-gap: 8px; }
+  #ft-ui-options .ft-layout-compact .ft-setting { border-bottom: 1px solid color-mix(in srgb, var(--ft-line) 45%, transparent); }
+  #ft-ui-options .ft-layout-compact .ft-setting:last-child { border-bottom: 0; }
+  #ft-ui-options .ft-layout-cards .ft-sections { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+  #ft-ui-options .ft-layout-cards .ft-section { background: color-mix(in srgb, var(--ft-inset) 65%, var(--ft-panel)); border: 1px solid color-mix(in srgb, var(--ft-line) 60%, transparent); border-radius: 10px; padding: 16px; }
+  #ft-ui-options .ft-layout-cards .ft-setting { align-items: start; }
+  #ft-ui-options .ft-layout-cards .ft-setting:has(.ft-inline-field) { grid-template-columns: 1fr; gap: 8px; }
+  #ft-ui-options .ft-layout-columns .ft-section { display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: 20px; padding-top: 6px; }
+  #ft-ui-options .ft-layout-columns .ft-section > h3 { padding-top: var(--ft-row-gap); }
+  #ft-ui-options .ft-layout-columns .ft-section-rows { border-left: 1px solid color-mix(in srgb, var(--ft-line) 55%, transparent); padding-left: 18px; }
+  #ft-ui-options .ft-type-soft { --ft-font: "Manrope", "Segoe UI", sans-serif; --ft-body-size: 15px; --ft-heading-size: 24px; --ft-helper-size: 12px; }
+  #ft-ui-options .ft-type-soft .ft-timer-digits { font-size: 34px; font-weight: 400; }
+  #ft-ui-options .ft-type-compact { --ft-font: "Inter", "Segoe UI", sans-serif; --ft-body-size: 13px; --ft-heading-size: 18px; --ft-helper-size: 12px; }
+  #ft-ui-options .ft-type-compact .ft-timer-digits { font-size: 28px; letter-spacing: -0.01em; }
+  #ft-ui-options .ft-nav-underline .ft-product-nav { background: transparent; border-bottom: 1px solid var(--ft-line); border-radius: 0; padding: 0; gap: 12px; }
+  #ft-ui-options .ft-nav-underline .ft-nav-item { padding: 8px 0 10px; border-radius: 0; border-bottom: 2px solid transparent; }
+  #ft-ui-options .ft-nav-underline .ft-nav-item[aria-current="page"] { border-bottom-color: var(--ft-ink); background: transparent; box-shadow: none; }
+  #ft-ui-options .ft-nav-sidebar .ft-workspace { display: grid; grid-template-columns: 145px minmax(0, 1fr); }
+  #ft-ui-options .ft-nav-sidebar .ft-product-nav { margin: 0; padding: 16px 10px; border-radius: 0; border-right: 1px solid color-mix(in srgb, var(--ft-line) 50%, transparent); display: flex; flex-direction: column; align-items: stretch; justify-content: start; gap: 4px; }
+  #ft-ui-options .ft-nav-sidebar .ft-nav-item { justify-content: start; padding: 9px 10px; }
+  #ft-ui-options .ft-nav-sidebar .ft-nav-item > svg { display: block; flex: 0 0 auto; }
+  #ft-ui-options .ft-nav-sidebar .ft-body { padding: 22px 20px; }
+  #ft-ui-options .ft-controls-soft { --ft-control-height: 36px; --ft-control-radius: 9px; }
+  #ft-ui-options .ft-controls-soft .ft-field { border-color: color-mix(in srgb, var(--ft-line) 40%, transparent); }
+  #ft-ui-options .ft-controls-outline { --ft-control-height: 34px; --ft-control-radius: 4px; }
+  #ft-ui-options .ft-controls-outline .ft-field, #ft-ui-options .ft-controls-outline .ft-button:not(.ft-primary), #ft-ui-options .ft-controls-outline .ft-icon-button { background: transparent; border-color: var(--ft-line); }
+  #ft-ui-options .ft-controls-outline .ft-toggle { appearance: auto; accent-color: var(--ft-action); width: 18px; height: 18px; border-radius: 3px; }
+  #ft-ui-options .ft-controls-outline .ft-toggle::before { content: none; }
+  #ft-ui-options .ft-controls-outline .ft-icon-button svg { stroke-width: 1.5; }
+  #ft-ui-options .ft-controls-capsule { --ft-control-height: 38px; --ft-control-radius: 12px; }
+  #ft-ui-options .ft-controls-capsule .ft-button, #ft-ui-options .ft-controls-capsule .ft-icon-button { border-radius: 30px; }
+  #ft-ui-options .ft-controls-capsule .ft-toggle { width: 38px; height: 22px; }
+  #ft-ui-options .ft-controls-capsule .ft-toggle::before { width: 16px; height: 16px; }
+  #ft-ui-options .ft-controls-capsule .ft-toggle:checked::before { left: 18px; }
+  #ft-ui-options .ft-controls-capsule .ft-icon-button svg { stroke-width: 2; }
+  #ft-ui-options [hidden] { display: none !important; }
+  @media (max-width: 560px) {
+    #ft-ui-options .ft-stage { padding: 14px; min-height: 800px; }
+    #ft-ui-options .ft-titlebar, #ft-ui-options .ft-footer { padding-left: 14px; padding-right: 14px; }
+    #ft-ui-options .ft-product-nav { margin: 12px 14px 0; }
+    #ft-ui-options .ft-body { padding: 18px 16px; }
+    #ft-ui-options .ft-layout-cards .ft-sections { grid-template-columns: 1fr; }
+    #ft-ui-options .ft-layout-columns .ft-section { grid-template-columns: 1fr; gap: 4px; }
+    #ft-ui-options .ft-layout-columns .ft-section > h3 { padding-top: 0; }
+    #ft-ui-options .ft-layout-columns .ft-section-rows { padding-left: 12px; }
+    #ft-ui-options .ft-nav-sidebar .ft-workspace { grid-template-columns: 1fr; }
+    #ft-ui-options .ft-nav-sidebar .ft-product-nav { flex-direction: row; flex-wrap: wrap; border-right: 0; border-bottom: 1px solid var(--ft-line); padding: 10px; }
+    #ft-ui-options .ft-nav-sidebar .ft-nav-item { padding: 7px 8px; }
+    #ft-ui-options .ft-nav-sidebar .ft-body { padding: 18px 16px; }
+  }
+  @media (max-width: 380px) {
+    #ft-ui-options .ft-setting:has(.ft-inline-field), #ft-ui-options .ft-setting:has(select) { grid-template-columns: 1fr; gap: 8px; }
+    #ft-ui-options .ft-nav-item { padding: 6px 8px; }
+    #ft-ui-options .ft-footer .ft-save-state { flex-basis: 100%; min-height: 1px; }
+    #ft-ui-options .ft-footer { justify-content: end; }
+    #ft-ui-options .ft-type-sample { text-align: left; }
+  }
+  @media (pointer: coarse) {
+    #ft-ui-options .ft-stage { min-height: 900px; }
+    #ft-ui-options .ft-button, #ft-ui-options .ft-icon-button, #ft-ui-options .ft-nav-item { min-height: 44px; }
+    #ft-ui-options .ft-field { min-height: 44px; font-size: 16px; }
+    #ft-ui-options .ft-setting { min-height: 52px; }
+  }
+  @supports not (backdrop-filter: blur(1px)) {
+    #ft-ui-options .ft-product-window { background: var(--ft-panel); }
+  }
+</style>
+
+<script>
+(() => {
+  const root = document.getElementById('ft-ui-options');
+  const categories = { glass: 'Glass', layout: 'Layout', type: 'Typography', navigation: 'Navigation', controls: 'Controls' };
+  const configurations = {
+    'glass-light': { css: 'ft-glass-light', blur: 12, opacity: 68, radius: 14 },
+    'glass-dense': { css: 'ft-glass-dense', blur: 28, opacity: 92, radius: 14 },
+    'glass-layered': { css: 'ft-glass-layered', blur: 20, opacity: 66, radius: 14 },
+    'layout-compact': { css: 'ft-layout-compact', gap: 8 },
+    'layout-cards': { css: 'ft-layout-cards', gap: 12 },
+    'layout-columns': { css: 'ft-layout-columns', gap: 12 },
+    'type-native': { css: 'ft-type-native', size: 14 },
+    'type-soft': { css: 'ft-type-soft', size: 15 },
+    'type-compact': { css: 'ft-type-compact', size: 13 },
+    'nav-segmented': { css: 'ft-nav-segmented', radius: 6 },
+    'nav-underline': { css: 'ft-nav-underline', radius: 0 },
+    'nav-sidebar': { css: 'ft-nav-sidebar', radius: 6 },
+    'controls-soft': { css: 'ft-controls-soft', height: 36, radius: 9 },
+    'controls-outline': { css: 'ft-controls-outline', height: 34, radius: 4 },
+    'controls-capsule': { css: 'ft-controls-capsule', height: 38, radius: 12 }
+  };
+  const favorites = { glass: null, layout: null, type: null, navigation: null, controls: null };
+  const views = new Map();
+  function restore(saved) {
+    const publicState = saved?.modelContent ?? saved;
+    if (publicState?.schema !== 'focustimer-design-options-v1') return;
+    for (const category of Object.keys(categories)) {
+      const candidate = publicState.choices?.[category];
+      const allowed = [...root.querySelectorAll('[data-choose]')].some(button => button.dataset.choose === category && button.dataset.option === candidate);
+      if (allowed) favorites[category] = candidate;
+    }
+    const customizations = saved?.privateContent?.customizations;
+    if (customizations) for (const [id, values] of Object.entries(customizations)) {
+      if (!configurations[id] || !values || typeof values !== 'object') continue;
+      for (const [property, value] of Object.entries(values)) if (property !== 'css' && property in configurations[id] && Number.isFinite(value)) configurations[id][property] = value;
+    }
+  }
+  restore(window.openai?.widgetState);
+  function persist() {
+    if (!window.openai?.setWidgetState) return;
+    window.openai.setWidgetState({
+      modelContent: { schema: 'focustimer-design-options-v1', choices: { ...favorites } },
+      privateContent: { customizations: configurations }
+    }).catch(() => {});
+  }
+  function refreshChoices() {
+    for (const button of root.querySelectorAll('[data-choose]')) {
+      const chosen = favorites[button.dataset.choose] === button.dataset.option;
+      button.setAttribute('aria-pressed', String(chosen));
+      button.textContent = (chosen ? 'Chosen: ' : 'Choose ') + button.dataset.option;
+    }
+    for (const label of root.querySelectorAll('[data-choice-label]')) label.textContent = 'Selected: ' + (favorites[label.dataset.choiceLabel] ?? 'none');
+    const picks = Object.keys(categories).filter(category => favorites[category]).map(category => categories[category] + ': ' + favorites[category]);
+    root.querySelector('#ft-pick-summary').textContent = picks.join(' · ');
+  }
+  function showPage(product, page) {
+    const template = root.querySelector('#ft-' + page + '-template');
+    if (!template) return;
+    const body = product.querySelector('.ft-body');
+    body.replaceChildren(template.content.cloneNode(true));
+    product.dataset.page = page;
+    for (const item of product.querySelectorAll('[data-page-link]')) {
+      if (item.dataset.pageLink === page) item.setAttribute('aria-current', 'page');
+      else item.removeAttribute('aria-current');
+    }
+    if (product.dataset.preview.startsWith('type-')) {
+      const sample = body.querySelector('.ft-type-sample');
+      if (sample) sample.hidden = false;
+    }
+    if (globalThis.lucide) lucide.createIcons({ attrs: { width: 16, height: 16 } });
+  }
+  function applyDesign(product, config) {
+    if ('blur' in config) product.style.setProperty('--ft-blur', config.blur + 'px');
+    if ('opacity' in config) product.style.setProperty('--ft-opacity', config.opacity);
+    if ('gap' in config) product.style.setProperty('--ft-row-gap', config.gap + 'px');
+    if ('size' in config) product.style.setProperty('--ft-body-size', config.size + 'px');
+    if ('height' in config) product.style.setProperty('--ft-control-height', config.height + 'px');
+    if ('radius' in config) {
+      if (product.dataset.preview.startsWith('glass-')) product.style.setProperty('--ft-radius', config.radius + 'px');
+      else if (product.dataset.preview.startsWith('controls-')) product.style.setProperty('--ft-control-radius', config.radius + 'px');
+      else for (const item of product.querySelectorAll('.ft-nav-item')) item.style.borderRadius = config.radius + 'px';
+    }
+  }
+  for (const stage of root.querySelectorAll('[data-preview]')) {
+    const id = stage.dataset.preview;
+    const config = configurations[id];
+    const product = root.querySelector('#ft-window-template').content.firstElementChild.cloneNode(true);
+    product.id = 'ft-preview-' + id;
+    product.dataset.preview = id;
+    product.classList.add(config.css);
+    product.setAttribute('aria-label', stage.closest('[data-variant]').dataset.variant + ' settings');
+    stage.append(product);
+    showPage(product, stage.dataset.page);
+    applyDesign(product, config);
+    views.set(id, product);
+    if (globalThis.Tweak) {
+      const tweak = new Tweak({ container: product, onChange: () => { applyDesign(product, config); persist(); } });
+      if ('blur' in config) tweak.addSlider(config, 'blur', { label: 'Backdrop blur', min: 4, max: 36, unit: 'px' });
+      if ('opacity' in config) tweak.addSlider(config, 'opacity', { label: 'Surface opacity', min: 55, max: 98, unit: '%' });
+      if ('gap' in config) tweak.addSlider(config, 'gap', { label: 'Row spacing', min: 6, max: 18, unit: 'px' });
+      if ('size' in config) tweak.addSlider(config, 'size', { label: 'Body text', min: 13, max: 16, unit: 'px' });
+      if ('height' in config) tweak.addSlider(config, 'height', { label: 'Control height', min: 32, max: 42, unit: 'px' });
+      if ('radius' in config && !id.startsWith('glass-')) tweak.addSlider(config, 'radius', { label: 'Corner radius', min: 0, max: 16, unit: 'px' });
+    }
+  }
+  root.addEventListener('click', event => {
+    const choose = event.target.closest('[data-choose]');
+    if (choose) { favorites[choose.dataset.choose] = choose.dataset.option; refreshChoices(); persist(); return; }
+    const product = event.target.closest('.ft-product-window');
+    if (!product) return;
+    const pageLink = event.target.closest('[data-page-link]');
+    if (pageLink) { showPage(product, pageLink.dataset.pageLink); applyDesign(product, configurations[product.dataset.preview]); product.querySelector('.ft-save-state').textContent = ''; return; }
+    if (event.target.closest('.ft-save')) product.querySelector('.ft-save-state').textContent = 'Preview saved';
+    if (event.target.closest('.ft-cancel')) { showPage(product, product.dataset.page); product.querySelector('.ft-save-state').textContent = 'Preview restored'; }
+    if (event.target.closest('[data-reset-scale]')) {
+      const scale = product.querySelector('[aria-label="Widget scale"]');
+      if (scale) { scale.value = '1'; product.querySelector('.ft-save-state').textContent = 'Unsaved preview'; }
+    }
+  });
+  root.addEventListener('input', event => {
+    const product = event.target.closest('.ft-product-window');
+    if (!product) return;
+    product.querySelector('.ft-save-state').textContent = 'Unsaved preview';
+    if (event.target.matches('.ft-range')) event.target.closest('.ft-range-setting').querySelector('output').value = event.target.value + '%';
+  });
+  window.addEventListener('openai:set_globals', event => {
+    if (!event.detail?.globals?.widgetState) return;
+    restore(event.detail.globals.widgetState);
+    for (const [id, product] of views) applyDesign(product, configurations[id]);
+    refreshChoices();
+  });
+  refreshChoices();
+})();
+</script>

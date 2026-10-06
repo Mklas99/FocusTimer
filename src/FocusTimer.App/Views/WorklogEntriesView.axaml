@@ -23,6 +23,19 @@
             <Setter Property="Background" Value="{DynamicResource TabSelectedBackgroundBrush}" />
             <Setter Property="TextElement.Foreground" Value="{DynamicResource TabSelectedTextBrush}" />
         </Style>
+        <Style Selector="Border.worklog-table-header">
+            <Setter Property="Background" Value="{DynamicResource DesktopCardBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtleBrush}" />
+            <Setter Property="BorderThickness" Value="0,0,0,1" />
+            <Setter Property="CornerRadius" Value="{DynamicResource DesktopControlRadius}" />
+            <Setter Property="Padding" Value="12,6" />
+            <Setter Property="Margin" Value="0,0,0,4" />
+        </Style>
+        <Style Selector="Border.worklog-table-header TextBlock">
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+            <Setter Property="Margin" Value="0" />
+        </Style>
         <Style Selector="TextBlock.worklog-manual">
             <Setter Property="FontWeight" Value="SemiBold" />
         </Style>
@@ -40,34 +53,22 @@
         <!-- Toolbar -->
         <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="{StaticResource SpacingSm}" Margin="0,0,0,8">
             <Button Content="Add entry"
-                    MinWidth="{StaticResource MinHitTargetSize}"
-                    MinHeight="{StaticResource MinHitTargetSize}"
                     Command="{Binding AddCommand}"
                     IsVisible="{Binding IsEditingAvailable}"
                     ToolTip.Tip="Add time you forgot to track" />
             <Button Content="Edit"
-                    MinWidth="{StaticResource MinHitTargetSize}"
-                    MinHeight="{StaticResource MinHitTargetSize}"
                     Command="{Binding EditCommand}"
                     IsVisible="{Binding IsEditingAvailable}"
                     ToolTip.Tip="Change the window, project, or duration of the selected entry" />
             <Button Content="Delete"
-                    MinWidth="{StaticResource MinHitTargetSize}"
-                    MinHeight="{StaticResource MinHitTargetSize}"
                     Command="{Binding DeleteCommand}"
                     IsVisible="{Binding IsEditingAvailable}"
                     ToolTip.Tip="Delete the selected entry" />
-            <Button Content="Refresh"
-                    MinWidth="{StaticResource MinHitTargetSize}"
-                    MinHeight="{StaticResource MinHitTargetSize}"
-                    Command="{Binding RefreshCommand}"
-                    ToolTip.Tip="Reload the entries for this day" />
 
             <!-- Search: every word must be part of the application, window, project, source, or times -->
             <Grid ColumnDefinitions="*,Auto" Width="280" Margin="8,0,0,0">
                 <TextBox x:Name="SearchBox"
                          Grid.ColumnSpan="2"
-                         MinHeight="{StaticResource MinHitTargetSize}"
                          Text="{Binding SearchText, Mode=TwoWay}"
                          Watermark="Search entries (Ctrl + F)"
                          AutomationProperties.Name="Search entries"
@@ -76,8 +77,6 @@
                         Content="&#10005;"
                         Margin="0,0,4,0"
                         Padding="6,0"
-                        MinWidth="{StaticResource MinHitTargetSize}"
-                        MinHeight="{StaticResource MinHitTargetSize}"
                         VerticalAlignment="Center"
                         Command="{Binding ClearSearchCommand}"
                         IsVisible="{Binding IsSearchActive}"
@@ -106,7 +105,6 @@
                     <Button Grid.Column="1"
                             Content="Dismiss"
                             Margin="12,0,0,0"
-                            MinHeight="{StaticResource MinHitTargetSize}"
                             Command="{Binding DismissOverlapWarningCommand}"
                             AutomationProperties.Name="Dismiss overlap warning" />
                 </Grid>
@@ -125,7 +123,6 @@
                     <Button Grid.Column="1"
                             Content="Dismiss"
                             Margin="12,0,0,0"
-                            MinHeight="{StaticResource MinHitTargetSize}"
                             Command="{Binding DismissActionErrorCommand}"
                             AutomationProperties.Name="Dismiss error message" />
                 </Grid>
@@ -167,7 +164,6 @@
                 <CalendarDatePicker Grid.Row="2" Grid.Column="1"
                                     HorizontalAlignment="Left"
                                     Background="Transparent"
-                                    MinHeight="{StaticResource MinHitTargetSize}"
                                     SelectedDate="{Binding Date, Mode=TwoWay}"
                                     DisplayDateStart="{Binding DisplayDateStart}"
                                     DisplayDateEnd="{Binding DisplayDateEnd}"
@@ -215,8 +211,6 @@
                     <Button Grid.Column="1"
                             Content="&#9662;"
                             Margin="4,0,0,0"
-                            MinWidth="{StaticResource MinHitTargetSize}"
-                            MinHeight="{StaticResource MinHitTargetSize}"
                             Click="OnProjectDropDownClick"
                             AutomationProperties.Name="Show projects already used"
                             ToolTip.Tip="Show projects already used" />
@@ -232,14 +226,10 @@
                 <StackPanel Grid.Row="8" Grid.Column="1" Orientation="Horizontal" Spacing="{StaticResource SpacingSm}">
                     <Button Content="Save"
                             IsDefault="True"
-                            MinWidth="{StaticResource MinHitTargetSize}"
-                            MinHeight="{StaticResource MinHitTargetSize}"
                             Command="{Binding SaveCommand}"
                             IsEnabled="{Binding !IsSaving}" />
                     <Button Content="Cancel"
                             IsCancel="True"
-                            MinWidth="{StaticResource MinHitTargetSize}"
-                            MinHeight="{StaticResource MinHitTargetSize}"
                             Command="{Binding CancelCommand}" />
                 </StackPanel>
             </Grid>
@@ -254,13 +244,9 @@
                 <TextBlock Text="{Binding DeletePrompt}" TextWrapping="Wrap" />
                 <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpacingSm}">
                     <Button Content="Delete"
-                            MinWidth="{StaticResource MinHitTargetSize}"
-                            MinHeight="{StaticResource MinHitTargetSize}"
                             Command="{Binding ConfirmDeleteCommand}" />
                     <Button Content="Cancel"
                             IsCancel="True"
-                            MinWidth="{StaticResource MinHitTargetSize}"
-                            MinHeight="{StaticResource MinHitTargetSize}"
                             Command="{Binding CancelDeleteCommand}" />
                 </StackPanel>
             </StackPanel>
@@ -279,14 +265,16 @@
 
         <!-- Table: header row and rows share the same column widths -->
         <Grid Grid.Row="5" RowDefinitions="Auto,*" MinHeight="120" IsVisible="{Binding IsReady}">
-            <Grid Grid.Row="0" ColumnDefinitions="56,56,76,150,*,130" Margin="12,0,12,4">
-                <TextBlock Grid.Column="0" Classes="SettingLabel" Text="Start" />
-                <TextBlock Grid.Column="1" Classes="SettingLabel" Text="End" />
-                <TextBlock Grid.Column="2" Classes="SettingLabel" Text="Duration" />
-                <TextBlock Grid.Column="3" Classes="SettingLabel" Text="Application" />
-                <TextBlock Grid.Column="4" Classes="SettingLabel" Text="Window" />
-                <TextBlock Grid.Column="5" Classes="SettingLabel" Text="Project" />
-            </Grid>
+            <Border Grid.Row="0" Classes="worklog-table-header">
+                <Grid ColumnDefinitions="56,56,76,150,*,130">
+                    <TextBlock Grid.Column="0" Text="Start" />
+                    <TextBlock Grid.Column="1" Text="End" />
+                    <TextBlock Grid.Column="2" Text="Duration" />
+                    <TextBlock Grid.Column="3" Text="Application" />
+                    <TextBlock Grid.Column="4" Text="Window" />
+                    <TextBlock Grid.Column="5" Text="Project" />
+                </Grid>
+            </Border>
             <ListBox Grid.Row="1"
                      Classes="worklog-table"
                      ItemsSource="{Binding Rows}"
@@ -294,7 +282,7 @@
                      AutomationProperties.Name="Worklog entries">
                 <ListBox.ItemTemplate>
                     <DataTemplate x:DataType="vm:WorklogEntryRowViewModel">
-                        <Grid ColumnDefinitions="56,56,76,150,*,130" MinHeight="{StaticResource MinHitTargetSize}">
+                        <Grid ColumnDefinitions="56,56,76,150,*,130">
                             <controls:HighlightTextBlock Grid.Column="0" SourceText="{Binding StartText}" Terms="{Binding HighlightTerms}" FontFamily="{StaticResource TabularTimerFontFamily}" VerticalAlignment="Center" />
                             <controls:HighlightTextBlock Grid.Column="1" SourceText="{Binding EndText}" Terms="{Binding HighlightTerms}" FontFamily="{StaticResource TabularTimerFontFamily}" VerticalAlignment="Center" />
                             <controls:HighlightTextBlock Grid.Column="2" SourceText="{Binding DurationText}" Terms="{Binding HighlightTerms}" FontFamily="{StaticResource TabularTimerFontFamily}" VerticalAlignment="Center" />

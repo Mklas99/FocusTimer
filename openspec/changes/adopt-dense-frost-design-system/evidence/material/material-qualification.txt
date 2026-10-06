@@ -1,0 +1,6 @@
+Window material: solid (requested AcrylicBlur/None, actual AcrylicBlur, transparency effects off)
+Requested hint: AcrylicBlur/None; actual: AcrylicBlur
+Active material: SolidFallback; mean luma 45,0, stddev 0,00, max adjacent-pixel step 0
+Forced solid fallback: mean luma 45,0, stddev 0,00, max adjacent-pixel step 0
+Transparent, unblurred (control): mean luma 44,6, stddev 1,54, max adjacent-pixel step 9
+RESULT: dense frost NOT VERIFIED on this machine (Windows transparency effects are off or no blur level was reported); solid fallback verified.

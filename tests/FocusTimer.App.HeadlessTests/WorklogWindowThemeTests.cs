@@ -47,7 +47,7 @@ public sealed class WorklogWindowThemeTests
             Assert.True(rows.Count == 2, $"{theme.ThemeName}: expected 2 table rows, found {rows.Count}");
             Assert.All(rows, row => Assert.True(row.Bounds.Height >= 24, $"{theme.ThemeName}: row height {row.Bounds.Height}"));
             var tabs = window.FindControl<TabControl>("Tabs")!;
-            Assert.Equal(["Entries", "Timeline", "Summary"], tabs.Items.OfType<TabItem>().Select(t => t.Header?.ToString()));
+            Assert.Equal(["Entries", "Timeline", "Summary"], tabs.Items.OfType<TabItem>().Select(t => Avalonia.Automation.AutomationProperties.GetName(t)));
             tabs.SelectedIndex = 1;
             await viewModel.SelectTabAsync(WorklogTab.Timeline);
             Dispatcher.UIThread.RunJobs();

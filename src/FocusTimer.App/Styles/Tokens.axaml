@@ -37,11 +37,31 @@
         <x:Double x:Key="FontSizeBody">14</x:Double>
         <x:Double x:Key="FontSizeCaption">12</x:Double>
 
-        <!-- Control Dimensions & Hit Targets (WCAG 2.5.8 compliant >= 24px) -->
-        <x:Double x:Key="MinHitTargetSize">24</x:Double>
-        <x:Double x:Key="BaseIconButtonSize">28</x:Double>
+        <!--
+          Desktop (Settings / Worklog / app-owned editors) tokens. Logical pixels; consumed only through
+          the Window.settings-window scope in ControlStyles.axaml so the timer widget keeps its own metrics.
+        -->
+        <FontFamily x:Key="DesktopFontFamily">Segoe UI, $Default</FontFamily>
+        <x:Double x:Key="DesktopControlHeight">25</x:Double>
+        <x:Double x:Key="DesktopTabRowHeight">44</x:Double>
+        <x:Double x:Key="DesktopTabIconSize">18</x:Double>
+        <x:Double x:Key="DesktopTabUnderlineThickness">3</x:Double>
+        <x:Double x:Key="DesktopRowGap">8</x:Double>
+        <x:Double x:Key="DesktopSectionGap">24</x:Double>
+        <x:Double x:Key="DesktopLabelColumnWidth">168</x:Double>
+        <x:Double x:Key="DesktopNumericFieldWidth">132</x:Double>
+        <x:Double x:Key="DesktopCardTwoColumnMinWidth">560</x:Double>
+        <Thickness x:Key="DesktopContentPadding">16</Thickness>
+        <Thickness x:Key="DesktopControlPadding">10,0</Thickness>
+        <Thickness x:Key="DesktopCardPadding">14</Thickness>
+        <CornerRadius x:Key="DesktopControlRadius">8</CornerRadius>
+        <CornerRadius x:Key="DesktopCardRadius">12</CornerRadius>
+
+        <!-- Control Dimensions & Hit Targets -->
+        <x:Double x:Key="MinHitTargetSize">22</x:Double>
+        <x:Double x:Key="BaseIconButtonSize">24</x:Double>
         <x:Double x:Key="BaseIconSize">18</x:Double>
-        <x:Double x:Key="CompactIconButtonSize">24</x:Double>
-        <x:Double x:Key="CompactIconSize">16</x:Double>
+        <x:Double x:Key="CompactIconButtonSize">22</x:Double>
+        <x:Double x:Key="CompactIconSize">12</x:Double>
     </Styles.Resources>
 </Styles>

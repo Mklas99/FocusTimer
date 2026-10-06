@@ -145,8 +145,19 @@ namespace FocusTimer.App.ViewModels
         public Orientation ButtonPanelOrientation
         {
             get => this._buttonPanelOrientation;
-            set => this.RaiseAndSetIfChanged(ref this._buttonPanelOrientation, value);
+            set
+            {
+                this.RaiseAndSetIfChanged(ref this._buttonPanelOrientation, value);
+                this.RaisePropertyChanged(nameof(this.ButtonPanelVerticalAlignment));
+            }
         }
+
+        /// <summary>
+        /// Gets the vertical placement of the compact button panel: centered when the buttons are stacked,
+        /// stretched over the clock's height when they sit in a row so their click areas use the full height.
+        /// </summary>
+        public VerticalAlignment ButtonPanelVerticalAlignment =>
+            this._buttonPanelOrientation == Orientation.Vertical ? VerticalAlignment.Center : VerticalAlignment.Stretch;
 
         /// <summary>
         /// Gets or sets the main timer font size for responsive layout.
@@ -687,8 +698,10 @@ namespace FocusTimer.App.ViewModels
             this.ProjectFontSize = DesignMetrics.BaseProjectFontSize * scale;
             this.ButtonSize = Math.Max(DesignMetrics.MinAccessibleHitTarget, DesignMetrics.BaseButtonSize * scale);
             this.IconSize = DesignMetrics.BaseIconSize * scale;
-            this.CompactButtonSize = Math.Max(DesignMetrics.MinAccessibleHitTarget, DesignMetrics.BaseButtonSize * 0.85 * scale);
-            this.CompactIconSize = DesignMetrics.BaseIconSize * 0.85 * scale;
+            this.CompactIconSize = DesignMetrics.BaseIconSize * 0.8 * scale;
+
+            // The icon's side gap equals the clock's side gap, so the widget has the same space left and right.
+            this.CompactButtonSize = Math.Max(DesignMetrics.MinAccessibleHitTarget, this.CompactIconSize + 6);
             this.ButtonPanelOrientation = scale >= 1.25 ? Orientation.Vertical : Orientation.Horizontal;
         }
 

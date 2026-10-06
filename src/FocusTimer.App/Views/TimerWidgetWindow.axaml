@@ -69,7 +69,7 @@
                     HorizontalAlignment="Center"
                     IsVisible="{Binding UseCompactMode, Converter={StaticResource BooleanNegationConverter}}" />
                     <views:CompactModeView
-                    Margin="{DynamicResource WidgetContentMargin}"
+                    Margin="9,0,8,0"
                     VerticalAlignment="Center"
                     HorizontalAlignment="Center"
                     IsVisible="{Binding UseCompactMode}" />

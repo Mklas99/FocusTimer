@@ -652,6 +652,22 @@ For C# hot reload alongside XAML editing, use:
 dotnet watch --project src/FocusTimer.Host run -c Debug
 ```
 
+### Desktop window styles
+
+Settings, Worklog, and the color picker share the `settings-window` class. Add new desktop controls to `Styles/ControlStyles.axaml` under `Window.settings-window` and take sizes from the `Desktop*` tokens in `Styles/Tokens.axaml`; do not set per-view heights, radii, or fonts. Avalonia 11.2 has no `Grid.ColumnSpacing`/`RowSpacing`, so use child margins. Put page insets on the content `StackPanel` margin, not `ScrollViewer.Padding` (padding is subtracted only on arrange, so wide children overshoot it).
+
+Native layout and material checks run only on Windows and are skipped by default:
+
+```powershell
+$env:FOCUSTIMER_NATIVE_APPEARANCE_TESTS = "1"
+$env:FOCUSTIMER_EVIDENCE_DIR = "$PWD\artifacts\desktop-evidence"   # PNG output (default: the test bin folder)
+$env:FOCUSTIMER_EVIDENCE_THEMES = "Dark,Light"                       # comma-separated built-in themes
+dotnet test tests/FocusTimer.App.Tests --filter "FullyQualifiedName~DesktopShellEvidence"
+dotnet test tests/FocusTimer.App.Tests --filter "FullyQualifiedName~DesktopMaterialNative"
+```
+
+`DesktopShellEvidence` renders every Settings and Worklog page at the default and minimum sizes and asserts the commit buttons, tab labels, and page content stay inside the window. `DesktopMaterialNative` briefly shows windows on screen to compare the dense-frost shell with a solid and an unblurred-transparent control over a stripe pattern; it reports the frost as not verified when Windows transparency effects are off.
+
 ### Enable Verbose Logging
 
 There's no environment variable for log level today. Two options:

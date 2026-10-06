@@ -86,12 +86,13 @@ public class AppearanceNativeTests
                 {
                     var editor = SettingsWindowViewModelTests.CreateAppearanceEditor();
                     editor.SelectedThemeName = preset;
-                    editor.SelectedTabIndex = 3;
+                    editor.SelectedTabIndex = AppearanceTab;
                     var gate = new TaskCompletionSource();
                     editor.SetRuntimeActivator(_ => gate.Task);
                     var settings = new SettingsWindow { DataContext = editor, ShowActivated = false, Position = new PixelPoint(-3000, -3000) };
                     settings.Show();
                     Dispatcher.UIThread.RunJobs();
+                    ExpandPaletteGroups(settings);
                     TextBox input = settings.GetVisualDescendants().OfType<TextBox>().First();
                     input.Focus();
                     var inputMethod = new TextInputMethodClientRequestedEventArgs
@@ -164,7 +165,7 @@ public class AppearanceNativeTests
 
                     var reopenedEditor = SettingsWindowViewModelTests.CreateAppearanceEditor();
                     reopenedEditor.SelectedThemeName = preset;
-                    reopenedEditor.SelectedTabIndex = 3;
+                    reopenedEditor.SelectedTabIndex = AppearanceTab;
                     var reopenedWindow = new SettingsWindow { DataContext = reopenedEditor, ShowActivated = false, Position = new PixelPoint(-3000, -3000) };
                     reopenedWindow.Show();
                     Dispatcher.UIThread.RunJobs();
@@ -188,6 +189,20 @@ public class AppearanceNativeTests
         thread.Start();
         Assert.True(thread.Join(TimeSpan.FromSeconds(30)), "Native appearance test timed out.");
         if (failure != null) throw new Xunit.Sdk.XunitException(failure.ToString());
+    }
+
+    private const int AppearanceTab = 2;
+
+    private static void ExpandPaletteGroups(SettingsWindow settings)
+    {
+        settings.UpdateLayout();
+        foreach (Expander expander in settings.GetVisualDescendants().OfType<Expander>())
+        {
+            expander.IsExpanded = true;
+        }
+
+        Dispatcher.UIThread.RunJobs();
+        settings.UpdateLayout();
     }
 
     public class AppearanceTestApp : Application

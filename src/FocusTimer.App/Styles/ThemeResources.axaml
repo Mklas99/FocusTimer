@@ -182,5 +182,18 @@
         <SolidColorBrush x:Key="WidgetShellTintBrush" Color="{DynamicResource WindowBackgroundColor}"/>
         <SolidColorBrush x:Key="WidgetShellFallbackBrush" Color="{DynamicResource WindowBackgroundColor}"/>
 
+        <!--
+          Desktop (Settings / Worklog) material. Derived from the Settings roles only, never from widget
+          opacity values. ThemeManager keeps these in sync; the values here are the default-theme baseline.
+        -->
+        <SolidColorBrush x:Key="DesktopShellFrostBrush" Color="#2D2D30" Opacity="0.95"/>
+        <SolidColorBrush x:Key="DesktopCardBrush" Color="#38383C"/>
+        <SolidColorBrush x:Key="DesktopFocusBrush" Color="#2899F5"/>
+        <SolidColorBrush x:Key="DesktopFieldBrush" Color="#414143"/>
+        <SolidColorBrush x:Key="DesktopControlHoverBrush" Color="#4E4E50"/>
+        <SolidColorBrush x:Key="DesktopControlPressedBrush" Color="#5A5A5C"/>
+        <SolidColorBrush x:Key="TabSelectedLabelBrush" Color="#4DA3E8"/>
+        <SolidColorBrush x:Key="DesktopTabUnderlineIdleBrush" Color="#CCCCCC" Opacity="0.18"/>
+
     </Styles.Resources>
 </Styles>

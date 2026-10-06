@@ -12,6 +12,11 @@ namespace FocusTimer.App.Services
     /// </summary>
     public class ThemeManager
     {
+        /// <summary>
+        /// Tint opacity of the dense-frost Settings/Worklog shell (a near-solid 95% tint).
+        /// </summary>
+        public const double DesktopShellFrostOpacity = 0.95;
+
         private readonly IAppLogger? _logWriter;
         private IResourceDictionary? _activeResources;
 
@@ -98,6 +103,12 @@ namespace FocusTimer.App.Services
                 this.ThemeApplied?.Invoke(this.ActiveTheme);
                 return;
             }
+
+            // High Contrast never uses translucent desktop material.
+            SetResourceIfChanged(
+                resources,
+                DesktopWindowMaterial.ForceSolidResourceKey,
+                string.Equals(theme.ThemeName, "High Contrast", StringComparison.OrdinalIgnoreCase));
 
             // Store opacity values as resources
             SetResourceIfChanged(resources, "BackgroundOpacity", theme.BackgroundOpacity);
@@ -192,6 +203,35 @@ namespace FocusTimer.App.Services
                 SetBrushIfChanged(resources, "SettingsAccordionBorderBrush", Color.Parse(theme.AccentPrimary), 0.4);
                 SetBrushIfChanged(resources, "SettingsAccordionHeaderHoverBrush", Colors.White, 0.06);
 
+                // Desktop material: derived from Settings roles only, independent of widget opacity values.
+                Color shell = Color.Parse(theme.SettingsBackground);
+                Color opaqueShell = Color.FromArgb(255, shell.R, shell.G, shell.B);
+                SetBrushIfChanged(resources, "DesktopShellFrostBrush", opaqueShell, DesktopShellFrostOpacity);
+                SetBrushIfChanged(resources, "DesktopCardBrush", Mix(opaqueShell, Color.Parse(theme.PrimaryText), 0.06));
+                Color primaryText = Color.Parse(theme.PrimaryText);
+                Color opaquePrimaryText = Color.FromArgb(255, primaryText.R, primaryText.G, primaryText.B);
+
+                // Fields, buttons and disclosure headers share one opaque surface (the input role composited over the
+                // window), so they look identical on the window and inside cards; hover and pressed are opaque mixes of it.
+                Color field = Composite(Color.Parse(theme.InputBackground), opaqueShell);
+                SetBrushIfChanged(resources, "DesktopFieldBrush", field);
+
+                // Focus indication is the accent, lightened or darkened only as far as needed to reach 3:1 on the
+                // window and on fields (Dark and Nord accents are below that).
+                Color focus = ThemeContrast.EnsureContrast(
+                    ThemeContrast.EnsureContrast(Color.Parse(theme.AccentPrimary), opaqueShell, 3.0), field, 3.0);
+                SetBrushIfChanged(resources, "DesktopFocusBrush", focus);
+                SetBrushIfChanged(resources, "DesktopControlHoverBrush", Mix(field, opaquePrimaryText, 0.10));
+                SetBrushIfChanged(resources, "DesktopControlPressedBrush", Mix(field, opaquePrimaryText, 0.18));
+                Color tabText = Color.Parse(theme.TabText);
+
+                // Tabs sit directly on the window, so the label must be readable on the Settings background.
+                SetBrushIfChanged(
+                    resources,
+                    "TabSelectedLabelBrush",
+                    ThemeContrast.EnsureContrast(Color.Parse(theme.AccentPrimary), opaqueShell));
+                SetBrushIfChanged(resources, "DesktopTabUnderlineIdleBrush", Color.FromArgb(255, tabText.R, tabText.G, tabText.B), 0.18);
+
                 var accentColor = Color.Parse(theme.AccentPrimary);
                 SetBrushIfChanged(resources, "FocusRingBrush", accentColor);
                 SetBrushIfChanged(resources, "BorderSubtleBrush", Color.Parse(theme.InputBorder));
@@ -231,6 +271,13 @@ namespace FocusTimer.App.Services
             }
 
             resources[key] = new SolidColorBrush(color, opacity);
+        }
+
+        private static Color Composite(Color foreground, Color background)
+        {
+            double alpha = foreground.A / 255.0;
+            byte Blend(byte front, byte back) => (byte)Math.Round((alpha * front) + ((1 - alpha) * back));
+            return Color.FromRgb(Blend(foreground.R, background.R), Blend(foreground.G, background.G), Blend(foreground.B, background.B));
         }
 
         private static Color Mix(Color source, Color target, double amount)

@@ -79,6 +79,16 @@ View (XAML)
   - Converters: Color opacity, angle rotation, play/pause icons
   - WorklogEntryEditorViewModel: the add/edit form (inline in the Entries tab); it calls only `IWorklogEditingService`. The Timeline tab (WorklogTimelineViewModel / WorklogTimelineView, laid out by the custom `TimelinePanel`) reads all entries the Entries tab loaded (a search does not hide them), so the two never disagree; overlapping entries are drawn side by side in lanes, and Ctrl + mouse wheel changes the hour height (zoom, remembered between runs), recomputing the lanes. A Group by switch splits the timeline into one column per application, project, or window (the Summary's groupings, remembered with the zoom): `TimelinePanel` arranges blocks in columns, `TimelineColumnsPanel` lines up the headers and column lines, and the lanes are split only inside a column
 
+**Desktop UI styling (Settings, Worklog, color picker)**
+
+All desktop windows carry the `settings-window` class, and every desktop selector in `Styles/ControlStyles.axaml` is scoped under `Window.settings-window`, so the timer widget keeps its own geometry, fonts, and palette. Ownership:
+
+- `Styles/Tokens.axaml` holds the invariant `Desktop*` metrics (25 px control height, 8/12 px control and card radii, 44 px tab row, 3 px underline, spacing, Segoe UI with a `$Default` fallback). `TabularTimerFontFamily` and the widget metrics are untouched.
+- `Styles/ThemeResources.axaml` holds default brushes for the desktop material (`DesktopShellFrostBrush`, `DesktopCardBrush`, the opaque `DesktopFieldBrush` shared by fields, buttons and disclosure headers with its hover/pressed mixes, `TabSelectedLabelBrush`, the idle underline). `ThemeManager.ApplyTheme` recomputes them from the Settings, text, tab, and accent roles only, never from the widget opacity values, and sets `DesktopMaterialForceSolid` for the High Contrast theme. No theme-file field was added.
+- `Styles/ControlStyles.axaml` defines the shared soft-rounded control family (buttons, text/read-only fields, numeric fields, dropdowns, checkboxes, sliders, disclosure headers), the icon-and-underline `TabControl`/`TabItem` templates, and the cards. Worklog-local control overrides live here too. Template buttons of other controls (date picker, calendar) and the color swatches are excluded or reset.
+- `Controls/TabHeader` renders an outlined Material icon beside the label and reserves the semibold width; `Controls/ResponsiveCardsPanel` places peer cards side by side from 560 px of content width and stacks them below that.
+- `Services/DesktopWindowMaterial` (attached by the `SettingsWindow` and `WorklogWindow` constructors) requests `AcrylicBlur` then `None`, and sets the `frost-active` class only when `DesktopMaterialPolicy` sees a reported blur level with no High Contrast, no system contrast preference, and Windows transparency effects on (`WindowsTransparencySetting`). Otherwise the solid `SettingsBackgroundBrush` stays. Layout is identical in both states. The App project does not reference `FocusTimer.Platform.Windows`, and no Host DI is involved.
+
 **Dependencies**: Core, Persistence
 
 **Cross-Platform**: Built as `net8.0` (no Windows-specific code; platform-specific features accessed via Core interfaces)

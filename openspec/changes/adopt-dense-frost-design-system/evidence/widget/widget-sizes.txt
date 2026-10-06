@@ -1,0 +1,11 @@
+full: window 303x101
+  button 24x24 at 185, 18
+  button 24x24 at 213, 18
+  button 24x24 at 241, 18
+  button 24x24 at 269, 18
+compact-1,0: window 183x39
+  button 21x37 at 133, 1
+  button 21x37 at 154, 1
+compact-1,5: window 231x54
+  button 28x25 at 195, 2
+  button 28x25 at 195, 27

@@ -14,19 +14,19 @@ using FocusTimer.Persistence;
 public class ExclusionRuleEditorTests
 {
     [Fact]
-    public async Task BlankRuleShowsErrorAndCannotSave()
+    public async Task BlankRuleIsWarnedAboutAndDroppedWhenApplied()
     {
         var provider = new Provider(); var vm = Create(provider);
         vm.AddExclusionRuleCommand.Execute(null);
         Assert.Single(vm.ExclusionRules);
-        Assert.NotEmpty(vm.ExclusionRules[0].Error);
-        Assert.NotEmpty(vm.ExclusionRulesError);
-        await Apply(vm);
-        Assert.False(vm.LastApplySucceeded); Assert.Equal(0, provider.Saves);
-        Assert.NotEmpty(vm.CommitError);
-        vm.ExclusionRules[0].AppPattern = "keepass";
         Assert.Empty(vm.ExclusionRules[0].Error);
+        Assert.NotEmpty(vm.ExclusionRules[0].Warning);
+        Assert.True(vm.ExclusionRules[0].HasWarning);
         Assert.Empty(vm.ExclusionRulesError);
+        await Apply(vm);
+        Assert.True(vm.LastApplySucceeded);
+        Assert.Empty(provider.Saved.ExclusionRules);
+        Assert.Empty(vm.ExclusionRules);
     }
 
     [Fact]
@@ -73,10 +73,9 @@ public class ExclusionRuleEditorTests
         vm.ExclusionList.AddCommand.Execute(null);
         vm.ExclusionRules[0].AppPattern = "keepass";
         vm.SegmentationList.AddCommand.Execute(null);
-        Assert.NotEmpty(vm.SegmentationList.Error);
+        Assert.Empty(vm.SegmentationList.Error);
+        Assert.True(vm.SegmentationList.Rules[0].IsBlank);
         Assert.Empty(vm.ExclusionList.Error);
-        await Apply(vm);
-        Assert.False(vm.LastApplySucceeded); Assert.Equal(0, provider.Saves);
         vm.SegmentationList.Rules[0].AppPattern = "chrome";
         vm.SegmentationList.Rules[0].TitlePattern = " * ";
         await Apply(vm);
@@ -96,11 +95,14 @@ public class ExclusionRuleEditorTests
     {
         var provider = new Provider(); var vm = Create(provider);
         vm.ProjectList.AddCommand.Execute(null);
-        Assert.NotEmpty(vm.ProjectList.Error);
+        Assert.Empty(vm.ProjectList.Error); // a blank row is only warned about
+        Assert.True(vm.ProjectList.Rules[0].HasWarning);
+        vm.ProjectList.Rules[0].AppPattern = "code";
+        Assert.False(vm.ProjectList.Rules[0].HasWarning);
+        Assert.True(vm.ProjectList.Rules[0].HasError);
+        Assert.NotEmpty(vm.ProjectList.Error); // project name still missing
         await Apply(vm);
         Assert.False(vm.LastApplySucceeded); Assert.Equal(0, provider.Saves);
-        vm.ProjectList.Rules[0].AppPattern = "code";
-        Assert.NotEmpty(vm.ProjectList.Error); // project name still missing
         vm.ProjectList.Rules[0].ProjectName = "  Alpha ";
         Assert.Empty(vm.ProjectList.Error);
         vm.ProjectList.AddCommand.Execute(null);

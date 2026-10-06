@@ -6,30 +6,19 @@
 
     <Grid RowDefinitions="Auto,Auto,*">
 
-        <!-- Total and refresh -->
-        <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="0,0,0,12">
-            <StackPanel Grid.Column="0" Spacing="{StaticResource SpacingXs}">
-                <TextBlock Classes="SectionHeader" Margin="0" Text="{Binding RangeLabel}" />
-                <TextBlock FontSize="{StaticResource FontSizeHeadline}"
-                           FontWeight="SemiBold"
-                           Text="{Binding TotalText}"
-                           IsVisible="{Binding IsReady}"
-                           AutomationProperties.Name="Total tracked time" />
-            </StackPanel>
-            <Button Grid.Column="1"
-                    Content="Refresh"
-                    MinWidth="{StaticResource MinHitTargetSize}"
-                    MinHeight="{StaticResource MinHitTargetSize}"
-                    VerticalAlignment="Top"
-                    Command="{Binding RefreshCommand}"
-                    ToolTip.Tip="Reload the breakdown for this day" />
-        </Grid>
+        <!-- Total of the day shown above the tabs -->
+        <StackPanel Grid.Row="0" Spacing="{StaticResource SpacingXs}" Margin="0,0,0,12" IsVisible="{Binding IsReady}">
+            <TextBlock Classes="SettingLabel" Margin="0" Text="Total tracked" />
+            <TextBlock FontSize="{StaticResource FontSizeHeadline}"
+                       FontWeight="SemiBold"
+                       Text="{Binding TotalText}"
+                       AutomationProperties.Name="Total tracked time" />
+        </StackPanel>
 
         <!-- Grouping switch -->
         <Grid Grid.Row="1" ColumnDefinitions="Auto,*" Margin="0,0,0,12">
             <TextBlock Grid.Column="0" Classes="SettingLabel" Text="Group by:" />
             <ComboBox Grid.Column="1"
-                      MinHeight="{StaticResource MinHitTargetSize}"
                       HorizontalAlignment="Left"
                       MinWidth="180"
                       ItemsSource="{Binding Groupings}"

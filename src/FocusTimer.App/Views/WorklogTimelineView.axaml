@@ -1,5 +1,6 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:icons="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
              xmlns:vm="using:FocusTimer.App.ViewModels"
              xmlns:controls="using:FocusTimer.App.Controls"
              x:DataType="vm:WorklogTimelineViewModel"
@@ -53,7 +54,7 @@
                     Spacing="{StaticResource SpacingSm}"
                     Margin="0,0,0,8">
             <TextBlock Classes="SettingLabel" Text="Group by" VerticalAlignment="Center" />
-            <ComboBox MinHeight="{StaticResource MinHitTargetSize}"
+            <ComboBox
                       MinWidth="190"
                       ItemsSource="{Binding GroupingOptions}"
                       SelectedItem="{Binding SelectedGrouping}"
@@ -66,8 +67,6 @@
             </ComboBox>
             <TextBlock Classes="SettingLabel" Text="Zoom" VerticalAlignment="Center" Margin="12,0,0,0" />
             <Button Content="&#8722;"
-                    MinWidth="{StaticResource MinHitTargetSize}"
-                    MinHeight="{StaticResource MinHitTargetSize}"
                     Command="{Binding ZoomOutCommand}"
                     IsEnabled="{Binding CanZoomOut}"
                     AutomationProperties.Name="Zoom out"
@@ -78,21 +77,18 @@
                        VerticalAlignment="Center"
                        AutomationProperties.Name="Current zoom" />
             <Button Content="+"
-                    MinWidth="{StaticResource MinHitTargetSize}"
-                    MinHeight="{StaticResource MinHitTargetSize}"
                     Command="{Binding ZoomInCommand}"
                     IsEnabled="{Binding CanZoomIn}"
                     AutomationProperties.Name="Zoom in"
                     ToolTip.Tip="Zoom in (Ctrl + plus)" />
             <Button Content="Reset"
-                    MinHeight="{StaticResource MinHitTargetSize}"
                     Command="{Binding ResetZoomCommand}"
                     AutomationProperties.Name="Reset zoom"
                     ToolTip.Tip="Back to 100% (Ctrl + 0)" />
-            <TextBlock Text="Ctrl + mouse wheel zooms the hours"
-                       VerticalAlignment="Center"
-                       Foreground="{DynamicResource SecondaryTextBrush}"
-                       FontSize="{StaticResource FontSizeCaption}" />
+            <Border Classes="help-hint" ToolTip.Tip="Ctrl + mouse wheel zooms the hours" Focusable="True"
+                    AutomationProperties.Name="About zooming" AutomationProperties.HelpText="Ctrl + mouse wheel zooms the hours">
+                <icons:MaterialIcon Kind="HelpCircleOutline" Width="16" Height="16" Foreground="{DynamicResource SettingsLabelTextBrush}" />
+            </Border>
         </StackPanel>
 
         <!-- Read states and warnings are the same as on the Entries tab -->

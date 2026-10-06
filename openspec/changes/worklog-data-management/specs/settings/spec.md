@@ -1,12 +1,16 @@
 ## MODIFIED Requirements
 
 ### Requirement: Settings Tabs
-The system SHALL provide a Settings window with General, Logging, Appearance, Hotkeys, and About tabs, covering auto-start, start-minimized, always-on-top, break reminders, worklog directory and retention, theme/opacity, hotkey display, and version/changelog/repo link. Worklog reporting SHALL be provided by the Worklog window, not by Settings.
+The system SHALL provide General, Logging, Appearance, Hotkeys, and About tabs in that order, using icon-and-underline navigation. They SHALL cover startup/window behavior, break reminders, logging and project rules, appearance, read-only hotkeys, and version/changelog/repository links with the existing developer unlock. Worklog reporting SHALL remain in the Worklog window rather than Settings.
 
 #### Scenario: User opens Settings
 - **WHEN** the user opens the Settings window
-- **THEN** the General, Logging, Appearance, Hotkeys, and About tabs are available with their respective controls and no Summary tab is shown
+- **THEN** General, Logging, Appearance, Hotkeys, and About are available in that order with their respective controls and labeled icons
 
 #### Scenario: User opens the Summary tab
-- **WHEN** the user looks for the Summary tab in Settings
-- **THEN** there is none, and today's breakdown is available in the Summary tab of the Worklog window instead
+- **WHEN** the user looks for today's time breakdown
+- **THEN** reporting is available in the Worklog Summary tab and Settings does not contain a Summary tab
+
+#### Scenario: User opens Hotkeys
+- **WHEN** the user selects Hotkeys
+- **THEN** the existing shortcut values remain read-only and the refresh does not introduce shortcut recording or editing

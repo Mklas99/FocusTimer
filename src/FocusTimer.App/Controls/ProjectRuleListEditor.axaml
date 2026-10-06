@@ -3,30 +3,52 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="using:FocusTimer.App.ViewModels"
+             xmlns:icons="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
              mc:Ignorable="d"
              x:Class="FocusTimer.App.Controls.ProjectRuleListEditor"
              x:DataType="vm:ProjectRuleListViewModel">
-    <StackPanel Spacing="10">
-        <TextBlock Classes="SectionHeader" Text="{Binding Title}" />
-        <TextBlock Text="{Binding Description}"
-                   TextWrapping="Wrap" Foreground="{DynamicResource SettingsLabelTextBrush}" />
-        <ItemsControl ItemsSource="{Binding Rules}" x:Name="RuleList">
+    <StackPanel Spacing="8">
+        <StackPanel Orientation="Horizontal">
+            <TextBlock Classes="SectionHeader" Margin="0" Text="{Binding Title}" />
+            <Border Classes="help-hint" ToolTip.Tip="{Binding Description}" Focusable="True"
+                    AutomationProperties.Name="About project rules" AutomationProperties.HelpText="{Binding Description}">
+                <icons:MaterialIcon Kind="HelpCircleOutline" Width="16" Height="16" Foreground="{DynamicResource SettingsLabelTextBrush}" />
+            </Border>
+        </StackPanel>
+        <ItemsControl ItemsSource="{Binding Rules}" x:Name="RuleList" Margin="12,0,0,0">
             <ItemsControl.ItemTemplate>
                 <DataTemplate x:DataType="vm:ProjectRuleItemViewModel">
-                    <StackPanel Spacing="4" Margin="0,0,0,8">
-                        <Grid ColumnDefinitions="*,*,*,Auto,Auto,Auto">
-                            <TextBox Grid.Column="0" Margin="0,0,6,0" Text="{Binding AppPattern}" Watermark="Application, e.g. code" />
-                            <TextBox Grid.Column="1" Margin="0,0,6,0" Text="{Binding TitlePattern}" Watermark="Window title, e.g. *my-repo*" />
-                            <TextBox Grid.Column="2" Margin="0,0,6,0" Text="{Binding ProjectName}" Watermark="Project name" />
-                            <Button Grid.Column="3" Margin="0,0,6,0" Content="Up" Command="{Binding #RuleList.((vm:ProjectRuleListViewModel)DataContext).MoveUpCommand}" CommandParameter="{Binding}" />
-                            <Button Grid.Column="4" Margin="0,0,6,0" Content="Down" Command="{Binding #RuleList.((vm:ProjectRuleListViewModel)DataContext).MoveDownCommand}" CommandParameter="{Binding}" />
-                            <Button Grid.Column="5" Content="Remove" Command="{Binding #RuleList.((vm:ProjectRuleListViewModel)DataContext).RemoveCommand}" CommandParameter="{Binding}" />
-                        </Grid>
-                        <TextBlock Text="{Binding Error}" TextWrapping="Wrap" Foreground="{DynamicResource SettingsLabelTextBrush}" />
-                    </StackPanel>
+                    <Border Classes="rule-row" Classes.warning="{Binding HasWarning}" Classes.danger="{Binding HasError}" Margin="0,0,0,8">
+                        <StackPanel Spacing="4">
+                            <!-- Labeled fields wrap onto a second line at narrow widths; the actions stay on the rule's row. -->
+                            <Grid ColumnDefinitions="*,Auto">
+                                <WrapPanel Grid.Column="0" Orientation="Horizontal">
+                                    <StackPanel Spacing="2" Margin="0,0,8,6">
+                                        <TextBlock Classes="helper-text" Text="Application pattern" />
+                                        <TextBox Width="150" Text="{Binding AppPattern}" Watermark="e.g. code" AutomationProperties.Name="Application pattern" />
+                                    </StackPanel>
+                                    <StackPanel Spacing="2" Margin="0,0,8,6">
+                                        <TextBlock Classes="helper-text" Text="Window title pattern" />
+                                        <TextBox Width="150" Text="{Binding TitlePattern}" Watermark="e.g. *my-repo*" AutomationProperties.Name="Window title pattern" />
+                                    </StackPanel>
+                                    <StackPanel Spacing="2" Margin="0,0,8,6">
+                                        <TextBlock Classes="helper-text" Text="Project" />
+                                        <TextBox Width="150" Text="{Binding ProjectName}" Watermark="Project name" AutomationProperties.Name="Project name" />
+                                    </StackPanel>
+                                </WrapPanel>
+                                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4" VerticalAlignment="Top" Margin="8,18,0,0">
+                                    <Button Classes="rule-action" Content="Up" AutomationProperties.Name="Move rule up" Command="{Binding #RuleList.((vm:ProjectRuleListViewModel)DataContext).MoveUpCommand}" CommandParameter="{Binding}" />
+                                    <Button Classes="rule-action" Content="Down" AutomationProperties.Name="Move rule down" Command="{Binding #RuleList.((vm:ProjectRuleListViewModel)DataContext).MoveDownCommand}" CommandParameter="{Binding}" />
+                                    <Button Classes="rule-action" Content="Remove" AutomationProperties.Name="Remove rule" Command="{Binding #RuleList.((vm:ProjectRuleListViewModel)DataContext).RemoveCommand}" CommandParameter="{Binding}" />
+                                </StackPanel>
+                            </Grid>
+                            <TextBlock Classes="helper-text rule-warning" Text="{Binding Warning}" IsVisible="{Binding HasWarning}" />
+                            <TextBlock Classes="helper-text rule-error" Text="{Binding Error}" IsVisible="{Binding HasError}" />
+                        </StackPanel>
+                    </Border>
                 </DataTemplate>
             </ItemsControl.ItemTemplate>
         </ItemsControl>
-        <Button Content="Add project rule" Command="{Binding AddCommand}" HorizontalAlignment="Left" />
+        <Button Content="Add project rule" Command="{Binding AddCommand}" HorizontalAlignment="Left" Margin="12,0,0,0" />
     </StackPanel>
 </UserControl>

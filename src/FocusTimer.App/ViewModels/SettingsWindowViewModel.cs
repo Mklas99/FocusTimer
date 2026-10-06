@@ -24,6 +24,20 @@ namespace FocusTimer.App.ViewModels
     public class SettingsWindowViewModel : ReactiveObject
     {
         private const double OpacityTolerance = 0.0001;
+
+        private static readonly HashSet<string> WidgetPaletteColors =
+        [
+            nameof(Theme.WindowBackground), nameof(Theme.TimerText), nameof(Theme.PlayPauseColor),
+            nameof(Theme.ButtonNormal), nameof(Theme.ButtonHover), nameof(Theme.ButtonPressed), nameof(Theme.ButtonDisabled),
+        ];
+
+        private static readonly HashSet<string> DialogPaletteColors =
+        [
+            nameof(Theme.SettingsBackground), nameof(Theme.PrimaryText), nameof(Theme.SecondaryText),
+            nameof(Theme.SettingsSectionHeader), nameof(Theme.SettingsLabelText), nameof(Theme.AccentPrimary),
+            nameof(Theme.InputBackground), nameof(Theme.InputBorder), nameof(Theme.InputText),
+        ];
+
         private readonly ISettingsProvider _settingsProvider;
         private readonly IAutoStartService _autoStartService;
         private readonly IThemeService _themeService;
@@ -588,6 +602,26 @@ namespace FocusTimer.App.ViewModels
         public string OpacityDiagnosticsSummary =>
             $"BG={(this.SelectedBlurMode == WidgetBlurModes.Solid ? "solid" : this.NormalizedBackgroundOpacity.ToString("F2"))} | Clock={this.NormalizedClockOpacity:F2} | Controls={this.NormalizedButtonsOpacity:F2} | Overall={this.NormalizedOverallFade:F2}";
 
+        /// <summary>
+        /// Gets a value indicating whether a Timer Widget palette color currently holds an invalid value.
+        /// </summary>
+        public bool HasInvalidWidgetPalette => WidgetPaletteColors.Contains(FindInvalidThemeColor(this.Settings.Theme) ?? string.Empty);
+
+        /// <summary>
+        /// Gets a value indicating whether a Dialogs and Notifications palette color currently holds an invalid value.
+        /// </summary>
+        public bool HasInvalidDialogPalette => DialogPaletteColors.Contains(FindInvalidThemeColor(this.Settings.Theme) ?? string.Empty);
+
+        /// <summary>
+        /// Gets the Timer Widget palette group header, flagged while one of its colors is invalid.
+        /// </summary>
+        public string WidgetPaletteHeader => this.HasInvalidWidgetPalette ? "Widget colors (invalid color)" : "Widget colors";
+
+        /// <summary>
+        /// Gets the Dialogs and Notifications palette group header, flagged while one of its colors is invalid.
+        /// </summary>
+        public string DialogPaletteHeader => this.HasInvalidDialogPalette ? "Dialogs & co. colors (invalid color)" : "Dialogs & co. colors";
+
         /// <summary>Gets the generation used to reject appearance results from before a commit.</summary>
         internal int AppearanceEditGeneration => this._editGeneration;
 
@@ -765,6 +799,19 @@ namespace FocusTimer.App.ViewModels
             this._logger.LogInformation($"Theme '{theme.ThemeName}' imported successfully");
         }
 
+        private static string StripChangelogTitle(string text)
+        {
+            // The card already has a "Changelog" header, so the file's own "# Changelog" title line is dropped.
+            string trimmed = text.TrimStart();
+            if (!trimmed.StartsWith("# Changelog", StringComparison.OrdinalIgnoreCase))
+            {
+                return text;
+            }
+
+            int lineEnd = trimmed.IndexOf('\n');
+            return lineEnd < 0 ? string.Empty : trimmed[(lineEnd + 1)..].TrimStart('\r', '\n');
+        }
+
         private static string? FindInvalidThemeColor(Theme theme)
         {
             foreach (PropertyInfo property in typeof(Theme).GetProperties())
@@ -843,6 +890,11 @@ namespace FocusTimer.App.ViewModels
                     this.RaisePropertyChanged(nameof(this.AutoStartDriftWarning));
                     this.RaisePropertyChanged(nameof(this.HasAutoStartDrift));
                     this._logger.LogDebug("Settings saved successfully");
+
+                    // Blank rule rows were left out of the saved rules; drop them from the draft too.
+                    this.ExclusionList.PruneBlank();
+                    this.SegmentationList.PruneBlank();
+                    this.ProjectList.PruneBlank();
                 }
                 else
                 {
@@ -1196,6 +1248,7 @@ namespace FocusTimer.App.ViewModels
             if (e.PropertyName == nameof(this.Settings.Theme))
             {
                 this.RaisePropertyChanged(nameof(this.PlayPauseColor));
+                this.RaisePaletteValidity();
                 this.AttachTheme(this.Settings.Theme);
                 this._appearancePreviewChanged = true;
                 this.ApplyThemeChanges();
@@ -1254,7 +1307,16 @@ namespace FocusTimer.App.ViewModels
                 this.RaisePropertyChanged(nameof(this.NormalizedButtonsOpacity));
             }
 
+            this.RaisePaletteValidity();
             this.RaisePropertyChanged(nameof(this.OpacityDiagnosticsSummary));
+        }
+
+        private void RaisePaletteValidity()
+        {
+            this.RaisePropertyChanged(nameof(this.HasInvalidWidgetPalette));
+            this.RaisePropertyChanged(nameof(this.HasInvalidDialogPalette));
+            this.RaisePropertyChanged(nameof(this.WidgetPaletteHeader));
+            this.RaisePropertyChanged(nameof(this.DialogPaletteHeader));
         }
 
         private void OnActualWidgetTransparencyChanged(WindowTransparencyLevel level) =>
@@ -1339,7 +1401,7 @@ namespace FocusTimer.App.ViewModels
                     string candidate = Path.Combine(current.FullName, "docs", "CHANGELOG.md");
                     if (File.Exists(candidate))
                     {
-                        return File.ReadAllText(candidate);
+                        return StripChangelogTitle(File.ReadAllText(candidate));
                     }
 
                     current = current.Parent;

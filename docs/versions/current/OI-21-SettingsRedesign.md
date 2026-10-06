@@ -15,7 +15,28 @@ The shared draft, full Apply/OK commit, Cancel/title-bar discard, temporary appe
 - Every Appearance control previews immediately by default, including theme colors, background choice, all opacity controls, scale, and compact mode. Preview does not persist the draft or activate reminders, logging, hotkeys, or polling changes. Any future immediate-change option applies only to eligible nonappearance settings.
 - Cancel discards all edits since the last successful Save/OK or Apply, across every tab. It restores any immediate previews to that restore point before closing. Closing the window through its title-bar control follows the same discard behavior, including when there are new edits after an earlier Apply.
 - A failed save does not advance the restore point or close the window. Show a useful error, and keep the draft available for correction or retry.
-- Smaller window sizes are not a priority for this redesign. Avoid new clipping at the current minimum size, but prioritize the normal desktop window size and do not spend this task on a compact settings layout.
+- Keep the default desktop window and the existing 500 by 400 logical-pixel minimum usable. Reflow labels and peer cards as needed, scroll content vertically, and keep navigation and commit actions reachable. This does not introduce a mobile Settings layout.
+
+## Selected visual direction
+
+The user selected the following direction on 2026-10-05. The [OpenSpec proposal](../../../openspec/changes/adopt-dense-frost-design-system/proposal.md), [design](../../../openspec/changes/adopt-dense-frost-design-system/design.md), and [screenshot references](../../../openspec/changes/adopt-dense-frost-design-system/references/README.md) define the remaining visual work. The layout, navigation, typography, and control refresh is implemented; native verification of the frost itself is still open (see Implemented decisions).
+
+| Area | Decision |
+|---|---|
+| Material | Dense frost with sharp foreground content and a solid accessible fallback; require native Windows evidence |
+| Layout | Compact rows by default; cards only for two or more meaningful peer groups, including Widget layout and Widget opacity |
+| Typography | Segoe UI desktop hierarchy; preserve the timer widget's font |
+| Navigation | Uploaded icon-and-underline reference; General, Logging, Appearance, Hotkeys, About |
+| Controls | Shared soft-rounded fields, buttons, dropdowns, checkboxes, sliders, and disclosures |
+
+### Implemented decisions
+
+- **Navigation.** Settings tabs are General, Logging, Appearance, Hotkeys, About with outlined Material icons beside the labels, a 2 px shared baseline, and a 3 px underline under the selected tab, drawn directly on the window background (TabSelectedBackground). The selected label and icon use the theme accent, adjusted only as far as needed to reach 4.5:1 on the tab background, because built-in TabSelectedText values were chosen for the old filled tab. Worklog uses the same tabs. At 500 logical pixels all five labels fit; narrower strips scroll horizontally.
+- **Layout.** General and Logging are compact sections with restrained dividers. Appearance has the theme tools, then Widget layout and Widget opacity as peer cards, then Timer widget colors and Dialogs and notifications colors as peer cards (all side by side from 560 px of content width, stacked below), then an opacity-diagnostics disclosure that only appears in developer mode. The dialogs card also edits the field background, border, and text colors; Changelog is a card; the rule-list descriptions show on hover of a small ? next to their headers. A palette card holding an invalid color is flagged in its header. Rule editors carry persistent Application pattern, Window title pattern, and Project labels, named reorder/remove actions, and wrap at narrow widths. Page content scrolls; the tab row and the OK/Apply/Cancel footer stay reachable at 500 by 400.
+- **Controls and type.** One soft-rounded family (25 px height, 8 px radius; focus is the accent, adjusted to 3:1; fields, buttons, and disclosure headers share one opaque surface derived from the field-background role) covers buttons, text and read-only fields, numeric fields, dropdowns, checkboxes, sliders, and disclosures; all desktop selectors are scoped under Window.settings-window. Segoe UI with page/section/body/helper sizes of 24/18/14/12.
+- **Material.** Settings and Worklog request AcrylicBlur and use a 95% tint only when the platform reports a blur level and Windows transparency effects and contrast preferences allow it; otherwise they keep the solid background with identical layout. Frost has **not** been visually verified: transparency effects are off on the development machine, so only the solid fallback and an unblurred-transparent control have been captured. The widget backdrop (OI-25, OI-28) is unchanged.
+- **Still open.** Theme palette work, the optional nonappearance immediate-change setting, native frost verification with transparency effects on, the 100/125/150/200% display-scale review, and the F-03 manual walkthrough.
+Theme palette changes are separate. Keep OK, Apply, Cancel, the implemented draft/preview/recovery behavior, read-only hotkeys, and widget Off/Solid choices. The optional nonappearance immediate-change setting and native widget blur remain outside this proposal.
 
 ## Investigation before design
 
@@ -25,13 +46,13 @@ The shared draft, full Apply/OK commit, Cancel/title-bar discard, temporary appe
 
 ## Design and implementation tasks
 
-- [ ] Define a small Settings-specific set of semantic colors for page surfaces, primary and muted text, input text, borders, selection, focus, and action states. Map every visible Settings control to these roles. Keep widget button colors independent. Preserve existing theme file compatibility or document a deliberate migration.
+- [ ] Preserve the implemented Settings semantic color roles while refreshing remaining control states and mapping the selected-tab background role to the underline. Keep widget button colors independent and retain existing theme-file values without migration.
 - [ ] Decide whether to keep the native tray menu's system styling or use a themeable app menu. Base the decision on the audit and keep menu behavior accessible.
 - [ ] Establish one Settings control system for tabs, accordions, inputs, checkboxes, sliders, and buttons. Specify normal, hover, pressed, selected/checked, disabled, invalid, and keyboard focus states where applicable. Preserve readable contrast in built-in and custom themes.
 - [ ] Redesign the Settings page hierarchy and spacing. Give the footer a clear boundary and distinguish its primary action from secondary actions. Keep the Appearance editor scannable; group detailed theme fields without hiding essential controls.
 - [x] Implement one draft and restore-point model shared by all tabs. Make Save/OK, Apply, Cancel, and title-bar close follow the decisions above. Treat import, theme reset, and preset selection as draft changes until saved or applied.
 - [ ] Add the optional immediate-change setting and define which nonappearance settings can preview safely.
-- [ ] Provide visible validation and save-failure feedback without silently discarding edits. Check keyboard order, focus visibility, labels, and pointer targets.
+- [ ] Preserve the implemented validation, load/save-failure, and recovery feedback during the refresh. Complete the remaining keyboard-order, focus-visibility, persistent-label, and pointer-target checks.
 - [ ] Update OpenSpec, design references, and user-facing documentation to match the final behavior and visual roles.
 
 ## Acceptance criteria

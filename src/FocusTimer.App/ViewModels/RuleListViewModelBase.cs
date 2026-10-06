@@ -57,6 +57,20 @@ namespace FocusTimer.App.ViewModels
 
         private string ErrorText { get; }
 
+        /// <summary>
+        /// Removes every fully blank row, as committing settings drops them.
+        /// </summary>
+        public void PruneBlank()
+        {
+            foreach (TItem row in this.Rules.Where(r => r.IsBlank).ToList())
+            {
+                row.PropertyChanged -= this.OnItemChanged;
+                this.Rules.Remove(row);
+            }
+
+            this.NotifyChanged();
+        }
+
         /// <summary>Replaces the draft rows.</summary>
         /// <param name="items">The rows to show.</param>
         protected void LoadItems(IEnumerable<TItem> items)

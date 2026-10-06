@@ -112,8 +112,11 @@ namespace FocusTimer.App.Tests
                 Check(name, "hovered tab text", theme.TabText, Color.Parse(theme.TabHoverBackground), 4.5, failures);
                 Check(name, "selected tab text", theme.TabSelectedText, selectedSurface, 4.5, failures);
                 Check(name, "selected tab", theme.TabSelectedBackground, tabSurface, 3.0, failures);
-                Check(name, "field focus", theme.InputFocusBorder, inputSurface, 3.0, failures);
-                Check(name, "unselected tab focus", theme.InputFocusBorder, tabSurface, 3.0, failures);
+                Color label = ThemeContrast.EnsureContrast(Color.Parse(theme.AccentPrimary), settingsSurface);
+                Check(name, "selected tab label", label, settingsSurface, 4.5, failures);
+                Color focus = ThemeContrast.EnsureContrast(ThemeContrast.EnsureContrast(Color.Parse(theme.AccentPrimary), settingsSurface, 3.0), inputSurface, 3.0);
+                Check(name, "field focus", focus, inputSurface, 3.0, failures);
+                Check(name, "tab focus", focus, settingsSurface, 3.0, failures);
             }
 
             Assert.True(failures.Count == 0, string.Join(Environment.NewLine, failures));
