@@ -1,6 +1,7 @@
 namespace FocusTimer.App.Services
 {
     using System;
+    using System.Linq;
     using Avalonia.Media;
 
     /// <summary>
@@ -48,6 +49,33 @@ namespace FocusTimer.App.Services
             {
                 Color candidate = Mix(start, target, step / 20.0);
                 if (Ratio(candidate, surface) >= minimumRatio)
+                {
+                    return candidate;
+                }
+            }
+
+            return target;
+        }
+
+        /// <summary>Finds a readable foreground shared by related desktop surfaces.</summary>
+        /// <param name="preferred">The stored theme color.</param>
+        /// <param name="minimumRatio">The required contrast ratio.</param>
+        /// <param name="surfaces">The opaque backgrounds where the color is used.</param>
+        /// <returns>The closest qualifying mix toward white or black.</returns>
+        public static Color EnsureContrastAcross(Color preferred, double minimumRatio, params Color[] surfaces)
+        {
+            Color start = Color.FromRgb(preferred.R, preferred.G, preferred.B);
+            double Minimum(Color color) => surfaces.Min(surface => Ratio(color, surface));
+            if (Minimum(start) >= minimumRatio)
+            {
+                return start;
+            }
+
+            Color target = Minimum(Colors.White) >= Minimum(Colors.Black) ? Colors.White : Colors.Black;
+            for (int step = 1; step <= 20; step++)
+            {
+                Color candidate = Mix(start, target, step / 20.0);
+                if (Minimum(candidate) >= minimumRatio)
                 {
                     return candidate;
                 }

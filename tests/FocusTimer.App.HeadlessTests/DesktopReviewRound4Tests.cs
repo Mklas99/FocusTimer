@@ -212,13 +212,14 @@ public sealed class DesktopReviewRound4Tests
 
         StackPanel controls = compact.GetVisualDescendants().OfType<StackPanel>().Single(p => p.Name == "ControlsLayer");
         Assert.Equal(0, controls.Spacing);
-        Assert.Equal(VerticalAlignment.Stretch, controls.VerticalAlignment);
+        Assert.Equal(Orientation.Vertical, controls.Orientation);
+        Assert.Equal(VerticalAlignment.Center, controls.VerticalAlignment);
         Assert.All(controls.Children.OfType<Button>(), b =>
         {
             Assert.Equal(new Thickness(0), b.Margin);
             Assert.Equal(VerticalAlignment.Stretch, b.VerticalAlignment);
-            Assert.True(double.IsNaN(b.Height), "The click target is not capped to the icon height.");
-            Assert.True(b.MinWidth >= 20 && b.MinHeight >= 20);
+            Assert.Equal(0, b.MinWidth);
+            Assert.Equal(0, b.MinHeight);
             Assert.Contains("compact-button", b.Classes);
         });
         host.Close();

@@ -113,6 +113,8 @@ The system SHALL block user edits and duplicate commits while Apply or OK is com
 ### Requirement: Reserved Settings save feedback
 The system SHALL show an accessible "Saving..." status while a validated Apply or OK is committing, in a reserved footer area that does not move the content or buttons. Validation failures SHALL show an error without entering the saving state. The status SHALL clear after success, ordinary failure, or recovery-required failure; existing error and retry actions SHALL remain available as appropriate.
 
+Feedback SHALL sit left of OK/Apply/Cancel in the same footer row. Routine saving feedback SHALL not reserve a separate row above the actions. Long errors and retry actions SHALL wrap and scroll within a bounded feedback area, keeping actions reachable at the 500 by 400 minimum window size.
+
 #### Scenario: Commit starts and finishes
 - **WHEN** Apply or OK begins a validated commit
 - **THEN** "Saving..." is visible and announced while committing, then clears when the commit finishes; OK closes only after success and Apply keeps the window open
@@ -151,12 +153,12 @@ Button Normal SHALL control ordinary widget icons; Play/Pause color SHALL contro
 - **WHEN** the user edits a button state color while a widget button is in that state
 - **THEN** the rendered icon immediately uses the new color, Apply/OK retains it, and Cancel restores the last successful commit
 
-### Requirement: Reserved future status colors
-Settings SHALL retain editable Success and Danger color fields and their saved theme values for future status displays. Help text SHALL state that they are reserved for future use and currently do not affect notifications. These values SHALL survive import/export and Apply/OK, and Cancel SHALL restore the last successful commit. Warning SHALL continue to color existing summary warnings.
+### Requirement: Status theme colors
+Settings SHALL preserve Success, Warning, and Danger theme values through import/export and Apply/OK, and Cancel SHALL restore the last successful commit. Warning and Danger SHALL color warning and error notifications respectively. Warning SHALL continue to color existing summary warnings. Success SHALL remain reserved for future status displays. These saved theme values need not have individual editors in the current palette layout.
 
-#### Scenario: User edits a reserved status color
-- **WHEN** the user edits Success or Danger
-- **THEN** its swatch reflects the valid color, Apply/OK saves it, and Cancel restores it, without claiming an existing notification or status changes
+#### Scenario: User imports status colors
+- **WHEN** the user imports a theme with Success, Warning, or Danger values
+- **THEN** Apply/OK preserves those values and Cancel restores the last successful commit, while open warning/error notifications follow the previewed theme
 
 ### Requirement: Shared Settings draft
 The system SHALL keep edits from every editable Settings tab in one draft, separate from the last successfully applied settings. Navigation, theme selection, theme import, and theme reset SHALL NOT persist the draft.

@@ -211,7 +211,8 @@ internal sealed class WorklogPersistenceCoordinator : IDisposable
             {
                 await _notificationService.ShowNotificationAsync(
                     "Focus Timer",
-                    "Worklog entries could not be saved. FocusTimer will retry while it remains open.");
+                    "Worklog entries could not be saved. FocusTimer will retry while it remains open.",
+                    NotificationSeverity.Error);
             }
             catch (Exception ex)
             {

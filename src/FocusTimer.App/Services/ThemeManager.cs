@@ -223,6 +223,31 @@ namespace FocusTimer.App.Services
                 SetBrushIfChanged(resources, "DesktopFocusBrush", focus);
                 SetBrushIfChanged(resources, "DesktopControlHoverBrush", Mix(field, opaquePrimaryText, 0.10));
                 SetBrushIfChanged(resources, "DesktopControlPressedBrush", Mix(field, opaquePrimaryText, 0.18));
+                Color card = Mix(opaqueShell, primaryText, 0.06);
+                Color hover = Mix(field, opaquePrimaryText, 0.10);
+                Color pressed = Mix(field, opaquePrimaryText, 0.18);
+                Color Readable(string value) => ThemeContrast.EnsureContrastAcross(
+                    Color.Parse(value), ThemeContrast.TextRatio, opaqueShell, card, field, hover, pressed);
+                SetBrushIfChanged(resources, "DesktopTextBrush", Readable(theme.PrimaryText));
+                SetBrushIfChanged(resources, "DesktopSecondaryTextBrush", Readable(theme.SecondaryText));
+                SetBrushIfChanged(resources, "DesktopLabelBrush", Readable(theme.SettingsLabelText));
+                SetBrushIfChanged(resources, "DesktopHeadingBrush", Readable(theme.SettingsSectionHeader));
+                SetBrushIfChanged(resources, "DesktopInputTextBrush", Readable(theme.InputText));
+                SetBrushIfChanged(resources, "DesktopWarningBrush", Readable(theme.WarningColor));
+                SetBrushIfChanged(resources, "DesktopDangerBrush", Readable(theme.DangerColor));
+                SetBrushIfChanged(resources, "DesktopSuccessBrush", Readable(theme.SuccessColor));
+                SetBrushIfChanged(resources, "DesktopBorderBrush", ThemeContrast.EnsureContrastAcross(
+                    Composite(Color.Parse(theme.InputBorder), field), 3.0, opaqueShell, card, field));
+                SetBrushIfChanged(resources, "DesktopNotificationBorderBrush", ThemeContrast.EnsureContrast(
+                    Color.Parse(theme.WindowBorder), opaqueShell, 3.0));
+                Color tabHover = Composite(Color.Parse(theme.TabHoverBackground), opaqueShell);
+                SetBrushIfChanged(resources, "DesktopTabTextBrush", ThemeContrast.EnsureContrastAcross(
+                    Color.Parse(theme.TabText), ThemeContrast.TextRatio, opaqueShell, tabHover));
+                SetBrushIfChanged(resources, "DesktopSelectedTextBrush", ThemeContrast.EnsureContrast(
+                    Color.Parse(theme.TabSelectedText), Composite(Color.Parse(theme.TabSelectedBackground), opaqueShell)));
+                SetBrushIfChanged(resources, "DesktopTabSelectedBrush", ThemeContrast.EnsureContrast(
+                    Color.Parse(theme.TabSelectedBackground), opaqueShell, 3.0));
+                SetBrushIfChanged(resources, "DesktopAccentTextBrush", ThemeContrast.EnsureContrast(primaryText, focus));
                 Color tabText = Color.Parse(theme.TabText);
 
                 // Tabs sit directly on the window, so the label must be readable on the Settings background.

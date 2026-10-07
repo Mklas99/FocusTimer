@@ -10,14 +10,14 @@
     <UserControl.Styles>
         <Style Selector="ListBox.worklog-table">
             <Setter Property="Background" Value="Transparent" />
-            <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource DesktopTextBrush}" />
         </Style>
         <Style Selector="ListBox.worklog-table ListBoxItem">
-            <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource DesktopTextBrush}" />
         </Style>
         <Style Selector="ListBox.worklog-table ListBoxItem:pointerover /template/ ContentPresenter#PART_ContentPresenter">
             <Setter Property="Background" Value="{DynamicResource TabHoverBackgroundBrush}" />
-            <Setter Property="TextElement.Foreground" Value="{DynamicResource TabTextBrush}" />
+            <Setter Property="TextElement.Foreground" Value="{DynamicResource DesktopTabTextBrush}" />
         </Style>
         <Style Selector="ListBox.worklog-table ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter, ListBox.worklog-table ListBoxItem:selected:pointerover /template/ ContentPresenter#PART_ContentPresenter, ListBox.worklog-table ListBoxItem:selected:focus /template/ ContentPresenter#PART_ContentPresenter">
             <Setter Property="Background" Value="{DynamicResource TabSelectedBackgroundBrush}" />
@@ -25,7 +25,7 @@
         </Style>
         <Style Selector="Border.worklog-table-header">
             <Setter Property="Background" Value="{DynamicResource DesktopCardBrush}" />
-            <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtleBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource DesktopBorderBrush}" />
             <Setter Property="BorderThickness" Value="0,0,0,1" />
             <Setter Property="CornerRadius" Value="{DynamicResource DesktopControlRadius}" />
             <Setter Property="Padding" Value="12,6" />
@@ -33,7 +33,7 @@
         </Style>
         <Style Selector="Border.worklog-table-header TextBlock">
             <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource DesktopTextBrush}" />
             <Setter Property="Margin" Value="0" />
         </Style>
         <Style Selector="TextBlock.worklog-manual">
@@ -44,7 +44,7 @@
             <Setter Property="Margin" Value="0,0,0,8" />
             <Setter Property="CornerRadius" Value="{StaticResource RadiusSm}" />
             <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtleBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource DesktopBorderBrush}" />
         </Style>
     </UserControl.Styles>
 
@@ -85,7 +85,7 @@
             </Grid>
             <TextBlock Text="{Binding SearchResultText}"
                        VerticalAlignment="Center"
-                       Foreground="{DynamicResource SecondaryTextBrush}"
+                       Foreground="{DynamicResource DesktopSecondaryTextBrush}"
                        IsVisible="{Binding IsSearchActive}" />
         </StackPanel>
 
@@ -93,7 +93,7 @@
         <StackPanel Grid.Row="1" Spacing="{StaticResource SpacingXs}">
             <Border Classes="worklog-panel"
                     Margin="0,0,0,4"
-                    BorderBrush="{DynamicResource WarningBrush}"
+                    BorderBrush="{DynamicResource DesktopWarningBrush}"
                     IsVisible="{Binding HasOverlapWarning}"
                     Tapped="OnOverlapWarningTapped"
                     AutomationProperties.Name="Overlap warning">
@@ -101,7 +101,7 @@
                     <TextBlock Grid.Column="0"
                                Text="{Binding OverlapWarning}"
                                TextWrapping="Wrap"
-                               Foreground="{DynamicResource WarningBrush}" />
+                               Foreground="{DynamicResource DesktopWarningBrush}" />
                     <Button Grid.Column="1"
                             Content="Dismiss"
                             Margin="12,0,0,0"
@@ -111,7 +111,7 @@
             </Border>
             <Border Classes="worklog-panel"
                     Margin="0,0,0,4"
-                    BorderBrush="{DynamicResource DangerBrush}"
+                    BorderBrush="{DynamicResource DesktopDangerBrush}"
                     IsVisible="{Binding HasActionError}"
                     Tapped="OnActionErrorTapped"
                     AutomationProperties.Name="Error message">
@@ -119,7 +119,7 @@
                     <TextBlock Grid.Column="0"
                                Text="{Binding ActionError}"
                                TextWrapping="Wrap"
-                               Foreground="{DynamicResource DangerBrush}" />
+                               Foreground="{DynamicResource DesktopDangerBrush}" />
                     <Button Grid.Column="1"
                             Content="Dismiss"
                             Margin="12,0,0,0"
@@ -130,7 +130,7 @@
             <TextBlock Text="{Binding WarningText}"
                        TextWrapping="Wrap"
                        Margin="0,0,0,8"
-                       Foreground="{DynamicResource WarningBrush}"
+                       Foreground="{DynamicResource DesktopWarningBrush}"
                        IsVisible="{Binding HasWarning}" />
         </StackPanel>
 
@@ -220,7 +220,7 @@
                            Text="{Binding ErrorText}"
                            TextWrapping="Wrap"
                            Margin="0,0,0,6"
-                           Foreground="{DynamicResource DangerBrush}"
+                           Foreground="{DynamicResource DesktopDangerBrush}"
                            IsVisible="{Binding HasError}" />
 
                 <StackPanel Grid.Row="8" Grid.Column="1" Orientation="Horizontal" Spacing="{StaticResource SpacingSm}">
@@ -238,7 +238,7 @@
         <!-- Delete confirmation -->
         <Border Grid.Row="3"
                 Classes="worklog-panel"
-                BorderBrush="{DynamicResource DangerBrush}"
+                BorderBrush="{DynamicResource DesktopDangerBrush}"
                 IsVisible="{Binding IsDeleteConfirmOpen}">
             <StackPanel Spacing="{StaticResource SpacingSm}">
                 <TextBlock Text="{Binding DeletePrompt}" TextWrapping="Wrap" />
@@ -255,11 +255,11 @@
         <!-- Read states -->
         <StackPanel Grid.Row="4" Spacing="{StaticResource SpacingSm}">
             <TextBlock Text="Loading…"
-                       Foreground="{DynamicResource SecondaryTextBrush}"
+                       Foreground="{DynamicResource DesktopSecondaryTextBrush}"
                        IsVisible="{Binding IsLoading}" />
             <TextBlock Text="{Binding StatusMessage}"
                        TextWrapping="Wrap"
-                       Foreground="{DynamicResource SecondaryTextBrush}"
+                       Foreground="{DynamicResource DesktopSecondaryTextBrush}"
                        IsVisible="{Binding IsMessageVisible}" />
         </StackPanel>
 

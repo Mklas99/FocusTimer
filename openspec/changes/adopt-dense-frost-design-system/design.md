@@ -23,7 +23,7 @@ The implemented `worklog-data-management` change moved Summary into Worklog. Its
 **Non-goals**
 
 - Palette selection, contrast-driven palette redesign, new presets, or serialized theme/settings fields.
-- Widget typography, icon layout, backdrop choices, scale behavior, or native widget blur. Review round 4 made two spacing exceptions on request: the gap and vertical centering of the full-mode project field, and tighter compact-mode button spacing with a click target that spans the full row height. Placing the buttons below the clock is backlog item OI-35.
+- Broader widget typography, backdrop choices, or native widget blur. Requested widget corrections retain the full-mode project-field gap and centered text, put compact buttons in a vertical column at every scale, balance visible side gaps, remove duplicate window chrome, and shrink shell corners below 1x while capping them at 12 px above it. Placing the whole button group below the clock is backlog item OI-35.
 - New Worklog charts, table columns, summary metrics, timeline interaction, or data-management behavior.
 - Hotkey editing/recording, immediate commits for nonappearance settings, custom window decorations, or a framework upgrade.
 
@@ -113,6 +113,8 @@ Update tests that assume About is index 3 or that `Header.ToString()` is the tab
 Use one moderately rounded family for buttons, text fields, read-only fields, numeric inputs/spinners, dropdowns and popup items, checkboxes, sliders, and disclosure headers. Retain existing control types and commands. Provide shared normal, hover, pressed, disabled, invalid, and focus states, including readable selection/caret and popup states.
 
 Keep OK, Apply, Cancel labels, order, commands, and transaction semantics. Keep the reserved feedback region and commit input shielding, including IME/paste, open popup/editor handling, deferred results, and focus restoration. Do not implement locking by reducing opacity or globally applying disabled styling to the draft.
+
+Place feedback left of the action buttons in the same footer row. Saving status fits the normal action height; long errors and retry actions wrap and scroll within a 120 px maximum feedback height. Keep actions pinned at the bottom so feedback does not move them.
 
 Use a scrollable content region with fixed reachable navigation/footer at Settings 640 by 540 default and 500 by 400 minimum. Worklog retains 900 by 620 default and 640 by 560 minimum. Validate logical bounds at common Windows display scales rather than shrinking controls below accessible hit targets.
 

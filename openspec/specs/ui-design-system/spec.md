@@ -41,6 +41,8 @@ The design system SHALL expose tokenized standard spacing intervals based on an 
 ### Requirement: Accessible Control Targets and Focus Rings
 All interactive controls (including icon buttons and title bar controls) SHALL provide an interactive hit target of at least 24x24 pixels regardless of inner visual icon size, SHALL support keyboard focus navigation, and SHALL display a high-contrast focus indicator when focused via keyboard.
 
+User-selected timer WidgetScale is an exception to the fixed target-size rule: widget button areas scale with the clock to preserve proportions below 1x. Desktop editors retain their minimum target sizes.
+
 #### Scenario: User navigates controls via keyboard
 - **WHEN** the user presses the Tab key to navigate between widget controls
 - **THEN** interactive icon buttons receive focus sequentially and display a visible focus indicator with at least 3:1 contrast against the surface

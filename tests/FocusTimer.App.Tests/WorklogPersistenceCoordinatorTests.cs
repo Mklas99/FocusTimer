@@ -27,6 +27,7 @@ public class WorklogPersistenceCoordinatorTests
 
         Assert.Equal(2, store.AppendCount);
         Assert.Equal(1, notificationService.NotificationCount);
+        Assert.Equal(NotificationSeverity.Error, notificationService.LastSeverity);
         Assert.Equal(entry, Assert.Single(persisted!));
     }
 
@@ -284,8 +285,15 @@ public class WorklogPersistenceCoordinatorTests
     {
         public int NotificationCount { get; private set; }
         public bool Fail { get; set; }
+        public NotificationSeverity LastSeverity { get; private set; }
 
         public Task ShowBreakReminderAsync(string message, bool requireAcknowledgement) => Task.CompletedTask;
+
+        public Task ShowNotificationAsync(string title, string message, NotificationSeverity severity)
+        {
+            this.LastSeverity = severity;
+            return this.ShowNotificationAsync(title, message);
+        }
 
         public Task ShowNotificationAsync(string title, string message)
         {

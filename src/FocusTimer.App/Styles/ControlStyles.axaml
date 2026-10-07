@@ -100,6 +100,7 @@
         <Setter Property="FontFamily" Value="{DynamicResource DesktopFontFamily}" />
         <Setter Property="FontSize" Value="{DynamicResource FontSizeBody}" />
         <Setter Property="Background" Value="{DynamicResource SettingsBackgroundBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DesktopTextBrush}" />
     </Style>
 
     <!-- Dense frost: only applied after the window verified an actual blur level (see DesktopWindowMaterial). -->
@@ -111,12 +112,12 @@
     <Style Selector="Window.settings-window TextBlock.page-title">
         <Setter Property="FontSize" Value="{DynamicResource FontSizeHeadline}" />
         <Setter Property="FontWeight" Value="SemiBold" />
-        <Setter Property="Foreground" Value="{DynamicResource SettingsSectionHeaderBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DesktopHeadingBrush}" />
     </Style>
 
     <Style Selector="Window.settings-window TextBlock.helper-text">
         <Setter Property="FontSize" Value="{DynamicResource FontSizeCaption}" />
-        <Setter Property="Foreground" Value="{DynamicResource SettingsLabelTextBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DesktopLabelBrush}" />
         <Setter Property="TextWrapping" Value="Wrap" />
     </Style>
 
@@ -128,6 +129,11 @@
 
     <Style Selector="Window.settings-window TextBlock.SettingLabel, Window.settings-window TextBlock.settings-label">
         <Setter Property="TextWrapping" Value="Wrap" />
+        <Setter Property="Foreground" Value="{DynamicResource DesktopLabelBrush}" />
+    </Style>
+
+    <Style Selector="Window.settings-window TextBlock.SectionHeader, Window.settings-window TextBlock.settings-section-header">
+        <Setter Property="Foreground" Value="{DynamicResource DesktopHeadingBrush}" />
     </Style>
 
     <Style Selector="Window.settings-window Border.help-hint">
@@ -151,14 +157,14 @@
     <!-- Peer-group cards: near-solid, never nested translucent layers. -->
     <Style Selector="Window.settings-window Border.desktop-card">
         <Setter Property="Background" Value="{DynamicResource DesktopCardBrush}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtleBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopBorderBrush}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="CornerRadius" Value="{DynamicResource DesktopCardRadius}" />
         <Setter Property="Padding" Value="{DynamicResource DesktopCardPadding}" />
     </Style>
 
     <Style Selector="Window.settings-window TextBlock.settings-body">
-        <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DesktopTextBrush}" />
     </Style>
 
     <Style Selector="Window.settings-window TextBlock.settings-body:disabled">
@@ -167,7 +173,7 @@
 
     <!-- CheckBox -->
     <Style Selector="Window.settings-window CheckBox">
-        <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DesktopTextBrush}" />
         <Setter Property="MinHeight" Value="23" />
         <Setter Property="Margin" Value="0,-3" />
         <Setter Property="Padding" Value="8,0,0,0" />
@@ -179,6 +185,17 @@
         <Setter Property="Width" Value="15" />
         <Setter Property="Height" Value="15" />
         <Setter Property="CornerRadius" Value="4" />
+        <Setter Property="Background" Value="{DynamicResource DesktopFieldBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopBorderBrush}" />
+    </Style>
+
+    <Style Selector="Window.settings-window CheckBox:checked /template/ Border#NormalRectangle, Window.settings-window CheckBox:indeterminate /template/ Border#NormalRectangle">
+        <Setter Property="Background" Value="{DynamicResource DesktopFocusBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopFocusBrush}" />
+    </Style>
+
+    <Style Selector="Window.settings-window CheckBox /template/ Path#CheckGlyph, Window.settings-window CheckBox /template/ Rectangle#IndeterminateGlyph">
+        <Setter Property="Fill" Value="{DynamicResource DesktopAccentTextBrush}" />
     </Style>
 
     <Style Selector="Window.settings-window CheckBox /template/ Grid">
@@ -214,19 +231,19 @@
     </Style>
 
     <Style Selector="Window.settings-window Border.rule-row.warning">
-        <Setter Property="BorderBrush" Value="{DynamicResource WarningBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopWarningBrush}" />
     </Style>
 
     <Style Selector="Window.settings-window Border.rule-row.danger">
-        <Setter Property="BorderBrush" Value="{DynamicResource DangerBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopDangerBrush}" />
     </Style>
 
     <Style Selector="Window.settings-window TextBlock.rule-warning">
-        <Setter Property="Foreground" Value="{DynamicResource WarningBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DesktopWarningBrush}" />
     </Style>
 
     <Style Selector="Window.settings-window TextBlock.rule-error">
-        <Setter Property="Foreground" Value="{DynamicResource DangerBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DesktopDangerBrush}" />
     </Style>
 
     <!--
@@ -234,7 +251,7 @@
       and buttons that belong to another control's template (date picker, calendar) keep their own chrome.
     -->
     <Style Selector="Window.settings-window Button:not(.color-swatch)">
-        <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DesktopTextBrush}" />
         <Setter Property="MinHeight" Value="{DynamicResource DesktopControlHeight}" />
         <Setter Property="CornerRadius" Value="{DynamicResource DesktopControlRadius}" />
         <Setter Property="Padding" Value="14,0" />
@@ -244,20 +261,20 @@
 
     <Style Selector="Window.settings-window Button:not(.color-swatch) /template/ ContentPresenter#PART_ContentPresenter">
         <Setter Property="Background" Value="{DynamicResource DesktopFieldBrush}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource InputBorderBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopBorderBrush}" />
         <Setter Property="BorderThickness" Value="1" />
     </Style>
 
     <Style Selector="Window.settings-window Button:not(.color-swatch):pointerover /template/ ContentPresenter#PART_ContentPresenter">
         <Setter Property="Background" Value="{DynamicResource DesktopControlHoverBrush}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource InputBorderBrush}" />
-        <Setter Property="TextElement.Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopBorderBrush}" />
+        <Setter Property="TextElement.Foreground" Value="{DynamicResource DesktopTextBrush}" />
     </Style>
 
     <Style Selector="Window.settings-window Button:not(.color-swatch):pressed /template/ ContentPresenter#PART_ContentPresenter">
         <Setter Property="Background" Value="{DynamicResource DesktopControlPressedBrush}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource InputBorderBrush}" />
-        <Setter Property="TextElement.Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopBorderBrush}" />
+        <Setter Property="TextElement.Foreground" Value="{DynamicResource DesktopTextBrush}" />
     </Style>
 
     <Style Selector="Window.settings-window Button:not(.color-swatch):disabled">
@@ -266,7 +283,7 @@
 
     <Style Selector="Window.settings-window Button:not(.color-swatch):disabled /template/ ContentPresenter#PART_ContentPresenter">
         <Setter Property="Background" Value="{DynamicResource DesktopFieldBrush}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource InputBorderBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopBorderBrush}" />
         <Setter Property="TextElement.Foreground" Value="{DynamicResource DisabledTextBrush}" />
     </Style>
 
@@ -303,19 +320,19 @@
         <Setter Property="MinHeight" Value="28" />
         <Setter Property="Padding" Value="8,0" />
         <Setter Property="FontSize" Value="{DynamicResource FontSizeCaption}" />
-        <Setter Property="Foreground" Value="{DynamicResource SettingsLabelTextBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DesktopLabelBrush}" />
     </Style>
 
     <Style Selector="Window.settings-window Button.rule-action:not(.color-swatch) /template/ ContentPresenter#PART_ContentPresenter">
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="BorderBrush" Value="Transparent" />
-        <Setter Property="TextElement.Foreground" Value="{DynamicResource SettingsLabelTextBrush}" />
+        <Setter Property="TextElement.Foreground" Value="{DynamicResource DesktopLabelBrush}" />
     </Style>
 
     <Style Selector="Window.settings-window Button.rule-action:not(.color-swatch):pointerover /template/ ContentPresenter#PART_ContentPresenter">
         <Setter Property="Background" Value="{DynamicResource DesktopControlHoverBrush}" />
         <Setter Property="BorderBrush" Value="Transparent" />
-        <Setter Property="TextElement.Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+        <Setter Property="TextElement.Foreground" Value="{DynamicResource DesktopTextBrush}" />
     </Style>
 
     <Style Selector="Window.settings-window Button.rule-action:not(.color-swatch):pressed /template/ ContentPresenter#PART_ContentPresenter">
@@ -342,11 +359,11 @@
     <!-- Text fields -->
     <Style Selector="Window.settings-window TextBox">
         <Setter Property="Background" Value="{DynamicResource DesktopFieldBrush}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource InputBorderBrush}" />
-        <Setter Property="Foreground" Value="{DynamicResource InputTextBrush}" />
-        <Setter Property="CaretBrush" Value="{DynamicResource InputTextBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopBorderBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DesktopInputTextBrush}" />
+        <Setter Property="CaretBrush" Value="{DynamicResource DesktopInputTextBrush}" />
         <Setter Property="SelectionBrush" Value="{DynamicResource TabSelectedBackgroundBrush}" />
-        <Setter Property="SelectionForegroundBrush" Value="{DynamicResource TabSelectedTextBrush}" />
+        <Setter Property="SelectionForegroundBrush" Value="{DynamicResource DesktopSelectedTextBrush}" />
         <Setter Property="MinHeight" Value="{DynamicResource DesktopControlHeight}" />
         <Setter Property="CornerRadius" Value="{DynamicResource DesktopControlRadius}" />
         <Setter Property="Padding" Value="{DynamicResource DesktopControlPadding}" />
@@ -359,7 +376,7 @@
 
     <Style Selector="Window.settings-window TextBox:pointerover /template/ Border#PART_BorderElement">
         <Setter Property="Background" Value="{DynamicResource DesktopFieldBrush}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource InputBorderBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopBorderBrush}" />
     </Style>
 
     <Style Selector="Window.settings-window TextBox:focus /template/ Border#PART_BorderElement">
@@ -369,7 +386,7 @@
 
     <Style Selector="Window.settings-window TextBox[IsReadOnly=True] /template/ Border#PART_BorderElement">
         <Setter Property="Background" Value="Transparent" />
-        <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtleBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopBorderBrush}" />
     </Style>
 
     <Style Selector="Window.settings-window TextBox[IsReadOnly=True]:focus /template/ Border#PART_BorderElement">
@@ -377,14 +394,14 @@
     </Style>
 
     <Style Selector="Window.settings-window TextBox:error /template/ Border#PART_BorderElement">
-        <Setter Property="BorderBrush" Value="{DynamicResource DangerBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopDangerBrush}" />
     </Style>
 
     <!-- Numeric fields -->
     <Style Selector="Window.settings-window NumericUpDown">
         <Setter Property="Background" Value="{DynamicResource DesktopFieldBrush}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource InputBorderBrush}" />
-        <Setter Property="Foreground" Value="{DynamicResource InputTextBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopBorderBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DesktopInputTextBrush}" />
         <Setter Property="MinHeight" Value="{DynamicResource DesktopControlHeight}" />
         <Setter Property="CornerRadius" Value="{DynamicResource DesktopControlRadius}" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
@@ -434,14 +451,14 @@
     </Style>
 
     <Style Selector="Window.settings-window NumericUpDown:error">
-        <Setter Property="BorderBrush" Value="{DynamicResource DangerBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopDangerBrush}" />
     </Style>
 
     <!-- Dropdowns and popup items -->
     <Style Selector="Window.settings-window ComboBox">
         <Setter Property="Background" Value="{DynamicResource DesktopFieldBrush}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource InputBorderBrush}" />
-        <Setter Property="Foreground" Value="{DynamicResource InputTextBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopBorderBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DesktopInputTextBrush}" />
         <Setter Property="MinHeight" Value="{DynamicResource DesktopControlHeight}" />
         <Setter Property="CornerRadius" Value="{DynamicResource DesktopControlRadius}" />
         <Setter Property="Padding" Value="{DynamicResource DesktopControlPadding}" />
@@ -466,7 +483,7 @@
 
     <Style Selector="Window.settings-window ComboBox:pointerover /template/ Border#Background, Window.settings-window ComboBox:pressed /template/ Border#Background">
         <Setter Property="Background" Value="{DynamicResource DesktopFieldBrush}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource InputBorderBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopBorderBrush}" />
     </Style>
 
     <Style Selector="Window.settings-window ComboBox:focus-visible /template/ Border#HighlightBackground">
@@ -479,11 +496,11 @@
     </Style>
 
     <Style Selector="Window.settings-window ComboBox:focus-visible /template/ ContentControl#ContentPresenter">
-        <Setter Property="Foreground" Value="{DynamicResource InputTextBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DesktopInputTextBrush}" />
     </Style>
 
     <Style Selector="Window.settings-window ComboBox /template/ PathIcon#DropDownGlyph">
-        <Setter Property="Foreground" Value="{DynamicResource InputTextBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DesktopInputTextBrush}" />
     </Style>
 
     <Style Selector="Window.settings-window ComboBox:disabled /template/ PathIcon#DropDownGlyph">
@@ -529,7 +546,7 @@
                                       CornerRadius="{TemplateBinding CornerRadius}" />
                     <icons:MaterialIcon Kind="CalendarMonthOutline" Width="18" Height="18"
                                         HorizontalAlignment="Center" VerticalAlignment="Center"
-                                        Foreground="{DynamicResource PrimaryTextBrush}" IsHitTestVisible="False" />
+                                        Foreground="{DynamicResource DesktopTextBrush}" IsHitTestVisible="False" />
                 </Panel>
             </ControlTemplate>
         </Setter>
@@ -537,8 +554,8 @@
 
     <Style Selector="Window.settings-window CalendarDatePicker /template/ TextBox#PART_TextBox">
         <Setter Property="Background" Value="{DynamicResource DesktopFieldBrush}" />
-        <Setter Property="Foreground" Value="{DynamicResource InputTextBrush}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource InputBorderBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DesktopInputTextBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopBorderBrush}" />
     </Style>
 
     <Style Selector="Window.settings-window CalendarDatePicker /template/ TextBox#PART_TextBox:pointerover /template/ Border#PART_BorderElement, Window.settings-window CalendarDatePicker /template/ TextBox#PART_TextBox:focus /template/ Border#PART_BorderElement">
@@ -587,7 +604,7 @@
 
     <Style Selector="Window.settings-window TabItem">
         <Setter Property="Background" Value="Transparent" />
-        <Setter Property="Foreground" Value="{DynamicResource TabTextBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DesktopTabTextBrush}" />
         <Setter Property="MinHeight" Value="{DynamicResource DesktopTabRowHeight}" />
         <Setter Property="Padding" Value="6,0" />
         <Setter Property="Margin" Value="0" />
@@ -631,7 +648,7 @@
     </Style>
 
     <Style Selector="Window.settings-window TabItem:selected /template/ Border#PART_LayoutRoot">
-        <Setter Property="BorderBrush" Value="{DynamicResource TabSelectedBackgroundBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopTabSelectedBrush}" />
     </Style>
 
     <Style Selector="Window.settings-window TabItem:pointerover:not(:selected) /template/ Border#PART_LayoutRoot">
@@ -657,7 +674,7 @@
     <!-- Version Info Text in About tab -->
     <Style Selector="TextBlock.VersionInfoText">
         <Setter Property="Cursor" Value="Hand" />
-        <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DesktopTextBrush}" />
     </Style>
 
     <!-- Settings scroll viewer -->
@@ -680,7 +697,7 @@
     -->
     <Style Selector="Calendar">
         <Setter Property="Background" Value="{DynamicResource SettingsBackgroundBrush}" />
-        <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DesktopTextBrush}" />
         <!-- Fluent fills the calendar's grid layer with BorderBrush, so it must be the surface color. -->
         <Setter Property="BorderBrush" Value="{DynamicResource SettingsBackgroundBrush}" />
         <Setter Property="FontSize" Value="{DynamicResource FontSizeBody}" />
@@ -690,7 +707,7 @@
     <Style Selector="CalendarItem">
         <Setter Property="Background" Value="{DynamicResource SettingsBackgroundBrush}" />
         <Setter Property="BorderBrush" Value="{DynamicResource SettingsBackgroundBrush}" />
-        <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DesktopTextBrush}" />
         <Setter Property="FontSize" Value="{DynamicResource FontSizeBody}" />
     </Style>
 
@@ -703,7 +720,7 @@
     </Style>
 
     <Style Selector="CalendarItem /template/ Button:not(.cal)">
-        <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DesktopTextBrush}" />
         <Setter Property="FontSize" Value="{DynamicResource FontSizeBody}" />
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="MinHeight" Value="0" />
@@ -725,8 +742,8 @@
 
     <!-- Month arrows: small, same size as the day-row icons. -->
     <Style Selector="CalendarItem /template/ Button#PART_PreviousButton /template/ Path, CalendarItem /template/ Button#PART_NextButton /template/ Path">
-        <Setter Property="Fill" Value="{DynamicResource PrimaryTextBrush}" />
-        <Setter Property="Stroke" Value="{DynamicResource PrimaryTextBrush}" />
+        <Setter Property="Fill" Value="{DynamicResource DesktopTextBrush}" />
+        <Setter Property="Stroke" Value="{DynamicResource DesktopTextBrush}" />
     </Style>
 
     <!-- The template fixes the arrow's size, so the arrow buttons are scaled down instead. -->
@@ -735,7 +752,7 @@
     </Style>
 
     <Style Selector="CalendarItem /template/ Button:not(.cal) /template/ Path">
-        <Setter Property="Fill" Value="{DynamicResource PrimaryTextBrush}" />
+        <Setter Property="Fill" Value="{DynamicResource DesktopTextBrush}" />
     </Style>
 
     <!-- The ring around today. -->
@@ -744,7 +761,7 @@
     </Style>
 
     <Style Selector="CalendarDayButton, CalendarButton">
-        <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DesktopTextBrush}" />
         <Setter Property="FontSize" Value="{DynamicResource FontSizeBody}" />
         <Setter Property="MinHeight" Value="32" />
         <Setter Property="MinWidth" Value="32" />
@@ -789,7 +806,7 @@
         <Setter Property="Template">
             <ControlTemplate>
                 <Border Background="{DynamicResource DesktopFieldBrush}"
-                        BorderBrush="{DynamicResource InputBorderBrush}"
+                        BorderBrush="{DynamicResource DesktopBorderBrush}"
                         BorderThickness="1"
                         CornerRadius="{DynamicResource DesktopControlRadius}"
                         ClipToBounds="True">
@@ -822,7 +839,7 @@
         <Setter Property="Padding" Value="10,0" />
         <Setter Property="BorderThickness" Value="0" />
         <Setter Property="CornerRadius" Value="0" />
-        <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DesktopTextBrush}" />
     </Style>
 
     <Style Selector="Expander.settings-accordion ToggleButton.accordion-header /template/ ContentPresenter#PART_ContentPresenter">
@@ -882,14 +899,14 @@
     <Style Selector="Border.color-picker-surface">
         <Setter Property="CornerRadius" Value="{DynamicResource RadiusMd}" />
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="BorderBrush" Value="{DynamicResource InputBorderBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopBorderBrush}" />
         <Setter Property="ClipToBounds" Value="True" />
     </Style>
 
     <Style Selector="Border.color-picker-hue-strip">
         <Setter Property="CornerRadius" Value="{DynamicResource RadiusSm}" />
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="BorderBrush" Value="{DynamicResource InputBorderBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopBorderBrush}" />
         <Setter Property="ClipToBounds" Value="True" />
     </Style>
 
@@ -903,7 +920,7 @@
     <Style Selector="Border.color-picker-chip">
         <Setter Property="CornerRadius" Value="{DynamicResource RadiusSm}" />
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="BorderBrush" Value="{DynamicResource InputBorderBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopBorderBrush}" />
         <Setter Property="Background" Value="{DynamicResource DesktopFieldBrush}" />
         <Setter Property="Padding" Value="6,5" />
     </Style>
@@ -925,8 +942,8 @@
     <!-- ToolTips on transient surfaces -->
     <Style Selector="ToolTip">
         <Setter Property="Background" Value="{DynamicResource SettingsBackgroundBrush}" />
-        <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtleBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DesktopTextBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopBorderBrush}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="CornerRadius" Value="{DynamicResource RadiusXs}" />
         <Setter Property="Padding" Value="8,4" />
@@ -936,7 +953,7 @@
     <!-- Context Menus -->
     <Style Selector="ContextMenu">
         <Setter Property="Background" Value="{DynamicResource SettingsBackgroundBrush}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtleBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopBorderBrush}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="CornerRadius" Value="{DynamicResource RadiusSm}" />
         <Setter Property="Padding" Value="4" />
@@ -944,7 +961,7 @@
 
     <Style Selector="TextBlock.summary-unassigned">
         <Setter Property="FontStyle" Value="Italic" />
-        <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DesktopSecondaryTextBrush}" />
     </Style>
 
 </Styles>

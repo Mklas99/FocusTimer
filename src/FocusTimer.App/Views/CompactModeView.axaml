@@ -11,8 +11,7 @@
         <converters:BooleanToAngleConverter x:Key="BooleanToAngleConverter" />
     </UserControl.Resources>
 
-    <!-- Compact buttons have no fill in any state (the icon color changes instead), so the clock stays readable
-         where the click areas reach over it. -->
+    <!-- Compact buttons use icon color for hover and pressed feedback. -->
     <UserControl.Styles>
         <Style Selector="Button.compact-button:pointerover, Button.compact-button:pressed">
             <Setter Property="Background" Value="Transparent" />
@@ -38,30 +37,33 @@
                 TextAlignment="Center"
                 VerticalAlignment="Center"
                 HorizontalAlignment="Center"
-                Margin="2" />
+                Margin="0" />
         </Grid>
 
         <StackPanel x:Name="ControlsLayer"
             Grid.Column="1"
-            Orientation="{Binding ButtonPanelOrientation}"
-            VerticalAlignment="{Binding ButtonPanelVerticalAlignment}"
+            Orientation="Vertical"
+            VerticalAlignment="Center"
             HorizontalAlignment="Center"
-            Margin="-4,0,0,0"
+            Margin="0"
             Spacing="0"
             Opacity="{Binding EffectiveControlsOpacity}"
             IsHitTestVisible="{Binding AreControlsInteractable}">
             <Button Command="{Binding ToggleCommand}"
                 Classes="icon-button compact-button"
                 ToolTip.Tip="Start/Pause"
-                MinWidth="20"
-                MinHeight="20"
-                Width="{Binding CompactButtonSize}"
+                MinWidth="0"
+                MinHeight="0"
+                Padding="0"
+                BorderThickness="0"
+                VerticalContentAlignment="Bottom"
+                Width="{Binding CompactButtonSize}" Height="{Binding CompactIconSize}"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Stretch"
                 Margin="0">
                 <materialIcons:MaterialIcon
                     Classes="widget-icon play-pause-icon" Kind="{Binding IsRunning, Converter={StaticResource PlayPauseConverter}}"
-                    Margin="0,-2,0,-3"
+                    Margin="0"
                     Width="{Binding CompactIconSize}"
                     Height="{Binding CompactIconSize}" />
             </Button>
@@ -69,15 +71,18 @@
             <Button Command="{Binding ToggleCompactModeCommand}"
                 Classes="icon-button compact-button"
                 ToolTip.Tip="Expand"
-                MinWidth="20"
-                MinHeight="20"
-                Width="{Binding CompactButtonSize}"
+                MinWidth="0"
+                MinHeight="0"
+                Padding="0"
+                BorderThickness="0"
+                VerticalContentAlignment="Top"
+                Width="{Binding CompactButtonSize}" Height="{Binding CompactIconSize}"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Stretch"
                 Margin="0,0,0,0">
                 <materialIcons:MaterialIcon Kind="ViewHeadline"
                     Classes="widget-icon"
-                    Margin="0,-3,0,-2"
+                    Margin="0"
                     Width="{Binding CompactIconSize}"
                     Height="{Binding CompactIconSize}" />
             </Button>

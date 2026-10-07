@@ -42,6 +42,7 @@ Settings SHALL remain usable at its existing 500 by 400 logical-pixel minimum an
 #### Scenario: Feedback appears
 - **WHEN** saving, validation, failure, or recovery feedback appears
 - **THEN** it occupies the reserved footer region without moving the action buttons or disabling the presentation of the complete draft
+- **AND** feedback is left of OK/Apply/Cancel in the same row, with long errors scrolling in a bounded area
 
 #### Scenario: User operates a long labeled control
 - **WHEN** a long label such as overall widget fade or activity polling interval is displayed

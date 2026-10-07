@@ -29,6 +29,38 @@ public sealed class DesktopShellNavigationTests
 
     public DesktopShellNavigationTests() => HeadlessAvaloniaFixture.EnsureInitialized();
 
+    [Theory]
+    [InlineData(500, 400)]
+    [InlineData(640, 540)]
+    public async Task Settings_FeedbackSharesTheActionRowAndLongErrorsStayBounded(int width, int height)
+    {
+        (SettingsWindow window, SettingsWindowViewModel vm) = await OpenSettingsAsync();
+        window.Width = width;
+        window.Height = height;
+        Dispatcher.UIThread.RunJobs();
+        window.UpdateLayout();
+        var status = window.FindControl<TextBlock>("SaveStatus")!;
+        var actions = window.FindControl<StackPanel>("FooterActions")!;
+        Point statusOrigin = status.TranslatePoint(default, window)!.Value;
+        Point actionOrigin = actions.TranslatePoint(default, window)!.Value;
+        Assert.True(statusOrigin.X + status.Bounds.Width < actionOrigin.X);
+        Assert.True(statusOrigin.Y >= actionOrigin.Y);
+        Assert.True(statusOrigin.Y + status.Bounds.Height <= actionOrigin.Y + actions.Bounds.Height);
+        Rect normalActions = new(actionOrigin, actions.Bounds.Size);
+
+        typeof(SettingsWindowViewModel).GetProperty(nameof(SettingsWindowViewModel.CommitError))!
+            .SetValue(vm, string.Join(" ", Enumerable.Repeat("Settings could not be saved. Try again.", 100)));
+        Dispatcher.UIThread.RunJobs();
+        window.UpdateLayout();
+        Assert.Equal(normalActions, new Rect(actions.TranslatePoint(default, window)!.Value, actions.Bounds.Size));
+        var feedback = window.FindControl<StackPanel>("FooterFeedback")!;
+        var scroll = Assert.IsType<ScrollViewer>(feedback.Parent);
+        Assert.True(scroll.Bounds.Height <= 120);
+        Assert.True(scroll.Extent.Height > scroll.Viewport.Height);
+        Assert.True(actions.TranslatePoint(default, window)!.Value.Y + actions.Bounds.Height <= window.Bounds.Height);
+        window.Close();
+    }
+
     [Fact]
     public async Task SettingsTabs_AreOrderedNamedAndShowOutlinedIconsBesideLabels()
     {
@@ -125,7 +157,7 @@ public sealed class DesktopShellNavigationTests
         theme.TabSelectedBackground = "#0000FF";
         new ThemeManager().ApplyTheme(theme);
         Dispatcher.UIThread.RunJobs();
-        Assert.Equal(Color.Parse("#0000FF"), Underline(selected));
+        Assert.Equal(ThemeContrast.EnsureContrast(Color.Parse("#0000FF"), Color.Parse(theme.SettingsBackground), 3.0), Underline(selected));
 
         // The theme file contract is unchanged: the serialized fields round-trip without migration.
         Theme reloaded = System.Text.Json.JsonSerializer.Deserialize<Theme>(System.Text.Json.JsonSerializer.Serialize(theme))!;

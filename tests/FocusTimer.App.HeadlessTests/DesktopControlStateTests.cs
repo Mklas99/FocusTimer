@@ -41,7 +41,7 @@ public sealed class DesktopControlStateTests
         Rect normalBounds = button.Bounds;
 
         Assert.Equal(Color.Parse("#223344"), Brush(surface.Background));
-        Assert.Equal(Color.Parse("#445566"), Brush(surface.BorderBrush));
+        Assert.Equal(ResourceColor("DesktopBorderBrush"), Brush(surface.BorderBrush));
         Assert.Equal(new Thickness(1), surface.BorderThickness);
         Assert.Equal(new CornerRadius(8), button.CornerRadius);
         Assert.True(normalBounds.Height >= 25);
@@ -73,7 +73,7 @@ public sealed class DesktopControlStateTests
         Border border = box.GetVisualDescendants().OfType<Border>().First(b => b.Name == "PART_BorderElement");
         Size normalSize = box.Bounds.Size;
 
-        Assert.Equal(Color.Parse("#445566"), Brush(border.BorderBrush));
+        Assert.Equal(ResourceColor("DesktopBorderBrush"), Brush(border.BorderBrush));
         Assert.Equal(Color.Parse("#223344"), Brush(border.Background));
         Assert.Equal(new CornerRadius(8), box.CornerRadius);
         Assert.True(normalSize.Height >= 25);
@@ -84,13 +84,13 @@ public sealed class DesktopControlStateTests
         Assert.Equal(Color.Parse("#CC8800"), Set(box, ":focus", () => Brush(border.BorderBrush)));
         Clear(box, ":focus");
 
-        Assert.Equal(Color.Parse("#CC0000"), Set(box, ":error", () => Brush(border.BorderBrush)));
+        Assert.Equal(ResourceColor("DesktopDangerBrush"), Set(box, ":error", () => Brush(border.BorderBrush)));
         Clear(box, ":error");
 
         box.IsReadOnly = true;
         Dispatcher.UIThread.RunJobs();
         Assert.Equal(Colors.Transparent, Brush(border.Background));
-        Assert.Equal(Color.Parse("#445566"), Brush(border.BorderBrush));
+        Assert.Equal(ResourceColor("DesktopBorderBrush"), Brush(border.BorderBrush));
         Assert.Equal(Color.Parse("#CC8800"), Set(box, ":focus", () => Brush(border.BorderBrush)));
         Assert.Equal(normalSize, box.Bounds.Size);
         window.Close();
@@ -113,8 +113,8 @@ public sealed class DesktopControlStateTests
         Assert.True(check.Bounds.Height >= 26);
         Assert.True(slider.Bounds.Height >= 14);
         Assert.Equal(132, numeric.Bounds.Width);
-        Assert.Equal(Color.Parse("#445566"), Brush(numeric.BorderBrush));
-        Assert.Equal(Color.Parse("#445566"), Brush(combo.BorderBrush));
+        Assert.Equal(ResourceColor("DesktopBorderBrush"), Brush(numeric.BorderBrush));
+        Assert.Equal(ResourceColor("DesktopBorderBrush"), Brush(combo.BorderBrush));
 
         Set(numeric, ":focus-within", () => Brush(numeric.BorderBrush));
         Assert.Equal(Color.Parse("#CC8800"), Brush(numeric.BorderBrush));
@@ -164,6 +164,8 @@ public sealed class DesktopControlStateTests
     }
 
     private static Color Brush(IBrush? brush) => ((ISolidColorBrush)brush!).Color;
+
+    private static Color ResourceColor(string key) => Brush((IBrush)Application.Current!.Resources[key]!);
 
     private static T Set<T>(Control control, string pseudoClass, Func<T> read, string? keep = null)
     {

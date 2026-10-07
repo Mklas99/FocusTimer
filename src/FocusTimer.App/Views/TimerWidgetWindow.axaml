@@ -11,17 +11,24 @@
     ShowInTaskbar="False"
     TransparencyLevelHint="Transparent"
     CanResize="False"
+    UseLayoutRounding="False"
     Background="Transparent"
     TransparencyBackgroundFallback="{DynamicResource WidgetShellFallbackBrush}"
-    ExtendClientAreaToDecorationsHint="True"
-    ExtendClientAreaChromeHints="NoChrome"
-    ExtendClientAreaTitleBarHeightHint="-1"
-    CornerRadius="{DynamicResource WidgetCornerRadius}"
+    ExtendClientAreaToDecorationsHint="False"
     Opacity="{Binding OverallOpacity}"
     BorderBrush="Transparent"
     BorderThickness="0"
     SizeToContent="WidthAndHeight"
     Topmost="{Binding Settings.AlwaysOnTop}">
+
+    <!-- The widget owns its outline; Fluent's window template otherwise adds a second border. -->
+    <Window.Template>
+        <ControlTemplate>
+            <ContentPresenter Name="PART_ContentPresenter"
+                Content="{TemplateBinding Content}"
+                ContentTemplate="{TemplateBinding ContentTemplate}" />
+        </ControlTemplate>
+    </Window.Template>
 
     <Window.Resources>
         <converters:PlayPauseConverter x:Key="PlayPauseConverter" />
@@ -33,12 +40,18 @@
         Background="Transparent"
         ClipToBounds="False">
         <!-- Single glass surface: no nested translucent layers -->
+        <Border x:Name="WidgetShell"
+            Background="{DynamicResource WidgetShellActiveBrush}"
+            BorderBrush="{DynamicResource WindowBorderBrush}"
+            BorderThickness="1"
+            CornerRadius="{Binding WidgetCornerRadius}"
+            IsHitTestVisible="False" />
         <Border x:Name="WidgetSurface"
         Background="Transparent"
         BorderBrush="Transparent"
         BorderThickness="0"
-        CornerRadius="{DynamicResource WidgetCornerRadius}"
-        ClipToBounds="True"
+        CornerRadius="{Binding WidgetCornerRadius}"
+        ClipToBounds="False"
         Padding="0"
         PointerPressed="WindowDragArea_PointerPressed"
         PointerEntered="DragArea_PointerEnter"
@@ -48,28 +61,21 @@
 
             <Grid x:Name="ContentLayer"
             Background="Transparent"
-            ClipToBounds="True"
+            ClipToBounds="False"
             VerticalAlignment="Center"
             HorizontalAlignment="Center">
-                <Border x:Name="WidgetShell"
-                    Background="{DynamicResource WidgetShellActiveBrush}"
-                    BorderBrush="{DynamicResource WindowBorderBrush}"
-                    BorderThickness="1"
-                    CornerRadius="{DynamicResource WidgetCornerRadius}"
-                    IsHitTestVisible="False" />
-
                 <!-- Content area: switch between full and compact modes -->
                 <Grid
                 Background="Transparent"
                 VerticalAlignment="Center"
                 HorizontalAlignment="Center">
                     <views:FullModeView
-                    Margin="{DynamicResource WidgetContentMargin}"
+                    Margin="{Binding WidgetContentMargin}"
                     VerticalAlignment="Center"
                     HorizontalAlignment="Center"
                     IsVisible="{Binding UseCompactMode, Converter={StaticResource BooleanNegationConverter}}" />
                     <views:CompactModeView
-                    Margin="9,0,8,0"
+                    Margin="{Binding CompactContentMargin}"
                     VerticalAlignment="Center"
                     HorizontalAlignment="Center"
                     IsVisible="{Binding UseCompactMode}" />

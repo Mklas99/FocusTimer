@@ -19,7 +19,7 @@ FocusTimer's Settings and Worklog screens have oversized navigation, uneven spac
 - Keep the existing OK, Apply, Cancel, draft, preview, commit locking, failure, and recovery behavior. Restyle those actions; do not replace the commit model.
 - Verify native Windows frost before claiming it works. A browser mockup or a successful compositor API call is insufficient evidence. Preserve the solid fallback when effects are unavailable.
 - Keep theme colors and theme-file values separate from this change. No palette redesign, new theme presets, or settings/theme schema migration is planned.
-- Preserve the timer widget's current Full/Compact layout, typography, Off/Solid choices, foreground-opacity settings, and tray behavior. Only spacing changed, on request: a gap and vertical centering for the full-mode project field, and tighter compact-mode buttons whose click target spans the row height. Its native blur investigation remains separately tracked in OI-28.
+- Preserve widget typography, Off/Solid choices, foreground-opacity settings, and tray behavior. Requested layout corrections keep the full-mode project-field gap and centered text, stack compact buttons at every scale, balance side spacing, draw one shell outline, and cap corner growth at 12 px. Its native blur investigation remains separately tracked in OI-28.
 
 The visual scope is the five selected improvements. Widget typography/icon redesign and worklog table, summary, or timeline redesign from ranks 6–7 are separate follow-ups. Worklog controls, navigation, fonts, spacing, and window material still adopt the shared language.
 

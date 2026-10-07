@@ -78,6 +78,7 @@ public class DesktopShellEvidenceTests
                     CaptureSettings(manager, themeName, folder);
                     CaptureWorklogAsync(themeName, folder).GetAwaiter().GetResult();
                     CaptureColorPicker(themeName, folder);
+                    CaptureNotifications(themeName, folder);
                 }
 
                 if (!CaptureOnly)
@@ -212,6 +213,38 @@ public class DesktopShellEvidenceTests
         Settle();
         Capture(picker, Path.Combine(folder, $"color-picker-{themeName}.png"));
         picker.Close();
+    }
+
+    private static void CaptureNotifications(string themeName, string folder)
+    {
+        foreach (bool acknowledgement in new[] { false, true })
+        {
+            var window = new NotificationWindow(
+                acknowledgement ? "Break Reminder" : "Focus Timer",
+                "Take a short break. Your focus session has been running for a while. Longer messages wrap within the notification.",
+                acknowledgement)
+            {
+                Position = new PixelPoint(-3000, -3000),
+                ShowActivated = false,
+            };
+            window.Show();
+            Settle();
+            Capture(window, Path.Combine(folder, $"notification-{themeName}-{acknowledgement}.png"));
+            window.Close();
+        }
+
+        foreach (NotificationSeverity severity in new[] { NotificationSeverity.Warning, NotificationSeverity.Error })
+        {
+            var window = new NotificationWindow("Focus Timer", "Worklog entries could not be saved. FocusTimer will retry while it remains open.", false, severity)
+            {
+                Position = new PixelPoint(-3000, -3000),
+                ShowActivated = false,
+            };
+            window.Show();
+            Settle();
+            Capture(window, Path.Combine(folder, $"notification-{themeName}-{severity}.png"));
+            window.Close();
+        }
     }
 
     /// <summary>

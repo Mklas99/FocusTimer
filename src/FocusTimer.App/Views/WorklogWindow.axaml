@@ -12,7 +12,7 @@
         MinWidth="640" MinHeight="560"
         WindowStartupLocation="CenterScreen"
         CanResize="True"
-        Foreground="{DynamicResource PrimaryTextBrush}">
+        Foreground="{DynamicResource DesktopTextBrush}">
 
     <Window.KeyBindings>
         <KeyBinding Gesture="F5" Command="{Binding RefreshCommand}" />
@@ -69,7 +69,7 @@
         <TextBlock Grid.Row="1"
                    Margin="0,0,0,8"
                    TextWrapping="Wrap"
-                   Foreground="{DynamicResource WarningBrush}"
+                   Foreground="{DynamicResource DesktopWarningBrush}"
                    Text="{Binding DayMessage}"
                    IsVisible="{Binding HasDayMessage}" />
 

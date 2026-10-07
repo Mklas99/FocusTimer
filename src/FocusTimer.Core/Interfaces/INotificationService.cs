@@ -1,5 +1,7 @@
 namespace FocusTimer.Core.Interfaces
 {
+    using FocusTimer.Core.Models;
+
     /// <summary>
     /// Service for showing notifications (break reminders, etc.).
     /// </summary>
@@ -20,5 +22,13 @@ namespace FocusTimer.Core.Interfaces
         /// <param name="message">The notification message to display.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         Task ShowNotificationAsync(string title, string message);
+
+        /// <summary>Shows a notification with an explicit severity.</summary>
+        /// <param name="title">The notification title.</param>
+        /// <param name="message">The message.</param>
+        /// <param name="severity">The urgency of the notification.</param>
+        /// <returns>A task representing the display operation.</returns>
+        Task ShowNotificationAsync(string title, string message, NotificationSeverity severity) =>
+            this.ShowNotificationAsync(title, message);
     }
 }

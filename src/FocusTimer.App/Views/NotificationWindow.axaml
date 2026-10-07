@@ -1,0 +1,45 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="FocusTimer.App.Views.NotificationWindow"
+        Classes="settings-window notification-window"
+        Width="380" SizeToContent="Height" MaxHeight="480"
+        CanResize="False" ShowInTaskbar="False" Topmost="True"
+        SystemDecorations="None" ShowActivated="False"
+        Background="Transparent" TransparencyLevelHint="Transparent">
+    <Window.Styles>
+        <Style Selector="Window.notification-window Border#NotificationCard">
+            <Setter Property="BorderBrush" Value="{DynamicResource DesktopNotificationBorderBrush}" />
+        </Style>
+        <Style Selector="Window.notification-window.warning Border#NotificationCard">
+            <Setter Property="BorderBrush" Value="{DynamicResource DesktopWarningBrush}" />
+            <Setter Property="BorderThickness" Value="2" />
+        </Style>
+        <Style Selector="Window.notification-window.error Border#NotificationCard">
+            <Setter Property="BorderBrush" Value="{DynamicResource DesktopDangerBrush}" />
+            <Setter Property="BorderThickness" Value="2" />
+        </Style>
+        <Style Selector="Window.notification-window.warning TextBlock#Heading">
+            <Setter Property="Foreground" Value="{DynamicResource DesktopWarningBrush}" />
+        </Style>
+        <Style Selector="Window.notification-window.error TextBlock#Heading">
+            <Setter Property="Foreground" Value="{DynamicResource DesktopDangerBrush}" />
+        </Style>
+    </Window.Styles>
+    <Border x:Name="NotificationCard" Classes="desktop-card" Background="{DynamicResource SettingsBackgroundBrush}"
+            Padding="{DynamicResource DesktopContentPadding}">
+        <Grid RowDefinitions="Auto,Auto,Auto" ColumnDefinitions="*,Auto">
+            <TextBlock x:Name="Heading" Classes="SectionHeader" Margin="0,0,8,8"
+                       FontSize="{DynamicResource FontSizeTitle}" TextWrapping="Wrap" />
+            <Button x:Name="Dismiss" Grid.Column="1" Content="×" Width="36"
+                    AutomationProperties.Name="Dismiss notification" Click="OnDismiss"
+                    IsCancel="True" />
+            <ScrollViewer Grid.Row="1" Grid.ColumnSpan="2" MaxHeight="320"
+                          HorizontalScrollBarVisibility="Disabled">
+                <TextBlock x:Name="Message" Classes="settings-body" TextWrapping="Wrap" />
+            </ScrollViewer>
+            <Button x:Name="Acknowledge" Grid.Row="2" Grid.ColumnSpan="2" Content="OK"
+                    HorizontalAlignment="Right" MinWidth="80" Margin="0,12,0,0"
+                    IsDefault="True" Click="OnDismiss" />
+        </Grid>
+    </Border>
+</Window>

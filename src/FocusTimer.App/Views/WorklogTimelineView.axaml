@@ -11,7 +11,7 @@
              difference never depends on color alone. -->
         <Style Selector="Border.timeline-block">
             <Setter Property="Background" Value="{DynamicResource TabSelectedBackgroundBrush}" />
-            <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtleBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource DesktopBorderBrush}" />
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="CornerRadius" Value="{StaticResource RadiusXs}" />
             <Setter Property="Padding" Value="6,2" />
@@ -19,25 +19,25 @@
         </Style>
         <Style Selector="Border.timeline-block.timeline-manual">
             <Setter Property="Background" Value="{DynamicResource SettingsBackgroundBrush}" />
-            <Setter Property="BorderBrush" Value="{DynamicResource PrimaryTextBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource DesktopTextBrush}" />
             <Setter Property="BorderThickness" Value="2" />
         </Style>
         <Style Selector="Border.timeline-block TextBlock">
             <Setter Property="Foreground" Value="{DynamicResource TabSelectedTextBrush}" />
         </Style>
         <Style Selector="Border.timeline-block.timeline-manual TextBlock">
-            <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource DesktopTextBrush}" />
         </Style>
         <Style Selector="Border.timeline-hour">
-            <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtleBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource DesktopBorderBrush}" />
             <Setter Property="BorderThickness" Value="0,1,0,0" />
         </Style>
         <Style Selector="Border.timeline-column">
-            <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtleBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource DesktopBorderBrush}" />
             <Setter Property="BorderThickness" Value="1,0,0,0" />
         </Style>
         <Style Selector="Border.timeline-header">
-            <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtleBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource DesktopBorderBrush}" />
             <Setter Property="BorderThickness" Value="1,0,0,1" />
             <Setter Property="Padding" Value="6,2" />
         </Style>
@@ -87,7 +87,7 @@
                     ToolTip.Tip="Back to 100% (Ctrl + 0)" />
             <Border Classes="help-hint" ToolTip.Tip="Ctrl + mouse wheel zooms the hours" Focusable="True"
                     AutomationProperties.Name="About zooming" AutomationProperties.HelpText="Ctrl + mouse wheel zooms the hours">
-                <icons:MaterialIcon Kind="HelpCircleOutline" Width="16" Height="16" Foreground="{DynamicResource SettingsLabelTextBrush}" />
+                <icons:MaterialIcon Kind="HelpCircleOutline" Width="16" Height="16" Foreground="{DynamicResource DesktopLabelBrush}" />
             </Border>
         </StackPanel>
 
@@ -96,14 +96,14 @@
             <TextBlock Text="{Binding Entries.WarningText}"
                        TextWrapping="Wrap"
                        Margin="0,0,0,8"
-                       Foreground="{DynamicResource WarningBrush}"
+                       Foreground="{DynamicResource DesktopWarningBrush}"
                        IsVisible="{Binding Entries.HasWarning}" />
             <TextBlock Text="Loading…"
-                       Foreground="{DynamicResource SecondaryTextBrush}"
+                       Foreground="{DynamicResource DesktopSecondaryTextBrush}"
                        IsVisible="{Binding Entries.IsLoading}" />
             <TextBlock Text="{Binding Entries.StatusMessage}"
                        TextWrapping="Wrap"
-                       Foreground="{DynamicResource SecondaryTextBrush}"
+                       Foreground="{DynamicResource DesktopSecondaryTextBrush}"
                        IsVisible="{Binding Entries.IsMessageVisible}" />
         </StackPanel>
 
@@ -130,7 +130,7 @@
                                                FontWeight="SemiBold"
                                                TextTrimming="CharacterEllipsis"
                                                Classes.timeline-unassigned="{Binding IsUnassigned}" />
-                                    <TextBlock Foreground="{DynamicResource SecondaryTextBrush}"
+                                    <TextBlock Foreground="{DynamicResource DesktopSecondaryTextBrush}"
                                                FontSize="{StaticResource FontSizeCaption}"
                                                TextTrimming="CharacterEllipsis">
                                         <Run Text="{Binding TotalText}" /><Run Text=" · " /><Run Text="{Binding CountText}" />
@@ -226,7 +226,7 @@
                                     <TextBlock Text="{Binding}"
                                                FontFamily="{StaticResource TabularTimerFontFamily}"
                                                FontSize="{StaticResource FontSizeCaption}"
-                                               Foreground="{DynamicResource SecondaryTextBrush}"
+                                               Foreground="{DynamicResource DesktopSecondaryTextBrush}"
                                                VerticalAlignment="Top"
                                                Margin="0,2,0,0" />
                                 </Border>
