@@ -133,7 +133,7 @@ public sealed class DesktopReviewRound4Tests
         Assert.Contains("Overall opacity", texts);
         Assert.DoesNotContain(texts, t => t.Contains("Overall fade", StringComparison.Ordinal));
         Assert.DoesNotContain(texts, t => t.StartsWith("Appearance changes preview", StringComparison.Ordinal));
-        Assert.Contains(AutomationProperties.GetName(window.GetVisualDescendants().OfType<Slider>().Last()), new[] { "Overall opacity" });
+        Assert.Equal("Overall opacity", AutomationProperties.GetName(window.GetVisualDescendants().OfType<Slider>().Last()));
 
         var hints = window.GetVisualDescendants().OfType<Border>().Where(b => b.Classes.Contains("help-hint")).ToList();
         Assert.Contains(hints, h => AutomationProperties.GetName(h) == "About theme changes"

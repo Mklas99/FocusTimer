@@ -134,7 +134,7 @@ public class DesktopMaterialNativeTests
         }
     }
 
-    private static Control BuildStripes()
+    private static Canvas BuildStripes()
     {
         var canvas = new Canvas { Background = Brushes.White };
         for (int x = 0; x < 1000; x += StripeWidth * 2)

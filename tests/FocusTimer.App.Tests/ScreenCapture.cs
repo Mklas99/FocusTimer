@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 using Avalonia;
 using Avalonia.Platform;
 
-internal static class ScreenCapture
+internal static partial class ScreenCapture
 {
     private const int SrcCopy = 0x00CC0020;
     private const int CaptureBlt = 0x40000000;
@@ -15,6 +15,8 @@ internal static class ScreenCapture
         IntPtr memory = CreateCompatibleDC(screen);
         IntPtr bitmap = CreateCompatibleBitmap(screen, width, height);
         IntPtr previous = SelectObject(memory, bitmap);
+        byte[] pixels;
+        int releaseResult;
         try
         {
             if (!BitBlt(memory, 0, 0, width, height, screen, left, top, SrcCopy | CaptureBlt))
@@ -22,22 +24,29 @@ internal static class ScreenCapture
                 throw new InvalidOperationException("Screen capture failed.");
             }
 
+            // GetDIBits requires the bitmap to be deselected from the device context.
+            SelectObject(memory, previous);
             var info = new BitmapInfo { Size = 40, Width = width, Height = -height, Planes = 1, BitCount = 32 };
-            byte[] pixels = new byte[width * height * 4];
+            pixels = new byte[width * height * 4];
             if (GetDIBits(memory, bitmap, 0, (uint)height, pixels, ref info, 0) == 0)
             {
                 throw new InvalidOperationException("Reading the captured pixels failed.");
             }
-
-            return pixels;
         }
         finally
         {
             SelectObject(memory, previous);
             DeleteObject(bitmap);
             DeleteDC(memory);
-            ReleaseDC(IntPtr.Zero, screen);
+            releaseResult = ReleaseDC(IntPtr.Zero, screen);
         }
+
+        if (releaseResult == 0)
+        {
+            throw new InvalidOperationException("Releasing the screen device context failed.");
+        }
+
+        return pixels;
     }
 
     public static void SavePng(byte[] bgra, int width, int height, string path)
@@ -55,32 +64,35 @@ internal static class ScreenCapture
         bitmap.Save(path);
     }
 
-    [DllImport("user32.dll")]
-    private static extern IntPtr GetDC(IntPtr window);
+    [LibraryImport("user32.dll")]
+    private static partial IntPtr GetDC(IntPtr window);
 
-    [DllImport("user32.dll")]
-    private static extern int ReleaseDC(IntPtr window, IntPtr dc);
+    [LibraryImport("user32.dll")]
+    private static partial int ReleaseDC(IntPtr window, IntPtr dc);
 
-    [DllImport("gdi32.dll")]
-    private static extern IntPtr CreateCompatibleDC(IntPtr dc);
+    [LibraryImport("gdi32.dll")]
+    private static partial IntPtr CreateCompatibleDC(IntPtr dc);
 
-    [DllImport("gdi32.dll")]
-    private static extern IntPtr CreateCompatibleBitmap(IntPtr dc, int width, int height);
+    [LibraryImport("gdi32.dll")]
+    private static partial IntPtr CreateCompatibleBitmap(IntPtr dc, int width, int height);
 
-    [DllImport("gdi32.dll")]
-    private static extern IntPtr SelectObject(IntPtr dc, IntPtr obj);
+    [LibraryImport("gdi32.dll")]
+    private static partial IntPtr SelectObject(IntPtr dc, IntPtr obj);
 
-    [DllImport("gdi32.dll")]
-    private static extern bool DeleteObject(IntPtr obj);
+    [LibraryImport("gdi32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static partial bool DeleteObject(IntPtr obj);
 
-    [DllImport("gdi32.dll")]
-    private static extern bool DeleteDC(IntPtr dc);
+    [LibraryImport("gdi32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static partial bool DeleteDC(IntPtr dc);
 
-    [DllImport("gdi32.dll")]
-    private static extern bool BitBlt(IntPtr dest, int x, int y, int width, int height, IntPtr source, int sourceX, int sourceY, int rop);
+    [LibraryImport("gdi32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static partial bool BitBlt(IntPtr dest, int x, int y, int width, int height, IntPtr source, int sourceX, int sourceY, int rop);
 
-    [DllImport("gdi32.dll")]
-    private static extern int GetDIBits(IntPtr dc, IntPtr bitmap, uint start, uint lines, byte[] bits, ref BitmapInfo info, uint usage);
+    [LibraryImport("gdi32.dll")]
+    private static partial int GetDIBits(IntPtr dc, IntPtr bitmap, uint start, uint lines, [Out] byte[] bits, ref BitmapInfo info, uint usage);
 
     [StructLayout(LayoutKind.Sequential)]
     private struct BitmapInfo

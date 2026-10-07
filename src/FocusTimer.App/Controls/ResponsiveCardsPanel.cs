@@ -56,7 +56,7 @@ namespace FocusTimer.App.Controls
         /// <inheritdoc/>
         protected override Size MeasureOverride(Size availableSize)
         {
-            var visible = this.VisibleChildren();
+            Control[] visible = this.VisibleChildren();
             if (this.UsesColumns(availableSize.Width, visible.Length))
             {
                 double columnWidth = (availableSize.Width - this.Spacing) / 2;
@@ -85,7 +85,7 @@ namespace FocusTimer.App.Controls
         /// <inheritdoc/>
         protected override Size ArrangeOverride(Size finalSize)
         {
-            var visible = this.VisibleChildren();
+            Control[] visible = this.VisibleChildren();
             if (this.UsesColumns(finalSize.Width, visible.Length))
             {
                 double columnWidth = (finalSize.Width - this.Spacing) / 2;

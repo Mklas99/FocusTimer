@@ -21,12 +21,10 @@ namespace FocusTimer.App.Services
         /// <returns>The material to paint.</returns>
         public static DesktopMaterialState Resolve(in DesktopMaterialInputs inputs)
         {
-            if (inputs.HighContrastTheme || inputs.SystemHighContrast || inputs.TransparencyDisabled)
-            {
-                return DesktopMaterialState.SolidFallback;
-            }
-
-            return IsBlurLevel(inputs.Actual) ? DesktopMaterialState.DenseFrost : DesktopMaterialState.SolidFallback;
+            return !inputs.HighContrastTheme && !inputs.SystemHighContrast && !inputs.TransparencyDisabled
+                && IsBlurLevel(inputs.Actual)
+                ? DesktopMaterialState.DenseFrost
+                : DesktopMaterialState.SolidFallback;
         }
 
         /// <summary>

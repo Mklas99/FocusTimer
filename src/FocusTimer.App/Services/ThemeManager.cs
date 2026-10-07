@@ -128,8 +128,8 @@ namespace FocusTimer.App.Services
 
             try
             {
-                Color baseColor = Color.Parse(theme.WindowBackground);
-                Color opaqueColor = Color.FromArgb(255, baseColor.R, baseColor.G, baseColor.B);
+                var baseColor = Color.Parse(theme.WindowBackground);
+                var opaqueColor = Color.FromArgb(255, baseColor.R, baseColor.G, baseColor.B);
                 double tintOpacity = theme.ThemeName == "High Contrast" ? 1.0 : theme.BackgroundOpacity;
                 SetBrushIfChanged(resources, "WidgetShellTintBrush", opaqueColor, tintOpacity);
                 SetBrushIfChanged(resources, "WidgetShellFallbackBrush", opaqueColor);
@@ -204,12 +204,12 @@ namespace FocusTimer.App.Services
                 SetBrushIfChanged(resources, "SettingsAccordionHeaderHoverBrush", Colors.White, 0.06);
 
                 // Desktop material: derived from Settings roles only, independent of widget opacity values.
-                Color shell = Color.Parse(theme.SettingsBackground);
-                Color opaqueShell = Color.FromArgb(255, shell.R, shell.G, shell.B);
+                var shell = Color.Parse(theme.SettingsBackground);
+                var opaqueShell = Color.FromArgb(255, shell.R, shell.G, shell.B);
                 SetBrushIfChanged(resources, "DesktopShellFrostBrush", opaqueShell, DesktopShellFrostOpacity);
                 SetBrushIfChanged(resources, "DesktopCardBrush", Mix(opaqueShell, Color.Parse(theme.PrimaryText), 0.06));
-                Color primaryText = Color.Parse(theme.PrimaryText);
-                Color opaquePrimaryText = Color.FromArgb(255, primaryText.R, primaryText.G, primaryText.B);
+                var primaryText = Color.Parse(theme.PrimaryText);
+                var opaquePrimaryText = Color.FromArgb(255, primaryText.R, primaryText.G, primaryText.B);
 
                 // Fields, buttons and disclosure headers share one opaque surface (the input role composited over the
                 // window), so they look identical on the window and inside cards; hover and pressed are opaque mixes of it.
@@ -248,7 +248,7 @@ namespace FocusTimer.App.Services
                 SetBrushIfChanged(resources, "DesktopTabSelectedBrush", ThemeContrast.EnsureContrast(
                     Color.Parse(theme.TabSelectedBackground), opaqueShell, 3.0));
                 SetBrushIfChanged(resources, "DesktopAccentTextBrush", ThemeContrast.EnsureContrast(primaryText, focus));
-                Color tabText = Color.Parse(theme.TabText);
+                var tabText = Color.Parse(theme.TabText);
 
                 // Tabs sit directly on the window, so the label must be readable on the Settings background.
                 SetBrushIfChanged(

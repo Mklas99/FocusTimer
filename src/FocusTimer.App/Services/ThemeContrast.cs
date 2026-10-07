@@ -38,7 +38,7 @@ namespace FocusTimer.App.Services
         /// <returns>An opaque color that reaches the ratio, or pure white or black when nothing closer can.</returns>
         public static Color EnsureContrast(Color preferred, Color surface, double minimumRatio = TextRatio)
         {
-            Color start = Color.FromRgb(preferred.R, preferred.G, preferred.B);
+            var start = Color.FromRgb(preferred.R, preferred.G, preferred.B);
             if (Ratio(start, surface) >= minimumRatio)
             {
                 return start;
@@ -64,7 +64,7 @@ namespace FocusTimer.App.Services
         /// <returns>The closest qualifying mix toward white or black.</returns>
         public static Color EnsureContrastAcross(Color preferred, double minimumRatio, params Color[] surfaces)
         {
-            Color start = Color.FromRgb(preferred.R, preferred.G, preferred.B);
+            var start = Color.FromRgb(preferred.R, preferred.G, preferred.B);
             double Minimum(Color color) => surfaces.Min(surface => Ratio(color, surface));
             if (Minimum(start) >= minimumRatio)
             {
@@ -92,7 +92,7 @@ namespace FocusTimer.App.Services
 
         private static double Luminance(Color color)
         {
-            double Channel(byte value)
+            static double Channel(byte value)
             {
                 double c = value / 255.0;
                 return c <= 0.03928 ? c / 12.92 : Math.Pow((c + 0.055) / 1.055, 2.4);

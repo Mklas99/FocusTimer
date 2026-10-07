@@ -13,24 +13,33 @@ using FocusTimer.Core.Models;
 /// </summary>
 public class DesktopMaterialTests
 {
-    public static TheoryData<WindowTransparencyLevel, bool, bool, bool, DesktopMaterialState> Cases => new()
+    public static TheoryData<string, bool, bool, bool, DesktopMaterialState> Cases => new()
     {
-        { WindowTransparencyLevel.AcrylicBlur, false, false, false, DesktopMaterialState.DenseFrost },
-        { WindowTransparencyLevel.Blur, false, false, false, DesktopMaterialState.DenseFrost },
-        { WindowTransparencyLevel.None, false, false, false, DesktopMaterialState.SolidFallback },
-        { WindowTransparencyLevel.Transparent, false, false, false, DesktopMaterialState.SolidFallback },
-        { WindowTransparencyLevel.Mica, false, false, false, DesktopMaterialState.SolidFallback },
-        { WindowTransparencyLevel.AcrylicBlur, true, false, false, DesktopMaterialState.SolidFallback },
-        { WindowTransparencyLevel.AcrylicBlur, false, true, false, DesktopMaterialState.SolidFallback },
-        { WindowTransparencyLevel.AcrylicBlur, false, false, true, DesktopMaterialState.SolidFallback },
+        { nameof(WindowTransparencyLevel.AcrylicBlur), false, false, false, DesktopMaterialState.DenseFrost },
+        { nameof(WindowTransparencyLevel.Blur), false, false, false, DesktopMaterialState.DenseFrost },
+        { nameof(WindowTransparencyLevel.None), false, false, false, DesktopMaterialState.SolidFallback },
+        { nameof(WindowTransparencyLevel.Transparent), false, false, false, DesktopMaterialState.SolidFallback },
+        { nameof(WindowTransparencyLevel.Mica), false, false, false, DesktopMaterialState.SolidFallback },
+        { nameof(WindowTransparencyLevel.AcrylicBlur), true, false, false, DesktopMaterialState.SolidFallback },
+        { nameof(WindowTransparencyLevel.AcrylicBlur), false, true, false, DesktopMaterialState.SolidFallback },
+        { nameof(WindowTransparencyLevel.AcrylicBlur), false, false, true, DesktopMaterialState.SolidFallback },
     };
 
     [Theory]
     [MemberData(nameof(Cases))]
     public void Resolve_RequiresAReportedBlurAndNoAccessibilityOverride(
-        WindowTransparencyLevel actual, bool highContrastTheme, bool systemHighContrast, bool transparencyOff, DesktopMaterialState expected)
+        string actual, bool highContrastTheme, bool systemHighContrast, bool transparencyOff, DesktopMaterialState expected)
     {
-        var inputs = new DesktopMaterialInputs(actual, highContrastTheme, systemHighContrast, transparencyOff);
+        WindowTransparencyLevel level = actual switch
+        {
+            nameof(WindowTransparencyLevel.AcrylicBlur) => WindowTransparencyLevel.AcrylicBlur,
+            nameof(WindowTransparencyLevel.Blur) => WindowTransparencyLevel.Blur,
+            nameof(WindowTransparencyLevel.None) => WindowTransparencyLevel.None,
+            nameof(WindowTransparencyLevel.Transparent) => WindowTransparencyLevel.Transparent,
+            nameof(WindowTransparencyLevel.Mica) => WindowTransparencyLevel.Mica,
+            _ => throw new ArgumentOutOfRangeException(nameof(actual), actual, "Unknown transparency level."),
+        };
+        var inputs = new DesktopMaterialInputs(level, highContrastTheme, systemHighContrast, transparencyOff);
 
         Assert.Equal(expected, DesktopMaterialPolicy.Resolve(inputs));
     }
