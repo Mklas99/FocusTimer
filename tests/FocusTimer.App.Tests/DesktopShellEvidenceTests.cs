@@ -74,6 +74,13 @@ public class DesktopShellEvidenceTests
                 foreach (string themeName in themeNames)
                 {
                     Theme theme = themeService.BuiltInThemes.First(t => t.ThemeName == themeName);
+                    string? palettePath = Environment.GetEnvironmentVariable("FOCUSTIMER_EVIDENCE_PALETTES");
+                    if (palettePath != null)
+                    {
+                        theme = System.Text.Json.JsonSerializer.Deserialize<List<Theme>>(File.ReadAllText(palettePath))!
+                            .First(t => t.ThemeName == themeName);
+                    }
+
                     manager.ApplyTheme(theme);
                     CaptureSettings(manager, themeName, folder);
                     CaptureWorklogAsync(themeName, folder).GetAwaiter().GetResult();
@@ -106,7 +113,7 @@ public class DesktopShellEvidenceTests
         {
             for (int tab = 0; tab < SettingsTabs.Length; tab++)
             {
-                SettingsWindowViewModel editor = SettingsWindowViewModelTests.CreateAppearanceEditor();
+                SettingsWindowViewModel editor = SettingsWindowViewModelTests.CreateAppearanceEditor(manager.ActiveTheme);
                 editor.SelectedTabIndex = tab;
                 var window = new SettingsWindow
                 {

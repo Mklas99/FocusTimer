@@ -73,8 +73,8 @@
                                              Height="6"
                                              ShowProgressText="False"
                                              Value="{Binding SharePercent}"
-                                             Foreground="{DynamicResource AccentPrimaryBrush}"
-                                             Background="{DynamicResource SurfaceSubtleBrush}" />
+                                             Foreground="{DynamicResource DesktopFocusBrush}"
+                                             Background="{DynamicResource DesktopFieldBrush}" />
                             </StackPanel>
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>

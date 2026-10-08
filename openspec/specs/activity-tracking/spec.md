@@ -44,11 +44,11 @@ The system SHALL begin foreground capture immediately when tracking starts or re
 - **THEN** the result produces no new segments and the existing disable behavior discards non-persisted tracking entries
 
 ### Requirement: Capture interval preserves session maintenance
-The activity polling interval SHALL NOT change timer-display updates, break-reminder timing, or pause/stop/exit segment closure. Local-midnight splitting SHALL remain independent of foreground sampling cadence, with segments split at the exact local-day boundary on the next maintenance opportunity. Applying an interval change SHALL NOT by itself close a segment, reset elapsed time, or initiate a new session.
+The activity polling interval SHALL NOT change timer-display updates, break-reminder timing, or pause/stop/exit segment closure. Local-midnight splitting SHALL remain independent of foreground sampling cadence, with segments split at the local-day boundary (closing at 23:59:59 and restarting at 00:00:00) on the next maintenance opportunity. Applying an interval change SHALL NOT by itself close a segment, reset elapsed time, or initiate a new session.
 
 #### Scenario: Midnight falls between foreground samples
 - **WHEN** an active session crosses local midnight before its next foreground sample
-- **THEN** the next one-second maintenance opportunity splits the segment at midnight without requesting an extra foreground sample
+- **THEN** the next one-second maintenance opportunity splits the segment at the day boundary without requesting an extra foreground sample
 
 #### Scenario: Pause occurs before the next foreground sample
 - **WHEN** the user pauses with a 60-second interval before the next sample is due
@@ -114,11 +114,15 @@ The system SHALL assign each new tracked segment a stable entry ID, offset-aware
 - **THEN** the active segment is closed with an idle-pause end reason without classifying the preceding active interval as idle work
 
 ### Requirement: Local Day Boundary Segmentation
-The system SHALL prevent a persisted entry from spanning more than one local calendar date by closing and restarting an otherwise unchanged segment at the local day boundary.
+The system SHALL prevent a persisted entry from spanning more than one local calendar date by closing an otherwise unchanged segment at 23:59:59 of its local day and starting the replacement segment at 00:00:00 of the next local day, so every persisted entry starts and ends on the same local calendar date.
 
 #### Scenario: Timer remains running across midnight
 - **WHEN** an active segment reaches local midnight without an application/window change
-- **THEN** the segment ending at midnight and the replacement segment have different entry IDs, the same session ID, and are persisted to their respective daily worklogs
+- **THEN** the closing segment ends at 23:59:59 with the day-boundary end reason, the replacement segment starts at 00:00:00, they have different entry IDs and the same session ID, and each is persisted to its own daily worklog
+
+#### Scenario: Entries written before this rule
+- **WHEN** a stored entry ends exactly at the next local midnight
+- **THEN** it stays readable and counted on its start day
 
 ### Requirement: Application exclusion during capture
 While the timer is Running and work logging is enabled, the system SHALL NOT record activity whose sampled foreground

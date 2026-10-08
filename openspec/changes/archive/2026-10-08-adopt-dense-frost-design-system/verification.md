@@ -2,6 +2,20 @@
 
 Recorded while applying the change. Everything here was measured on one Windows 11 development machine (Avalonia 11.2.0, .NET 10 SDK building `net8.0`); nothing is inferred from a browser mockup.
 
+## Dense-frost qualification rerun, 2026-10-08
+
+The corrected `DesktopMaterialNativeTests` passes and reports dense frost VERIFIED on this Windows development machine with transparency effects on, using Avalonia 11.2.0 AcrylicBlur. The test previously checked blur availability after switching to its transparent unblurred control; it now captures the active frost state before changing controls. No production material behavior changed.
+
+| Capture | Luminance standard deviation | Maximum adjacent-pixel step |
+|---|---|---|
+| Dense frost | 0.49 | 1 |
+| Forced solid fallback | 0.00 | 0 |
+| Transparent unblurred control | 6.50 | 13 |
+
+Evidence: `artifacts/frost-rerun-2026-10-08/material-qualification.txt` and the three `material-*.png` captures. Reviewed the frost capture; pixels show smoothly softened backdrop variation. Tasks 1.1, 1.2, and 1.4 are complete for these tested conditions. The isolated Windows adapter is unnecessary because the pinned Avalonia backend meets the acceptance thresholds. This is a Settings qualification on one machine; it does not qualify widget blur, other Windows compositors, remote sessions, or the outstanding full display-scale/theme walkthrough.
+
+Earlier unsuccessful or obscured captures below are historical and superseded by this rerun.
+
 ## Initial dense-frost material evidence (tasks 1.1-1.4)
 
 | Question | Result |
@@ -123,3 +137,17 @@ The full native pointer/keyboard walkthrough across themes remains open. Native 
 On 2026-10-08, adapted notification chrome to the supplied rounded-dialog reference. Cards use a 420 px logical width, 20 px corner radius and padding, a semibold heading, muted contrast-adjusted body text, a borderless 24 px close target, and the shared primary acknowledgement button. Informational outlines are subtle; High Contrast retains a 3:1 outline. Warning/error headings and thin outlines retain their readable severity colors and explicit labels. All chrome now lives in the shared styles.
 
 Fifteen focused headless notification and control tests passed, including severity/timeouts, dismissal, acknowledgement, scrollable long messages, and live theme changes across all seven built-in themes. The native Windows render/layout test passed for Dark, Light, and High Contrast; reviewed information, acknowledgement, and severity captures in `artifacts/notification-dialog-style/`. The Windows Host win-x64 build passed with zero warnings or errors. Timing, activation, placement, and acknowledgement behavior were preserved.
+
+## Manual review handoff
+
+The user confirmed the display-scaling review complete on 2026-10-08. Exact tested scale values and captures were not supplied in chat; this is user-reported completion, not a fresh automated scale check. The [manual UI walkthrough](../../../../docs/versions/current/ManualUiWalkthrough.md) records the remaining native interaction checks, with results fields for failures and scenarios not tested. Its checks are initially unticked.
+
+## Native review completion, 2026-10-08
+
+On 2026-10-08, the user confirmed that the interactive review and verifications can be closed: "everything fine". This closes the combined native interaction walkthrough, the theme-focused checks across presets and imports, and the Full/Compact widget desktop-content checks. Completion is user-reported; no fresh automated run or additional captures were supplied with this confirmation. Exact build, Windows version, scale and opacity values were not supplied. Existing automated and capture evidence remains recorded below. OI-25/OI-28 widget blur, OI-44, and the separate F-03 and tracking-rule walkthroughs retain their own status.
+
+This confirmation supersedes the earlier open native pointer/keyboard and manual-review handoff notes and completes tasks 5.2, 6.1, 6.2 and 9.5. Task 6.4 is complete using the existing recorded build/test/format evidence and this native acceptance confirmation.
+
+## F-03 walkthrough completion, 2026-10-08
+
+The user subsequently confirmed that the separate Worklog data-management walkthrough had already been performed and was fine. Task 10.5 in worklog-data-management is complete, including the carried-over Summary check in Light and High Contrast. This supersedes earlier notes describing the F-03 walkthrough as open. Tracking-rule walkthroughs retain their separate status.

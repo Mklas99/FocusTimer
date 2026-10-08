@@ -131,6 +131,6 @@ installer/FocusTimer.Installer/ProductComponents.wxs
 
 
 # a lot of images
-openspec/changes/adopt-dense-frost-design-system/evidence/*
-openspec/changes/adopt-dense-frost-design-system/references/*
+openspec/changes/archive/2026-10-08-adopt-dense-frost-design-system/evidence/*
+openspec/changes/archive/2026-10-08-adopt-dense-frost-design-system/references/*
 .codex-remote-attachments/

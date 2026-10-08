@@ -27,6 +27,29 @@ public sealed class DesktopShellNavigationTests
 {
     private static readonly string[] SettingsTabNames = ["General", "Logging", "Appearance", "Hotkeys", "About"];
 
+    [Fact]
+    public async Task ThemeDropdown_ShowsThePresetChosenFromTheControl()
+    {
+        (SettingsWindow window, SettingsWindowViewModel vm) = await OpenSettingsAsync();
+        vm.SelectedTabIndex = 2;
+        Dispatcher.UIThread.RunJobs();
+        window.UpdateLayout();
+        ComboBox dropdown = window.GetVisualDescendants().OfType<ComboBox>().Single(c => AutomationProperties.GetName(c) == "Theme preset");
+        Assert.Equal(vm.SelectedThemeName, dropdown.SelectedItem);
+        foreach (string name in new ThemeService().BuiltInThemes.Select(t => t.ThemeName).Reverse())
+        {
+            dropdown.SelectedItem = name;
+            Dispatcher.UIThread.RunJobs();
+            window.UpdateLayout();
+            Assert.Equal(name, vm.Settings.ActiveThemeName);
+            Assert.Equal(name, vm.SelectedThemeName);
+            Assert.Equal(name, dropdown.SelectedItem);
+            Assert.Contains(dropdown.GetVisualDescendants().OfType<TextBlock>(), t => t.IsEffectivelyVisible && t.Text == name);
+        }
+
+        window.Close();
+    }
+
     public DesktopShellNavigationTests() => HeadlessAvaloniaFixture.EnsureInitialized();
 
     [Theory]
@@ -145,7 +168,8 @@ public sealed class DesktopShellNavigationTests
         Assert.Equal(Color.Parse("#00FF00"), Underline(selected));
         Assert.Equal(Colors.Transparent, Underline(other));
         Assert.NotEqual(Color.Parse(theme.AccentPrimary), Underline(selected));
-        Color label = ThemeContrast.EnsureContrast(Color.Parse(theme.AccentPrimary), Color.Parse(theme.SettingsBackground));
+        window.TryFindResource("TabSelectedLabelBrush", out object? selectedLabel);
+        Color label = Assert.IsAssignableFrom<ISolidColorBrush>(selectedLabel).Color;
         Assert.True(ThemeContrast.Ratio(label, Color.Parse(theme.SettingsBackground)) >= ThemeContrast.TextRatio);
         Assert.Equal(label, ((ISolidColorBrush)selected.GetVisualDescendants().OfType<MaterialIcon>().First().Foreground!).Color);
         Assert.Equal(label, ((ISolidColorBrush)selected.Foreground!).Color);
@@ -157,7 +181,9 @@ public sealed class DesktopShellNavigationTests
         theme.TabSelectedBackground = "#0000FF";
         new ThemeManager().ApplyTheme(theme);
         Dispatcher.UIThread.RunJobs();
-        Assert.Equal(ThemeContrast.EnsureContrast(Color.Parse("#0000FF"), Color.Parse(theme.SettingsBackground), 3.0), Underline(selected));
+        window.TryFindResource("DesktopTabSelectedBrush", out object? selectedUnderline);
+        Assert.Equal(Assert.IsAssignableFrom<ISolidColorBrush>(selectedUnderline).Color, Underline(selected));
+        Assert.True(ThemeContrast.Ratio(Underline(selected), Color.Parse(theme.SettingsBackground)) >= 3);
 
         // The theme file contract is unchanged: the serialized fields round-trip without migration.
         Theme reloaded = System.Text.Json.JsonSerializer.Deserialize<Theme>(System.Text.Json.JsonSerializer.Serialize(theme))!;

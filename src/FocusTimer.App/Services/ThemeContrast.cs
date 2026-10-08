@@ -61,27 +61,107 @@ namespace FocusTimer.App.Services
         /// <param name="preferred">The stored theme color.</param>
         /// <param name="minimumRatio">The required contrast ratio.</param>
         /// <param name="surfaces">The opaque backgrounds where the color is used.</param>
-        /// <returns>The closest qualifying mix toward white or black.</returns>
+        /// <returns>A qualifying mix toward white or black.</returns>
+        /// <exception cref="InvalidOperationException">No shared foreground qualifies.</exception>
         public static Color EnsureContrastAcross(Color preferred, double minimumRatio, params Color[] surfaces)
         {
-            var start = Color.FromRgb(preferred.R, preferred.G, preferred.B);
-            double Minimum(Color color) => surfaces.Min(surface => Ratio(color, surface));
-            if (Minimum(start) >= minimumRatio)
+            if (TryEnsureContrastAcross(preferred, minimumRatio, out Color result, surfaces))
             {
-                return start;
+                return result;
             }
 
-            Color target = Minimum(Colors.White) >= Minimum(Colors.Black) ? Colors.White : Colors.Black;
-            for (int step = 1; step <= 20; step++)
+            throw new InvalidOperationException("The surfaces cannot share a foreground at the requested contrast.");
+        }
+
+        /// <summary>Finds a shared foreground without accepting a failed endpoint when surfaces conflict.</summary>
+        /// <param name="preferred">The source color to retain when readable.</param>
+        /// <param name="minimumRatio">The required contrast ratio.</param>
+        /// <param name="result">The qualifying opaque color, or default when no color qualifies.</param>
+        /// <param name="surfaces">The actual opaque backgrounds.</param>
+        /// <returns>Whether a qualifying foreground exists.</returns>
+        public static bool TryEnsureContrastAcross(Color preferred, double minimumRatio, out Color result, params Color[] surfaces)
+        {
+            ArgumentOutOfRangeException.ThrowIfLessThan(minimumRatio, 1);
+            ArgumentOutOfRangeException.ThrowIfGreaterThan(minimumRatio, 21);
+            ArgumentNullException.ThrowIfNull(surfaces);
+            if (surfaces.Length == 0)
             {
-                Color candidate = Mix(start, target, step / 20.0);
-                if (Minimum(candidate) >= minimumRatio)
+                throw new ArgumentException("At least one background is required.", nameof(surfaces));
+            }
+
+            var start = Color.FromRgb(preferred.R, preferred.G, preferred.B);
+            bool Qualifies(Color color) => surfaces.All(surface => Ratio(color, surface) >= minimumRatio);
+            if (Qualifies(start))
+            {
+                result = start;
+                return true;
+            }
+
+            double closestAmount = double.PositiveInfinity;
+            Color closest = default;
+            foreach (Color target in new[] { Colors.White, Colors.Black })
+            {
+                if (!Qualifies(target))
                 {
-                    return candidate;
+                    continue;
+                }
+
+                double low = 0;
+                double high = 1;
+                for (int iteration = 0; iteration < 20; iteration++)
+                {
+                    double middle = (low + high) / 2;
+                    if (Qualifies(Mix(start, target, middle)))
+                    {
+                        high = middle;
+                    }
+                    else
+                    {
+                        low = middle;
+                    }
+                }
+
+                if (high < closestAmount)
+                {
+                    closestAmount = high;
+                    closest = Mix(start, target, high);
                 }
             }
 
-            return target;
+            if (!double.IsPositiveInfinity(closestAmount))
+            {
+                result = closest;
+                return true;
+            }
+
+            // Search both directions, including intermediate colors. Opposing surfaces can share a middle gray
+            // even when neither endpoint qualifies. Fine steps avoid skipping the narrow AA interval.
+            for (int step = 1; step <= 1024; step++)
+            {
+                foreach (Color target in new[] { Colors.White, Colors.Black })
+                {
+                    Color candidate = Mix(start, target, step / 1024.0);
+                    if (Qualifies(candidate))
+                    {
+                        result = candidate;
+                        return true;
+                    }
+                }
+            }
+
+            // Hue-preserving paths can miss a representable neutral in an otherwise feasible interval.
+            for (int channel = 0; channel <= 255; channel++)
+            {
+                var candidate = Color.FromRgb((byte)channel, (byte)channel, (byte)channel);
+                if (Qualifies(candidate))
+                {
+                    result = candidate;
+                    return true;
+                }
+            }
+
+            result = default;
+            return false;
         }
 
         private static Color Mix(Color source, Color target, double amount)

@@ -75,6 +75,8 @@ public class DesktopMaterialNativeTests
                 report.AppendLine($"Requested hint: {string.Join("/", settings.TransparencyLevelHint)}; actual: {settings.ActualTransparencyLevel}");
                 PixelMetrics frost = Measure(settings, folder, "frost");
                 DesktopMaterialState frostState = DesktopWindowMaterial.GetState(settings);
+                bool effectsOff = DesktopWindowMaterial.GetDescription(settings).Contains("transparency effects off", StringComparison.Ordinal);
+                bool blurReported = DesktopMaterialPolicy.IsBlurLevel(settings.ActualTransparencyLevel);
                 report.AppendLine($"Active material: {frostState}; {frost}");
 
                 // Control 1: the same shell forced to the solid fallback must hide the stripes completely.
@@ -97,8 +99,7 @@ public class DesktopMaterialNativeTests
                 File.WriteAllText(Path.Combine(folder, "material-qualification.txt"), report.ToString());
 
                 Assert.True(sharp.MaxStep >= 6, $"Control must show sharp stripes to be meaningful: {sharp}");
-                bool effectsOff = DesktopWindowMaterial.GetDescription(settings).Contains("transparency effects off", StringComparison.Ordinal);
-                if (effectsOff || !DesktopMaterialPolicy.IsBlurLevel(settings.ActualTransparencyLevel))
+                if (effectsOff || !blurReported)
                 {
                     // Windows draws acrylic as a flat color while Transparency effects is off, so the active material cannot be
                     // observed here. The fallback controls above still ran; the frost itself stays unqualified.

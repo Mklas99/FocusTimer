@@ -51,7 +51,7 @@ public sealed class DesktopControlStateTests
         Assert.NotEqual(Color.Parse("#223344"), Brush(hover));
         Assert.NotEqual(Brush(hover), Brush(pressed));
 
-        Assert.Equal(Color.Parse("#CC8800"), Set(button, ":focus-visible", () => Brush(surface.BorderBrush)));
+        Assert.Equal(ResourceColor("DesktopFocusBrush"), Set(button, ":focus-visible", () => Brush(surface.BorderBrush)));
         Assert.Equal(new Thickness(2), surface.BorderThickness);
         Assert.Equal(normalBounds.Size, button.Bounds.Size);
 
@@ -78,10 +78,10 @@ public sealed class DesktopControlStateTests
         Assert.Equal(new CornerRadius(8), box.CornerRadius);
         Assert.True(normalSize.Height >= 25);
         Assert.Equal(Color.Parse("#EEEEEE"), Brush(box.CaretBrush));
-        Assert.Equal(Color.Parse("#AA5500"), Brush(box.SelectionBrush));
-        Assert.Equal(Color.Parse("#FFFFFF"), Brush(box.SelectionForegroundBrush));
+        Assert.Equal(ResourceColor("DesktopSelectionBrush"), Brush(box.SelectionBrush));
+        Assert.Equal(ResourceColor("DesktopSelectedTextBrush"), Brush(box.SelectionForegroundBrush));
 
-        Assert.Equal(Color.Parse("#CC8800"), Set(box, ":focus", () => Brush(border.BorderBrush)));
+        Assert.Equal(ResourceColor("DesktopFocusBrush"), Set(box, ":focus", () => Brush(border.BorderBrush)));
         Clear(box, ":focus");
 
         Assert.Equal(ResourceColor("DesktopDangerBrush"), Set(box, ":error", () => Brush(border.BorderBrush)));
@@ -91,7 +91,7 @@ public sealed class DesktopControlStateTests
         Dispatcher.UIThread.RunJobs();
         Assert.Equal(Colors.Transparent, Brush(border.Background));
         Assert.Equal(ResourceColor("DesktopBorderBrush"), Brush(border.BorderBrush));
-        Assert.Equal(Color.Parse("#CC8800"), Set(box, ":focus", () => Brush(border.BorderBrush)));
+        Assert.Equal(ResourceColor("DesktopFocusBrush"), Set(box, ":focus", () => Brush(border.BorderBrush)));
         Assert.Equal(normalSize, box.Bounds.Size);
         window.Close();
     }
@@ -117,7 +117,7 @@ public sealed class DesktopControlStateTests
         Assert.Equal(ResourceColor("DesktopBorderBrush"), Brush(combo.BorderBrush));
 
         Set(numeric, ":focus-within", () => Brush(numeric.BorderBrush));
-        Assert.Equal(Color.Parse("#CC8800"), Brush(numeric.BorderBrush));
+        Assert.Equal(ResourceColor("DesktopFocusBrush"), Brush(numeric.BorderBrush));
         Clear(numeric, ":focus-within");
         window.Close();
     }

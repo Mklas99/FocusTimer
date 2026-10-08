@@ -189,7 +189,14 @@
         <SolidColorBrush x:Key="DesktopShellFrostBrush" Color="#2D2D30" Opacity="0.95"/>
         <SolidColorBrush x:Key="DesktopCardBrush" Color="#38383C"/>
         <SolidColorBrush x:Key="DesktopFocusBrush" Color="#2899F5"/>
+        <SolidColorBrush x:Key="DesktopSliderThumbBrush" Color="#15476C"/>
         <SolidColorBrush x:Key="DesktopFieldBrush" Color="#414143"/>
+        <SolidColorBrush x:Key="DesktopShellBrush" Color="#2D2D30"/>
+        <SolidColorBrush x:Key="DesktopSelectionBrush" Color="#007ACC"/>
+        <SolidColorBrush x:Key="DesktopSelectedTextBrush" Color="#FFFFFF"/>
+        <SolidColorBrush x:Key="DesktopTabHoverBrush" Color="#1E1E1E"/>
+        <SolidColorBrush x:Key="DesktopTabFocusBrush" Color="#409DDC"/>
+        <SolidColorBrush x:Key="WidgetProjectLabelBrush" Color="#FFFFFF"/>
         <SolidColorBrush x:Key="DesktopControlHoverBrush" Color="#4E4E50"/>
         <SolidColorBrush x:Key="DesktopControlPressedBrush" Color="#5A5A5C"/>
         <SolidColorBrush x:Key="TabSelectedLabelBrush" Color="#4DA3E8"/>

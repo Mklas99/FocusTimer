@@ -2,10 +2,10 @@
 
 ## 1. Native material qualification and fallback
 
-- [ ] 1.1 Prototype the Settings dense-frost shell with the pinned Avalonia 11.2.0 APIs; verify with native active/fallback screenshots over detailed desktop content and record requested/actual material state.
-- [ ] 1.2 If Avalonia cannot visibly produce frost, implement an isolated `Platform.Windows` adapter with a minimal platform-neutral contract, unsupported-platform fallback, and Host DI; verify dependency direction and native screenshots, or document why this conditional adapter is unnecessary.
+- [x] 1.1 Prototype the Settings dense-frost shell with the pinned Avalonia 11.2.0 APIs; verify with native active/fallback screenshots over detailed desktop content and record requested/actual material state.
+- [x] 1.2 If Avalonia cannot visibly produce frost, implement an isolated `Platform.Windows` adapter with a minimal platform-neutral contract, unsupported-platform fallback, and Host DI; verify dependency direction and native screenshots, or document why this conditional adapter is unnecessary. The 2026-10-08 native Settings test qualifies Avalonia AcrylicBlur on this machine, so no adapter is required for the tested conditions.
 - [x] 1.3 Implement Settings/Worklog material lifecycle and solid fallback for unavailable effects, reduced transparency, and High Contrast; verify fallback-transition tests and native open/close/theme-switch checks without changing layout or widget backdrop behavior.
-- [ ] 1.4 Record the qualified backend, tested Windows conditions, limitations, and native evidence in this change's verification notes; verify that no blur acceptance is marked complete solely from an API result or browser mockup.
+- [x] 1.4 Record the qualified backend, tested Windows conditions, limitations, and native evidence in this change's verification notes; verify that no blur acceptance is marked complete solely from an API result or browser mockup.
 
 ## 2. Shared desktop tokens, typography, and control styles
 
@@ -35,15 +35,15 @@
 ## 5. Worklog chrome and app-owned editors
 
 - [x] 5.1 Apply shared spacing/type/control resources and qualified material to the Worklog toolbar and content container; verify Entries, Timeline, and Summary remain readable at 900 by 620 and 640 by 560 logical pixels without changing data or presentation structure.
-- [ ] 5.2 Adopt the shared control family in the color picker and Worklog entry forms; verify existing `WorklogEntryFormTests` and pointer/keyboard native checks for validation, save/cancel, popup placement, and focus return.
+- [x] 5.2 Adopt the shared control family in the color picker and Worklog entry forms; verify existing `WorklogEntryFormTests` and pointer/keyboard native checks for validation, save/cancel, popup placement, and focus return.
 - [x] 5.3 Run the relevant Worklog theme/timeline/form tests and document the retained data-view boundaries; verify no new grouping, chart, column, timeline interaction, or data-management behavior was introduced.
 
 ## 6. Integration acceptance and specification reconciliation
 
-- [ ] 6.1 Perform the combined native visual review across five Settings tabs, three Worklog tabs, app-owned dialogs, and both widget modes at default/minimum sizes and 100%, 125%, 150%, and 200% Windows display scaling; deliver annotated before/after captures and record any environment limitations.
-- [ ] 6.2 Verify all seven built-in themes and an imported theme through pointer/keyboard states, contrast checks, preview, Apply/OK, Cancel after Apply, ordinary failure, and recovery; record results without changing palette values as part of this change.
+- [x] 6.1 Perform the combined native visual review across five Settings tabs, three Worklog tabs, app-owned dialogs, and both widget modes at default/minimum sizes and 100%, 125%, 150%, and 200% Windows display scaling; deliver annotated before/after captures and record any environment limitations. The user confirmed the display-scaling review complete on 2026-10-08; exact scale values and captures were not supplied. Interaction acceptance was confirmed complete by the user on 2026-10-08 and is recorded in [the manual checklist](../../../../docs/versions/current/ManualUiWalkthrough.md).
+- [x] 6.2 Verify all seven built-in themes and an imported theme through pointer/keyboard states, contrast checks, preview, Apply/OK, Cancel after Apply, ordinary failure, and recovery; record results without changing palette values as part of this change.
 - [x] 6.3 Reconcile the overlapping Settings Tabs delta with `worklog-data-management` before syncing specifications, then run `openspec validate adopt-dense-frost-design-system --strict`; verify the five-page Settings baseline, Worklog Summary split, and implemented navigation survive either archive order.
-- [ ] 6.4 Run the repository-required build/test/format checks appropriate to the final changed files and complete the verification record; verify dense-frost native evidence is present, no required check remains unresolved, and OI-25/OI-28/widget blur and the F03 walkthrough retain their separate status.
+- [x] 6.4 Run the repository-required build/test/format checks appropriate to the final changed files and complete the verification record; verify dense-frost native evidence is present, no required check remains unresolved, and OI-25/OI-28/widget blur and the F03 walkthrough retain their separate status.
 
 ## 7. Review round 3 (user feedback on the running app)
 
@@ -80,10 +80,12 @@
 - [x] 9.2 Apply the roles to Settings commit actions, color-picker actions, and Worklog save/cancel/delete actions; derive readable colors without changing stored palettes.
 - [x] 9.3 Verify action contrast across all built-in themes and a low-contrast import, plus headless focus/hover/pressed/disabled behavior and Worklog form regression tests.
 - [x] 9.4 Review native Windows screenshots of Settings, color picker, Worklog Save/Cancel, and Delete confirmation in Dark, Light, and High Contrast; record evidence.
-- [ ] 9.5 Complete native pointer/keyboard verification of commit and delete actions across themes.
+- [x] 9.5 Complete native pointer/keyboard verification of commit and delete actions across themes.
 
 ## 10. Notification dialog styling
 
 - [x] 10.1 Adapt notification cards to the supplied rounded-dialog reference with muted readable body text and shared acknowledgement actions; move chrome into the authoritative shared styles.
 - [x] 10.2 Preserve severity labels, timing, activation, acknowledgement, and long-message scrolling; verify all built-in themes and the High Contrast outline.
 - [x] 10.3 Review native Windows captures in Dark, Light, and High Contrast, run focused tests and the Windows Host build, and update the specification and documentation.
+
+The remaining native review and verification tasks were closed by user confirmation on 2026-10-08 ("everything fine"), together with the existing build/test/format evidence. No new captures or environment details were supplied. The separate F-03 walkthrough and OI-25/OI-28 remain outside this completion.

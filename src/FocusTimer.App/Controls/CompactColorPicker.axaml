@@ -93,7 +93,8 @@
                                VerticalAlignment="Center"
                                FontSize="11"
                                FontWeight="Bold"
-                               Foreground="{Binding PreviewTextBrush}"
+                               Foreground="{DynamicResource DesktopInputTextBrush}"
+                               Background="{DynamicResource DesktopFieldBrush}"
                                Text="{Binding SelectedColorHex}" />
                 </Grid>
             </Border>

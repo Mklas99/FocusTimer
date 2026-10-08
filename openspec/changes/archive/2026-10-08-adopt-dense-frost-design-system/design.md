@@ -25,7 +25,7 @@ The implemented `worklog-data-management` change moved Summary into Worklog. Its
 - Palette selection, contrast-driven palette redesign, new presets, or serialized theme/settings fields.
 - Broader widget typography, backdrop choices, or native widget blur. Requested widget corrections retain the full-mode project-field gap and centered text, put compact buttons in a vertical column at every scale, balance visible side gaps, remove duplicate window chrome, and shrink shell corners below 1x while capping them at 12 px above it. Placing the whole button group below the clock is backlog item OI-35.
 - New Worklog charts, table columns, summary metrics, timeline interaction, or data-management behavior.
-- Hotkey editing/recording, immediate commits for nonappearance settings, custom window decorations, or a framework upgrade.
+- Hotkey editing/recording, optional nonappearance preview (OI-44), immediate commits for nonappearance settings, custom window decorations, or a framework upgrade.
 
 ## Decisions
 

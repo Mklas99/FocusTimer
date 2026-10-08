@@ -165,20 +165,7 @@ namespace FocusTimer.App.Services
 
             try
             {
-                if (!string.IsNullOrEmpty(this.CurrentSettings.ActiveThemeName))
-                {
-                    Theme? theme = this._themeService.GetBuiltInTheme(this.CurrentSettings.ActiveThemeName);
-
-                    // A matching saved theme can contain edited appearance values.
-                    // Use the factory preset only for first-run defaults or a name mismatch.
-                    if (theme != null && !string.Equals(
-                            this.CurrentSettings.Theme.ThemeName,
-                            theme.ThemeName,
-                            StringComparison.OrdinalIgnoreCase))
-                    {
-                        this.CurrentSettings.Theme = theme;
-                    }
-                }
+                ThemeSelection.Restore(this.CurrentSettings, this._themeService);
 
                 this._themeManager.ApplyTheme(this.CurrentSettings.Theme);
             }

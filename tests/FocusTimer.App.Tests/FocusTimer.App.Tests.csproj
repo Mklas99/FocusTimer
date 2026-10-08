@@ -24,6 +24,7 @@
 
   <ItemGroup>
     <Using Include="Xunit" />
+    <Compile Include="..\ThemeFixtures.cs" Link="ThemeFixtures.cs" />
   </ItemGroup>
 
 </Project>

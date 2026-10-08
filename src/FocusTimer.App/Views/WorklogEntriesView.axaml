@@ -16,12 +16,12 @@
             <Setter Property="Foreground" Value="{DynamicResource DesktopTextBrush}" />
         </Style>
         <Style Selector="ListBox.worklog-table ListBoxItem:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-            <Setter Property="Background" Value="{DynamicResource TabHoverBackgroundBrush}" />
+            <Setter Property="Background" Value="{DynamicResource DesktopTabHoverBrush}" />
             <Setter Property="TextElement.Foreground" Value="{DynamicResource DesktopTabTextBrush}" />
         </Style>
         <Style Selector="ListBox.worklog-table ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter, ListBox.worklog-table ListBoxItem:selected:pointerover /template/ ContentPresenter#PART_ContentPresenter, ListBox.worklog-table ListBoxItem:selected:focus /template/ ContentPresenter#PART_ContentPresenter">
-            <Setter Property="Background" Value="{DynamicResource TabSelectedBackgroundBrush}" />
-            <Setter Property="TextElement.Foreground" Value="{DynamicResource TabSelectedTextBrush}" />
+            <Setter Property="Background" Value="{DynamicResource DesktopSelectionBrush}" />
+            <Setter Property="TextElement.Foreground" Value="{DynamicResource DesktopSelectedTextBrush}" />
         </Style>
         <Style Selector="Border.worklog-table-header">
             <Setter Property="Background" Value="{DynamicResource DesktopCardBrush}" />

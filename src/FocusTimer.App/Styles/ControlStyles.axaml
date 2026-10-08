@@ -99,7 +99,7 @@
     <Style Selector="Window.settings-window">
         <Setter Property="FontFamily" Value="{DynamicResource DesktopFontFamily}" />
         <Setter Property="FontSize" Value="{DynamicResource FontSizeBody}" />
-        <Setter Property="Background" Value="{DynamicResource SettingsBackgroundBrush}" />
+        <Setter Property="Background" Value="{DynamicResource DesktopShellBrush}" />
         <Setter Property="Foreground" Value="{DynamicResource DesktopTextBrush}" />
     </Style>
 
@@ -430,7 +430,7 @@
         <Setter Property="BorderBrush" Value="{DynamicResource DesktopBorderBrush}" />
         <Setter Property="Foreground" Value="{DynamicResource DesktopInputTextBrush}" />
         <Setter Property="CaretBrush" Value="{DynamicResource DesktopInputTextBrush}" />
-        <Setter Property="SelectionBrush" Value="{DynamicResource TabSelectedBackgroundBrush}" />
+        <Setter Property="SelectionBrush" Value="{DynamicResource DesktopSelectionBrush}" />
         <Setter Property="SelectionForegroundBrush" Value="{DynamicResource DesktopSelectedTextBrush}" />
         <Setter Property="MinHeight" Value="{DynamicResource DesktopControlHeight}" />
         <Setter Property="CornerRadius" Value="{DynamicResource DesktopControlRadius}" />
@@ -466,6 +466,16 @@
     </Style>
 
     <!-- Numeric fields -->
+    <Style Selector="Window.settings-window TextBox:not(:disabled) /template/ TextBlock#PART_Watermark">
+        <Setter Property="Foreground" Value="{DynamicResource DesktopSecondaryTextBrush}" />
+        <Setter Property="Opacity" Value="1" />
+    </Style>
+
+    <Style Selector="TextBox.project-tag:not(:disabled) /template/ TextBlock#PART_Watermark">
+        <Setter Property="Foreground" Value="{DynamicResource ProjectTagTextBrush}" />
+        <Setter Property="Opacity" Value="1" />
+    </Style>
+
     <Style Selector="Window.settings-window NumericUpDown">
         <Setter Property="Background" Value="{DynamicResource DesktopFieldBrush}" />
         <Setter Property="BorderBrush" Value="{DynamicResource DesktopBorderBrush}" />
@@ -582,6 +592,85 @@
         <Setter Property="VerticalContentAlignment" Value="Center" />
     </Style>
 
+    <Style Selector="Window.settings-window NumericUpDown /template/ ButtonSpinner /template/ RepeatButton:not(:disabled) PathIcon">
+        <Setter Property="Foreground" Value="{DynamicResource DesktopInputTextBrush}" />
+    </Style>
+
+    <Style Selector="Window.settings-window NumericUpDown /template/ ButtonSpinner /template/ RepeatButton:not(:disabled) /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource DesktopFieldBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopBorderBrush}" />
+    </Style>
+
+    <Style Selector="Window.settings-window NumericUpDown /template/ ButtonSpinner /template/ RepeatButton:not(:disabled):pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource DesktopControlHoverBrush}" />
+    </Style>
+
+    <Style Selector="Window.settings-window NumericUpDown /template/ ButtonSpinner /template/ RepeatButton:not(:disabled):pressed /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource DesktopControlPressedBrush}" />
+    </Style>
+
+    <!-- Popup children live in a separate visual root. Dropdowns are desktop-only controls. -->
+    <Style Selector="ComboBox:not(:disabled) /template/ Border#PopupBorder">
+        <Setter Property="Background" Value="{DynamicResource DesktopShellBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopBorderBrush}" />
+    </Style>
+
+    <Style Selector="ComboBoxItem">
+        <Setter Property="Foreground" Value="{DynamicResource DesktopTextBrush}" />
+    </Style>
+
+    <Style Selector="ComboBoxItem /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource DesktopShellBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DesktopTextBrush}" />
+    </Style>
+
+    <Style Selector="ComboBoxItem:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource DesktopControlHoverBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DesktopTextBrush}" />
+    </Style>
+
+    <Style Selector="ComboBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter, ComboBoxItem:selected:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource DesktopSelectionBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DesktopSelectedTextBrush}" />
+    </Style>
+
+    <!-- Project suggestions are an AutoCompleteBox popup, separate from ComboBox dropdowns. -->
+    <Style Selector="Window.settings-window AutoCompleteBox">
+        <Setter Property="Background" Value="{DynamicResource DesktopFieldBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DesktopInputTextBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopBorderBrush}" />
+        <Setter Property="CornerRadius" Value="{DynamicResource DesktopControlRadius}" />
+        <Setter Property="Padding" Value="{DynamicResource DesktopControlPadding}" />
+    </Style>
+
+    <Style Selector="AutoCompleteBox:not(:disabled) /template/ Border#PART_SuggestionsContainer">
+        <Setter Property="Background" Value="{DynamicResource DesktopShellBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopBorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="{DynamicResource DesktopControlRadius}" />
+    </Style>
+
+    <Style Selector="AutoCompleteBox /template/ ListBox#PART_SelectingItemsControl ListBoxItem:not(:disabled) /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource DesktopShellBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DesktopTextBrush}" />
+        <Setter Property="CornerRadius" Value="{DynamicResource DesktopControlRadius}" />
+    </Style>
+
+    <Style Selector="AutoCompleteBox /template/ ListBox#PART_SelectingItemsControl ListBoxItem:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource DesktopControlHoverBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DesktopTextBrush}" />
+    </Style>
+
+    <Style Selector="AutoCompleteBox /template/ ListBox#PART_SelectingItemsControl ListBoxItem:pressed /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource DesktopControlPressedBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DesktopTextBrush}" />
+    </Style>
+
+    <Style Selector="AutoCompleteBox /template/ ListBox#PART_SelectingItemsControl ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter, AutoCompleteBox /template/ ListBox#PART_SelectingItemsControl ListBoxItem:selected:not(:focus) /template/ ContentPresenter#PART_ContentPresenter, AutoCompleteBox /template/ ListBox#PART_SelectingItemsControl ListBoxItem:selected:pointerover /template/ ContentPresenter#PART_ContentPresenter, AutoCompleteBox /template/ ListBox#PART_SelectingItemsControl ListBoxItem:selected:pressed /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource DesktopSelectionBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DesktopSelectedTextBrush}" />
+    </Style>
+
     <!-- Sliders -->
     <Style Selector="Window.settings-window Slider">
         <Setter Property="MinHeight" Value="12" />
@@ -597,10 +686,38 @@
         <Setter Property="MinHeight" Value="10" />
     </Style>
 
+    <Style Selector="Window.settings-window Slider /template/ RepeatButton#PART_DecreaseButton /template/ Border#TrackBackground">
+        <Setter Property="Background" Value="{DynamicResource DesktopFocusBrush}" />
+    </Style>
+
+    <Style Selector="Window.settings-window Slider /template/ RepeatButton#PART_IncreaseButton /template/ Border#TrackBackground">
+        <Setter Property="Background" Value="{DynamicResource DesktopBorderBrush}" />
+    </Style>
+
+    <Style Selector="Window.settings-window Slider /template/ Thumb:not(:disabled) /template/ Border">
+        <Setter Property="Background" Value="{DynamicResource DesktopSliderThumbBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopFocusBrush}" />
+    </Style>
+
     <!-- Date picker text field (Worklog toolbar) shares the text-field family. -->
     <Style Selector="Window.settings-window CalendarDatePicker">
+        <Setter Property="Background" Value="{DynamicResource DesktopFieldBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DesktopInputTextBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopBorderBrush}" />
+        <Setter Property="Padding" Value="{DynamicResource DesktopControlPadding}" />
         <Setter Property="MinHeight" Value="{DynamicResource DesktopControlHeight}" />
         <Setter Property="CornerRadius" Value="{DynamicResource DesktopControlRadius}" />
+    </Style>
+
+    <Style Selector="Window.settings-window CalendarDatePicker:pointerover /template/ Border#Background, Window.settings-window CalendarDatePicker:pressed /template/ Border#Background">
+        <Setter Property="Background" Value="{DynamicResource DesktopFieldBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopBorderBrush}" />
+    </Style>
+
+    <Style Selector="Window.settings-window CalendarDatePicker:focus-within /template/ Border#Background">
+        <Setter Property="Background" Value="{DynamicResource DesktopFieldBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopFocusBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
     </Style>
 
     <!-- The picker's calendar button shows the app's icon instead of Fluent's drawn glyph. -->
@@ -621,14 +738,20 @@
     </Style>
 
     <Style Selector="Window.settings-window CalendarDatePicker /template/ TextBox#PART_TextBox">
-        <Setter Property="Background" Value="{DynamicResource DesktopFieldBrush}" />
+        <Setter Property="Background" Value="Transparent" />
         <Setter Property="Foreground" Value="{DynamicResource DesktopInputTextBrush}" />
         <Setter Property="BorderBrush" Value="{DynamicResource DesktopBorderBrush}" />
     </Style>
 
     <Style Selector="Window.settings-window CalendarDatePicker /template/ TextBox#PART_TextBox:pointerover /template/ Border#PART_BorderElement, Window.settings-window CalendarDatePicker /template/ TextBox#PART_TextBox:focus /template/ Border#PART_BorderElement">
-        <Setter Property="Background" Value="{DynamicResource DesktopFieldBrush}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource DesktopFocusBrush}" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+    </Style>
+
+    <Style Selector="Window.settings-window CalendarDatePicker /template/ TextBox#PART_TextBox:not(:disabled)">
+        <Setter Property="SelectionBrush" Value="{DynamicResource DesktopSelectionBrush}" />
+        <Setter Property="SelectionForegroundBrush" Value="{DynamicResource DesktopSelectedTextBrush}" />
+        <Setter Property="CaretBrush" Value="{DynamicResource DesktopInputTextBrush}" />
     </Style>
 
     <!--
@@ -720,7 +843,7 @@
     </Style>
 
     <Style Selector="Window.settings-window TabItem:pointerover:not(:selected) /template/ Border#PART_LayoutRoot">
-        <Setter Property="Background" Value="{DynamicResource TabHoverBackgroundBrush}" />
+        <Setter Property="Background" Value="{DynamicResource DesktopTabHoverBrush}" />
     </Style>
 
     <Style Selector="Window.settings-window TabItem:disabled">
@@ -728,7 +851,7 @@
     </Style>
 
     <Style Selector="Window.settings-window TabItem:focus-visible /template/ Border#PART_FocusRing">
-        <Setter Property="BorderBrush" Value="{DynamicResource DesktopFocusBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopTabFocusBrush}" />
     </Style>
 
     <Style Selector="Window.settings-window TabItem controls|TabHeader TextBlock.tab-label">
@@ -764,27 +887,75 @@
       Window.settings-window scope, so these selectors are global: Calendar is only used by desktop windows.
     -->
     <Style Selector="Calendar">
-        <Setter Property="Background" Value="{DynamicResource SettingsBackgroundBrush}" />
+        <Setter Property="Background" Value="{DynamicResource DesktopShellBrush}" />
         <Setter Property="Foreground" Value="{DynamicResource DesktopTextBrush}" />
-        <!-- Fluent fills the calendar's grid layer with BorderBrush, so it must be the surface color. -->
-        <Setter Property="BorderBrush" Value="{DynamicResource SettingsBackgroundBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopBorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="{DynamicResource DesktopCardRadius}" />
         <Setter Property="FontSize" Value="{DynamicResource FontSizeBody}" />
         <Setter Property="FontFamily" Value="{DynamicResource DesktopFontFamily}" />
     </Style>
 
     <Style Selector="CalendarItem">
-        <Setter Property="Background" Value="{DynamicResource SettingsBackgroundBrush}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource SettingsBackgroundBrush}" />
+        <Setter Property="Background" Value="{DynamicResource DesktopShellBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopBorderBrush}" />
         <Setter Property="Foreground" Value="{DynamicResource DesktopTextBrush}" />
         <Setter Property="FontSize" Value="{DynamicResource FontSizeBody}" />
+        <Setter Property="Template">
+            <ControlTemplate>
+                <Border Name="CalendarFrame" Background="{TemplateBinding Background}"
+                        BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}"
+                        CornerRadius="{TemplateBinding CornerRadius}" Padding="4" ClipToBounds="True">
+                    <Grid RowDefinitions="33,Auto">
+                        <Border Name="MonthHeaderSeparator" BorderBrush="{DynamicResource DesktopBorderBrush}"
+                                BorderThickness="0,0,0,1" Padding="0" Background="{DynamicResource DesktopShellBrush}">
+                            <Grid ColumnDefinitions="*,32,32">
+                                <Button Name="PART_HeaderButton" HorizontalContentAlignment="Left" />
+                                <Button Name="PART_PreviousButton" Grid.Column="1" Padding="0">
+                                    <Path StrokeThickness="1.5" Data="M 0,9 L 9,0 L 18,9"
+                                          HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                </Button>
+                                <Button Name="PART_NextButton" Grid.Column="2" Padding="0">
+                                    <Path StrokeThickness="1.5" Data="M 0,0 L 9,9 L 18,0"
+                                          HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                </Button>
+                            </Grid>
+                        </Border>
+                        <!-- CalendarItem requires an empty month backdrop and populates both named grids. -->
+                        <Border Name="BackgroundLayer" Grid.Row="1" Background="{DynamicResource DesktopShellBrush}"
+                                IsVisible="{Binding #PART_MonthView.IsVisible}" />
+                        <Grid Name="PART_MonthView" Grid.Row="1" IsVisible="False"
+                              RowDefinitions="28,Auto,Auto,Auto,Auto,Auto,Auto"
+                              ColumnDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto" />
+                        <Grid Name="PART_YearView" Grid.Row="1" IsVisible="False" MinHeight="192" MinWidth="238"
+                              RowDefinitions="*,*,*" ColumnDefinitions="*,*,*,*"
+                              Background="{DynamicResource DesktopShellBrush}" />
+                    </Grid>
+                </Border>
+            </ControlTemplate>
+        </Setter>
     </Style>
 
-    <Style Selector="CalendarItem /template/ Border#BackgroundLayer">
-        <Setter Property="Background" Value="{DynamicResource SettingsBackgroundBrush}" />
+    <!-- Clip the day/year panels to the rounded popup outline. -->
+    <Style Selector="CalendarItem /template/ Border">
+        <Setter Property="ClipToBounds" Value="True" />
+        <Setter Property="Padding" Value="4" />
     </Style>
 
-    <Style Selector="CalendarItem /template/ Grid#PART_YearView">
-        <Setter Property="Background" Value="{DynamicResource SettingsBackgroundBrush}" />
+    <!-- Keep the month backdrop empty; the divider belongs to the month navigation above it. -->
+    <Style Selector="CalendarItem:not(.cal) /template/ Border#BackgroundLayer">
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="Background" Value="{DynamicResource DesktopShellBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopBorderBrush}" />
+        <Setter Property="BorderThickness" Value="0" />
+    </Style>
+
+    <Style Selector="CalendarItem:not(.cal) /template/ Grid#PART_YearView">
+        <Setter Property="Background" Value="{DynamicResource DesktopShellBrush}" />
+    </Style>
+
+    <Style Selector="CalendarItem:not(.cal) /template/ Grid#PART_MonthView">
+        <Setter Property="MinHeight" Value="0" />
     </Style>
 
     <Style Selector="CalendarItem /template/ Button:not(.cal)">
@@ -809,9 +980,15 @@
     </Style>
 
     <!-- Month arrows: small, same size as the day-row icons. -->
-    <Style Selector="CalendarItem /template/ Button#PART_PreviousButton /template/ Path, CalendarItem /template/ Button#PART_NextButton /template/ Path">
-        <Setter Property="Fill" Value="{DynamicResource DesktopTextBrush}" />
+    <Style Selector="CalendarItem /template/ Button#PART_PreviousButton:not(:disabled) Path, CalendarItem /template/ Button#PART_NextButton:not(:disabled) Path">
+        <Setter Property="Fill" Value="Transparent" />
         <Setter Property="Stroke" Value="{DynamicResource DesktopTextBrush}" />
+    </Style>
+
+    <Style Selector="CalendarItem /template/ Button#PART_PreviousButton:disabled Path, CalendarItem /template/ Button#PART_NextButton:disabled Path">
+        <Setter Property="Fill" Value="Transparent" />
+        <Setter Property="Stroke" Value="{DynamicResource DesktopSecondaryTextBrush}" />
+        <Setter Property="Opacity" Value="0.4" />
     </Style>
 
     <!-- The template fixes the arrow's size, so the arrow buttons are scaled down instead. -->
@@ -843,14 +1020,18 @@
     </Style>
 
     <Style Selector="CalendarDayButton:inactive /template/ Border#Root">
-        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Background" Value="{DynamicResource DesktopShellBrush}" />
+    </Style>
+
+    <Style Selector="CalendarDayButton:not(:inactive):not(:selected):not(:disabled):not(:pointerover) /template/ Border#Root">
+        <Setter Property="Background" Value="{DynamicResource DesktopCardBrush}" />
     </Style>
 
     <Style Selector="CalendarDayButton:disabled, CalendarDayButton:blackout, CalendarButton:disabled">
         <Setter Property="Foreground" Value="{DynamicResource DisabledTextBrush}" />
     </Style>
 
-    <!-- Days outside the allowed range (after today, before the retention window) are shown dimmed, not hidden. -->
+    <!-- Disabled days are dimmed; Calendar may hide dates outside its DisplayDateStart/End range. -->
     <Style Selector="CalendarDayButton:disabled">
         <Setter Property="Opacity" Value="0.4" />
     </Style>
@@ -860,11 +1041,27 @@
     </Style>
 
     <Style Selector="CalendarDayButton:inactive">
-        <Setter Property="Foreground" Value="{DynamicResource DisabledTextBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DesktopTextBrush}" />
+    </Style>
+
+    <Style Selector="CalendarDayButton:not(:selected):not(:disabled):not(:blackout) /template/ ContentPresenter#PART_ContentPresenter, CalendarButton:not(:selected):not(:disabled) /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Foreground" Value="{DynamicResource DesktopTextBrush}" />
+    </Style>
+
+    <Style Selector="CalendarDayButton:today /template/ Border#Border">
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopFocusBrush}" />
     </Style>
 
     <Style Selector="CalendarDayButton:pointerover /template/ Border#Root, CalendarButton:pointerover /template/ Border#Root">
         <Setter Property="Background" Value="{DynamicResource DesktopControlHoverBrush}" />
+    </Style>
+
+    <Style Selector="CalendarDayButton:selected /template/ Border#Root, CalendarDayButton:selected:pointerover /template/ Border#Root, CalendarButton:selected /template/ Border#Root">
+        <Setter Property="Background" Value="{DynamicResource DesktopSelectionBrush}" />
+    </Style>
+
+    <Style Selector="CalendarDayButton:selected /template/ ContentPresenter#PART_ContentPresenter, CalendarDayButton:selected:pointerover /template/ ContentPresenter#PART_ContentPresenter, CalendarButton:selected /template/ ContentPresenter#PART_ContentPresenter, CalendarButton:selected:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Foreground" Value="{DynamicResource DesktopSelectedTextBrush}" />
     </Style>
 
     <!-- Settings accordion: one self-contained template on the shared field surface. -->
@@ -889,6 +1086,7 @@
                                                   ContentTemplate="{TemplateBinding HeaderTemplate}"
                                                   VerticalAlignment="Center" />
                                 <icons:MaterialIcon Grid.Column="1" Name="Chevron" Kind="ChevronDown" Width="18" Height="18"
+                                                    Foreground="{DynamicResource DesktopTextBrush}"
                                                     VerticalAlignment="Center" RenderTransformOrigin="50%,50%" />
                             </Grid>
                         </ToggleButton>
@@ -917,14 +1115,17 @@
 
     <Style Selector="Expander.settings-accordion ToggleButton.accordion-header:pointerover /template/ ContentPresenter#PART_ContentPresenter">
         <Setter Property="Background" Value="{DynamicResource DesktopControlHoverBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DesktopTextBrush}" />
     </Style>
 
     <Style Selector="Expander.settings-accordion ToggleButton.accordion-header:checked /template/ ContentPresenter#PART_ContentPresenter">
         <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="{DynamicResource DesktopTextBrush}" />
     </Style>
 
     <Style Selector="Expander.settings-accordion ToggleButton.accordion-header:checked:pointerover /template/ ContentPresenter#PART_ContentPresenter">
         <Setter Property="Background" Value="{DynamicResource DesktopControlHoverBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DesktopTextBrush}" />
     </Style>
 
     <Style Selector="Expander.settings-accordion ToggleButton.accordion-header:focus-visible /template/ ContentPresenter#PART_ContentPresenter">
@@ -949,6 +1150,13 @@
 
     <!-- Color picker controls and surfaces -->
     <Style Selector="Button.color-swatch">
+        <Setter Property="Template">
+            <ControlTemplate>
+                <ContentPresenter Name="SwatchSurface" Background="{TemplateBinding Background}"
+                                  BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}"
+                                  CornerRadius="{TemplateBinding CornerRadius}" Content="{TemplateBinding Content}" />
+            </ControlTemplate>
+        </Setter>
         <Setter Property="Width" Value="28" />
         <Setter Property="Height" Value="28" />
         <Setter Property="Padding" Value="0" />
@@ -960,7 +1168,17 @@
     </Style>
 
     <Style Selector="Button.color-swatch:focus-visible">
-        <Setter Property="BorderBrush" Value="{DynamicResource FocusRingBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopFocusBrush}" />
+        <Setter Property="BorderThickness" Value="2" />
+    </Style>
+
+    <Style Selector="Expander.settings-accordion ToggleButton.accordion-header:pressed /template/ ContentPresenter#PART_ContentPresenter, Expander.settings-accordion ToggleButton.accordion-header:checked:pressed /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource DesktopControlPressedBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DesktopTextBrush}" />
+    </Style>
+
+    <Style Selector="Button.color-swatch:pointerover, Button.color-swatch:pressed">
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopFocusBrush}" />
         <Setter Property="BorderThickness" Value="2" />
     </Style>
 
@@ -998,18 +1216,19 @@
         <Setter Property="BorderThickness" Value="2" />
         <Setter Property="BorderBrush" Value="#FFFFFFFF" />
         <Setter Property="Background" Value="#22000000" />
+        <Setter Property="BoxShadow" Value="0 0 0 1 #FF000000" />
     </Style>
 
     <Style Selector="Border.color-picker-strip-thumb">
         <Setter Property="CornerRadius" Value="{DynamicResource RadiusXs}" />
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="BorderBrush" Value="#CCFFFFFF" />
-        <Setter Property="Background" Value="#66000000" />
+        <Setter Property="BorderBrush" Value="#FFFFFFFF" />
+        <Setter Property="Background" Value="#FF000000" />
     </Style>
 
     <!-- ToolTips on transient surfaces -->
     <Style Selector="ToolTip">
-        <Setter Property="Background" Value="{DynamicResource SettingsBackgroundBrush}" />
+        <Setter Property="Background" Value="{DynamicResource DesktopShellBrush}" />
         <Setter Property="Foreground" Value="{DynamicResource DesktopTextBrush}" />
         <Setter Property="BorderBrush" Value="{DynamicResource DesktopBorderBrush}" />
         <Setter Property="BorderThickness" Value="1" />
@@ -1020,7 +1239,7 @@
 
     <!-- Context Menus -->
     <Style Selector="ContextMenu">
-        <Setter Property="Background" Value="{DynamicResource SettingsBackgroundBrush}" />
+        <Setter Property="Background" Value="{DynamicResource DesktopShellBrush}" />
         <Setter Property="BorderBrush" Value="{DynamicResource DesktopBorderBrush}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="CornerRadius" Value="{DynamicResource RadiusSm}" />
@@ -1034,7 +1253,7 @@
 
     <!-- Notifications follow the rounded dialog reference, with quiet chrome and secondary body text. -->
     <Style Selector="Window.notification-window Border.notification-card">
-        <Setter Property="Background" Value="{DynamicResource SettingsBackgroundBrush}" />
+        <Setter Property="Background" Value="{DynamicResource DesktopShellBrush}" />
         <Setter Property="BorderBrush" Value="{DynamicResource DesktopNotificationBorderBrush}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="CornerRadius" Value="{DynamicResource NotificationCardRadius}" />

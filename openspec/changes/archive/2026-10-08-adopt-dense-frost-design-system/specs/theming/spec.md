@@ -1,7 +1,7 @@
 ## MODIFIED Requirements
 
 ### Requirement: Settings color roles
-The system SHALL apply every existing Settings text, input, and tab color to its named visible role, updating live without changing layout or widget button colors. `TabSelectedBackground` SHALL color the selected-tab underline. The selected tab label and icon SHALL use the theme accent, adjusted toward white or black only as far as needed to reach a 4.5:1 contrast ratio on the Settings background (tabs have no fill of their own), because `TabSelectedText` is chosen for text drawn on the selected fill. `TabSelectedText` SHALL continue to color text on selected-background fills such as the selected Worklog row. Normal and hover tab backgrounds SHALL retain their respective roles. No new serialized theme field SHALL be required.
+The system SHALL apply every existing Settings text, input, and tab color as the preferred source for its named visible role, updating live without changing layout or widget button colors. `TabSelectedBackground` SHALL supply the selected-tab underline color, adjusted for indicator contrast when necessary. The selected tab label and icon SHALL use the theme accent, adjusted toward white or black only as far as needed to reach a 4.5:1 contrast ratio on the Settings background (tabs have no fill of their own), because `TabSelectedText` is chosen for text drawn on the selected fill. `TabSelectedText` and `TabSelectedBackground` SHALL supply matched readable text and fill colors for selections such as the selected Worklog row, without changing stored values. Normal and hover tab backgrounds SHALL retain their respective roles. No new serialized theme field SHALL be required.
 
 #### Scenario: Text roles update live
 - **WHEN** a user selects or edits a theme while Settings is open
@@ -21,11 +21,11 @@ The system SHALL apply every existing Settings text, input, and tab color to its
 
 #### Scenario: Selected text keeps its fill role
 - **WHEN** a Worklog row is selected
-- **THEN** its text uses `TabSelectedText` on the `TabSelectedBackground` fill
+- **THEN** its text and fill derive from `TabSelectedText` and `TabSelectedBackground`, adjusted together for rendered contrast
 
 #### Scenario: Independent focus and selected colors
 - **WHEN** a desktop field, button, or tab receives keyboard focus
-- **THEN** its focus indicator uses `AccentPrimary`, while the selected-tab underline uses `TabSelectedBackground` even when that differs from the accent
+- **THEN** its focus indicator derives from `AccentPrimary`, while the selected-tab underline derives from `TabSelectedBackground` even when that differs from the accent
 
 #### Scenario: Existing theme round trip
 - **WHEN** an existing built-in or imported theme is previewed, applied, exported, and reimported

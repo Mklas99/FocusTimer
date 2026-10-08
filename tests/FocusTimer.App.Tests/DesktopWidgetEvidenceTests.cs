@@ -44,7 +44,6 @@ public class DesktopWidgetEvidenceTests
                 var manager = new ThemeManager();
                 manager.InitializeThemeResources();
                 string themeName = Environment.GetEnvironmentVariable("FOCUSTIMER_EVIDENCE_THEME") ?? "Dark";
-                manager.ApplyTheme(new ThemeService().GetBuiltInTheme(themeName)!);
 
                 var provider = new SettingsProviderStub();
                 var logger = new QuietLogger();
@@ -56,9 +55,23 @@ public class DesktopWidgetEvidenceTests
                     provider, logger, new CsvSessionRepository(provider), notifications, tracker, reminders, timer, null, new EventBus());
 
                 var report = new List<string>();
-                double[] scales = [0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.5, 2.0, 2.5, 3.0];
-                foreach ((bool compact, double scale) in scales.SelectMany(scale => new[] { (false, scale), (true, scale) }))
+                bool themeFocused = Environment.GetEnvironmentVariable("FOCUSTIMER_THEME_FOCUSED") == "1";
+                double[] scales = themeFocused ? [1.0] : [0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.5, 2.0, 2.5, 3.0];
+                string[] themeNames = (Environment.GetEnvironmentVariable("FOCUSTIMER_EVIDENCE_THEMES") ?? themeName)
+                    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                foreach ((string preset, bool compact, double scale) in themeNames.SelectMany(
+                    name => scales.SelectMany(scale => new[] { (name, false, scale), (name, true, scale) })))
                 {
+                    Theme theme = new ThemeService().GetBuiltInTheme(preset)!;
+                    string? palettePath = Environment.GetEnvironmentVariable("FOCUSTIMER_EVIDENCE_PALETTES");
+                    if (palettePath != null)
+                    {
+                        theme = System.Text.Json.JsonSerializer.Deserialize<List<Theme>>(File.ReadAllText(palettePath))!
+                            .First(t => t.ThemeName == preset);
+                    }
+
+                    manager.ApplyTheme(theme);
+                    vm.Settings.Theme = theme.Clone();
                     vm.Settings.WidgetScale = scale;
                     vm.Settings.UseCompactMode = compact;
                     vm.IsProjectInputVisible = false;
@@ -128,7 +141,15 @@ public class DesktopWidgetEvidenceTests
                         report.Add($"  button {button.Bounds.Width:F0}x{button.Bounds.Height:F0} at {button.TranslatePoint(default, window)}");
                     }
 
-                    Capture(window, Path.Combine(folder, $"widget-{mode}.png"));
+                    Capture(window, Path.Combine(folder, $"widget-{(themeFocused ? preset + "-" : string.Empty)}{mode}.png"));
+                    if (!compact && Environment.GetEnvironmentVariable("FOCUSTIMER_EVIDENCE_PROJECT_ROWS") == "1")
+                    {
+                        vm.IsProjectInputVisible = true;
+                        Settle();
+                        Capture(window, Path.Combine(folder, $"widget-{preset}-{mode}-project.png"));
+                        vm.IsProjectInputVisible = false;
+                        Settle();
+                    }
                     vm.Settings.WidgetScale = scale + 0.1;
                     Settle();
                     Assert.Equal(window.Bounds.Size, shell.Bounds.Size);

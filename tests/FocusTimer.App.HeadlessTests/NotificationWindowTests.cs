@@ -32,7 +32,7 @@ public sealed class NotificationWindowTests
         manager.ApplyTheme(themes.GetBuiltInTheme("Dark")!);
         var window = new NotificationWindow("Focus Timer", "An operation needs attention.", false, severity);
         window.Show();
-        foreach (var theme in themes.BuiltInThemes)
+        foreach (var theme in FocusTimer.Tests.ThemeFixtures.All)
         {
             manager.ApplyTheme(theme);
             Dispatcher.UIThread.RunJobs();
@@ -81,7 +81,7 @@ public sealed class NotificationWindowTests
         window.Show();
         Dispatcher.UIThread.RunJobs();
         Size size = window.Bounds.Size;
-        foreach (var theme in service.BuiltInThemes)
+        foreach (var theme in FocusTimer.Tests.ThemeFixtures.All)
         {
             manager.ApplyTheme(theme);
             Dispatcher.UIThread.RunJobs();
@@ -89,7 +89,7 @@ public sealed class NotificationWindowTests
             var background = Assert.IsAssignableFrom<ISolidColorBrush>(card.Background);
             var message = window.FindControl<TextBlock>("Message")!;
             var foreground = Assert.IsAssignableFrom<ISolidColorBrush>(message.Foreground);
-            Assert.Equal(Color.Parse(theme.SettingsBackground), background.Color);
+            Assert.Equal(Assert.IsAssignableFrom<ISolidColorBrush>(Application.Current!.Resources["DesktopShellBrush"]).Color, background.Color);
             Assert.True(ThemeContrast.Ratio(foreground.Color, background.Color) >= 4.5);
             if (theme.ThemeName == "High Contrast")
             {

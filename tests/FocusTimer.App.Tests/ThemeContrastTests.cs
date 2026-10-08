@@ -6,6 +6,21 @@ using FocusTimer.App.Services;
 public class ThemeContrastTests
 {
     [Fact]
+    public void EnsureContrastAcross_RejectsAnInfeasibleSetInsteadOfReturningAFailedEndpoint()
+    {
+        Assert.Throws<InvalidOperationException>(() => ThemeContrast.EnsureContrastAcross(
+            Colors.Gray, 4.5, Colors.Black, Colors.Gray, Colors.White));
+    }
+
+    [Fact]
+    public void EnsureContrastAcross_FindsTheFeasibleMiddleBetweenOpposingEndpoints()
+    {
+        Color result = ThemeContrast.EnsureContrastAcross(Colors.White, 4.5, Colors.Black, Colors.White);
+        Assert.True(ThemeContrast.Ratio(result, Colors.Black) >= 4.5);
+        Assert.True(ThemeContrast.Ratio(result, Colors.White) >= 4.5);
+    }
+
+    [Fact]
     public void Ratio_MatchesTheWcagReferenceValues()
     {
         Assert.Equal(21.0, ThemeContrast.Ratio(Colors.White, Colors.Black), 2);

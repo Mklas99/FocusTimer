@@ -1,6 +1,7 @@
 namespace FocusTimer.App.HeadlessTests;
 
 using Avalonia.Controls;
+using Avalonia.Controls.Presenters;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using FocusTimer.App.Services;
@@ -21,7 +22,7 @@ public sealed class WorklogWindowThemeTests
     [Fact]
     public async Task Window_UnderEveryBuiltInTheme_ShowsEntriesAndSummaryTabs()
     {
-        var themes = new ThemeService().BuiltInThemes;
+        var themes = FocusTimer.Tests.ThemeFixtures.All.ToArray();
         Assert.Contains(themes, t => t.ThemeName == "High Contrast");
         var manager = new ThemeManager();
         manager.InitializeThemeResources();
@@ -46,6 +47,24 @@ public sealed class WorklogWindowThemeTests
             var rows = window.GetVisualDescendants().OfType<ListBoxItem>().ToList();
             Assert.True(rows.Count == 2, $"{theme.ThemeName}: expected 2 table rows, found {rows.Count}");
             Assert.All(rows, row => Assert.True(row.Bounds.Height >= 24, $"{theme.ThemeName}: row height {row.Bounds.Height}"));
+            var list = window.GetVisualDescendants().OfType<ListBox>().First(l => l.Classes.Contains("worklog-table"));
+            list.SelectedIndex = 0;
+            Dispatcher.UIThread.RunJobs();
+            foreach (var next in new[] { theme, FocusTimer.Tests.ThemeFixtures.Custom.First() })
+            {
+                manager.ApplyTheme(next);
+                Dispatcher.UIThread.RunJobs();
+                var shell = RenderedThemeContrastTests.ColorOf(window.Background, Avalonia.Media.Colors.Black);
+                var selected = rows[0].GetVisualDescendants().OfType<ContentPresenter>().First(p => p.Name == "PART_ContentPresenter");
+                RenderedThemeContrastTests.Pair(next, "worklog/selected/text", selected.Foreground, selected.Background, shell, 4.5);
+                foreach (var text in rows[0].GetVisualDescendants().OfType<TextBlock>())
+                {
+                    RenderedThemeContrastTests.Pair(next, "worklog/selected/cell", text.Foreground, selected.Background, shell, 4.5);
+                }
+                RenderedThemeContrastTests.Pair(next, "worklog/selected/fill", selected.Background, window.Background, shell, 3);
+                Assert.Equal(0, list.SelectedIndex);
+            }
+
             var tabs = window.FindControl<TabControl>("Tabs")!;
             Assert.Equal(["Entries", "Timeline", "Summary"], tabs.Items.OfType<TabItem>().Select(t => Avalonia.Automation.AutomationProperties.GetName(t)));
             tabs.SelectedIndex = 1;
@@ -55,6 +74,14 @@ public sealed class WorklogWindowThemeTests
             var panel = window.GetVisualDescendants().OfType<FocusTimer.App.Controls.TimelinePanel>().Single();
             Assert.True(panel.Children.Count == 2, $"{theme.ThemeName}: expected 2 timeline blocks, found {panel.Children.Count}");
             Assert.All(panel.Children, block => Assert.True(block.Bounds.Height >= FocusTimer.App.Controls.TimelinePanel.MinimumBlockHeight, theme.ThemeName));
+            foreach (Border block in panel.Children.OfType<Border>())
+            {
+                var shell = RenderedThemeContrastTests.ColorOf(window.Background, Avalonia.Media.Colors.Black);
+                foreach (var text in block.GetVisualDescendants().OfType<TextBlock>())
+                {
+                    RenderedThemeContrastTests.Pair(theme, "worklog/timeline/text", text.Foreground, block.Background, shell, 4.5);
+                }
+            }
             window.Close();
         }
     }

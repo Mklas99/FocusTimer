@@ -52,6 +52,7 @@ namespace FocusTimer.App.ViewModels
         private Settings _settings;
         private Settings _lastAppliedSettings = new();
         private bool _observedAutoStartEnabled;
+        private bool _updatingThemeSelection;
         private string _selectedThemeName;
         private Theme _lastAppliedTheme = new();
         private bool _appearancePreviewChanged;
@@ -92,6 +93,7 @@ namespace FocusTimer.App.ViewModels
                 settingsProvider, autoStartService, settings => this._activateRuntime(settings));
             this._settings = new Settings();
             this._selectedThemeName = "Dark";
+            this.AvailableThemes = new ObservableCollection<string>(this._themeService.BuiltInThemes.Select(t => t.ThemeName));
             this.ChangelogContent = this.LoadChangelogContent();
             this.AttachSettings(this._settings);
 
@@ -319,7 +321,7 @@ namespace FocusTimer.App.ViewModels
         /// <summary>
         /// Gets list of available theme names for the ComboBox.
         /// </summary>
-        public List<string> AvailableThemes => [.. this._themeService.BuiltInThemes.Select(t => t.ThemeName)];
+        public ObservableCollection<string> AvailableThemes { get; }
 
         /// <summary>Gets or sets the explicit or inherited normal Play/Pause color.</summary>
         public string PlayPauseColor
@@ -435,7 +437,7 @@ namespace FocusTimer.App.ViewModels
             get => this._selectedThemeName;
             set
             {
-                if (!this.CanEdit || string.IsNullOrEmpty(value) || string.Equals(this._selectedThemeName, value, StringComparison.Ordinal))
+                if (this._updatingThemeSelection || !this.CanEdit || string.IsNullOrEmpty(value) || string.Equals(this._selectedThemeName, value, StringComparison.Ordinal))
                 {
                     return;
                 }
@@ -698,8 +700,8 @@ namespace FocusTimer.App.ViewModels
             // The loaded theme may have been resolved from a preset when the saved names differed.
             restoredSettings.Theme = this._lastAppliedTheme.Clone();
             this.Settings = restoredSettings;
-            this._selectedThemeName = this.Settings.ActiveThemeName;
-            this.RaisePropertyChanged(nameof(this.SelectedThemeName));
+            this._selectedThemeName = ThemeSelection.Restore(this.Settings, this._themeService);
+            this.NotifyThemeSelection();
             this._previewAppearance?.Invoke(restoredSettings);
         }
 
@@ -793,9 +795,9 @@ namespace FocusTimer.App.ViewModels
 
             this.Settings.Theme = theme;
             this.Settings.CustomThemePath = filePath;
-            this.Settings.ActiveThemeName = theme.ThemeName;
-            this._selectedThemeName = "Custom";
-            this.RaisePropertyChanged(nameof(this.SelectedThemeName));
+            this.Settings.ActiveThemeName = ThemeSelection.CustomIdentity;
+            this._selectedThemeName = ThemeSelection.CustomLabel;
+            this.NotifyThemeSelection();
             this._logger.LogInformation($"Theme '{theme.ThemeName}' imported successfully");
         }
 
@@ -1050,20 +1052,12 @@ namespace FocusTimer.App.ViewModels
                 Settings savedSettings = await this._settingsProvider.LoadAsync();
                 this._lastAppliedSettings = savedSettings.Clone();
                 this.Settings = savedSettings.Clone();
-                Theme? selectedPreset = this._themeService.GetBuiltInTheme(this.Settings.ActiveThemeName);
-                if (selectedPreset != null && !string.Equals(
-                        this.Settings.Theme.ThemeName,
-                        selectedPreset.ThemeName,
-                        StringComparison.OrdinalIgnoreCase))
-                {
-                    this.Settings.Theme = selectedPreset;
-                }
+                this._selectedThemeName = ThemeSelection.Restore(this.Settings, this._themeService);
 
                 this._lastAppliedSettings = this.Settings.Clone();
                 this._lastAppliedTheme = this.Settings.Theme.Clone();
                 this._appearancePreviewChanged = false;
-                this._selectedThemeName = this.Settings.ActiveThemeName;
-                this.RaisePropertyChanged(nameof(this.SelectedThemeName));
+                this.NotifyThemeSelection();
                 this.RaisePropertyChanged(nameof(this.IsDeveloperModeVisible));
                 this.RaisePropertyChanged(nameof(this.SelectedDeveloperLogLevel));
                 this._observedAutoStartEnabled = this._autoStartService.IsAutoStartEnabled();
@@ -1189,9 +1183,33 @@ namespace FocusTimer.App.ViewModels
             this.Settings.Theme = this._themeService.GetBuiltInTheme("Dark")
                 ?? throw new InvalidOperationException("The built-in Dark theme is unavailable.");
             this.Settings.ActiveThemeName = "Dark";
+            this.Settings.CustomThemePath = null;
             this._selectedThemeName = "Dark";
-            this.RaisePropertyChanged(nameof(this.SelectedThemeName));
+            this.NotifyThemeSelection();
             this._logger.LogInformation("Theme reset to default.");
+        }
+
+        private void NotifyThemeSelection()
+        {
+            this._updatingThemeSelection = true;
+            try
+            {
+                bool custom = this.Settings.ActiveThemeName == ThemeSelection.CustomIdentity;
+                if (custom && !this.AvailableThemes.Contains(ThemeSelection.CustomLabel))
+                {
+                    this.AvailableThemes.Add(ThemeSelection.CustomLabel);
+                }
+                else if (!custom)
+                {
+                    this.AvailableThemes.Remove(ThemeSelection.CustomLabel);
+                }
+
+                this.RaisePropertyChanged(nameof(this.SelectedThemeName));
+            }
+            finally
+            {
+                this._updatingThemeSelection = false;
+            }
         }
 
         private void LoadThemeByName(string themeName)
@@ -1201,6 +1219,8 @@ namespace FocusTimer.App.ViewModels
             {
                 this.Settings.Theme = theme.Clone();
                 this.Settings.ActiveThemeName = themeName;
+                this.Settings.CustomThemePath = null;
+                this.NotifyThemeSelection();
             }
         }
 

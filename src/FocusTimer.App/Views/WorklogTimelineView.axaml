@@ -10,7 +10,7 @@
         <!-- Tracked entries are solid; manual entries have a dashed outline and a "Manual" label, so the
              difference never depends on color alone. -->
         <Style Selector="Border.timeline-block">
-            <Setter Property="Background" Value="{DynamicResource TabSelectedBackgroundBrush}" />
+            <Setter Property="Background" Value="{DynamicResource DesktopSelectionBrush}" />
             <Setter Property="BorderBrush" Value="{DynamicResource DesktopBorderBrush}" />
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="CornerRadius" Value="{StaticResource RadiusXs}" />
@@ -18,12 +18,12 @@
             <Setter Property="ClipToBounds" Value="True" />
         </Style>
         <Style Selector="Border.timeline-block.timeline-manual">
-            <Setter Property="Background" Value="{DynamicResource SettingsBackgroundBrush}" />
+            <Setter Property="Background" Value="{DynamicResource DesktopShellBrush}" />
             <Setter Property="BorderBrush" Value="{DynamicResource DesktopTextBrush}" />
             <Setter Property="BorderThickness" Value="2" />
         </Style>
         <Style Selector="Border.timeline-block TextBlock">
-            <Setter Property="Foreground" Value="{DynamicResource TabSelectedTextBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource DesktopSelectedTextBrush}" />
         </Style>
         <Style Selector="Border.timeline-block.timeline-manual TextBlock">
             <Setter Property="Foreground" Value="{DynamicResource DesktopTextBrush}" />
@@ -213,7 +213,7 @@
                 <Border x:Name="Gutter"
                         Grid.Column="0"
                         ZIndex="10"
-                        Background="{DynamicResource SettingsBackgroundBrush}">
+                        Background="{DynamicResource DesktopShellBrush}">
                     <ItemsControl ItemsSource="{Binding HourLabels}">
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>

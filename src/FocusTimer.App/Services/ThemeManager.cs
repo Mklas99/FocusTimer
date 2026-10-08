@@ -133,6 +133,7 @@ namespace FocusTimer.App.Services
                 double tintOpacity = theme.ThemeName == "High Contrast" ? 1.0 : theme.BackgroundOpacity;
                 SetBrushIfChanged(resources, "WidgetShellTintBrush", opaqueColor, tintOpacity);
                 SetBrushIfChanged(resources, "WidgetShellFallbackBrush", opaqueColor);
+                SetBrushIfChanged(resources, "WidgetProjectLabelBrush", ThemeContrast.EnsureContrast(Color.Parse(theme.WindowForeground), opaqueColor));
                 this.UpdateWidgetShellActiveBrush();
             }
             catch (Exception ex)
@@ -205,50 +206,56 @@ namespace FocusTimer.App.Services
 
                 // Desktop material: derived from Settings roles only, independent of widget opacity values.
                 var shell = Color.Parse(theme.SettingsBackground);
-                var opaqueShell = Color.FromArgb(255, shell.R, shell.G, shell.B);
+                var sourceShell = Color.FromRgb(shell.R, shell.G, shell.B);
+                Color anchor = ThemeContrast.Ratio(Colors.White, sourceShell) >= ThemeContrast.Ratio(Colors.Black, sourceShell)
+                    ? Colors.White : Colors.Black;
+                Color opaqueShell = NormalizeSurface(sourceShell, sourceShell, anchor, includeFrost: true);
+                SetBrushIfChanged(resources, "DesktopShellBrush", opaqueShell);
                 SetBrushIfChanged(resources, "DesktopShellFrostBrush", opaqueShell, DesktopShellFrostOpacity);
-                SetBrushIfChanged(resources, "DesktopCardBrush", Mix(opaqueShell, Color.Parse(theme.PrimaryText), 0.06));
                 var primaryText = Color.Parse(theme.PrimaryText);
                 var opaquePrimaryText = Color.FromArgb(255, primaryText.R, primaryText.G, primaryText.B);
 
                 // Fields, buttons and disclosure headers share one opaque surface (the input role composited over the
                 // window), so they look identical on the window and inside cards; hover and pressed are opaque mixes of it.
-                Color field = Composite(Color.Parse(theme.InputBackground), opaqueShell);
+                Color field = NormalizeSurface(Composite(Color.Parse(theme.InputBackground), opaqueShell), opaqueShell, anchor);
                 SetBrushIfChanged(resources, "DesktopFieldBrush", field);
 
-                // Focus indication is the accent, lightened or darkened only as far as needed to reach 3:1 on the
-                // window and on fields (Dark and Nord accents are below that).
-                Color focus = ThemeContrast.EnsureContrast(
-                    ThemeContrast.EnsureContrast(Color.Parse(theme.AccentPrimary), opaqueShell, 3.0), field, 3.0);
+                // Normalize conflicting desktop surfaces before finding a shared text and indicator color.
+                Color card = NormalizeSurface(Mix(opaqueShell, primaryText, 0.06), opaqueShell, anchor);
+                Color hover = NormalizeSurface(Mix(field, opaquePrimaryText, 0.10), opaqueShell, anchor);
+                Color pressed = NormalizeSurface(Mix(field, opaquePrimaryText, 0.18), opaqueShell, anchor);
+                Color frostDark = Composite(opaqueShell, Colors.Black, DesktopShellFrostOpacity);
+                Color frostLight = Composite(opaqueShell, Colors.White, DesktopShellFrostOpacity);
+                Color[] surfaces = [opaqueShell, frostDark, frostLight, card, field, hover, pressed];
+                Color focus = ThemeContrast.EnsureContrastAcross(Color.Parse(theme.AccentPrimary), 3.0, surfaces);
                 SetBrushIfChanged(resources, "DesktopFocusBrush", focus);
-                SetBrushIfChanged(resources, "DesktopControlHoverBrush", Mix(field, opaquePrimaryText, 0.10));
-                SetBrushIfChanged(resources, "DesktopControlPressedBrush", Mix(field, opaquePrimaryText, 0.18));
-                Color card = Mix(opaqueShell, primaryText, 0.06);
-                Color hover = Mix(field, opaquePrimaryText, 0.10);
-                Color pressed = Mix(field, opaquePrimaryText, 0.18);
+                SetBrushIfChanged(resources, "DesktopSliderThumbBrush", ThemeContrast.EnsureContrast(Color.Parse(theme.AccentPrimary), focus, 3.0));
+                SetBrushIfChanged(resources, "DesktopCardBrush", card);
+                SetBrushIfChanged(resources, "DesktopControlHoverBrush", hover);
+                SetBrushIfChanged(resources, "DesktopControlPressedBrush", pressed);
 
                 // Action fills retain the palette accent without changing serialized theme values.
-                Color action = Mix(field, focus, 0.18);
-                Color actionHover = Mix(field, focus, 0.28);
-                Color actionPressed = Mix(field, focus, 0.38);
+                Color action = NormalizeSurface(Mix(field, focus, 0.18), opaqueShell, anchor);
+                Color actionHover = NormalizeSurface(Mix(field, focus, 0.28), opaqueShell, anchor);
+                Color actionPressed = NormalizeSurface(Mix(field, focus, 0.38), opaqueShell, anchor);
                 SetBrushIfChanged(resources, "DesktopPrimaryActionBrush", action);
                 SetBrushIfChanged(resources, "DesktopPrimaryActionHoverBrush", actionHover);
                 SetBrushIfChanged(resources, "DesktopPrimaryActionPressedBrush", actionPressed);
                 SetBrushIfChanged(resources, "DesktopPrimaryActionTextBrush", ThemeContrast.EnsureContrastAcross(
                     primaryText, ThemeContrast.TextRatio, action, actionHover, actionPressed));
                 Color danger = Color.Parse(theme.DangerColor);
-                Color dangerAction = Mix(field, danger, 0.12);
-                Color dangerHover = Mix(field, danger, 0.20);
-                Color dangerPressed = Mix(field, danger, 0.28);
+                Color dangerAction = NormalizeSurface(Mix(field, danger, 0.12), opaqueShell, anchor);
+                Color dangerHover = NormalizeSurface(Mix(field, danger, 0.20), opaqueShell, anchor);
+                Color dangerPressed = NormalizeSurface(Mix(field, danger, 0.28), opaqueShell, anchor);
                 SetBrushIfChanged(resources, "DesktopDestructiveActionBrush", dangerAction);
                 SetBrushIfChanged(resources, "DesktopDestructiveActionHoverBrush", dangerHover);
                 SetBrushIfChanged(resources, "DesktopDestructiveActionPressedBrush", dangerPressed);
                 SetBrushIfChanged(resources, "DesktopDestructiveActionTextBrush", ThemeContrast.EnsureContrastAcross(
                     danger, ThemeContrast.TextRatio, dangerAction, dangerHover, dangerPressed));
                 SetBrushIfChanged(resources, "DesktopActionFocusBrush", ThemeContrast.EnsureContrastAcross(
-                    focus, 3.0, opaqueShell, card, field, hover, pressed, action, actionHover, actionPressed, dangerAction, dangerHover, dangerPressed));
+                    focus, 3.0, opaqueShell, frostDark, frostLight, card, field, hover, pressed, action, actionHover, actionPressed, dangerAction, dangerHover, dangerPressed));
                 Color Readable(string value) => ThemeContrast.EnsureContrastAcross(
-                    Color.Parse(value), ThemeContrast.TextRatio, opaqueShell, card, field, hover, pressed);
+                    Composite(Color.Parse(value), opaqueShell), ThemeContrast.TextRatio, surfaces);
                 SetBrushIfChanged(resources, "DesktopTextBrush", Readable(theme.PrimaryText));
                 SetBrushIfChanged(resources, "DesktopSecondaryTextBrush", Readable(theme.SecondaryText));
                 SetBrushIfChanged(resources, "DesktopLabelBrush", Readable(theme.SettingsLabelText));
@@ -258,7 +265,7 @@ namespace FocusTimer.App.Services
                 SetBrushIfChanged(resources, "DesktopDangerBrush", Readable(theme.DangerColor));
                 SetBrushIfChanged(resources, "DesktopSuccessBrush", Readable(theme.SuccessColor));
                 SetBrushIfChanged(resources, "DesktopBorderBrush", ThemeContrast.EnsureContrastAcross(
-                    Composite(Color.Parse(theme.InputBorder), field), 3.0, opaqueShell, card, field));
+                    Composite(Color.Parse(theme.InputBorder), field), 3.0, surfaces));
                 bool highContrast = string.Equals(theme.ThemeName, "High Contrast", StringComparison.OrdinalIgnoreCase);
                 Color notificationBorder = highContrast
                     ? ThemeContrast.EnsureContrast(Color.Parse(theme.WindowBorder), opaqueShell, 3.0)
@@ -268,13 +275,22 @@ namespace FocusTimer.App.Services
                     ? Color.Parse(theme.SecondaryText)
                     : Mix(opaqueShell, Composite(Color.Parse(theme.SecondaryText), opaqueShell), 0.75);
                 SetBrushIfChanged(resources, "DesktopNotificationBodyBrush", ThemeContrast.EnsureContrast(notificationBody, opaqueShell));
-                Color tabHover = Composite(Color.Parse(theme.TabHoverBackground), opaqueShell);
+                Color tabHover = NormalizeSurface(Composite(Color.Parse(theme.TabHoverBackground), opaqueShell), opaqueShell, anchor);
+                SetBrushIfChanged(resources, "DesktopTabHoverBrush", tabHover);
+                SetBrushIfChanged(resources, "DesktopTabFocusBrush", ThemeContrast.EnsureContrastAcross(
+                    focus, 3.0, opaqueShell, frostDark, frostLight, tabHover));
                 SetBrushIfChanged(resources, "DesktopTabTextBrush", ThemeContrast.EnsureContrastAcross(
-                    Color.Parse(theme.TabText), ThemeContrast.TextRatio, opaqueShell, tabHover));
+                    Composite(Color.Parse(theme.TabText), opaqueShell), ThemeContrast.TextRatio, opaqueShell, frostDark, frostLight, tabHover));
+
+                // One opaque selection pair works on fields, read-only fields, and rows. Its source roles remain
+                // unchanged in the saved theme; the fill must also be visible against each unselected surface.
+                Color selection = ThemeContrast.EnsureContrastAcross(
+                    Composite(Color.Parse(theme.TabSelectedBackground), field), 3.0, surfaces);
+                SetBrushIfChanged(resources, "DesktopSelectionBrush", selection);
                 SetBrushIfChanged(resources, "DesktopSelectedTextBrush", ThemeContrast.EnsureContrast(
-                    Color.Parse(theme.TabSelectedText), Composite(Color.Parse(theme.TabSelectedBackground), opaqueShell)));
-                SetBrushIfChanged(resources, "DesktopTabSelectedBrush", ThemeContrast.EnsureContrast(
-                    Color.Parse(theme.TabSelectedBackground), opaqueShell, 3.0));
+                    Composite(Color.Parse(theme.TabSelectedText), selection), selection));
+                SetBrushIfChanged(resources, "DesktopTabSelectedBrush", ThemeContrast.EnsureContrastAcross(
+                    Composite(Color.Parse(theme.TabSelectedBackground), opaqueShell), 3.0, opaqueShell, frostDark, frostLight));
                 SetBrushIfChanged(resources, "DesktopAccentTextBrush", ThemeContrast.EnsureContrast(primaryText, focus));
                 var tabText = Color.Parse(theme.TabText);
 
@@ -282,7 +298,7 @@ namespace FocusTimer.App.Services
                 SetBrushIfChanged(
                     resources,
                     "TabSelectedLabelBrush",
-                    ThemeContrast.EnsureContrast(Color.Parse(theme.AccentPrimary), opaqueShell));
+                    ThemeContrast.EnsureContrastAcross(Color.Parse(theme.AccentPrimary), ThemeContrast.TextRatio, opaqueShell, frostDark, frostLight));
                 SetBrushIfChanged(resources, "DesktopTabUnderlineIdleBrush", Color.FromArgb(255, tabText.R, tabText.G, tabText.B), 0.18);
 
                 var accentColor = Color.Parse(theme.AccentPrimary);
@@ -326,11 +342,33 @@ namespace FocusTimer.App.Services
             resources[key] = new SolidColorBrush(color, opacity);
         }
 
-        private static Color Composite(Color foreground, Color background)
+        private static Color Composite(Color foreground, Color background, double opacity = 1.0)
         {
-            double alpha = foreground.A / 255.0;
+            double alpha = foreground.A / 255.0 * opacity;
             byte Blend(byte front, byte back) => (byte)Math.Round((alpha * front) + ((1 - alpha) * back));
             return Color.FromRgb(Blend(foreground.R, background.R), Blend(foreground.G, background.G), Blend(foreground.B, background.B));
+        }
+
+        private static Color NormalizeSurface(Color preferred, Color shell, Color foreground, bool includeFrost = false)
+        {
+            Color target = includeFrost ? (foreground == Colors.White ? Colors.Black : Colors.White) : shell;
+            for (int step = 0; step <= 100; step++)
+            {
+                Color candidate = Mix(preferred, target, step / 100.0);
+                bool readable = ThemeContrast.Ratio(foreground, candidate) >= ThemeContrast.TextRatio;
+                if (includeFrost)
+                {
+                    readable &= ThemeContrast.Ratio(foreground, Composite(candidate, Colors.Black, DesktopShellFrostOpacity)) >= ThemeContrast.TextRatio &&
+                        ThemeContrast.Ratio(foreground, Composite(candidate, Colors.White, DesktopShellFrostOpacity)) >= ThemeContrast.TextRatio;
+                }
+
+                if (readable)
+                {
+                    return candidate;
+                }
+            }
+
+            return target;
         }
 
         private static Color Mix(Color source, Color target, double amount)

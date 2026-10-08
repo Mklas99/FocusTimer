@@ -14,6 +14,147 @@ using ReactiveUI;
 
 public class SettingsWindowViewModelTests
 {
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task CustomIdentity_FailedCommitRetryAndDiscardRestoreTheLastSuccessfulCommit(bool useOk)
+    {
+        var provider = new StubSettingsProvider(new Settings());
+        var themes = new DelayedImportThemeService();
+        var manager = new ThemeManager();
+        var vm = Create(provider: provider, themeService: themes, themeManager: manager);
+        themes.CompleteImport(new Theme { ThemeName = "Dark", PrimaryText = "#123456" });
+        await vm.ImportThemeFileAsync("missing.fttheme");
+        provider.FailSave = true;
+        await ((ReactiveCommand<Unit, Unit>)(useOk ? vm.OkCommand : vm.ApplyCommand)).Execute().ToTask();
+        Assert.False(vm.LastApplySucceeded);
+        Assert.Equal("Custom/Imported", vm.SelectedThemeName);
+        Assert.Equal("#123456", vm.Settings.Theme.PrimaryText);
+        Assert.Equal("Dark", provider.Saved.ActiveThemeName);
+        provider.FailSave = false;
+        await ((ReactiveCommand<Unit, Unit>)(useOk ? vm.OkCommand : vm.ApplyCommand)).Execute().ToTask();
+        Assert.True(vm.LastApplySucceeded);
+        Assert.Equal("Custom", provider.Saved.ActiveThemeName);
+        Assert.Equal("missing.fttheme", provider.Saved.CustomThemePath);
+        vm.SelectedThemeName = "Light";
+        vm.RestoreAppearancePreview();
+        Assert.Equal("Custom/Imported", vm.SelectedThemeName);
+        Assert.Equal("#123456", manager.ActiveTheme!.PrimaryText);
+        Assert.Equal("missing.fttheme", vm.Settings.CustomThemePath);
+        vm.Dispose();
+    }
+
+    [Fact]
+    public async Task LaterFactoryTuning_PreservesEditedSnapshotThroughReopenStartupAndExport()
+    {
+        var themes = new ThemeService();
+        Theme edited = themes.GetBuiltInTheme("Dark")!;
+        edited.PrimaryText = "#CCDDEE";
+        edited.ButtonNormal = "#4CDEFFBD";
+        edited.ButtonOpacity = 0.42;
+        var provider = new StubSettingsProvider(new Settings { ActiveThemeName = "Dark", Theme = edited });
+        themes.BuiltInThemes.Single(t => t.ThemeName == "Dark").PrimaryText = "#ABCDEF";
+        var manager = new ThemeManager();
+        var vm = Create(provider: provider, themeService: themes, themeManager: manager);
+        Assert.Equal("Dark", vm.SelectedThemeName);
+        Assert.Equal("#CCDDEE", vm.Settings.Theme.PrimaryText);
+        Assert.Equal("#4CDEFFBD", vm.Settings.Theme.ButtonNormal);
+        await ((ReactiveCommand<Unit, Unit>)vm.ApplyCommand).Execute().ToTask();
+        vm.Dispose();
+        var reopened = Create(provider: provider, themeService: themes, themeManager: manager);
+        Assert.Equal("#CCDDEE", reopened.Settings.Theme.PrimaryText);
+        Assert.Equal(0.42, reopened.Settings.Theme.ButtonOpacity);
+        string path = Path.Combine(Path.GetTempPath(), $"edited-theme-{Guid.NewGuid():N}.fttheme");
+        try
+        {
+            await themes.SaveThemeToFileAsync(reopened.Settings.Theme, path);
+            Theme exported = await themes.LoadThemeFromFileAsync(path);
+            Assert.Equal("#CCDDEE", exported.PrimaryText);
+            Assert.Equal("#4CDEFFBD", exported.ButtonNormal);
+            Assert.Equal(0.42, exported.ButtonOpacity);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+
+        reopened.ResetThemeCommand.Execute(null);
+        Assert.Equal("#ABCDEF", reopened.Settings.Theme.PrimaryText);
+        Assert.Equal(themes.GetBuiltInTheme("Dark")!.ButtonNormal, reopened.Settings.Theme.ButtonNormal);
+        reopened.RestoreAppearancePreview();
+        Assert.Equal("#CCDDEE", reopened.Settings.Theme.PrimaryText);
+        reopened.SelectedThemeName = "Light";
+        reopened.SelectedThemeName = "Dark";
+        Assert.Equal("#ABCDEF", reopened.Settings.Theme.PrimaryText);
+        reopened.Dispose();
+    }
+
+    [Theory]
+    [InlineData("Dark", "Dark", "missing.fttheme", "Custom/Imported")]
+    [InlineData("Imported name", "Imported name", "missing.fttheme", "Custom/Imported")]
+    [InlineData("Unknown name", "Unknown name", "", "Custom/Imported")]
+    [InlineData("Dark", "Dark", "", "Dark")]
+    [InlineData("Light", "Dark", "stale.fttheme", "Light")]
+    public void SavedThemeIdentity_PreservesSnapshotAndDoesNotSaveOnOpen(
+        string identity, string metadata, string path, string expectedSelection)
+    {
+        var settings = new Settings
+        {
+            ActiveThemeName = identity,
+            CustomThemePath = path,
+            Theme = new Theme { ThemeName = metadata, PrimaryText = "#123456", BackgroundOpacity = 0.37 },
+        };
+        var provider = new StubSettingsProvider(settings);
+        var manager = new ThemeManager();
+        var vm = Create(provider: provider, themeManager: manager);
+        Assert.True(vm.IsSettingsLoaded);
+        Assert.Equal(expectedSelection, vm.SelectedThemeName);
+        Assert.Contains(expectedSelection, vm.AvailableThemes);
+        if (expectedSelection is "Custom/Imported" or "Dark")
+        {
+            Assert.Equal("#123456", vm.Settings.Theme.PrimaryText);
+            Assert.Equal(0.37, vm.Settings.Theme.BackgroundOpacity);
+        }
+
+        Assert.Equal(0, provider.SaveCalls);
+        vm.RestoreAppearancePreview();
+        Assert.Equal(expectedSelection, vm.SelectedThemeName);
+        vm.Dispose();
+    }
+
+    [Theory]
+    [InlineData("Dark")]
+    [InlineData("An imported name")]
+    public async Task ImportPresetAndReset_CommitCanonicalIdentityAndClearProvenance(string metadata)
+    {
+        var provider = new StubSettingsProvider(new Settings());
+        var themes = new DelayedImportThemeService();
+        var manager = new ThemeManager();
+        var vm = Create(provider: provider, themeService: themes, themeManager: manager);
+        themes.CompleteImport(new Theme { ThemeName = metadata, PrimaryText = "#123456" });
+        await vm.ImportThemeFileAsync("missing.fttheme");
+        Assert.Equal("Custom", vm.Settings.ActiveThemeName);
+        Assert.Equal(metadata, vm.Settings.Theme.ThemeName);
+        Assert.Equal("Custom/Imported", vm.SelectedThemeName);
+        Assert.Contains("Custom/Imported", vm.AvailableThemes);
+        await ((ReactiveCommand<Unit, Unit>)vm.ApplyCommand).Execute().ToTask();
+        Assert.True(vm.LastApplySucceeded);
+        var reopened = Create(provider: provider, themeManager: manager);
+        Assert.Equal("Custom/Imported", reopened.SelectedThemeName);
+        Assert.Equal("#123456", reopened.Settings.Theme.PrimaryText);
+        reopened.Dispose();
+        vm.SelectedThemeName = "Light";
+        Assert.True(string.IsNullOrEmpty(vm.Settings.CustomThemePath));
+        Assert.DoesNotContain("Custom/Imported", vm.AvailableThemes);
+        vm.RestoreAppearancePreview();
+        Assert.Equal("Custom/Imported", vm.SelectedThemeName);
+        Assert.Equal("missing.fttheme", vm.Settings.CustomThemePath);
+        vm.ResetThemeCommand.Execute(null);
+        Assert.Equal("Dark", vm.Settings.ActiveThemeName);
+        Assert.True(string.IsNullOrEmpty(vm.Settings.CustomThemePath));
+        vm.Dispose();
+    }
+
     [Fact]
     public async Task DelayedLoad_BlocksEditingAndCommitUntilSettingsArrive()
     {
@@ -731,8 +872,8 @@ public class SettingsWindowViewModelTests
             themeService.CompleteImport(imported);
             await import;
 
-            Assert.Equal("Imported", vm.Settings.ActiveThemeName);
-            Assert.Equal("Custom", vm.SelectedThemeName);
+            Assert.Equal("Custom", vm.Settings.ActiveThemeName);
+            Assert.Equal("Custom/Imported", vm.SelectedThemeName);
             Assert.Equal("custom-theme.json", vm.Settings.CustomThemePath);
             Assert.Equal("#123456", vm.Settings.Theme.TimerText);
             Assert.Equal(0, provider.SaveCalls);
@@ -814,11 +955,13 @@ public class SettingsWindowViewModelTests
         var vm = Create(provider: provider);
         try
         {
-            for (int click = 0; click < 6; click++) vm.RegisterVersionInfoClick();
+            for (int click = 0; click < 6; click++)
+                vm.RegisterVersionInfoClick();
             Assert.False(vm.IsDeveloperModeVisible);
             vm.RegisterVersionInfoClick();
             Assert.True(vm.IsDeveloperModeVisible);
-            for (int click = 0; click < 7; click++) vm.RegisterVersionInfoClick();
+            for (int click = 0; click < 7; click++)
+                vm.RegisterVersionInfoClick();
             Assert.True(vm.IsDeveloperModeVisible);
             Assert.False(provider.Saved.DeveloperModeEnabled);
             Assert.Equal(0, provider.SaveCalls);
@@ -870,14 +1013,16 @@ public class SettingsWindowViewModelTests
         }
         public Task RestorePreviousAsync()
         {
-            if (this.FailRestore) throw new IOException("Rollback failed.");
+            if (this.FailRestore)
+                throw new IOException("Rollback failed.");
             this.Saved = this._previous.Clone();
             return Task.CompletedTask;
         }
         public Task CompleteCommitAsync() { this.Pending = false; return Task.CompletedTask; }
     }
 
-    internal static SettingsWindowViewModel CreateAppearanceEditor() => Create();
+    internal static SettingsWindowViewModel CreateAppearanceEditor(Theme? theme = null) => Create(
+        settings: theme == null ? null : new Settings { ActiveThemeName = theme.ThemeName, Theme = theme.Clone() });
 
     private static SettingsWindowViewModel Create(
         ThemeManager? themeManager = null,

@@ -43,7 +43,7 @@ Primary ownership is `FocusTimer.App`: `Styles/Tokens.axaml`, `Styles/ControlSty
 
 Start material verification with the pinned Avalonia 11.2.0 APIs. If those cannot demonstrate the chosen effect, an isolated Windows adapter may require `FocusTimer.Platform.Windows`, a minimal platform-neutral contract/stub, and Host DI wiring. Do not introduce an App-to-Windows dependency, desktop capture, a new UI theme package, or a framework upgrade as part of the visual refresh.
 
-Related backlog: [OI-21, OI-24, OI-25, OI-28, OI-42](../../../docs/versions/current/OpenIssues.md), [Settings redesign decisions](../../../docs/versions/current/OI-21-SettingsRedesign.md). OI-25/widget transparency and OI-28/widget-native blur are not closed by a Settings/Worklog material implementation.
+Related backlog: [OI-21, OI-24, OI-25, OI-28, OI-42](../../../../docs/versions/current/OpenIssues.md), [Settings redesign decisions](../../../../docs/versions/current/OI-21-SettingsRedesign.md). OI-25/widget transparency and OI-28/widget-native blur are not closed by a Settings/Worklog material implementation.
 
 The in-progress `worklog-data-management` change already moved Summary out of Settings. This proposal uses that implemented five-page baseline and does not repeat the reporting move or alter its remaining manual verification.
 

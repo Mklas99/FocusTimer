@@ -73,23 +73,35 @@ The system SHALL ensure that built-in themes and imported custom themes modify o
 - **THEN** palette, opacity, and backdrop values apply without altering component structure, layout bounds, or interaction states
 
 ### Requirement: Settings color roles
-The system SHALL apply each existing Settings text, input, and tab theme color to the visible control role named by that color. Theme changes SHALL update those roles in the open Settings window without changing control layout or widget button colors.
+The system SHALL apply every existing Settings text, input, and tab color as the preferred source for its named visible role, updating live without changing layout or widget button colors. `TabSelectedBackground` SHALL supply the selected-tab underline color, adjusted for indicator contrast when necessary. The selected tab label and icon SHALL use the theme accent, adjusted toward white or black only as far as needed to reach a 4.5:1 contrast ratio on the Settings background (tabs have no fill of their own), because `TabSelectedText` is chosen for text drawn on the selected fill. `TabSelectedText` and `TabSelectedBackground` SHALL supply matched readable text and fill colors for selections such as the selected Worklog row, without changing stored values. Normal and hover tab backgrounds SHALL retain their respective roles. No new serialized theme field SHALL be required.
 
 #### Scenario: Text roles update live
 - **WHEN** a user selects or edits a theme while Settings is open
 - **THEN** ordinary text, section headings, labels, and disabled text use their corresponding theme text colors across Settings tabs
 
 #### Scenario: Input roles update live
-- **WHEN** a user changes the input background, border, text, or focus-border color
+- **WHEN** a user changes the input background, border, or text color
 - **THEN** editable and read-only Settings fields use the matching color in their applicable normal or focused state
 
 #### Scenario: Tab roles update live
-- **WHEN** a user changes the tab background, hover background, text, selected background, or selected text color
-- **THEN** Settings tabs use each matching color in the applicable normal, hovered, or selected state
+- **WHEN** a user changes the tab background, hover background, text, or selected background color, or the accent
+- **THEN** normal and hovered tabs use the matching background and text roles, the selected underline uses the selected background role, and the selected label and icon use the accent adjusted to stay readable on the Settings background
+
+#### Scenario: Selected label stays readable in every theme
+- **WHEN** any built-in or imported theme is applied
+- **THEN** the selected tab label and icon reach a 4.5:1 contrast ratio on the Settings background without changing any stored theme value
+
+#### Scenario: Selected text keeps its fill role
+- **WHEN** a Worklog row is selected
+- **THEN** its text and fill derive from `TabSelectedText` and `TabSelectedBackground`, adjusted together for rendered contrast
 
 #### Scenario: Independent focus and selected colors
-- **WHEN** `InputFocusBorder` or `TabSelectedBackground` differs from `AccentPrimary`
-- **THEN** the focused field border or selected tab background uses its named value rather than `AccentPrimary`
+- **WHEN** a desktop field, button, or tab receives keyboard focus
+- **THEN** its focus indicator derives from `AccentPrimary`, while the selected-tab underline derives from `TabSelectedBackground` even when that differs from the accent
+
+#### Scenario: Existing theme round trip
+- **WHEN** an existing built-in or imported theme is previewed, applied, exported, and reimported
+- **THEN** its existing color, opacity, and widget backdrop values are preserved without adding or migrating fields for this refresh
 
 ### Requirement: Built-in Settings color readability
 The system SHALL keep Settings text, field contents, selected tabs, and keyboard-focus indicators readable in every built-in theme, including Light and High Contrast.
@@ -101,3 +113,95 @@ The system SHALL keep Settings text, field contents, selected tabs, and keyboard
 #### Scenario: Theme switch preserves interaction states
 - **WHEN** a user switches between built-in themes with a field focused or a tab selected
 - **THEN** the field remains visibly focused and the selected tab remains identifiable without changing control geometry
+
+### Requirement: Built-in palette harmony
+The system SHALL provide a coordinated palette for each built-in theme across the widget, Settings, Worklog, color pickers, and notifications. Backgrounds, text, accents, borders, selection, and status colors SHALL retain that theme's identity and a clear visual hierarchy while meeting the applicable readability requirements. Status meanings SHALL remain distinguishable without relying on color alone.
+
+#### Scenario: Complete theme review
+- **WHEN** a built-in theme is reviewed across the widget and desktop views
+- **THEN** related backgrounds, text levels, accents, borders, and interaction states form a coherent palette
+- **AND** success, warning, and error colors fit the theme while retaining their semantic distinctions
+- **AND** the review records visual intent and representative views separately from numerical contrast results
+
+### Requirement: Later personal palette tuning
+The system SHALL preserve saved color edits to built-in and imported themes through Apply/OK, reopening, restart, and export/import. Future factory palette tuning SHALL NOT overwrite those saved edits. Authored palette choices SHALL remain separate from derived readability corrections so personal color preferences can be revised without changing layout or relaxing contrast requirements.
+
+#### Scenario: Personal color preferences survive
+- **WHEN** the user edits supported theme colors to personal taste, applies them, reopens Settings, and restarts
+- **THEN** the saved source colors remain active and survive export/import
+- **AND** desktop readability corrections continue to apply without replacing those stored preferences
+
+#### Scenario: Factory palette changes later
+- **WHEN** a later app build supplies harmonized or taste-adjusted factory colors for a preset with saved user edits
+- **THEN** the saved palette remains active until the user explicitly selects a factory preset or resets
+- **AND** choosing a factory preset or reset previews its current factory colors through the existing Settings draft model
+
+### Requirement: Desktop palette readability across states
+The system SHALL render enabled normal-size desktop text with at least 4.5:1 contrast and meaningful focus, selection, and control indicators with at least 3:1 contrast against adjacent rendered colors. This SHALL apply to Settings, Worklog, color pickers, notifications, and their popups under every built-in theme and valid imported palette. Contrast SHALL account for transparency and the actual background of each state.
+
+#### Scenario: Built-in control state review
+- **WHEN** each built-in theme is used through applicable normal, hover, pressed, focused, checked, selected, read-only, and invalid states
+- **THEN** enabled text and meaningful indicators meet their contrast thresholds without changing geometry or interaction behavior
+- **AND** disabled controls remain identifiable and noninteractive, without requiring the enabled-text threshold
+
+#### Scenario: Transparent selected fill
+- **WHEN** text or a Worklog row is selected using an imported translucent selection color
+- **THEN** selected text is readable against the actual composited fill on that control's background
+- **AND** the selection remains distinguishable from the unselected state
+
+#### Scenario: Opposing custom backgrounds
+- **WHEN** an imported palette uses light and dark backgrounds that cannot share a readable foreground
+- **THEN** each applicable control state uses readable derived colors appropriate to its background
+- **AND** the stored palette remains unchanged
+
+#### Scenario: Notification severity
+- **WHEN** an information, warning, error, or acknowledgement notification uses a built-in or imported palette
+- **THEN** its title, body, available actions, and meaningful focus indicators remain readable
+- **AND** warning and error severity remains explicit in the text
+
+#### Scenario: Live palette switch
+- **WHEN** the user changes the theme while a desktop field is focused, text is selected, or a popup is open
+- **THEN** rendered colors update without losing the applicable focus or selection state or changing layout
+
+### Requirement: Stored palette preservation during readability correction
+The system SHALL preserve stored imported colors, opacity values, metadata, and backdrop choices while applying readability corrections only to derived desktop colors. Corrections SHALL keep each named color role as their preferred source and SHALL leave widget-specific color and opacity controls independent. Export SHALL contain the stored palette rather than corrected desktop colors.
+
+#### Scenario: Import preview and export
+- **WHEN** a low-contrast imported theme is previewed, applied, exported, and reimported
+- **THEN** its stored appearance values and metadata survive unchanged while derived desktop colors meet the readability requirements
+
+#### Scenario: Widget color edit
+- **WHEN** the user edits a widget button or timer color
+- **THEN** that widget role updates without recoloring desktop actions or changing desktop layout
+
+### Requirement: Stable custom theme selection
+The system SHALL show a Custom/Imported preset entry for an imported theme, including one named like a built-in preset. Apply/OK, reopening, and restart SHALL restore that selection and the saved theme values without rereading the import file or loading factory defaults. Built-in selection and reset SHALL explicitly switch preset identity. Edited built-in themes SHALL retain their selected preset and saved edits.
+
+#### Scenario: Imported name matches a preset
+- **WHEN** a theme named Dark with custom colors is imported, committed, and the app restarted
+- **THEN** Custom/Imported is selected and the imported colors remain active
+
+#### Scenario: Source file is unavailable
+- **WHEN** a committed imported theme's source file is moved or deleted before Settings reopens or the app restarts
+- **THEN** the saved theme and Custom/Imported selection remain available without requiring that file
+
+#### Scenario: Legacy import identity
+- **WHEN** saved settings identify an import by its original theme name and custom source path
+- **THEN** reopening and restart restore the saved imported palette and show Custom/Imported
+- **AND** merely opening Settings does not persist a migration or reload a preset
+
+#### Scenario: Built-in transition
+- **WHEN** the user selects a built-in preset or resets an imported theme to default
+- **THEN** the selected built-in theme previews and import identity no longer overrides that selection
+
+#### Scenario: Cancel after Apply
+- **WHEN** an imported theme is applied, the user makes further appearance or preset edits, and cancels or closes Settings
+- **THEN** the last successful commit's palette, custom selection, and appearance values are restored
+
+#### Scenario: Cancel an uncommitted import
+- **WHEN** the user imports a theme and cancels without successfully applying it
+- **THEN** the prior committed palette and preset selection are restored
+
+#### Scenario: Edited built-in survives restart
+- **WHEN** a built-in preset's colors or opacity are edited, committed, and the app restarted
+- **THEN** the saved edits remain active and its built-in preset remains selected
