@@ -2,7 +2,7 @@
 
 Recorded while applying the change. Everything here was measured on one Windows 11 development machine (Avalonia 11.2.0, .NET 10 SDK building `net8.0`); nothing is inferred from a browser mockup.
 
-## Dense-frost material (tasks 1.1-1.4)
+## Initial dense-frost material evidence (tasks 1.1-1.4)
 
 | Question | Result |
 |---|---|
@@ -14,7 +14,7 @@ Recorded while applying the change. Everything here was measured on one Windows 
 | Solid fallback | Verified natively: over a stripe pattern the shell shows standard deviation 0.00 and no pixel step ([evidence](evidence/material/material-qualification.txt), [capture](evidence/material/material-solid.png)) |
 | Control: transparent, unblurred shell | Shows sharp stripes (largest adjacent-pixel step 9), so the measurement can tell blur from plain transparency |
 
-`DesktopMaterialNativeTests` is the acceptance check. With transparency effects on it requires the frost shell to let the backdrop bleed through (standard deviation above 0.3) while its largest pixel step stays at most a third of the unblurred control's. Until it runs with effects on, tasks 1.1, 1.2, and 1.4 stay open and the `Platform.Windows` adapter decision (1.2) is undecided. To close them: turn on Settings > Personalization > Colors > Transparency effects, then run:
+`DesktopMaterialNativeTests` is the acceptance check. With transparency effects on it requires the frost shell to let the backdrop bleed through (standard deviation above 0.3) while its largest pixel step stays at most a third of the unblurred control's. Until it completes a valid unobscured capture with effects on, tasks 1.1, 1.2, and 1.4 stay open and the `Platform.Windows` adapter decision (1.2) is undecided. Later notes record transparency effects enabled but an obscured test window. To close them, confirm effects are on, clear covering windows from the desktop, then run:
 
 ```powershell
 $env:FOCUSTIMER_NATIVE_APPEARANCE_TESTS = "1"
@@ -103,3 +103,23 @@ The proportions correction supersedes the fixed widget click-target floors descr
 The corner-radius follow-up supersedes the earlier 12 px cap. Both modes now scale continuously: compact uses the 8 px radius token at 1x, full uses 12 px. Native checks passed at all 13 scales in Dark and High Contrast, including mode changes and live scale preview; 41 widget behavior/theme tests passed. Both IDE Host builds passed without warnings or errors. Evidence: `artifacts/ui-fixes/widget-corners/comparison.html`.
 
 The native-frame correction disables extended Windows decoration on TimerWidgetWindow. That decoration had an independent corner radius and was absent from the earlier app-content captures. The widget keeps its single scaled shell outline. Native checks now verify both the requested decoration setting and the actual native extended-decoration state at all 13 scales, alongside size and mode changes. The separate Host build and the IDE win-x64 launch build passed without warnings or errors after the debugger stopped. App-content captures remain in `artifacts/ui-fixes/widget-native-frame/`; these captures do not include Windows compositor decoration.
+
+## OI-42 action hierarchy
+
+Implemented shared desktop roles for primary commit, neutral Cancel, and destructive Worklog Delete buttons. The supplied delete-dialog reference informed the muted danger fill. Labels, order, commands, targets, and the existing confirmation remain unchanged; semibold labels and outlines accompany color differences. ThemeManager derives action colors without changing stored palette values.
+
+Validation on 2026-10-08:
+
+- Windows Host `win-x64` build passed with zero warnings and errors.
+- Fourteen focused headless control-state and Worklog form tests passed. Action focus remains visible while hovered or pressed; disabled actions return to neutral styling without resizing.
+- Two palette tests passed, covering all seven built-in themes and a low-contrast import. Enabled action text reaches 4.5:1 and action focus reaches 3:1 against the tested surfaces; imported palette values remain unchanged.
+- Native Windows render/layout test passed in Dark, Light, and High Contrast at default and minimum window sizes. Reviewed Settings footer, Worklog Save/Cancel and Delete confirmation, and color-picker captures in `artifacts/oi-42/`.
+- Changed C# files passed `dotnet format --verify-no-changes`; the OpenSpec change passed strict validation; `git diff --check` passed.
+
+The full native pointer/keyboard walkthrough across themes remains open. Native capture evidence verifies rendering and layout, while interaction-state and form behavior evidence comes from headless tests.
+
+## Notification dialog styling
+
+On 2026-10-08, adapted notification chrome to the supplied rounded-dialog reference. Cards use a 420 px logical width, 20 px corner radius and padding, a semibold heading, muted contrast-adjusted body text, a borderless 24 px close target, and the shared primary acknowledgement button. Informational outlines are subtle; High Contrast retains a 3:1 outline. Warning/error headings and thin outlines retain their readable severity colors and explicit labels. All chrome now lives in the shared styles.
+
+Fifteen focused headless notification and control tests passed, including severity/timeouts, dismissal, acknowledgement, scrollable long messages, and live theme changes across all seven built-in themes. The native Windows render/layout test passed for Dark, Light, and High Contrast; reviewed information, acknowledgement, and severity captures in `artifacts/notification-dialog-style/`. The Windows Host win-x64 build passed with zero warnings or errors. Timing, activation, placement, and acknowledgement behavior were preserved.

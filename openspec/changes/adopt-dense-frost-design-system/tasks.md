@@ -73,3 +73,17 @@
 - [x] 8.12 Widget compact mode: less space between the buttons, slightly smaller icons, and a click target that uses the top and bottom padding.
 - [x] 8.13 Backlog: record the option to place the widget buttons beside or below the clock (OI-35).
 - [x] 8.14 Verify with unit, headless, and native suites and on-screen captures; update specs and docs; then tick this section.
+
+## 9. Action hierarchy (OI-42)
+
+- [x] 9.1 Add shared primary, secondary, and destructive button roles; preserve existing geometry, commands, action order, disabled states, and keyboard focus.
+- [x] 9.2 Apply the roles to Settings commit actions, color-picker actions, and Worklog save/cancel/delete actions; derive readable colors without changing stored palettes.
+- [x] 9.3 Verify action contrast across all built-in themes and a low-contrast import, plus headless focus/hover/pressed/disabled behavior and Worklog form regression tests.
+- [x] 9.4 Review native Windows screenshots of Settings, color picker, Worklog Save/Cancel, and Delete confirmation in Dark, Light, and High Contrast; record evidence.
+- [ ] 9.5 Complete native pointer/keyboard verification of commit and delete actions across themes.
+
+## 10. Notification dialog styling
+
+- [x] 10.1 Adapt notification cards to the supplied rounded-dialog reference with muted readable body text and shared acknowledgement actions; move chrome into the authoritative shared styles.
+- [x] 10.2 Preserve severity labels, timing, activation, acknowledgement, and long-message scrolling; verify all built-in themes and the High Contrast outline.
+- [x] 10.3 Review native Windows captures in Dark, Light, and High Contrast, run focused tests and the Windows Host build, and update the specification and documentation.

@@ -42,7 +42,7 @@ public sealed class NotificationWindowTests
             var heading = window.FindControl<TextBlock>("Heading")!;
             Assert.Equal(expected.Color, Assert.IsAssignableFrom<ISolidColorBrush>(card.BorderBrush).Color);
             Assert.Equal(expected.Color, Assert.IsAssignableFrom<ISolidColorBrush>(heading.Foreground).Color);
-            Assert.Equal(new Thickness(2), card.BorderThickness);
+            Assert.Equal(new Thickness(1), card.BorderThickness);
             Assert.StartsWith($"{severity}:", heading.Text);
             Assert.True(ThemeContrast.Ratio(expected.Color, Assert.IsAssignableFrom<ISolidColorBrush>(card.Background).Color) >= 4.5);
         }
@@ -85,12 +85,18 @@ public sealed class NotificationWindowTests
         {
             manager.ApplyTheme(theme);
             Dispatcher.UIThread.RunJobs();
-            Border card = window.GetVisualDescendants().OfType<Border>().First(b => b.Classes.Contains("desktop-card"));
+            Border card = window.GetVisualDescendants().OfType<Border>().First(b => b.Classes.Contains("notification-card"));
             var background = Assert.IsAssignableFrom<ISolidColorBrush>(card.Background);
             var message = window.FindControl<TextBlock>("Message")!;
             var foreground = Assert.IsAssignableFrom<ISolidColorBrush>(message.Foreground);
             Assert.Equal(Color.Parse(theme.SettingsBackground), background.Color);
             Assert.True(ThemeContrast.Ratio(foreground.Color, background.Color) >= 4.5);
+            if (theme.ThemeName == "High Contrast")
+            {
+                var outline = Assert.IsAssignableFrom<ISolidColorBrush>(card.BorderBrush);
+                Assert.True(ThemeContrast.Ratio(outline.Color, background.Color) >= 3.0);
+            }
+
             Assert.Equal(size, window.Bounds.Size);
         }
 

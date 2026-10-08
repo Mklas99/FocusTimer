@@ -437,9 +437,9 @@
 
             <!-- Button Panel -->
             <StackPanel x:Name="FooterActions" Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Bottom" Spacing="10">
-                <Button Content="OK" MinWidth="80" Click="OnOkClicked" IsEnabled="{Binding CanCommit}" />
-                <Button Content="Apply" MinWidth="80" Command="{Binding ApplyCommand}" IsEnabled="{Binding CanCommit}" />
-                <Button Content="Cancel" MinWidth="80" Command="{Binding CancelCommand}" CommandParameter="{Binding $parent[Window]}" IsEnabled="{Binding CanClose}" />
+                <Button Classes="action-primary" Content="OK" MinWidth="80" Click="OnOkClicked" IsEnabled="{Binding CanCommit}" />
+                <Button Classes="action-primary" Content="Apply" MinWidth="80" Command="{Binding ApplyCommand}" IsEnabled="{Binding CanCommit}" />
+                <Button Classes="action-secondary" Content="Cancel" MinWidth="80" Command="{Binding CancelCommand}" CommandParameter="{Binding $parent[Window]}" IsEnabled="{Binding CanClose}" />
             </StackPanel>
         </Grid>
     </Grid>

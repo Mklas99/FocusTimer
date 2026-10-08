@@ -226,6 +226,27 @@ namespace FocusTimer.App.Services
                 Color card = Mix(opaqueShell, primaryText, 0.06);
                 Color hover = Mix(field, opaquePrimaryText, 0.10);
                 Color pressed = Mix(field, opaquePrimaryText, 0.18);
+
+                // Action fills retain the palette accent without changing serialized theme values.
+                Color action = Mix(field, focus, 0.18);
+                Color actionHover = Mix(field, focus, 0.28);
+                Color actionPressed = Mix(field, focus, 0.38);
+                SetBrushIfChanged(resources, "DesktopPrimaryActionBrush", action);
+                SetBrushIfChanged(resources, "DesktopPrimaryActionHoverBrush", actionHover);
+                SetBrushIfChanged(resources, "DesktopPrimaryActionPressedBrush", actionPressed);
+                SetBrushIfChanged(resources, "DesktopPrimaryActionTextBrush", ThemeContrast.EnsureContrastAcross(
+                    primaryText, ThemeContrast.TextRatio, action, actionHover, actionPressed));
+                Color danger = Color.Parse(theme.DangerColor);
+                Color dangerAction = Mix(field, danger, 0.12);
+                Color dangerHover = Mix(field, danger, 0.20);
+                Color dangerPressed = Mix(field, danger, 0.28);
+                SetBrushIfChanged(resources, "DesktopDestructiveActionBrush", dangerAction);
+                SetBrushIfChanged(resources, "DesktopDestructiveActionHoverBrush", dangerHover);
+                SetBrushIfChanged(resources, "DesktopDestructiveActionPressedBrush", dangerPressed);
+                SetBrushIfChanged(resources, "DesktopDestructiveActionTextBrush", ThemeContrast.EnsureContrastAcross(
+                    danger, ThemeContrast.TextRatio, dangerAction, dangerHover, dangerPressed));
+                SetBrushIfChanged(resources, "DesktopActionFocusBrush", ThemeContrast.EnsureContrastAcross(
+                    focus, 3.0, opaqueShell, card, field, hover, pressed, action, actionHover, actionPressed, dangerAction, dangerHover, dangerPressed));
                 Color Readable(string value) => ThemeContrast.EnsureContrastAcross(
                     Color.Parse(value), ThemeContrast.TextRatio, opaqueShell, card, field, hover, pressed);
                 SetBrushIfChanged(resources, "DesktopTextBrush", Readable(theme.PrimaryText));
@@ -238,8 +259,15 @@ namespace FocusTimer.App.Services
                 SetBrushIfChanged(resources, "DesktopSuccessBrush", Readable(theme.SuccessColor));
                 SetBrushIfChanged(resources, "DesktopBorderBrush", ThemeContrast.EnsureContrastAcross(
                     Composite(Color.Parse(theme.InputBorder), field), 3.0, opaqueShell, card, field));
-                SetBrushIfChanged(resources, "DesktopNotificationBorderBrush", ThemeContrast.EnsureContrast(
-                    Color.Parse(theme.WindowBorder), opaqueShell, 3.0));
+                bool highContrast = string.Equals(theme.ThemeName, "High Contrast", StringComparison.OrdinalIgnoreCase);
+                Color notificationBorder = highContrast
+                    ? ThemeContrast.EnsureContrast(Color.Parse(theme.WindowBorder), opaqueShell, 3.0)
+                    : Mix(opaqueShell, opaquePrimaryText, 0.12);
+                SetBrushIfChanged(resources, "DesktopNotificationBorderBrush", notificationBorder);
+                Color notificationBody = highContrast
+                    ? Color.Parse(theme.SecondaryText)
+                    : Mix(opaqueShell, Composite(Color.Parse(theme.SecondaryText), opaqueShell), 0.75);
+                SetBrushIfChanged(resources, "DesktopNotificationBodyBrush", ThemeContrast.EnsureContrast(notificationBody, opaqueShell));
                 Color tabHover = Composite(Color.Parse(theme.TabHoverBackground), opaqueShell);
                 SetBrushIfChanged(resources, "DesktopTabTextBrush", ThemeContrast.EnsureContrastAcross(
                     Color.Parse(theme.TabText), ThemeContrast.TextRatio, opaqueShell, tabHover));

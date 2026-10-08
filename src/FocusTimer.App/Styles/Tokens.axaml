@@ -56,6 +56,8 @@
         <Thickness x:Key="DesktopCardPadding">14</Thickness>
         <CornerRadius x:Key="DesktopControlRadius">8</CornerRadius>
         <CornerRadius x:Key="DesktopCardRadius">12</CornerRadius>
+        <CornerRadius x:Key="NotificationCardRadius">20</CornerRadius>
+        <Thickness x:Key="NotificationContentPadding">20</Thickness>
 
         <!-- Control Dimensions & Hit Targets -->
         <x:Double x:Key="MinHitTargetSize">22</x:Double>

@@ -294,6 +294,74 @@
         <Setter Property="Margin" Value="-1" />
     </Style>
 
+    <!-- Action roles preserve geometry and commands; disabled controls use the shared neutral state. -->
+    <Style Selector="Window.settings-window Button.action-primary">
+        <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+
+    <Style Selector="Window.settings-window Button.action-primary:not(:disabled) /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource DesktopPrimaryActionBrush}" />
+        <Setter Property="TextElement.Foreground" Value="{DynamicResource DesktopPrimaryActionTextBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopFocusBrush}" />
+    </Style>
+
+    <Style Selector="Window.settings-window Button.action-primary:not(:disabled):pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource DesktopPrimaryActionHoverBrush}" />
+        <Setter Property="TextElement.Foreground" Value="{DynamicResource DesktopPrimaryActionTextBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopFocusBrush}" />
+    </Style>
+
+    <Style Selector="Window.settings-window Button.action-primary:not(:disabled):pressed /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource DesktopPrimaryActionPressedBrush}" />
+        <Setter Property="TextElement.Foreground" Value="{DynamicResource DesktopPrimaryActionTextBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopFocusBrush}" />
+    </Style>
+
+    <Style Selector="Window.settings-window Button.action-secondary:not(:disabled) /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource DesktopFieldBrush}" />
+        <Setter Property="TextElement.Foreground" Value="{DynamicResource DesktopTextBrush}" />
+    </Style>
+
+    <Style Selector="Window.settings-window Button.action-secondary:not(:disabled):pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource DesktopControlHoverBrush}" />
+        <Setter Property="TextElement.Foreground" Value="{DynamicResource DesktopTextBrush}" />
+    </Style>
+
+    <Style Selector="Window.settings-window Button.action-secondary:not(:disabled):pressed /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource DesktopControlPressedBrush}" />
+        <Setter Property="TextElement.Foreground" Value="{DynamicResource DesktopTextBrush}" />
+    </Style>
+
+    <Style Selector="Window.settings-window Button.action-destructive">
+        <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+
+    <Style Selector="Window.settings-window Button.action-destructive:not(:disabled) /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource DesktopDestructiveActionBrush}" />
+        <Setter Property="TextElement.Foreground" Value="{DynamicResource DesktopDestructiveActionTextBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopDestructiveActionTextBrush}" />
+    </Style>
+
+    <Style Selector="Window.settings-window Button.action-destructive:not(:disabled):pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource DesktopDestructiveActionHoverBrush}" />
+        <Setter Property="TextElement.Foreground" Value="{DynamicResource DesktopDestructiveActionTextBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopDestructiveActionTextBrush}" />
+    </Style>
+
+    <Style Selector="Window.settings-window Button.action-destructive:not(:disabled):pressed /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource DesktopDestructiveActionPressedBrush}" />
+        <Setter Property="TextElement.Foreground" Value="{DynamicResource DesktopDestructiveActionTextBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopDestructiveActionTextBrush}" />
+    </Style>
+
+    <Style Selector="Window.settings-window Button.action-primary:not(:disabled):focus-visible /template/ ContentPresenter#PART_ContentPresenter,
+                    Window.settings-window Button.action-secondary:not(:disabled):focus-visible /template/ ContentPresenter#PART_ContentPresenter,
+                    Window.settings-window Button.action-destructive:not(:disabled):focus-visible /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopActionFocusBrush}" />
+        <Setter Property="BorderThickness" Value="2" />
+        <Setter Property="Margin" Value="-1" />
+    </Style>
+
     <!-- Buttons inside another control's template (date picker, calendar header) keep a compact glyph chrome. -->
     <Style Selector="Window.settings-window CalendarDatePicker /template/ Button#PART_Button, Window.settings-window Calendar /template/ Button">
         <Setter Property="MinHeight" Value="0" />
@@ -962,6 +1030,69 @@
     <Style Selector="TextBlock.summary-unassigned">
         <Setter Property="FontStyle" Value="Italic" />
         <Setter Property="Foreground" Value="{DynamicResource DesktopSecondaryTextBrush}" />
+    </Style>
+
+    <!-- Notifications follow the rounded dialog reference, with quiet chrome and secondary body text. -->
+    <Style Selector="Window.notification-window Border.notification-card">
+        <Setter Property="Background" Value="{DynamicResource SettingsBackgroundBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopNotificationBorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="{DynamicResource NotificationCardRadius}" />
+        <Setter Property="Padding" Value="{DynamicResource NotificationContentPadding}" />
+    </Style>
+
+    <Style Selector="Window.notification-window TextBlock.notification-title">
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{DynamicResource DesktopHeadingBrush}" />
+    </Style>
+
+    <Style Selector="Window.notification-window TextBlock.notification-message">
+        <Setter Property="Foreground" Value="{DynamicResource DesktopNotificationBodyBrush}" />
+    </Style>
+
+    <Style Selector="Window.notification-window.warning Border.notification-card">
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopWarningBrush}" />
+    </Style>
+
+    <Style Selector="Window.notification-window.error Border.notification-card">
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopDangerBrush}" />
+    </Style>
+
+    <Style Selector="Window.notification-window.warning TextBlock.notification-title">
+        <Setter Property="Foreground" Value="{DynamicResource DesktopWarningBrush}" />
+    </Style>
+
+    <Style Selector="Window.notification-window.error TextBlock.notification-title">
+        <Setter Property="Foreground" Value="{DynamicResource DesktopDangerBrush}" />
+    </Style>
+
+    <Style Selector="Window.notification-window Button.notification-close">
+        <Setter Property="Width" Value="24" />
+        <Setter Property="Height" Value="24" />
+        <Setter Property="MinWidth" Value="{DynamicResource MinHitTargetSize}" />
+        <Setter Property="MinHeight" Value="{DynamicResource MinHitTargetSize}" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="VerticalAlignment" Value="Top" />
+        <Setter Property="Foreground" Value="{DynamicResource DesktopSecondaryTextBrush}" />
+    </Style>
+
+    <Style Selector="Window.notification-window Button.notification-close /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+    </Style>
+
+    <Style Selector="Window.notification-window Button.notification-close:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource DesktopControlHoverBrush}" />
+    </Style>
+
+    <Style Selector="Window.notification-window Button.notification-close:pressed /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource DesktopControlPressedBrush}" />
+    </Style>
+
+    <Style Selector="Window.notification-window Button.notification-close:focus-visible /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopFocusBrush}" />
+        <Setter Property="BorderThickness" Value="2" />
+        <Setter Property="Margin" Value="-2" />
     </Style>
 
 </Styles>

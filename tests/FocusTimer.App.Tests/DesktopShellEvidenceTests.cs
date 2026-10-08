@@ -169,13 +169,17 @@ public class DesktopShellEvidenceTests
         store.Add(WorklogTestData.Tracked("a", new DateTimeOffset(2026, 5, 4, 8, 0, 0, TimeSpan.Zero), 30, app: "code"));
         store.Add(WorklogTestData.Tracked("b", new DateTimeOffset(2026, 5, 4, 9, 0, 0, TimeSpan.Zero), 10, app: "mail"));
         var resolver = new RuleProjectResolver(new ProjectRuleStore());
+        var identity = new InstallationIdentity();
+        identity.Initialize("native-action-evidence");
+        var editing = new WorklogEditingService(
+            store, new SettingsStub(), identity, new SourcePlatformProvider(), clock, null, new QuietLogger());
         var groupings = new WorklogGroupingRegistry([new ApplicationGrouping(), new ProjectGrouping(), new WindowGrouping()]);
         foreach (var size in WorklogSizes)
         {
             for (int tab = 0; tab < WorklogTabs.Length; tab++)
             {
                 var viewModel = new WorklogWindowViewModel(
-                    new WorklogEntriesViewModel(store, clock, null, resolver),
+                    new WorklogEntriesViewModel(store, clock, editing, resolver),
                     new WorklogSummaryViewModel(new WorklogSummaryService(store, groupings, resolver, new QuietLogger()), groupings, clock),
                     new SettingsStub(),
                     clock,
@@ -196,6 +200,17 @@ public class DesktopShellEvidenceTests
                 await viewModel.SelectTabAsync((WorklogTab)tab);
                 Settle();
                 Capture(window, Path.Combine(folder, $"worklog-{themeName}-{WorklogTabs[tab]}-{size.Label}.png"));
+                if (tab == 0)
+                {
+                    viewModel.Entries.AddCommand.Execute(null);
+                    Settle();
+                    Capture(window, Path.Combine(folder, $"worklog-{themeName}-add-{size.Label}.png"));
+                    viewModel.Entries.Editor!.CancelCommand.Execute(null);
+                    viewModel.Entries.SelectedRow = viewModel.Entries.Rows[0];
+                    viewModel.Entries.DeleteCommand.Execute(null);
+                    Settle();
+                    Capture(window, Path.Combine(folder, $"worklog-{themeName}-delete-{size.Label}.png"));
+                }
                 window.Close();
             }
         }

@@ -60,7 +60,7 @@
                     Command="{Binding EditCommand}"
                     IsVisible="{Binding IsEditingAvailable}"
                     ToolTip.Tip="Change the window, project, or duration of the selected entry" />
-            <Button Content="Delete"
+            <Button Classes="action-destructive" Content="Delete"
                     Command="{Binding DeleteCommand}"
                     IsVisible="{Binding IsEditingAvailable}"
                     ToolTip.Tip="Delete the selected entry" />
@@ -224,11 +224,11 @@
                            IsVisible="{Binding HasError}" />
 
                 <StackPanel Grid.Row="8" Grid.Column="1" Orientation="Horizontal" Spacing="{StaticResource SpacingSm}">
-                    <Button Content="Save"
+                    <Button Classes="action-primary" Content="Save"
                             IsDefault="True"
                             Command="{Binding SaveCommand}"
                             IsEnabled="{Binding !IsSaving}" />
-                    <Button Content="Cancel"
+                    <Button Classes="action-secondary" Content="Cancel"
                             IsCancel="True"
                             Command="{Binding CancelCommand}" />
                 </StackPanel>
@@ -243,9 +243,9 @@
             <StackPanel Spacing="{StaticResource SpacingSm}">
                 <TextBlock Text="{Binding DeletePrompt}" TextWrapping="Wrap" />
                 <StackPanel Orientation="Horizontal" Spacing="{StaticResource SpacingSm}">
-                    <Button Content="Delete"
+                    <Button Classes="action-destructive" Content="Delete"
                             Command="{Binding ConfirmDeleteCommand}" />
-                    <Button Content="Cancel"
+                    <Button Classes="action-secondary" Content="Cancel"
                             IsCancel="True"
                             Command="{Binding CancelDeleteCommand}" />
                 </StackPanel>

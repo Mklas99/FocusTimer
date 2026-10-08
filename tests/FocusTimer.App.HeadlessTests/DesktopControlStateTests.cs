@@ -163,6 +163,48 @@ public sealed class DesktopControlStateTests
         return window;
     }
 
+    [Theory]
+    [InlineData("primary")]
+    [InlineData("secondary")]
+    [InlineData("destructive")]
+    public void ActionRoles_PreserveFocusDisabledStateAndGeometry(string role)
+    {
+        var button = new Button { Content = "Action", Classes = { $"action-{role}" } };
+        Window window = Show(button);
+        ContentPresenter surface = button.GetVisualDescendants().OfType<ContentPresenter>()
+            .First(p => p.Name == "PART_ContentPresenter");
+        Size size = button.Bounds.Size;
+        Assert.Equal(role == "secondary" ? FontWeight.Normal : FontWeight.SemiBold, button.FontWeight);
+        Assert.Equal(role == "primary" ? ResourceColor("DesktopPrimaryActionBrush") :
+            role == "destructive" ? ResourceColor("DesktopDestructiveActionBrush") : ResourceColor("DesktopFieldBrush"), Brush(surface.Background));
+        if (role == "destructive")
+        {
+            Assert.Equal(ResourceColor("DesktopDestructiveActionTextBrush"), Brush(surface.BorderBrush));
+        }
+
+        foreach (string state in new[] { ":pointerover", ":pressed" })
+        {
+            Set(button, state, () => surface.Background);
+            Assert.NotEqual(Colors.Transparent, Brush(surface.Background));
+            Set(button, ":focus-visible", () => surface.BorderBrush);
+            Assert.Equal(ResourceColor("DesktopActionFocusBrush"), Brush(surface.BorderBrush));
+            Assert.Equal(new Thickness(2), surface.BorderThickness);
+            window.UpdateLayout();
+            Assert.Equal(size, button.Bounds.Size);
+            Clear(button, ":focus-visible");
+            Clear(button, state);
+        }
+
+        Set(button, ":pointerover", () => surface.Background);
+        Set(button, ":pressed", () => surface.Background);
+        button.IsEnabled = false;
+        Dispatcher.UIThread.RunJobs();
+        Assert.Equal(ResourceColor("DesktopFieldBrush"), Brush(surface.Background));
+        Assert.Equal(ResourceColor("DesktopBorderBrush"), Brush(surface.BorderBrush));
+        Assert.Equal(Color.Parse(Palette.DisabledText), Brush(button.Foreground));
+        window.Close();
+    }
+
     private static Color Brush(IBrush? brush) => ((ISolidColorBrush)brush!).Color;
 
     private static Color ResourceColor(string key) => Brush((IBrush)Application.Current!.Resources[key]!);

@@ -83,3 +83,20 @@ Settings, Worklog, and their app-owned editors SHALL share moderately rounded bu
 #### Scenario: User switches themes
 - **WHEN** a different built-in or imported theme is applied
 - **THEN** desktop control geometry remains unchanged and timer-widget controls retain their existing styling boundaries
+
+### Requirement: Desktop action hierarchy
+Desktop action buttons SHALL use shared primary, secondary, and destructive roles. Primary commit actions SHALL have a restrained accent fill and semibold label; secondary cancellation actions SHALL have a neutral bordered surface; destructive worklog actions SHALL have a muted danger fill, visible outline, and semibold label. Labels and geometry SHALL identify actions without relying on color alone. Derived colors SHALL preserve stored theme values, keep enabled text at 4.5:1 contrast, and keep keyboard focus indicators at 3:1 contrast on each supported action surface.
+
+#### Scenario: User commits or discards edits
+- **WHEN** Settings, the color picker, or a Worklog entry form renders its action row
+- **THEN** OK, Apply, and Save use the primary role and Cancel uses the secondary role
+- **AND** labels, order, commands, click targets, and save/cancel behavior remain unchanged
+
+#### Scenario: User deletes a worklog entry
+- **WHEN** the Entries toolbar or delete confirmation renders Delete
+- **THEN** Delete uses the destructive role without bypassing the existing confirmation
+
+#### Scenario: User focuses or disables an action
+- **WHEN** an action receives keyboard focus while normal, hovered, or pressed
+- **THEN** a visible focus ring appears without moving or resizing the button
+- **AND** disabled actions use the shared neutral disabled state in every pointer state

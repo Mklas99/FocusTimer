@@ -44,8 +44,8 @@
         </Grid>
 
         <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="{DynamicResource SpacingSm}" Margin="0,16,0,0">
-            <Button Content="OK" Width="80" Click="OnOkClicked" IsDefault="True" />
-            <Button Content="Cancel" Width="80" Click="OnCancelClicked" IsCancel="True" />
+            <Button Classes="action-primary" Content="OK" Width="80" Click="OnOkClicked" IsDefault="True" />
+            <Button Classes="action-secondary" Content="Cancel" Width="80" Click="OnCancelClicked" IsCancel="True" />
         </StackPanel>
     </Grid>
 </Window>

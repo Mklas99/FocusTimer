@@ -15,8 +15,9 @@ FocusTimer's Settings and Worklog screens have oversized navigation, uneven spac
 | Controls | Soft rounded | Shared, moderately rounded buttons, fields, dropdowns, numeric inputs, checkboxes/toggles, sliders, and disclosure rows. |
 
 - Apply this language to Settings, the Worklog window, and their app-owned editors through shared resources. Keep dense tables and timeline content on readable near-solid surfaces.
+- Adapt notifications to the supplied rounded-dialog reference with muted body text, compact close controls, and shared primary acknowledgement actions; preserve severity labels, timings, and acknowledgement behavior.
 - Fix layout defects affected by the refresh, including the clipped opacity label, missing persistent rule-field labels, and crowded controls at the existing minimum window sizes.
-- Keep the existing OK, Apply, Cancel, draft, preview, commit locking, failure, and recovery behavior. Restyle those actions; do not replace the commit model.
+- Keep the existing OK, Apply, Cancel, draft, preview, commit locking, failure, and recovery behavior. Restyle those actions with the OI-42 primary/secondary/destructive hierarchy; do not replace the commit model.
 - Verify native Windows frost before claiming it works. A browser mockup or a successful compositor API call is insufficient evidence. Preserve the solid fallback when effects are unavailable.
 - Keep theme colors and theme-file values separate from this change. No palette redesign, new theme presets, or settings/theme schema migration is planned.
 - Preserve widget typography, Off/Solid choices, foreground-opacity settings, and tray behavior. Requested layout corrections keep the full-mode project-field gap and centered text, stack compact buttons at every scale, balance side spacing, draw one shell outline, and cap corner growth at 12 px. Its native blur investigation remains separately tracked in OI-28.
@@ -32,6 +33,7 @@ None. Reuse the existing design-system, Settings, and theming boundaries.
 ### Modified Capabilities
 
 - `ui-design-system`: dense-frost configuration/reporting shells with verified fallback, native typography, compact row and multi-card rules, icon-and-underline navigation, and soft-rounded control geometry.
+- `notifications`: rounded card presentation and shared action styles, with readable secondary body text and preserved severity/dismissal behavior.
 - `settings`: the five-tab icon-and-underline shell, preserved editable control inventory, scannable Appearance layout, and persistent save/feedback footer at the supported window sizes.
 - `theming`: preserve the existing tab palette roles while rendering selected state as an underline instead of a large filled tab, with the selected label and icon in the contrast-adjusted accent because built-in `TabSelectedText` values target the old fill; keep palette and serialized theme values unchanged.
 
@@ -41,7 +43,7 @@ Primary ownership is `FocusTimer.App`: `Styles/Tokens.axaml`, `Styles/ControlSty
 
 Start material verification with the pinned Avalonia 11.2.0 APIs. If those cannot demonstrate the chosen effect, an isolated Windows adapter may require `FocusTimer.Platform.Windows`, a minimal platform-neutral contract/stub, and Host DI wiring. Do not introduce an App-to-Windows dependency, desktop capture, a new UI theme package, or a framework upgrade as part of the visual refresh.
 
-Related backlog: [OI-21, OI-24, OI-25, OI-28](../../../docs/versions/current/OpenIssues.md), [Settings redesign decisions](../../../docs/versions/current/OI-21-SettingsRedesign.md). OI-25/widget transparency and OI-28/widget-native blur are not closed by a Settings/Worklog material implementation.
+Related backlog: [OI-21, OI-24, OI-25, OI-28, OI-42](../../../docs/versions/current/OpenIssues.md), [Settings redesign decisions](../../../docs/versions/current/OI-21-SettingsRedesign.md). OI-25/widget transparency and OI-28/widget-native blur are not closed by a Settings/Worklog material implementation.
 
 The in-progress `worklog-data-management` change already moved Summary out of Settings. This proposal uses that implemented five-page baseline and does not repeat the reporting move or alter its remaining manual verification.
 

@@ -146,3 +146,15 @@ Correct the main Settings specification's stale Summary tab now to the already-i
 - Check all built-in themes for text/focus/selection readability without changing their palettes. Verify imported theme round trips and theme changes while a field remains focused.
 - Capture native before/after screenshots for the ten original surfaces, plus material active/fallback and key minimum-size layouts. Store the resulting evidence with implementation verification; the proposal screenshots are labeled browser mockups.
 - Keep Full/Compact widget layout, controls, foreground opacity, Off/Solid choices, theme behavior, and tray operation unchanged, apart from the two round-4 spacing exceptions listed under Non-Goals.
+
+## Desktop action roles (OI-42)
+
+Use `action-primary` on OK/Apply/Save, `action-secondary` on Cancel, and `action-destructive` on Worklog Delete controls. Shared selectors stay inside `Window.settings-window`. Primary fills mix the field surface with the contrast-adjusted accent; destructive fills mix it with the danger palette value. Neutral Cancel retains the shared field surface and border. Primary and destructive labels are semibold, so hierarchy also uses typography and geometry.
+
+ThemeManager derives text colors across normal, hover, and pressed fills and derives a common focus indicator across all action surfaces. Disabled actions fall back to the existing neutral state. Focus increases the border outward without moving the button. No palette serialization, command, confirmation, order, or target-size changes are required.
+
+## Notification dialog presentation
+
+Use the supplied delete-dialog image as the notification chrome reference. Notifications have a 420 px logical width, 20 px card radius and padding, a semibold title, and a muted body derived from the live theme with at least 4.5:1 contrast. Informational outlines are quiet; High Contrast retains an outline with at least 3:1 contrast. Warning/error headings and thin outlines keep their readable severity colors and explicit labels.
+
+The close control is borderless at rest with a 24 px target, hover/pressed feedback, and a keyboard focus ring. Acknowledgement uses the shared primary OK action. Long messages scroll while actions remain reachable. Keep notification timings, activation, acknowledgement requirements, and bottom-right placement. Styles live in ControlStyles.axaml; the view contains layout and event bindings.
