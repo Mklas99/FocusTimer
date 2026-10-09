@@ -17,6 +17,8 @@ namespace FocusTimer.App.Services
         /// </summary>
         public const double DesktopShellFrostOpacity = 0.95;
 
+        private const string HighContrastThemeName = "High Contrast";
+
         private readonly IAppLogger? _logWriter;
         private IResourceDictionary? _activeResources;
 
@@ -53,7 +55,7 @@ namespace FocusTimer.App.Services
         /// Gets a value indicating whether the widget needs an opaque shell for the current backdrop result.
         /// </summary>
         public bool IsWidgetShellFallbackActive => this.ActiveTheme != null &&
-            (string.Equals(this.ActiveTheme.ThemeName, "High Contrast", StringComparison.OrdinalIgnoreCase) ||
+            (string.Equals(this.ActiveTheme.ThemeName, HighContrastThemeName, StringComparison.OrdinalIgnoreCase) ||
              this.ActiveTheme.WidgetBlurMode == WidgetBlurModes.Solid ||
              this.ActualWidgetTransparency == WindowTransparencyLevel.None);
 
@@ -108,7 +110,7 @@ namespace FocusTimer.App.Services
             SetResourceIfChanged(
                 resources,
                 DesktopWindowMaterial.ForceSolidResourceKey,
-                string.Equals(theme.ThemeName, "High Contrast", StringComparison.OrdinalIgnoreCase));
+                string.Equals(theme.ThemeName, HighContrastThemeName, StringComparison.OrdinalIgnoreCase));
 
             // Store opacity values as resources
             SetResourceIfChanged(resources, "BackgroundOpacity", theme.BackgroundOpacity);
@@ -130,7 +132,7 @@ namespace FocusTimer.App.Services
             {
                 var baseColor = Color.Parse(theme.WindowBackground);
                 var opaqueColor = Color.FromArgb(255, baseColor.R, baseColor.G, baseColor.B);
-                double tintOpacity = theme.ThemeName == "High Contrast" ? 1.0 : theme.BackgroundOpacity;
+                double tintOpacity = theme.ThemeName == HighContrastThemeName ? 1.0 : theme.BackgroundOpacity;
                 SetBrushIfChanged(resources, "WidgetShellTintBrush", opaqueColor, tintOpacity);
                 SetBrushIfChanged(resources, "WidgetShellFallbackBrush", opaqueColor);
                 SetBrushIfChanged(resources, "WidgetProjectLabelBrush", ThemeContrast.EnsureContrast(Color.Parse(theme.WindowForeground), opaqueColor));
@@ -243,7 +245,7 @@ namespace FocusTimer.App.Services
                 SetBrushIfChanged(resources, "DesktopPrimaryActionPressedBrush", actionPressed);
                 SetBrushIfChanged(resources, "DesktopPrimaryActionTextBrush", ThemeContrast.EnsureContrastAcross(
                     primaryText, ThemeContrast.TextRatio, action, actionHover, actionPressed));
-                Color danger = Color.Parse(theme.DangerColor);
+                var danger = Color.Parse(theme.DangerColor);
                 Color dangerAction = NormalizeSurface(Mix(field, danger, 0.12), opaqueShell, anchor);
                 Color dangerHover = NormalizeSurface(Mix(field, danger, 0.20), opaqueShell, anchor);
                 Color dangerPressed = NormalizeSurface(Mix(field, danger, 0.28), opaqueShell, anchor);
@@ -266,7 +268,7 @@ namespace FocusTimer.App.Services
                 SetBrushIfChanged(resources, "DesktopSuccessBrush", Readable(theme.SuccessColor));
                 SetBrushIfChanged(resources, "DesktopBorderBrush", ThemeContrast.EnsureContrastAcross(
                     Composite(Color.Parse(theme.InputBorder), field), 3.0, surfaces));
-                bool highContrast = string.Equals(theme.ThemeName, "High Contrast", StringComparison.OrdinalIgnoreCase);
+                bool highContrast = string.Equals(theme.ThemeName, HighContrastThemeName, StringComparison.OrdinalIgnoreCase);
                 Color notificationBorder = highContrast
                     ? ThemeContrast.EnsureContrast(Color.Parse(theme.WindowBorder), opaqueShell, 3.0)
                     : Mix(opaqueShell, opaquePrimaryText, 0.12);
@@ -351,7 +353,8 @@ namespace FocusTimer.App.Services
 
         private static Color NormalizeSurface(Color preferred, Color shell, Color foreground, bool includeFrost = false)
         {
-            Color target = includeFrost ? (foreground == Colors.White ? Colors.Black : Colors.White) : shell;
+            Color frostTarget = foreground == Colors.White ? Colors.Black : Colors.White;
+            Color target = includeFrost ? frostTarget : shell;
             for (int step = 0; step <= 100; step++)
             {
                 Color candidate = Mix(preferred, target, step / 100.0);

@@ -62,12 +62,12 @@ public sealed class ThemeScreenshotRegressionTests
             {
                 new ThemeManager().ApplyTheme(theme);
                 var button = new Button { Content = "Color" };
-                var tip = new ToolTip { Content = "Open color picker" };
+                // Measure the open state immediately, without the Fluent fade-in transition.
+                var tip = new ToolTip { Content = "Open color picker", Transitions = null };
                 ToolTip.SetTip(button, tip);
                 var window = Open(variant, button);
                 ToolTip.SetIsOpen(button, true);
                 Flush(window);
-                Thread.Sleep(250);
                 AvaloniaHeadlessPlatform.ForceRenderTimerTick();
                 Flush(window);
                 TextBlock label = Assert.Single(tip.GetVisualDescendants().OfType<TextBlock>());

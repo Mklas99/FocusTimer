@@ -14,6 +14,8 @@ namespace FocusTimer.App.Services
         /// </summary>
         public const double TextRatio = 4.5;
 
+        private static readonly Color[] ContrastTargets = [Colors.White, Colors.Black];
+
         /// <summary>
         /// Computes the WCAG contrast ratio between two opaque colors.
         /// </summary>
@@ -65,12 +67,9 @@ namespace FocusTimer.App.Services
         /// <exception cref="InvalidOperationException">No shared foreground qualifies.</exception>
         public static Color EnsureContrastAcross(Color preferred, double minimumRatio, params Color[] surfaces)
         {
-            if (TryEnsureContrastAcross(preferred, minimumRatio, out Color result, surfaces))
-            {
-                return result;
-            }
-
-            throw new InvalidOperationException("The surfaces cannot share a foreground at the requested contrast.");
+            return TryEnsureContrastAcross(preferred, minimumRatio, out Color result, surfaces)
+                ? result
+                : throw new InvalidOperationException("The surfaces cannot share a foreground at the requested contrast.");
         }
 
         /// <summary>Finds a shared foreground without accepting a failed endpoint when surfaces conflict.</summary>
@@ -97,11 +96,17 @@ namespace FocusTimer.App.Services
                 return true;
             }
 
+            return TryFindClosestEndpointMix(start, Qualifies, out result) ||
+                TryFindIntermediateColor(start, Qualifies, out result);
+        }
+
+        private static bool TryFindClosestEndpointMix(Color start, Func<Color, bool> qualifies, out Color result)
+        {
             double closestAmount = double.PositiveInfinity;
             Color closest = default;
-            foreach (Color target in new[] { Colors.White, Colors.Black })
+            foreach (Color target in ContrastTargets)
             {
-                if (!Qualifies(target))
+                if (!qualifies(target))
                 {
                     continue;
                 }
@@ -111,7 +116,7 @@ namespace FocusTimer.App.Services
                 for (int iteration = 0; iteration < 20; iteration++)
                 {
                     double middle = (low + high) / 2;
-                    if (Qualifies(Mix(start, target, middle)))
+                    if (qualifies(Mix(start, target, middle)))
                     {
                         high = middle;
                     }
@@ -128,20 +133,20 @@ namespace FocusTimer.App.Services
                 }
             }
 
-            if (!double.IsPositiveInfinity(closestAmount))
-            {
-                result = closest;
-                return true;
-            }
+            result = closest;
+            return !double.IsPositiveInfinity(closestAmount);
+        }
 
+        private static bool TryFindIntermediateColor(Color start, Func<Color, bool> qualifies, out Color result)
+        {
             // Search both directions, including intermediate colors. Opposing surfaces can share a middle gray
             // even when neither endpoint qualifies. Fine steps avoid skipping the narrow AA interval.
             for (int step = 1; step <= 1024; step++)
             {
-                foreach (Color target in new[] { Colors.White, Colors.Black })
+                foreach (Color target in ContrastTargets)
                 {
                     Color candidate = Mix(start, target, step / 1024.0);
-                    if (Qualifies(candidate))
+                    if (qualifies(candidate))
                     {
                         result = candidate;
                         return true;
@@ -153,7 +158,7 @@ namespace FocusTimer.App.Services
             for (int channel = 0; channel <= 255; channel++)
             {
                 var candidate = Color.FromRgb((byte)channel, (byte)channel, (byte)channel);
-                if (Qualifies(candidate))
+                if (qualifies(candidate))
                 {
                     result = candidate;
                     return true;

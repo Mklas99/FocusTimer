@@ -18,6 +18,8 @@ using FocusTimer.Tests;
 /// <summary>Measures resolved template brushes on actual surfaces across factory and imported palettes.</summary>
 public sealed class RenderedThemeContrastTests
 {
+    private static readonly string[] ActionRoles = ["secondary", "primary", "destructive"];
+
     public RenderedThemeContrastTests() => HeadlessAvaloniaFixture.EnsureInitialized();
 
     [Fact]
@@ -35,7 +37,7 @@ public sealed class RenderedThemeContrastTests
             var panel = new StackPanel { Spacing = 8, Children = { box, numeric, check, slider, tabs } };
             var swatch = new Button { Classes = { "color-swatch" }, Background = new SolidColorBrush(Color.Parse(theme.PrimaryText)) };
             panel.Children.Add(swatch);
-            var buttons = new[] { "secondary", "primary", "destructive" }
+            var buttons = ActionRoles
                 .Select(role => new Button { Content = role, Classes = { $"action-{role}" } }).ToArray();
             foreach (Button button in buttons)
             {

@@ -37,7 +37,7 @@ public sealed class AppControllerWindowInteractionTests
             for (int attempt = 0; attempt < 2000 && !task.IsCompleted; attempt++)
             {
                 Dispatcher.UIThread.RunJobs();
-                Thread.Sleep(5);
+                Task.WhenAny(task, Task.Delay(5)).GetAwaiter().GetResult();
             }
 
             Assert.True(task.IsCompleted);

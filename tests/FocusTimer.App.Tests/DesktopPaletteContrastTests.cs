@@ -9,6 +9,9 @@ using FocusTimer.Core.Services;
 
 public class DesktopPaletteContrastTests
 {
+    private static readonly System.Text.Json.JsonSerializerOptions EvidenceJsonOptions = new() { WriteIndented = true };
+    private static readonly string[] FrostTextBrushes = ["DesktopTabTextBrush", "TabSelectedLabelBrush"];
+
     [Fact]
     public void TranslucentSelection_UsesTheActualFieldAndKeepsSelectionDistinct()
     {
@@ -58,7 +61,7 @@ public class DesktopPaletteContrastTests
             Directory.CreateDirectory(folder);
             File.WriteAllLines(Path.Combine(folder, "derived-contrast.tsv"), rows);
             File.WriteAllText(Path.Combine(folder, "source-palettes.json"), System.Text.Json.JsonSerializer.Serialize(
-                new ThemeService().BuiltInThemes, new System.Text.Json.JsonSerializerOptions { WriteIndented = true }));
+                new ThemeService().BuiltInThemes, EvidenceJsonOptions));
         }
     }
 
@@ -110,7 +113,7 @@ public class DesktopPaletteContrastTests
         {
             byte Channel(byte foreground, byte background) => (byte)Math.Round(foreground * frost.Opacity + background * (1 - frost.Opacity));
             Color renderedShell = Color.FromRgb(Channel(frost.Color.R, desktop.R), Channel(frost.Color.G, desktop.G), Channel(frost.Color.B, desktop.B));
-            foreach (string foreground in foregrounds.Concat(new[] { "DesktopTabTextBrush", "TabSelectedLabelBrush" }))
+            foreach (string foreground in foregrounds.Concat(FrostTextBrushes))
             {
                 double ratio = ThemeContrast.Ratio(Brush(foreground), renderedShell);
                 Assert.True(ratio >= 4.5, $"{theme.ThemeName}: {foreground} on frost over {desktop} = {ratio:F3}:1");
