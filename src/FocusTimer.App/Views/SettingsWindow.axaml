@@ -1,10 +1,10 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:icons="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="using:FocusTimer.App.ViewModels"
         xmlns:controls="using:FocusTimer.App.Controls"
-        xmlns:views="using:FocusTimer.App.Views"
         mc:Ignorable="d"
         x:Class="FocusTimer.App.Views.SettingsWindow"
         x:DataType="vm:SettingsWindowViewModel"
@@ -14,408 +14,399 @@
         MinWidth="500" MinHeight="400"
         WindowStartupLocation="CenterOwner"
         CanResize="True"
-        Background="{DynamicResource SettingsBackgroundBrush}"
-        Foreground="{DynamicResource PrimaryTextBrush}">
+        Foreground="{DynamicResource DesktopTextBrush}">
 
     <Design.DataContext>
         <vm:SettingsWindowViewModel />
     </Design.DataContext>
 
-    <Grid RowDefinitions="*,Auto,Auto" Margin="20">
-        <!-- Settings Content -->
+    <Grid RowDefinitions="*,Auto" Margin="{DynamicResource DesktopContentPadding}">
+        <!-- Settings content: tabs stay fixed, each page scrolls vertically. -->
         <TabControl x:Name="DraftPanel" Grid.Row="0" SelectedIndex="{Binding SelectedTabIndex}" IsEnabled="{Binding IsDraftVisible}">
-            <!-- General Tab -->
-            <TabItem Header="General">
+            <!-- General -->
+            <TabItem AutomationProperties.Name="General">
+                <TabItem.Header>
+                    <controls:TabHeader Icon="CogOutline" Text="General" />
+                </TabItem.Header>
                 <ScrollViewer Classes="settings-scroll">
-                    <StackPanel Spacing="15">
-                        <TextBlock Classes="SectionHeader" Text="Startup" />
-
+                    <StackPanel Spacing="8">
+                        <TextBlock Classes="SectionHeader" Margin="0" Text="Startup" />
                         <CheckBox IsChecked="{Binding Settings.AutoStartOnLogin}" Content="Start with Windows" />
-
                         <CheckBox IsChecked="{Binding Settings.StartMinimized}" Content="Start minimized to tray" />
 
-                        <TextBlock Classes="SectionHeader" Text="Window" />
-
+                        <Border Classes="settings-divider" />
+                        <TextBlock Classes="SectionHeader" Margin="0" Text="Window" />
                         <CheckBox IsChecked="{Binding Settings.AlwaysOnTop}" Content="Keep widget always on top" />
 
-                        <TextBlock Classes="SectionHeader" Text="Break Reminders" />
-
+                        <Border Classes="settings-divider" />
+                        <TextBlock Classes="SectionHeader" Margin="0" Text="Break reminders" />
                         <CheckBox IsChecked="{Binding Settings.BreakRemindersEnabled}" Content="Enable break reminders" />
-
                         <CheckBox IsChecked="{Binding Settings.RequireBreakReminderAcknowledgement}"
                                   Content="Require acknowledgement before break reminders disappear"
                                   IsEnabled="{Binding Settings.BreakRemindersEnabled}" />
-
-                        <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto" Margin="0,0,0,0">
-                            <TextBlock Grid.Column="0" Classes="SettingLabel" Text="Remind every (minutes):" />
-                            <NumericUpDown Grid.Column="1"
+                        <Grid ColumnDefinitions="Auto,*">
+                            <TextBlock Grid.Column="0" Classes="SettingLabel" MaxWidth="220" Text="Remind every (minutes):" />
+                            <NumericUpDown Grid.Column="1" Classes="numeric-field"
                                            Value="{Binding Settings.BreakIntervalMinutes}"
                                            Minimum="1"
                                            Maximum="240"
                                            Increment="5"
-                                           Width="120"
-                                           HorizontalAlignment="Left"
-                                           IsEnabled="{Binding Settings.BreakRemindersEnabled}" />
+                                           AutomationProperties.Name="Remind every (minutes)"
+                                           IsEnabled="{Binding Settings.BreakRemindersEnabled}"  Margin="12,0,0,0"/>
                         </Grid>
                     </StackPanel>
                 </ScrollViewer>
             </TabItem>
 
-            <!-- Logging Tab -->
-            <TabItem Header="Logging">
+            <!-- Logging -->
+            <TabItem AutomationProperties.Name="Logging">
+                <TabItem.Header>
+                    <controls:TabHeader Icon="NoteTextOutline" Text="Logging" />
+                </TabItem.Header>
                 <ScrollViewer Classes="settings-scroll">
-                    <StackPanel Spacing="15">
-                        <TextBlock Classes="SectionHeader" Text="Worklog CSV Location" />
-
+                    <StackPanel Spacing="8">
+                        <TextBlock Classes="SectionHeader" Margin="0" Text="Work logging" />
                         <CheckBox IsChecked="{Binding Settings.WorkLoggingEnabled}"
                                   Content="Enable work logging"
                                   ToolTip.Tip="When disabled, session tracking and persistence are paused." />
-
-                        <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,10">
+                        <TextBlock Classes="SettingLabel" Text="Worklog CSV location" />
+                        <Grid ColumnDefinitions="*,Auto">
                             <TextBox Grid.Column="0"
                                      Text="{Binding Settings.WorklogDirectory}"
                                      Watermark="Worklog directory path"
+                                     AutomationProperties.Name="Worklog CSV location"
                                      IsReadOnly="True" />
                             <Button Grid.Column="1"
                                     Content="Browse…"
-                                    Margin="5,0,0,0"
                                     Command="{Binding BrowseWorklogDirectoryCommand}"
-                                    CommandParameter="{Binding $parent[Window]}" />
+                                    CommandParameter="{Binding $parent[Window]}"  Margin="8,0,0,0"/>
                         </Grid>
 
-                        <TextBlock Classes="SectionHeader" Text="Data Retention" />
-
-                        <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto">
-                            <TextBlock Grid.Column="0" Classes="SettingLabel" Text="Keep worklogs for (days):" />
-                            <NumericUpDown Grid.Column="1"
+                        <Border Classes="settings-divider" />
+                        <TextBlock Classes="SectionHeader" Margin="0" Text="Data retention" />
+                        <Grid ColumnDefinitions="Auto,*">
+                            <TextBlock Grid.Column="0" Classes="SettingLabel" MaxWidth="220" Text="Keep worklogs for (days):" />
+                            <NumericUpDown Grid.Column="1" Classes="numeric-field"
                                            Value="{Binding Settings.DataRetentionDays}"
                                            Minimum="1"
                                            Maximum="3650"
                                            Increment="1"
-                                           Width="120"
-                                           HorizontalAlignment="Left" />
+                                           AutomationProperties.Name="Keep worklogs for (days)"  Margin="12,0,0,0"/>
                         </Grid>
 
+                        <Border Classes="settings-divider" />
                         <controls:ProjectRuleListEditor DataContext="{Binding ProjectList}" />
                     </StackPanel>
                 </ScrollViewer>
             </TabItem>
 
-            <!-- Appearance Tab -->
-            <TabItem Header="Appearance">
+            <!-- Appearance -->
+            <TabItem AutomationProperties.Name="Appearance">
+                <TabItem.Header>
+                    <controls:TabHeader Icon="PaletteOutline" Text="Appearance" />
+                </TabItem.Header>
                 <ScrollViewer Classes="settings-scroll">
-                    <StackPanel Spacing="15">
-                        <!-- Theme Presets Section -->
-                        <TextBlock Classes="SectionHeader" Text="Theme Presets" />
-                        <Grid ColumnDefinitions="*,Auto,Auto,Auto">
+                    <StackPanel Spacing="12">
+                        <!-- Theme tools -->
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Classes="SectionHeader" Margin="0" Text="Theme" />
+                            <Border Classes="help-hint" ToolTip.Tip="Appearance changes preview immediately. Apply saves and keeps this window open; OK saves and closes. Cancel restores the last applied appearance. Import and export .fttheme files to share themes." Focusable="True"
+                                AutomationProperties.Name="About theme changes" AutomationProperties.HelpText="Appearance changes preview immediately. Apply saves and keeps this window open; OK saves and closes. Cancel restores the last applied appearance. Import and export .fttheme files to share themes.">
+                            <icons:MaterialIcon Kind="HelpCircleOutline" Width="14" Height="14" Foreground="{DynamicResource DesktopLabelBrush}" />
+                        </Border>
+                        </StackPanel>
+                        <Grid Classes="flush" ColumnDefinitions="*,Auto,Auto,Auto">
                             <ComboBox Grid.Column="0"
                                       SelectedItem="{Binding SelectedThemeName}"
                                       ItemsSource="{Binding AvailableThemes}"
+                                      AutomationProperties.Name="Theme preset"
                                       HorizontalAlignment="Stretch" />
-                            <Button Grid.Column="1" Content="Import..."
+                            <Button Grid.Column="1" Content="Import…"
                                     Command="{Binding ImportThemeCommand}"
-                                    CommandParameter="{Binding $parent[Window]}"
-                                    Width="80" Margin="10,0,0,0" />
-                            <Button Grid.Column="2" Content="Export..."
+                                    CommandParameter="{Binding $parent[Window]}"  Margin="8,0,0,0"/>
+                            <Button Grid.Column="2" Content="Export…"
                                     Command="{Binding ExportThemeCommand}"
-                                    CommandParameter="{Binding $parent[Window]}"
-                                    Width="80" Margin="10,0,0,0" />
+                                    CommandParameter="{Binding $parent[Window]}"  Margin="8,0,0,0"/>
                             <Button Grid.Column="3" Content="Reset"
-                                    Command="{Binding ResetThemeCommand}"
-                                    Width="80" Margin="10,0,0,0" />
+                                    Command="{Binding ResetThemeCommand}"  Margin="8,0,0,0"/>
                         </Grid>
 
-                        <Expander Header="Color Palette" IsExpanded="True" Classes="settings-accordion">
-                            <Grid ColumnDefinitions="*,12,*" Margin="0,8,0,0">
-                                <StackPanel Grid.Column="0" Spacing="8">
-                                    <TextBlock Classes="SectionHeader" Text="Timer Widget" />
-                                    <Grid ColumnDefinitions="126,*,Auto" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
-                                    <TextBlock Grid.Row="0" Grid.Column="0" Classes="SettingLabel" Text="Background:" />
-                                    <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Settings.Theme.WindowBackground}" Watermark="#1E1E1E" Margin="0,0,8,0" />
-                                    <Button Grid.Row="0" Grid.Column="2" Classes="color-swatch" Background="{Binding Settings.Theme.WindowBackground}" Tag="WindowBackground" Click="OnColorPreviewClicked" ToolTip.Tip="Open color picker" />
-
-                                    <!-- Border color removed temporarily -->
-
-                                    <TextBlock Grid.Row="2" Grid.Column="0" Classes="SettingLabel" Text="Timer Text:" Margin="0,6,0,0" />
-                                    <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding Settings.Theme.TimerText}" Watermark="#FFFFFF" Margin="0,6,8,0" />
-                                    <Button Grid.Row="2" Grid.Column="2" Classes="color-swatch" Background="{Binding Settings.Theme.TimerText}" Tag="TimerText" Click="OnColorPreviewClicked" ToolTip.Tip="Open color picker" Margin="0,6,0,0" />
-
-                                    <TextBlock Grid.Row="3" Grid.Column="0" Classes="SettingLabel" Text="Play/Pause color:" Margin="0,6,0,0" />
-                                    <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding PlayPauseColor}" Watermark="#RRGGBB" Margin="0,6,8,0" />
-                                    <Button Grid.Row="3" Grid.Column="2" Classes="color-swatch" Background="{Binding PlayPauseColor}" Tag="PlayPauseColor" Click="OnColorPreviewClicked" ToolTip.Tip="Open color picker" Margin="0,6,0,0" />
-
-                                    <TextBlock Grid.Row="4" Grid.Column="0" Classes="SettingLabel" Text="Button Normal:" Margin="0,6,0,0" />
-                                    <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding Settings.Theme.ButtonNormal}" Watermark="#4CDEFFBD" Margin="0,6,8,0" />
-                                    <Button Grid.Row="4" Grid.Column="2" Classes="color-swatch" Background="{Binding Settings.Theme.ButtonNormal}" Tag="ButtonNormal" Click="OnColorPreviewClicked" ToolTip.Tip="Open color picker" Margin="0,6,0,0" />
-
-                                    <TextBlock Grid.Row="5" Grid.Column="0" Classes="SettingLabel" Text="Button Hover:" Margin="0,6,0,0" />
-                                    <TextBox Grid.Row="5" Grid.Column="1" Text="{Binding Settings.Theme.ButtonHover}" Watermark="#5DEFFCE7" Margin="0,6,8,0" />
-                                    <Button Grid.Row="5" Grid.Column="2" Classes="color-swatch" Background="{Binding Settings.Theme.ButtonHover}" Tag="ButtonHover" Click="OnColorPreviewClicked" ToolTip.Tip="Open color picker" Margin="0,6,0,0" />
-
-                                    <TextBlock Grid.Row="6" Grid.Column="0" Classes="SettingLabel" Text="Button Pressed:" Margin="0,6,0,0" />
-                                    <TextBox Grid.Row="6" Grid.Column="1" Text="{Binding Settings.Theme.ButtonPressed}" Watermark="#3BBD99AC" Margin="0,6,8,0" />
-                                    <Button Grid.Row="6" Grid.Column="2" Classes="color-swatch" Background="{Binding Settings.Theme.ButtonPressed}" Tag="ButtonPressed" Click="OnColorPreviewClicked" ToolTip.Tip="Open color picker" Margin="0,6,0,0" />
-
-                                    <TextBlock Grid.Row="7" Grid.Column="0" Classes="SettingLabel" Text="Button Disabled:" Margin="0,6,0,0" />
-                                    <TextBox Grid.Row="7" Grid.Column="1" Text="{Binding Settings.Theme.ButtonDisabled}" Watermark="#40FFFFFF" Margin="0,6,8,0" />
-                                    <Button Grid.Row="7" Grid.Column="2" Classes="color-swatch" Background="{Binding Settings.Theme.ButtonDisabled}" Tag="ButtonDisabled" Click="OnColorPreviewClicked" ToolTip.Tip="Open color picker" Margin="0,6,0,0" />
+                        <!-- Peer groups: side by side when they fit, stacked otherwise. -->
+                        <controls:ResponsiveCardsPanel TwoColumnMinWidth="{DynamicResource DesktopCardTwoColumnMinWidth}" Spacing="12">
+                            <Border Classes="desktop-card">
+                                <StackPanel Spacing="6">
+                                    <TextBlock Classes="SectionHeader" Margin="0,0,0,4" Text="Widget layout" />
+                                    <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
+                                        <TextBlock Grid.Row="0" Grid.Column="0" Classes="SettingLabel" Text="Scale" />
+                                        <TextBlock Grid.Row="0" Grid.Column="1" Classes="settings-body numeric-value" MinWidth="44"
+                                                   Text="{Binding Settings.WidgetScale, StringFormat='{}{0:F1}×'}"  Margin="8,0,0,0"/>
+                                        <Slider Grid.Row="1" Grid.ColumnSpan="2" Margin="0,-10,0,-8" Classes="minimal-slider"
+                                                Value="{Binding Settings.WidgetScale}" Minimum="0.5" Maximum="3.0"
+                                                TickFrequency="0.1" IsSnapToTickEnabled="True"
+                                                AutomationProperties.Name="Scale" />
                                     </Grid>
+                                    <CheckBox IsChecked="{Binding Settings.UseCompactMode}" Content="Use compact mode"
+                                              ToolTip.Tip="Switches the timer widget into a minimal mode" />
                                 </StackPanel>
-
-                                <StackPanel Grid.Column="2" Spacing="8">
-                                    <TextBlock Classes="SectionHeader" Text="Dialogs &amp; Notifications" />
-                                    <TextBlock Classes="settings-body" TextWrapping="Wrap" Text="Success and Danger are reserved for future status displays; they currently do not change notifications." />
-                                    <Grid ColumnDefinitions="126,*,Auto" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
-                                    <TextBlock Grid.Row="0" Grid.Column="0" Classes="SettingLabel" Text="Background:" />
-                                    <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Settings.Theme.SettingsBackground}" Watermark="#2D2D30" Margin="0,0,8,0" />
-                                    <Button Grid.Row="0" Grid.Column="2" Classes="color-swatch" Background="{Binding Settings.Theme.SettingsBackground}" Tag="SettingsBackground" Click="OnColorPreviewClicked" ToolTip.Tip="Open color picker" />
-
-                                    <TextBlock Grid.Row="1" Grid.Column="0" Classes="SettingLabel" Text="Primary Text:" Margin="0,6,0,0" />
-                                    <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Settings.Theme.PrimaryText}" Watermark="#F5F5F5" Margin="0,6,8,0" />
-                                    <Button Grid.Row="1" Grid.Column="2" Classes="color-swatch" Background="{Binding Settings.Theme.PrimaryText}" Tag="PrimaryText" Click="OnColorPreviewClicked" ToolTip.Tip="Open color picker" Margin="0,6,0,0" />
-
-                                    <TextBlock Grid.Row="2" Grid.Column="0" Classes="SettingLabel" Text="Secondary Text:" Margin="0,6,0,0" />
-                                    <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding Settings.Theme.SecondaryText}" Watermark="#CCCCCC" Margin="0,6,8,0" />
-                                    <Button Grid.Row="2" Grid.Column="2" Classes="color-swatch" Background="{Binding Settings.Theme.SecondaryText}" Tag="SecondaryText" Click="OnColorPreviewClicked" ToolTip.Tip="Open color picker" Margin="0,6,0,0" />
-
-                                    <TextBlock Grid.Row="3" Grid.Column="0" Classes="SettingLabel" Text="Header Text:" Margin="0,6,0,0" />
-                                    <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding Settings.Theme.SettingsSectionHeader}" Watermark="#F5F5F5" Margin="0,6,8,0" />
-                                    <Button Grid.Row="3" Grid.Column="2" Classes="color-swatch" Background="{Binding Settings.Theme.SettingsSectionHeader}" Tag="SettingsSectionHeader" Click="OnColorPreviewClicked" ToolTip.Tip="Open color picker" Margin="0,6,0,0" />
-
-                                    <TextBlock Grid.Row="4" Grid.Column="0" Classes="SettingLabel" Text="Body Text:" Margin="0,6,0,0" />
-                                    <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding Settings.Theme.SettingsLabelText}" Watermark="#CCCCCC" Margin="0,6,8,0" />
-                                    <Button Grid.Row="4" Grid.Column="2" Classes="color-swatch" Background="{Binding Settings.Theme.SettingsLabelText}" Tag="SettingsLabelText" Click="OnColorPreviewClicked" ToolTip.Tip="Open color picker" Margin="0,6,0,0" />
-
-                                    <TextBlock Grid.Row="5" Grid.Column="0" Classes="SettingLabel" Text="Accent:" Margin="0,6,0,0" />
-                                    <TextBox Grid.Row="5" Grid.Column="1" Text="{Binding Settings.Theme.AccentPrimary}" Watermark="#0078D7" Margin="0,6,8,0" />
-                                    <Button Grid.Row="5" Grid.Column="2" Classes="color-swatch" Background="{Binding Settings.Theme.AccentPrimary}" Tag="AccentPrimary" Click="OnColorPreviewClicked" ToolTip.Tip="Open color picker" Margin="0,6,0,0" />
-
-                                    <TextBlock Grid.Row="6" Grid.Column="0" Classes="SettingLabel" Text="Success:" Margin="0,6,0,0" />
-                                    <TextBox Grid.Row="6" Grid.Column="1" Text="{Binding Settings.Theme.SuccessColor}" Watermark="#4CAF50" Margin="0,6,8,0" />
-                                    <Button Grid.Row="6" Grid.Column="2" Classes="color-swatch" Background="{Binding Settings.Theme.SuccessColor}" Tag="SuccessColor" Click="OnColorPreviewClicked" ToolTip.Tip="Open color picker" Margin="0,6,0,0" />
-
-                                    <TextBlock Grid.Row="7" Grid.Column="0" Classes="SettingLabel" Text="Warning:" Margin="0,6,0,0" />
-                                    <TextBox Grid.Row="7" Grid.Column="1" Text="{Binding Settings.Theme.WarningColor}" Watermark="#FFA726" Margin="0,6,8,0" />
-                                    <Button Grid.Row="7" Grid.Column="2" Classes="color-swatch" Background="{Binding Settings.Theme.WarningColor}" Tag="WarningColor" Click="OnColorPreviewClicked" ToolTip.Tip="Open color picker" Margin="0,6,0,0" />
-
-                                    <TextBlock Grid.Row="8" Grid.Column="0" Classes="SettingLabel" Text="Danger:" Margin="0,6,0,0" />
-                                    <TextBox Grid.Row="8" Grid.Column="1" Text="{Binding Settings.Theme.DangerColor}" Watermark="#D9534F" Margin="0,6,8,0" />
-                                    <Button Grid.Row="8" Grid.Column="2" Classes="color-swatch" Background="{Binding Settings.Theme.DangerColor}" Tag="DangerColor" Click="OnColorPreviewClicked" ToolTip.Tip="Open color picker" Margin="0,6,0,0" />
-                                    </Grid>
-                                </StackPanel>
-                            </Grid>
-                        </Expander>
-
-                        <!-- Opacity Controls Section -->
-
-                        <TextBlock Classes="SectionHeader" Text="Opacity Controls" />
-                        <Grid ColumnDefinitions="140,*,Auto" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto">
-                            <TextBlock Grid.Row="0" Grid.Column="0" Classes="SettingLabel" Text="Background:" />
-                            <ComboBox Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2"
-                                      ItemsSource="{Binding AvailableBlurModes}"
-                                      SelectedItem="{Binding SelectedBlurMode}"
-                                      ToolTip.Tip="Off shows the desktop through the tint; Solid uses an opaque fill" />
-
-                            <TextBlock Grid.Row="1" Grid.Column="0" Classes="SettingLabel" Text="Background tint opacity:" Margin="0,4,0,0" />
-                            <Slider Grid.Row="1" Grid.Column="1"
-                                    Classes="minimal-slider"
-                                IsEnabled="{Binding IsBackgroundTintOpacityAvailable}"
-                                Value="{Binding BackgroundOpacityPercent}"
-                                Minimum="0" Maximum="100"
-                                TickFrequency="1"
-                                    IsSnapToTickEnabled="True" Margin="0,4,0,0" />
-                            <TextBlock Grid.Row="1" Grid.Column="2" Classes="settings-body"
-                                   Text="{Binding BackgroundOpacityPercent, StringFormat='{}{0:F0}%'}"
-                                       Width="50"
-                                       TextAlignment="Right"
-                                       VerticalAlignment="Center"
-                                       Margin="10,0,0,0" />
-
-                            <TextBlock Grid.Row="2" Grid.Column="0" Classes="SettingLabel" Text="Clock:" Margin="0,4,0,0" />
-                            <Slider Grid.Row="2" Grid.Column="1"
-                                    Classes="minimal-slider"
-                                    Value="{Binding ClockOpacityPercent}"
-                                    Minimum="0" Maximum="100"
-                                    TickFrequency="1"
-                                    IsSnapToTickEnabled="True"
-                                    Margin="0,4,0,0" />
-                            <TextBlock Grid.Row="2" Grid.Column="2" Classes="settings-body"
-                                       Text="{Binding ClockOpacityPercent, StringFormat='{}{0:F0}%'}"
-                                       Width="50"
-                                       TextAlignment="Right"
-                                       VerticalAlignment="Center"
-                                       Margin="10,4,0,0" />
-
-                            <TextBlock Grid.Row="3" Grid.Column="0" Classes="SettingLabel" Text="Buttons:" Margin="0,4,0,0" />
-                            <Slider Grid.Row="3" Grid.Column="1"
-                                    Classes="minimal-slider"
-                                    Value="{Binding ButtonsOpacityPercent}"
-                                    Minimum="0" Maximum="100"
-                                    TickFrequency="1"
-                                    IsSnapToTickEnabled="True"
-                                    Margin="0,4,0,0" />
-                            <TextBlock Grid.Row="3" Grid.Column="2" Classes="settings-body"
-                                       Text="{Binding ButtonsOpacityPercent, StringFormat='{}{0:F0}%'}"
-                                       Width="50"
-                                       TextAlignment="Right"
-                                       VerticalAlignment="Center"
-                                       Margin="10,4,0,0" />
-
-                            <TextBlock Grid.Row="4" Grid.Column="0" Classes="SettingLabel" Text="Overall Fade:" Margin="0,4,0,0" />
-                            <Slider Grid.Row="4" Grid.Column="1"
-                                    Classes="minimal-slider"
-                                    Value="{Binding OverallFadePercent}"
-                                    Minimum="0" Maximum="100"
-                                    TickFrequency="1"
-                                    IsSnapToTickEnabled="True"
-                                    Margin="0,4,0,0" />
-                            <TextBlock Grid.Row="4" Grid.Column="2" Classes="settings-body"
-                                       Text="{Binding OverallFadePercent, StringFormat='{}{0:F0}%'}"
-                                       Width="50"
-                                       TextAlignment="Right"
-                                       VerticalAlignment="Center"
-                                       Margin="10,4,0,0" />
-
-                            <!-- Border opacity slider removed temporarily -->
-                        </Grid>
-
-                        <Border CornerRadius="{DynamicResource RadiusSm}"
-                                BorderThickness="1"
-                                BorderBrush="{DynamicResource BorderSubtleBrush}"
-                                Background="{DynamicResource SurfaceSubtleBrush}"
-                                Padding="{DynamicResource SpacingThicknessSm}"
-                                Margin="0,8,0,0">
-                            <StackPanel Spacing="4">
-                                <TextBlock Text="Opacity Diagnostics"
-                                           FontWeight="SemiBold"
-                                           Foreground="{DynamicResource SettingsSectionHeaderBrush}" />
-                                <TextBlock Text="{Binding TransparencyDiagnostics}"
-                                           TextWrapping="Wrap"
-                                           Foreground="{DynamicResource SecondaryTextBrush}" />
-                                <TextBlock Text="{Binding AcrylicDiagnostics}"
-                                           TextWrapping="Wrap"
-                                           Foreground="{DynamicResource SecondaryTextBrush}" />
-                                <TextBlock Text="{Binding OpacityDiagnosticsSummary}"
-                                           Foreground="{DynamicResource SettingsLabelTextBrush}" />
-                            </StackPanel>
-                        </Border>
-
-<!-- Widget Options Section -->
-                        <TextBlock Classes="SectionHeader" Text="Widget Options" />
-                        <Grid ColumnDefinitions="140,*,Auto" RowDefinitions="Auto,Auto">
-
-                            <TextBlock Grid.Row="1" Grid.Column="0" Classes="SettingLabel" Text="Scale:" Margin="0,8,0,0" />
-                            <Slider Grid.Row="1" Grid.Column="1" Classes="minimal-slider" Value="{Binding Settings.WidgetScale}" Minimum="0.5" Maximum="3.0" TickFrequency="0.1" IsSnapToTickEnabled="True" Margin="0,8,0,0" />
-                            <TextBlock Grid.Row="1" Grid.Column="2" Classes="settings-body" Text="{Binding Settings.WidgetScale, StringFormat='{}{0:F1}×'}" Width="50" TextAlignment="Right" VerticalAlignment="Center" Margin="10,8,0,0" />
-                        </Grid>
-
-                        <CheckBox IsChecked="{Binding Settings.UseCompactMode}" Content="Use compact mode" ToolTip.Tip="Switches the timer widget into a minimal mode" />
-                        <TextBlock TextWrapping="Wrap" FontSize="12" Foreground="{DynamicResource SettingsLabelTextBrush}"
-                                   Text="Appearance changes preview immediately. Apply saves and keeps this window open; OK saves and closes. Cancel restores the last applied appearance. Use #AARRGGBB or #RRGGBB colors. Import/export .fttheme files to share themes." />
-                    </StackPanel>
-                </ScrollViewer>
-            </TabItem>
-
-            <TabItem Header="About">
-                <ScrollViewer Classes="settings-scroll">
-                    <StackPanel Spacing="12">
-                        <TextBlock Classes="SectionHeader" Text="Application" />
-
-                        <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto" Margin="0,0,0,8">
-                            <TextBlock Grid.Row="0" Grid.Column="0" Classes="SettingLabel" Text="Version:" />
-                            <TextBlock Grid.Row="0" Grid.Column="1"
-                                       Classes="VersionInfoText"
-                                       HorizontalAlignment="Left"
-                                       Text="{Binding AppVersion}"
-                                       PointerPressed="OnVersionInfoPressed"
-                                       ToolTip.Tip="Click 7 times to unlock developer mode" />
-
-                            <TextBlock Grid.Row="1" Grid.Column="0" Classes="SettingLabel" Text="Repository:" Margin="0,8,0,0" />
-                            <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Spacing="8" Margin="0,8,0,0">
-                                <TextBlock Classes="settings-body" VerticalAlignment="Center" Text="{Binding RepositoryUrl}" TextWrapping="Wrap" />
-                                <Button Content="Open" Width="70" Command="{Binding OpenRepositoryCommand}" />
-                            </StackPanel>
-
-                            <TextBlock Grid.Row="2" Grid.Column="0" Classes="SettingLabel" Text="Author:" Margin="0,8,0,0" />
-                            <TextBlock Grid.Row="2" Grid.Column="1" Classes="settings-body" Text="{Binding AppAuthor}" Margin="0,8,0,0" TextWrapping="Wrap" />
-
-                            <TextBlock Grid.Row="3" Grid.Column="0" Classes="SettingLabel" Text="Info:" Margin="0,8,0,0" />
-                            <TextBlock Grid.Row="3" Grid.Column="1" Classes="settings-body" Text="{Binding AppInformation}" Margin="0,8,0,0" TextWrapping="Wrap" />
-                        </Grid>
-
-                        <Expander Header="Changelog" IsExpanded="False" Classes="settings-accordion">
-                            <Border Padding="0,8,0,0">
-                                <ScrollViewer MaxHeight="220">
-                                    <TextBlock Classes="settings-body" Text="{Binding ChangelogContent}" TextWrapping="Wrap" FontFamily="Consolas" FontSize="12" />
-                                </ScrollViewer>
                             </Border>
-                        </Expander>
 
-                        <Expander Header="Developer Options"
-                                  Classes="settings-accordion"
-                                  IsVisible="{Binding IsDeveloperModeVisible}">
-                            <StackPanel Spacing="10" Margin="0,8,0,0">
-                                <Grid ColumnDefinitions="120,*" RowDefinitions="Auto">
-                                    <TextBlock Grid.Column="0" Classes="SettingLabel" Text="Log Level:" />
-                                    <ComboBox Grid.Column="1"
-                                              SelectedItem="{Binding SelectedDeveloperLogLevel}"
-                                              ItemsSource="{Binding AvailableDeveloperLogLevels}"
-                                              HorizontalAlignment="Left"
-                                              Width="180" />
-                                </Grid>
+                            <Border Classes="desktop-card">
+                                <StackPanel Spacing="6">
+                                    <TextBlock Classes="SectionHeader" Margin="0,0,0,4" Text="Widget opacity" />
+                                    <TextBlock Classes="SettingLabel" Text="Background" />
+                                    <ComboBox ItemsSource="{Binding AvailableBlurModes}"
+                                              SelectedItem="{Binding SelectedBlurMode}"
+                                              AutomationProperties.Name="Background"
+                                              HorizontalAlignment="Stretch"
+                                              ToolTip.Tip="Off shows the desktop through the tint; Solid uses an opaque fill" />
 
-                                <TextBlock Classes="SettingLabel" Text="Activity polling interval (seconds)" />
-                                <NumericUpDown Value="{Binding ActivityPollingIntervalInput}"
-                                               Increment="1" FormatString="0.##" Width="120"
-                                               HorizontalAlignment="Left" />
-                                <TextBlock Text="{Binding ActivityPollingIntervalError}"
-                                           TextWrapping="Wrap" Foreground="{DynamicResource SettingsLabelTextBrush}" />
-                                <TextBlock Text="Longer intervals reduce polling work but may miss short app visits. Default: 10 seconds. Range: 1–60."
-                                           TextWrapping="Wrap" Foreground="{DynamicResource SettingsLabelTextBrush}" />
-                                <controls:WindowRuleListEditor DataContext="{Binding ExclusionList}" />
-                                <controls:WindowRuleListEditor DataContext="{Binding SegmentationList}" />
-                                <TextBlock TextWrapping="Wrap"
-                                           Foreground="{DynamicResource SettingsLabelTextBrush}"
-                                           FontSize="11"
-                                           Text="Developer options are experimental and will grow over time." />
+                                    <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
+                                        <TextBlock Grid.Row="0" Grid.Column="0" Classes="SettingLabel" Text="Background tint opacity" />
+                                        <TextBlock Grid.Row="0" Grid.Column="1" Classes="settings-body numeric-value" MinWidth="44"
+                                                   Text="{Binding BackgroundOpacityPercent, StringFormat='{}{0:F0}%'}"  Margin="5,0,0,0"/>
+                                        <Slider Grid.Row="1" Grid.ColumnSpan="2" Margin="0,-10,0,-8" Classes="minimal-slider"
+                                                IsEnabled="{Binding IsBackgroundTintOpacityAvailable}"
+                                                Value="{Binding BackgroundOpacityPercent}"
+                                                Minimum="0" Maximum="100" TickFrequency="1" IsSnapToTickEnabled="True"
+                                                AutomationProperties.Name="Background tint opacity" />
+                                    </Grid>
+
+                                    <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
+                                        <TextBlock Grid.Row="0" Grid.Column="0" Classes="SettingLabel" Text="Clock" />
+                                        <TextBlock Grid.Row="0" Grid.Column="1" Classes="settings-body numeric-value" MinWidth="44"
+                                                   Text="{Binding ClockOpacityPercent, StringFormat='{}{0:F0}%'}"  Margin="5,0,0,0"/>
+                                        <Slider Grid.Row="1" Grid.ColumnSpan="2" Margin="0,-10,0,-8" Classes="minimal-slider"
+                                                Value="{Binding ClockOpacityPercent}"
+                                                Minimum="0" Maximum="100" TickFrequency="1" IsSnapToTickEnabled="True"
+                                                AutomationProperties.Name="Clock opacity" />
+                                    </Grid>
+
+                                    <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
+                                        <TextBlock Grid.Row="0" Grid.Column="0" Classes="SettingLabel" Text="Buttons" />
+                                        <TextBlock Grid.Row="0" Grid.Column="1" Classes="settings-body numeric-value" MinWidth="44"
+                                                   Text="{Binding ButtonsOpacityPercent, StringFormat='{}{0:F0}%'}"  Margin="5,0,0,0"/>
+                                        <Slider Grid.Row="1" Grid.ColumnSpan="2" Margin="0,-10,0,-8" Classes="minimal-slider"
+                                                Value="{Binding ButtonsOpacityPercent}"
+                                                Minimum="0" Maximum="100" TickFrequency="1" IsSnapToTickEnabled="True"
+                                                AutomationProperties.Name="Buttons opacity" />
+                                    </Grid>
+
+                                    <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
+                                        <TextBlock Grid.Row="0" Grid.Column="0" Classes="SettingLabel" Text="Overall opacity" />
+                                        <TextBlock Grid.Row="0" Grid.Column="1" Classes="settings-body numeric-value" MinWidth="44"
+                                                   Text="{Binding OverallFadePercent, StringFormat='{}{0:F0}%'}"  Margin="-5,0,0,0"/>
+                                        <Slider Grid.Row="1" Grid.ColumnSpan="2" Margin="0,-10,0,-8" Classes="minimal-slider"
+                                                Value="{Binding OverallFadePercent}"
+                                                Minimum="0" Maximum="100" TickFrequency="1" IsSnapToTickEnabled="True"
+                                                AutomationProperties.Name="Overall opacity" />
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+                        </controls:ResponsiveCardsPanel>
+
+                        <!-- Palette groups: peer cards, side by side when they fit -->
+
+                        <controls:ResponsiveCardsPanel TwoColumnMinWidth="{DynamicResource DesktopCardTwoColumnMinWidth}" Spacing="12">
+                            <Border x:Name="WidgetPaletteCard" Classes="desktop-card">
+                                <StackPanel Spacing="10">
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,0">
+                                        <TextBlock Classes="SectionHeader" Margin="0" Text="{Binding WidgetPaletteHeader}" />
+                                        <Border Classes="help-hint" ToolTip.Tip="Use #AARRGGBB or #RRGGBB colors." Focusable="True"
+                                            AutomationProperties.Name="About color formats" AutomationProperties.HelpText="Use #AARRGGBB or #RRGGBB colors.">
+                                            <icons:MaterialIcon Kind="HelpCircleOutline" Width="14" Height="14" Foreground="{DynamicResource DesktopLabelBrush}" />
+                                        </Border>
+                                    </StackPanel>
+                                    <Grid ColumnDefinitions="Auto,*,Auto" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+                                        <TextBlock Grid.Row="0" Grid.Column="0" Classes="SettingLabel" MaxWidth="110" Margin="0,0,0,0" Text="Background" />
+                                        <TextBox Grid.Row="0" Grid.Column="1" Margin="8,0,0,0" Text="{Binding Settings.Theme.WindowBackground}" Watermark="#1E1E1E" AutomationProperties.Name="Background color" />
+                                        <Button Grid.Row="0" Grid.Column="2" Classes="color-swatch" Margin="8,0,0,0" Background="{Binding Settings.Theme.WindowBackground}" Tag="WindowBackground" Click="OnColorPreviewClicked" ToolTip.Tip="Open color picker" AutomationProperties.Name="Pick background color" />
+                                        <TextBlock Grid.Row="1" Grid.Column="0" Classes="SettingLabel" MaxWidth="110" Margin="0,6,0,0" Text="Timer text" />
+                                        <TextBox Grid.Row="1" Grid.Column="1" Margin="8,6,0,0" Text="{Binding Settings.Theme.TimerText}" Watermark="#FFFFFF" AutomationProperties.Name="Timer text color" />
+                                        <Button Grid.Row="1" Grid.Column="2" Classes="color-swatch" Margin="8,6,0,0" Background="{Binding Settings.Theme.TimerText}" Tag="TimerText" Click="OnColorPreviewClicked" ToolTip.Tip="Open color picker" AutomationProperties.Name="Pick timer text color" />
+                                        <TextBlock Grid.Row="2" Grid.Column="0" Classes="SettingLabel" MaxWidth="110" Margin="0,6,0,0" Text="Play/Pause" />
+                                        <TextBox Grid.Row="2" Grid.Column="1" Margin="8,6,0,0" Text="{Binding PlayPauseColor}" Watermark="#RRGGBB" AutomationProperties.Name="Play/Pause color" />
+                                        <Button Grid.Row="2" Grid.Column="2" Classes="color-swatch" Margin="8,6,0,0" Background="{Binding PlayPauseColor}" Tag="PlayPauseColor" Click="OnColorPreviewClicked" ToolTip.Tip="Open color picker" AutomationProperties.Name="Pick play/pause color" />
+                                        <TextBlock Grid.Row="3" Grid.Column="0" Classes="SettingLabel" MaxWidth="110" Margin="0,6,0,0" Text="Button normal" />
+                                        <TextBox Grid.Row="3" Grid.Column="1" Margin="8,6,0,0" Text="{Binding Settings.Theme.ButtonNormal}" Watermark="#4CDEFFBD" AutomationProperties.Name="Button normal color" />
+                                        <Button Grid.Row="3" Grid.Column="2" Classes="color-swatch" Margin="8,6,0,0" Background="{Binding Settings.Theme.ButtonNormal}" Tag="ButtonNormal" Click="OnColorPreviewClicked" ToolTip.Tip="Open color picker" AutomationProperties.Name="Pick button normal color" />
+                                        <TextBlock Grid.Row="4" Grid.Column="0" Classes="SettingLabel" MaxWidth="110" Margin="0,6,0,0" Text="Button hover" />
+                                        <TextBox Grid.Row="4" Grid.Column="1" Margin="8,6,0,0" Text="{Binding Settings.Theme.ButtonHover}" Watermark="#5DEFFCE7" AutomationProperties.Name="Button hover color" />
+                                        <Button Grid.Row="4" Grid.Column="2" Classes="color-swatch" Margin="8,6,0,0" Background="{Binding Settings.Theme.ButtonHover}" Tag="ButtonHover" Click="OnColorPreviewClicked" ToolTip.Tip="Open color picker" AutomationProperties.Name="Pick button hover color" />
+                                        <TextBlock Grid.Row="5" Grid.Column="0" Classes="SettingLabel" MaxWidth="110" Margin="0,6,0,0" Text="Button pressed" />
+                                        <TextBox Grid.Row="5" Grid.Column="1" Margin="8,6,0,0" Text="{Binding Settings.Theme.ButtonPressed}" Watermark="#3BBD99AC" AutomationProperties.Name="Button pressed color" />
+                                        <Button Grid.Row="5" Grid.Column="2" Classes="color-swatch" Margin="8,6,0,0" Background="{Binding Settings.Theme.ButtonPressed}" Tag="ButtonPressed" Click="OnColorPreviewClicked" ToolTip.Tip="Open color picker" AutomationProperties.Name="Pick button pressed color" />
+                                        <TextBlock Grid.Row="6" Grid.Column="0" Classes="SettingLabel" MaxWidth="110" Margin="0,6,0,0" Text="Button disabled" />
+                                        <TextBox Grid.Row="6" Grid.Column="1" Margin="8,6,0,0" Text="{Binding Settings.Theme.ButtonDisabled}" Watermark="#40FFFFFF" AutomationProperties.Name="Button disabled color" />
+                                        <Button Grid.Row="6" Grid.Column="2" Classes="color-swatch" Margin="8,6,0,0" Background="{Binding Settings.Theme.ButtonDisabled}" Tag="ButtonDisabled" Click="OnColorPreviewClicked" ToolTip.Tip="Open color picker" AutomationProperties.Name="Pick button disabled color" />
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+
+                            <Border x:Name="DialogPaletteCard" Classes="desktop-card">
+                                <StackPanel Spacing="10">
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,0">
+                                        <TextBlock Classes="SectionHeader" Margin="0" Text="{Binding DialogPaletteHeader}" />
+                                        <Border Classes="help-hint" ToolTip.Tip="Use #AARRGGBB or #RRGGBB colors." Focusable="True"
+                                            AutomationProperties.Name="About color formats" AutomationProperties.HelpText="Use #AARRGGBB or #RRGGBB colors.">
+                                            <icons:MaterialIcon Kind="HelpCircleOutline" Width="14" Height="14" Foreground="{DynamicResource DesktopLabelBrush}" />
+                                        </Border>
+                                    </StackPanel>
+                                    <Grid ColumnDefinitions="Auto,*,Auto" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+                                        <TextBlock Grid.Row="0" Grid.Column="0" Classes="SettingLabel" MaxWidth="110" Margin="0,0,0,0" Text="Background" />
+                                        <TextBox Grid.Row="0" Grid.Column="1" Margin="8,0,0,0" Text="{Binding Settings.Theme.SettingsBackground}" Watermark="#2D2D30" AutomationProperties.Name="Background color" />
+                                        <Button Grid.Row="0" Grid.Column="2" Classes="color-swatch" Margin="8,0,0,0" Background="{Binding Settings.Theme.SettingsBackground}" Tag="SettingsBackground" Click="OnColorPreviewClicked" ToolTip.Tip="Open color picker" AutomationProperties.Name="Pick background color" />
+                                        <TextBlock Grid.Row="1" Grid.Column="0" Classes="SettingLabel" MaxWidth="110" Margin="0,6,0,0" Text="Primary text" />
+                                        <TextBox Grid.Row="1" Grid.Column="1" Margin="8,6,0,0" Text="{Binding Settings.Theme.PrimaryText}" Watermark="#F5F5F5" AutomationProperties.Name="Primary text color" />
+                                        <Button Grid.Row="1" Grid.Column="2" Classes="color-swatch" Margin="8,6,0,0" Background="{Binding Settings.Theme.PrimaryText}" Tag="PrimaryText" Click="OnColorPreviewClicked" ToolTip.Tip="Open color picker" AutomationProperties.Name="Pick primary text color" />
+                                        <TextBlock Grid.Row="2" Grid.Column="0" Classes="SettingLabel" MaxWidth="110" Margin="0,6,0,0" Text="Secondary text" />
+                                        <TextBox Grid.Row="2" Grid.Column="1" Margin="8,6,0,0" Text="{Binding Settings.Theme.SecondaryText}" Watermark="#CCCCCC" AutomationProperties.Name="Secondary text color" />
+                                        <Button Grid.Row="2" Grid.Column="2" Classes="color-swatch" Margin="8,6,0,0" Background="{Binding Settings.Theme.SecondaryText}" Tag="SecondaryText" Click="OnColorPreviewClicked" ToolTip.Tip="Open color picker" AutomationProperties.Name="Pick secondary text color" />
+                                        <TextBlock Grid.Row="3" Grid.Column="0" Classes="SettingLabel" MaxWidth="110" Margin="0,6,0,0" Text="Header text" />
+                                        <TextBox Grid.Row="3" Grid.Column="1" Margin="8,6,0,0" Text="{Binding Settings.Theme.SettingsSectionHeader}" Watermark="#F5F5F5" AutomationProperties.Name="Header text color" />
+                                        <Button Grid.Row="3" Grid.Column="2" Classes="color-swatch" Margin="8,6,0,0" Background="{Binding Settings.Theme.SettingsSectionHeader}" Tag="SettingsSectionHeader" Click="OnColorPreviewClicked" ToolTip.Tip="Open color picker" AutomationProperties.Name="Pick header text color" />
+                                        <TextBlock Grid.Row="4" Grid.Column="0" Classes="SettingLabel" MaxWidth="110" Margin="0,6,0,0" Text="Body text" />
+                                        <TextBox Grid.Row="4" Grid.Column="1" Margin="8,6,0,0" Text="{Binding Settings.Theme.SettingsLabelText}" Watermark="#CCCCCC" AutomationProperties.Name="Body text color" />
+                                        <Button Grid.Row="4" Grid.Column="2" Classes="color-swatch" Margin="8,6,0,0" Background="{Binding Settings.Theme.SettingsLabelText}" Tag="SettingsLabelText" Click="OnColorPreviewClicked" ToolTip.Tip="Open color picker" AutomationProperties.Name="Pick body text color" />
+                                        <TextBlock Grid.Row="5" Grid.Column="0" Classes="SettingLabel" MaxWidth="110" Margin="0,6,0,0" Text="Accent" />
+                                        <TextBox Grid.Row="5" Grid.Column="1" Margin="8,6,0,0" Text="{Binding Settings.Theme.AccentPrimary}" Watermark="#0078D7" AutomationProperties.Name="Accent color" />
+                                        <Button Grid.Row="5" Grid.Column="2" Classes="color-swatch" Margin="8,6,0,0" Background="{Binding Settings.Theme.AccentPrimary}" Tag="AccentPrimary" Click="OnColorPreviewClicked" ToolTip.Tip="Open color picker" AutomationProperties.Name="Pick accent color" />
+                                        <TextBlock Grid.Row="6" Grid.Column="0" Classes="SettingLabel" MaxWidth="110" Margin="0,6,0,0" Text="Field background" />
+                                        <TextBox Grid.Row="6" Grid.Column="1" Margin="8,6,0,0" Text="{Binding Settings.Theme.InputBackground}" Watermark="#1AFFFFFF" AutomationProperties.Name="Field background color" />
+                                        <Button Grid.Row="6" Grid.Column="2" Classes="color-swatch" Margin="8,6,0,0" Background="{Binding Settings.Theme.InputBackground}" Tag="InputBackground" Click="OnColorPreviewClicked" ToolTip.Tip="Open color picker" AutomationProperties.Name="Pick field background color" />
+                                        <TextBlock Grid.Row="7" Grid.Column="0" Classes="SettingLabel" MaxWidth="110" Margin="0,6,0,0" Text="Field border" />
+                                        <TextBox Grid.Row="7" Grid.Column="1" Margin="8,6,0,0" Text="{Binding Settings.Theme.InputBorder}" Watermark="#35FFFFFF" AutomationProperties.Name="Field border color" />
+                                        <Button Grid.Row="7" Grid.Column="2" Classes="color-swatch" Margin="8,6,0,0" Background="{Binding Settings.Theme.InputBorder}" Tag="InputBorder" Click="OnColorPreviewClicked" ToolTip.Tip="Open color picker" AutomationProperties.Name="Pick field border color" />
+                                        <TextBlock Grid.Row="8" Grid.Column="0" Classes="SettingLabel" MaxWidth="110" Margin="0,6,0,0" Text="Field text" />
+                                        <TextBox Grid.Row="8" Grid.Column="1" Margin="8,6,0,0" Text="{Binding Settings.Theme.InputText}" Watermark="#FFFFFF" AutomationProperties.Name="Field text color" />
+                                        <Button Grid.Row="8" Grid.Column="2" Classes="color-swatch" Margin="8,6,0,0" Background="{Binding Settings.Theme.InputText}" Tag="InputText" Click="OnColorPreviewClicked" ToolTip.Tip="Open color picker" AutomationProperties.Name="Pick field text color" />
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+                        </controls:ResponsiveCardsPanel>
+
+                        <!-- Diagnostics (developer mode) -->
+                        <Expander Header="Opacity diagnostics" IsExpanded="False" Classes="settings-accordion" IsVisible="{Binding IsDeveloperModeVisible}">
+                            <StackPanel Spacing="6" Margin="0,12,0,4">
+                                <TextBlock Text="{Binding TransparencyDiagnostics}" TextWrapping="Wrap" Foreground="{DynamicResource DesktopSecondaryTextBrush}" />
+                                <TextBlock Text="{Binding AcrylicDiagnostics}" TextWrapping="Wrap" Foreground="{DynamicResource DesktopSecondaryTextBrush}" />
+                                <TextBlock Text="{Binding OpacityDiagnosticsSummary}" TextWrapping="Wrap" Foreground="{DynamicResource DesktopLabelBrush}" />
+                                <TextBlock x:Name="MaterialStatus" TextWrapping="Wrap" Foreground="{DynamicResource DesktopSecondaryTextBrush}" />
                             </StackPanel>
                         </Expander>
                     </StackPanel>
                 </ScrollViewer>
             </TabItem>
 
-            <!-- Hotkeys Tab -->
-            <TabItem Header="Hotkeys">
+            <!-- Hotkeys -->
+            <TabItem AutomationProperties.Name="Hotkeys">
+                <TabItem.Header>
+                    <controls:TabHeader Icon="KeyboardOutline" Text="Hotkeys" />
+                </TabItem.Header>
                 <ScrollViewer Classes="settings-scroll">
-                    <StackPanel Spacing="15">
-                        <TextBlock Classes="SectionHeader" Text="Global Hotkeys" />
-                        <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource SettingsLabelTextBrush}"
-                                   Margin="0,0,0,10"
-                                   Text="Note: Hotkeys work system‑wide even when the app is not focused. Windows only." />
+                    <StackPanel Spacing="8">
+                        <TextBlock Classes="SectionHeader" Margin="0" Text="Global hotkeys" />
+                        <TextBlock Classes="helper-text"
+                                   Text="Hotkeys work system‑wide even when the app is not focused. Windows only." />
 
                         <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto">
-                            <TextBlock Grid.Row="0" Grid.Column="0" Classes="SettingLabel" Text="Show/Hide Widget:" />
+                            <TextBlock Grid.Row="0" Grid.Column="0" Classes="SettingLabel" MaxWidth="220" Text="Show/Hide widget:" />
                             <TextBox Grid.Row="0" Grid.Column="1"
                                      Text="{Binding Settings.HotkeyShowHide}"
                                      Watermark="e.g. Ctrl+Alt+T"
                                      Width="200"
                                      HorizontalAlignment="Left"
                                      IsReadOnly="True"
-                                     ToolTip.Tip="Default: Ctrl+Alt+T (editable hotkeys coming soon)" />
+                                     AutomationProperties.Name="Show/Hide widget hotkey"
+                                     ToolTip.Tip="Default: Ctrl+Alt+T (editable hotkeys coming soon)"  Margin="12,0,0,0"/>
 
-                            <TextBlock Grid.Row="1" Grid.Column="0" Classes="SettingLabel" Text="Toggle Timer:" Margin="0,10,0,0" />
+                            <TextBlock Grid.Row="1" Grid.Column="0" Classes="SettingLabel" MaxWidth="220" Text="Toggle timer:"  Margin="0,8,0,0"/>
                             <TextBox Grid.Row="1" Grid.Column="1"
                                      Text="{Binding Settings.HotkeyToggleTimer}"
                                      Watermark="e.g. Ctrl+Alt+P"
                                      Width="200"
                                      HorizontalAlignment="Left"
                                      IsReadOnly="True"
-                                     ToolTip.Tip="Default: Ctrl+Alt+P (editable hotkeys coming soon)"
-                                     Margin="0,10,0,0" />
+                                     AutomationProperties.Name="Toggle timer hotkey"
+                                     ToolTip.Tip="Default: Ctrl+Alt+P (editable hotkeys coming soon)"  Margin="12,8,0,0"/>
                         </Grid>
 
-                        <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource SettingsLabelTextBrush}" FontSize="11" Margin="0,10,0,0"
+                        <TextBlock Classes="helper-text"
                                    Text="Hotkey changes take effect after a successful Apply or OK." />
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- About -->
+            <TabItem AutomationProperties.Name="About">
+                <TabItem.Header>
+                    <controls:TabHeader Icon="InformationOutline" Text="About" />
+                </TabItem.Header>
+                <ScrollViewer Classes="settings-scroll">
+                    <StackPanel Spacing="12">
+                        <TextBlock Classes="SectionHeader" Margin="0" Text="Application" />
+
+                        <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto">
+                            <TextBlock Grid.Row="0" Grid.Column="0" Classes="SettingLabel" Text="Version:" />
+                            <TextBlock Grid.Row="0" Grid.Column="1"
+                                       Classes="VersionInfoText"
+                                       HorizontalAlignment="Left"
+                                       Text="{Binding AppVersion}"
+                                       PointerPressed="OnVersionInfoPressed"
+                                       ToolTip.Tip="Click 7 times to unlock developer mode"  Margin="8,0,0,0"/>
+
+                            <TextBlock Grid.Row="1" Grid.Column="0" Classes="SettingLabel" Text="Repository:"  Margin="0,8,0,0"/>
+                            <Grid Grid.Row="1" Grid.Column="1" ColumnDefinitions="*,Auto" Margin="8,8,0,0">
+                                <TextBlock Classes="settings-body" VerticalAlignment="Center" HorizontalAlignment="Left" MaxWidth="240" Text="{Binding RepositoryUrl}" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding RepositoryUrl}" />
+                                <Button Grid.Column="1" Content="Open" Command="{Binding OpenRepositoryCommand}"  Margin="8,0,0,0"/>
+                            </Grid>
+
+                            <TextBlock Grid.Row="2" Grid.Column="0" Classes="SettingLabel" Text="Author:"  Margin="0,8,0,0"/>
+                            <TextBlock Grid.Row="2" Grid.Column="1" Classes="settings-body" Text="{Binding AppAuthor}" TextWrapping="Wrap"  Margin="8,8,0,0"/>
+
+                            <TextBlock Grid.Row="3" Grid.Column="0" Classes="SettingLabel" Text="Info:"  Margin="0,8,0,0"/>
+                            <TextBlock Grid.Row="3" Grid.Column="1" Classes="settings-body" Text="{Binding AppInformation}" TextWrapping="Wrap"  Margin="8,8,0,0"/>
+                        </Grid>
+
+                        <Border Classes="desktop-card">
+                            <StackPanel Spacing="8">
+                                <TextBlock Classes="SectionHeader" Margin="0" Text="Changelog" />
+                                <ScrollViewer MaxHeight="220" HorizontalScrollBarVisibility="Disabled">
+                                    <TextBlock Classes="settings-body" Margin="0,0,12,0" Text="{Binding ChangelogContent}" TextWrapping="Wrap" FontFamily="Consolas" FontSize="12" />
+                                </ScrollViewer>
+                            </StackPanel>
+                        </Border>
+
+                        <Expander Header="Developer Options"
+                                  Classes="settings-accordion"
+                                  IsVisible="{Binding IsDeveloperModeVisible}">
+                            <StackPanel Spacing="10" Margin="0,8,0,0">
+                                <Grid ColumnDefinitions="Auto,*">
+                                    <TextBlock Grid.Column="0" Classes="SettingLabel" Text="Log level:" />
+                                    <ComboBox Grid.Column="1"
+                                              SelectedItem="{Binding SelectedDeveloperLogLevel}"
+                                              ItemsSource="{Binding AvailableDeveloperLogLevels}"
+                                              AutomationProperties.Name="Log level"
+                                              HorizontalAlignment="Left"
+                                              Width="180"  Margin="12,0,0,0"/>
+                                </Grid>
+
+                                <Grid ColumnDefinitions="Auto,*">
+                                    <TextBlock Grid.Column="0" Classes="SettingLabel" MaxWidth="220" Text="Activity polling interval (seconds)" />
+                                    <NumericUpDown Grid.Column="1" Classes="numeric-field"
+                                                   Value="{Binding ActivityPollingIntervalInput}"
+                                                   Increment="1" FormatString="0.##"
+                                                   AutomationProperties.Name="Activity polling interval (seconds)"  Margin="12,0,0,0"/>
+                                </Grid>
+                                <TextBlock Text="{Binding ActivityPollingIntervalError}"
+                                           TextWrapping="Wrap" Foreground="{DynamicResource DesktopLabelBrush}" />
+                                <TextBlock Classes="helper-text"
+                                           Text="Longer intervals reduce polling work but may miss short app visits. Default: 10 seconds. Range: 1–60." />
+                                <controls:WindowRuleListEditor DataContext="{Binding ExclusionList}" />
+                                <controls:WindowRuleListEditor DataContext="{Binding SegmentationList}" />
+                                <TextBlock Classes="helper-text"
+                                           Text="Developer options are experimental and will grow over time." />
+                            </StackPanel>
+                        </Expander>
                     </StackPanel>
                 </ScrollViewer>
             </TabItem>
@@ -423,27 +414,33 @@
 
         <Border Grid.Row="0" Background="Transparent" IsVisible="{Binding IsCommitting}" />
 
-        <StackPanel Grid.Row="1" Spacing="6" Margin="0,10,0,0">
-            <TextBlock x:Name="SaveStatus" Height="20" Focusable="True"
-                       Text="{Binding SavingStatus}" AutomationProperties.LiveSetting="Polite" />
-            <Grid ColumnDefinitions="*,Auto" IsVisible="{Binding HasLoadError}">
-                <TextBlock Grid.Column="0" Text="{Binding LoadError}" TextWrapping="Wrap" VerticalAlignment="Center" Margin="0,0,10,0" />
-                <Button Grid.Column="1" Content="Retry load" Command="{Binding RetryLoadCommand}" />
-            </Grid>
-            <TextBlock Text="{Binding AutoStartDriftWarning}" TextWrapping="Wrap"
-                       IsVisible="{Binding HasAutoStartDrift}" />
-            <Grid ColumnDefinitions="*,Auto" IsVisible="{Binding HasCommitError}">
-                <TextBlock Grid.Column="0" Text="{Binding CommitError}" TextWrapping="Wrap" VerticalAlignment="Center" Margin="0,0,10,0" />
-                <Button Grid.Column="1" Content="Retry recovery" Command="{Binding RetryRecoveryCommand}"
-                        IsVisible="{Binding RecoveryRequired}" />
-            </Grid>
-        </StackPanel>
+        <!-- Feedback shares the action row so everyday content has more space. -->
+        <Grid Grid.Row="1" ColumnDefinitions="*,Auto" Margin="0,12,0,0">
+            <ScrollViewer Grid.Column="0" MaxHeight="120" Margin="0,0,12,0"
+                          VerticalAlignment="Center" HorizontalScrollBarVisibility="Disabled">
+                <StackPanel x:Name="FooterFeedback" Spacing="6">
+                    <TextBlock x:Name="SaveStatus" Height="20" Focusable="True"
+                               Text="{Binding SavingStatus}" AutomationProperties.LiveSetting="Polite" />
+                    <Grid ColumnDefinitions="*,Auto" IsVisible="{Binding HasLoadError}">
+                        <TextBlock Grid.Column="0" Text="{Binding LoadError}" TextWrapping="Wrap" VerticalAlignment="Center" Margin="0,0,10,0" Foreground="{DynamicResource DesktopDangerBrush}" />
+                        <Button Grid.Column="1" Content="Retry load" Command="{Binding RetryLoadCommand}" />
+                    </Grid>
+                    <TextBlock Text="{Binding AutoStartDriftWarning}" TextWrapping="Wrap"
+                               IsVisible="{Binding HasAutoStartDrift}" Foreground="{DynamicResource DesktopWarningBrush}" />
+                    <Grid ColumnDefinitions="*,Auto" IsVisible="{Binding HasCommitError}">
+                        <TextBlock Grid.Column="0" Text="{Binding CommitError}" TextWrapping="Wrap" VerticalAlignment="Center" Margin="0,0,10,0" Foreground="{DynamicResource DesktopDangerBrush}" />
+                        <Button Grid.Column="1" Content="Retry recovery" Command="{Binding RetryRecoveryCommand}"
+                                IsVisible="{Binding RecoveryRequired}" />
+                    </Grid>
+                </StackPanel>
+            </ScrollViewer>
 
-        <!-- Button Panel -->
-        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="10" Margin="0,15,0,0">
-            <Button Content="OK" Width="80" Click="OnOkClicked" IsEnabled="{Binding CanCommit}" />
-            <Button Content="Apply" Width="80" Command="{Binding ApplyCommand}" IsEnabled="{Binding CanCommit}" />
-            <Button Content="Cancel" Width="80" Command="{Binding CancelCommand}" CommandParameter="{Binding $parent[Window]}" IsEnabled="{Binding CanClose}" />
-        </StackPanel>
+            <!-- Button Panel -->
+            <StackPanel x:Name="FooterActions" Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Bottom" Spacing="10">
+                <Button Classes="action-primary" Content="OK" MinWidth="80" Click="OnOkClicked" IsEnabled="{Binding CanCommit}" />
+                <Button Classes="action-primary" Content="Apply" MinWidth="80" Command="{Binding ApplyCommand}" IsEnabled="{Binding CanCommit}" />
+                <Button Classes="action-secondary" Content="Cancel" MinWidth="80" Command="{Binding CancelCommand}" CommandParameter="{Binding $parent[Window]}" IsEnabled="{Binding CanClose}" />
+            </StackPanel>
+        </Grid>
     </Grid>
 </Window>

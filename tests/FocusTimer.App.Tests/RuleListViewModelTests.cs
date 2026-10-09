@@ -45,16 +45,28 @@ public class RuleListViewModelTests
         Assert.Equal(0, changes);
         list.Rules[0].AppPattern = "";
         Assert.True(changes > 0);
-        Assert.Equal("bad", list.Error);
-        Assert.Equal(1, list.ToRules().Count);
+
+        // A fully blank row is not an error: it is warned about and left out of the committed rules.
+        Assert.Equal(string.Empty, list.Error);
+        Assert.True(list.Rules[0].IsBlank);
+        Assert.True(list.Rules[0].HasWarning);
+        Assert.False(list.Rules[0].HasError);
+        Assert.Empty(list.ToRules());
+        list.PruneBlank();
+        Assert.Empty(list.Rules);
     }
 
     [Fact]
     public void ProjectRowsValidateEveryFieldAndConvertToTrimmedRules()
     {
         var row = new ProjectRuleItemViewModel();
-        Assert.NotEmpty(row.Error);
+        Assert.Empty(row.Error);
+        Assert.True(row.IsBlank);
+        Assert.NotEmpty(row.Warning);
         row.AppPattern = " code ";
+        Assert.False(row.IsBlank);
+        Assert.Empty(row.Warning);
+        Assert.True(row.HasError);
         Assert.NotEmpty(row.Error);
         row.ProjectName = " Alpha ";
         Assert.Empty(row.Error);
@@ -77,7 +89,9 @@ public class RuleListViewModelTests
         Assert.Equal(new WindowMatchRule("a", null), row.ToRule());
         row.AppPattern = null!;
         row.TitlePattern = null!;
-        Assert.NotEmpty(row.Error);
+        Assert.Empty(row.Error);
+        Assert.True(row.IsBlank);
+        Assert.True(row.HasWarning);
     }
 
     [Fact]

@@ -3,11 +3,13 @@ namespace FocusTimer.App.Views
     using System.ComponentModel;
     using System.Reactive;
     using System.Reactive.Threading.Tasks;
+    using Avalonia;
     using Avalonia.Controls;
     using Avalonia.Input;
     using Avalonia.Input.TextInput;
     using Avalonia.Interactivity;
     using Avalonia.VisualTree;
+    using FocusTimer.App.Services;
     using FocusTimer.App.ViewModels;
     using ReactiveUI;
 
@@ -26,6 +28,8 @@ namespace FocusTimer.App.Views
         public SettingsWindow()
         {
             this.InitializeComponent();
+            DesktopWindowMaterial.Attach(this);
+            this.PropertyChanged += this.OnMaterialChanged;
             this.Closing += this.OnSettingsClosing;
             this.Closed += this.OnSettingsClosed;
             this.DataContextChanged += this.OnEditorChanged;
@@ -34,6 +38,14 @@ namespace FocusTimer.App.Views
             this.AddHandler(InputElement.PointerWheelChangedEvent, this.BlockEditingInput, RoutingStrategies.Tunnel);
             this.AddHandler(TextBox.PastingFromClipboardEvent, this.BlockEditingInput, RoutingStrategies.Tunnel | RoutingStrategies.Bubble);
             this.AddHandler(TextBox.CuttingToClipboardEvent, this.BlockEditingInput, RoutingStrategies.Tunnel | RoutingStrategies.Bubble);
+        }
+
+        private void OnMaterialChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
+        {
+            if (e.Property == DesktopWindowMaterial.DescriptionProperty)
+            {
+                this.MaterialStatus.Text = DesktopWindowMaterial.GetDescription(this);
+            }
         }
 
         private void BlockEditingInput(object? sender, RoutedEventArgs e)

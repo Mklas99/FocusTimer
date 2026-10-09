@@ -155,7 +155,7 @@ public sealed class WorklogEntryFormTests
         h.Pump();
 
         var headers = h.Window.GetVisualDescendants().OfType<TextBlock>()
-            .Where(t => t.Classes.Contains("SettingLabel") && t.Parent is Grid { ColumnDefinitions.Count: 6 })
+            .Where(t => t.Parent is Grid { ColumnDefinitions.Count: 6, Parent: Border header } && header.Classes.Contains("worklog-table-header"))
             .Select(t => t.Text)
             .ToList();
 

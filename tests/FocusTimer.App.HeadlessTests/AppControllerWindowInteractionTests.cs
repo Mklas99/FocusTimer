@@ -2,6 +2,10 @@ namespace FocusTimer.App.HeadlessTests;
 
 using Avalonia.Controls;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
+using System.Reactive;
+using System.Reactive.Threading.Tasks;
+using ReactiveUI;
 using FocusTimer.App.Services;
 using FocusTimer.App.ViewModels;
 using FocusTimer.App.Views;
@@ -20,6 +24,96 @@ using FocusTimer.Persistence;
 public sealed class AppControllerWindowInteractionTests
 {
     public AppControllerWindowInteractionTests() => HeadlessAvaloniaFixture.EnsureInitialized();
+
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    public void ImportedTheme_WindowCloseOrCancelRestoresTheCommittedSnapshot(bool apply, bool cancel)
+    {
+        void Complete(Task task)
+        {
+            for (int attempt = 0; attempt < 2000 && !task.IsCompleted; attempt++)
+            {
+                Dispatcher.UIThread.RunJobs();
+                Task.WhenAny(task, Task.Delay(5)).GetAwaiter().GetResult();
+            }
+
+            Assert.True(task.IsCompleted);
+            task.GetAwaiter().GetResult();
+        }
+
+        using var harness = new Harness(settingsProvider: new SnapshotSettingsProvider());
+        Complete(harness.InitializeAsync());
+        harness.Controller.ShowSettings();
+        Dispatcher.UIThread.RunJobs();
+        var window = Assert.IsType<SettingsWindow>(harness.FindOpenSettingsWindow());
+        var vm = Assert.IsType<SettingsWindowViewModel>(window.DataContext);
+        Dispatcher.UIThread.RunJobs();
+        Assert.True(vm.IsSettingsLoaded);
+        vm.SelectedTabIndex = 2;
+        Dispatcher.UIThread.RunJobs();
+        window.UpdateLayout();
+        var themeDropdown = window.GetVisualDescendants().OfType<ComboBox>().Single(c => Avalonia.Automation.AutomationProperties.GetName(c) == "Theme preset");
+        Assert.Equal(vm.SelectedThemeName, themeDropdown.SelectedItem);
+        string originalColor = vm.Settings.Theme.PrimaryText;
+        string path = Path.Combine(Path.GetTempPath(), $"theme-close-{Guid.NewGuid():N}.fttheme");
+        SynchronizationContext? originalContext = SynchronizationContext.Current;
+        SynchronizationContext.SetSynchronizationContext(new AvaloniaSynchronizationContext());
+        try
+        {
+            Complete(new ThemeService().SaveThemeToFileAsync(new Theme { ThemeName = "Dark", PrimaryText = "#123456" }, path));
+            Complete((Task)typeof(SettingsWindowViewModel).GetMethod(
+                "ImportThemeFileAsync", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+                .Invoke(vm, [path])!);
+            Dispatcher.UIThread.RunJobs();
+            Assert.Equal("Custom", vm.Settings.ActiveThemeName);
+            Assert.Equal("Custom/Imported", vm.SelectedThemeName);
+            Assert.Equal("Custom/Imported", themeDropdown.SelectedItem);
+            if (apply)
+            {
+                Task commit = ((ReactiveCommand<Unit, Unit>)vm.ApplyCommand).Execute().ToTask();
+                Complete(commit);
+                Assert.True(vm.LastApplySucceeded);
+                Assert.Equal("Custom", Assert.IsType<SnapshotSettingsProvider>(harness.Provider).Saved.ActiveThemeName);
+                vm.SelectedThemeName = "Light";
+                Dispatcher.UIThread.RunJobs();
+                Assert.Equal("Light", themeDropdown.SelectedItem);
+            }
+
+            if (cancel)
+            {
+                vm.CancelCommand.Execute(window);
+            }
+            else
+            {
+                window.Close();
+            }
+
+            Dispatcher.UIThread.RunJobs();
+            File.Delete(path);
+            harness.Controller.ShowSettings();
+            Dispatcher.UIThread.RunJobs();
+            var reopened = Assert.IsType<SettingsWindowViewModel>(harness.FindOpenSettingsWindow()!.DataContext);
+            Dispatcher.UIThread.RunJobs();
+            Assert.True(reopened.IsSettingsLoaded);
+            reopened.SelectedTabIndex = 2;
+            Dispatcher.UIThread.RunJobs();
+            var reopenedWindow = harness.FindOpenSettingsWindow()!;
+            reopenedWindow.UpdateLayout();
+            var reopenedDropdown = reopenedWindow.GetVisualDescendants().OfType<ComboBox>().Single(c => Avalonia.Automation.AutomationProperties.GetName(c) == "Theme preset");
+            Assert.Equal(apply ? "Custom/Imported" : "Dark", reopenedDropdown.SelectedItem);
+            Assert.Equal(apply ? "Custom/Imported" : "Dark", reopened.SelectedThemeName);
+            Assert.Equal(apply ? "#123456" : originalColor, reopened.Settings.Theme.PrimaryText);
+            Assert.Equal(apply ? path : null, reopened.Settings.CustomThemePath);
+        }
+        finally
+        {
+            SynchronizationContext.SetSynchronizationContext(originalContext);
+            File.Delete(path);
+        }
+    }
 
     [Fact]
     public async Task ShowTimerWidget_FirstCall_CreatesAndActivatesWindow()
@@ -496,6 +590,21 @@ public sealed class AppControllerWindowInteractionTests
         public void LogInformation(string message) => this.InformationMessages.Add(message);
 
         public void LogDebug(string message) { }
+    }
+
+    private sealed class SnapshotSettingsProvider : ISettingsProvider
+    {
+        private Settings _saved = new();
+
+        public Settings Saved => this._saved.Clone();
+
+        public Task<Settings> LoadAsync() => Task.FromResult(this._saved.Clone());
+
+        public Task SaveAsync(Settings value)
+        {
+            this._saved = value.Clone();
+            return Task.CompletedTask;
+        }
     }
 
     private sealed class RecoveredSettingsProvider : ISettingsProvider

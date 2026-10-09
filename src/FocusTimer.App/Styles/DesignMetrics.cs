@@ -8,12 +8,12 @@ namespace FocusTimer.App.Styles
         /// <summary>
         /// Base font size for the main timer readout in Full mode.
         /// </summary>
-        public const double BaseMainTimerFontSize = 36.0;
+        public const double BaseMainTimerFontSize = 38.0;
 
         /// <summary>
         /// Base font size for the timer readout in Compact mode.
         /// </summary>
-        public const double BaseCompactTimerFontSize = 24.0;
+        public const double BaseCompactTimerFontSize = 28.0;
 
         /// <summary>
         /// Base reserved width for the main timer text block in Full mode.
@@ -23,7 +23,7 @@ namespace FocusTimer.App.Styles
         /// <summary>
         /// Base reserved width for the timer text block in Compact mode.
         /// </summary>
-        public const double BaseCompactTimerTextWidth = 115.0;
+        public const double BaseCompactTimerTextWidth = 124.0;
 
         /// <summary>
         /// Base font size for the project tag field and secondary labels.
@@ -33,7 +33,7 @@ namespace FocusTimer.App.Styles
         /// <summary>
         /// Base outer touch/click target dimension for interactive icon buttons.
         /// </summary>
-        public const double BaseButtonSize = 28.0;
+        public const double BaseButtonSize = 24.0;
 
         /// <summary>
         /// Base visual icon dimension rendered inside interactive buttons.
@@ -43,7 +43,7 @@ namespace FocusTimer.App.Styles
         /// <summary>
         /// Minimum accessible pointer hit target dimension conforming to WCAG 2.5.8.
         /// </summary>
-        public const double MinAccessibleHitTarget = 24.0;
+        public const double MinAccessibleHitTarget = 20.0;
 
         /// <summary>
         /// Canonical monospace font family string supporting tabular timer numerals.

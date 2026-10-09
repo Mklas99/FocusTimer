@@ -14,10 +14,20 @@ The system SHALL provide a draggable, always-on-top full-mode window showing the
 
 #### Scenario: User interacts with primary timer controls in full mode
 - **WHEN** the user activates the Start/Pause, Reset, or Toggle controls
-- **THEN** the controls display shared semantic button states (hover, pressed, focus) and provide accessible hit targets of at least 24x24 pixels
+- **THEN** the controls display shared semantic button states (hover, pressed, focus); at 1x the targets are 24x24 pixels, and user-selected widget scaling scales them with the clock
 
 ### Requirement: Compact Mode
 The system SHALL provide a narrow-bar compact mode showing the same timer data, state brushes, and theme as full mode as a density-adjusted variant of the shared component system, toggleable from the widget or Settings, and SHALL persist the selected mode across restarts. Compact mode SHALL show Start/Pause and Expand controls; Reset remains available after expanding to full mode.
+
+The shell tint and outline SHALL share the window bounds in both modes, with the borderless window following the scaled content height. The widget SHALL own a single outline without additional window-template chrome or extended native Windows decoration. Shell corners SHALL scale continuously with WidgetScale, using an 8 px base radius in compact mode and a 12 px base radius in full mode at 1x, including live appearance preview, without nested clipping that crops the outline or background. Compact buttons SHALL remain in a vertical column at every scale. Clock and icon side gaps SHALL be equal, accounting for the icon's click target.
+
+Compact icon bounds SHALL meet vertically without extra button padding between them. Each button SHALL retain a separate click target whose height scales with the icon. Fixed minimum target rows SHALL NOT add extra top and bottom space around the clock at small scales.
+
+Full-mode button margins and widget content insets SHALL scale with WidgetScale. The compact clock-to-icon gap and button side padding SHALL scale with the icon size. Compact clock and icon outer gaps SHALL remain equal, with the entire target inside the window. User-selected WidgetScale SHALL scale both button areas and clock dimensions proportionally in both modes, including below 1x. The full-mode clock-to-controls width ratio SHALL remain constant; the compact clock's vertical breathing room SHALL remain proportional without a fixed button-height floor.
+
+#### Scenario: User reduces compact widget scale
+- **WHEN** the user previews compact mode at 0.5 or 0.75 scale
+- **THEN** the shell covers the window, its corner radius scales with the content, and its tint and outline remain aligned
 
 #### Scenario: User toggles compact mode with Settings closed
 - **WHEN** the user toggles compact mode from the widget with Settings closed

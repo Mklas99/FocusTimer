@@ -23,6 +23,6 @@ namespace FocusTimer.App.ViewModels
 
         /// <summary>Converts the draft rows to rules in order.</summary>
         /// <returns>The rules.</returns>
-        public List<WindowMatchRule> ToRules() => this.Rules.Select(r => r.ToRule()).ToList();
+        public List<WindowMatchRule> ToRules() => this.Rules.Where(r => !r.IsBlank).Select(r => r.ToRule()).ToList();
     }
 }

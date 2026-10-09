@@ -45,10 +45,10 @@
                 Command="{Binding ToggleCommand}"
                 Classes="icon-button"
                 ToolTip.Tip="Start/Pause"
-                MinWidth="{DynamicResource MinHitTargetSize}"
-                MinHeight="{DynamicResource MinHitTargetSize}"
+                MinWidth="0"
+                MinHeight="0"
                 Width="{Binding ButtonSize}"
-                Height="{Binding ButtonSize}">
+                Height="{Binding ButtonSize}" Margin="{Binding WidgetButtonMargin}" Padding="0">
                     <materialIcons:MaterialIcon
                     Classes="widget-icon play-pause-icon" Kind="{Binding IsRunning, Converter={StaticResource PlayPauseConverter}}"
                     Width="{Binding IconSize}"
@@ -60,10 +60,10 @@
                 Command="{Binding ResetCommand}"
                 Classes="icon-button"
                 ToolTip.Tip="Reset"
-                MinWidth="{DynamicResource MinHitTargetSize}"
-                MinHeight="{DynamicResource MinHitTargetSize}"
+                MinWidth="0"
+                MinHeight="0"
                 Width="{Binding ButtonSize}"
-                Height="{Binding ButtonSize}">
+                Height="{Binding ButtonSize}" Margin="{Binding WidgetButtonMargin}" Padding="0">
                     <materialIcons:MaterialIcon Kind="Refresh"
                     Classes="widget-icon"
                     Width="{Binding IconSize}"
@@ -75,10 +75,10 @@
                 Command="{Binding ToggleProjectInputCommand}"
                 Classes="icon-button"
                 ToolTip.Tip="Project Tag"
-                MinWidth="{DynamicResource MinHitTargetSize}"
-                MinHeight="{DynamicResource MinHitTargetSize}"
+                MinWidth="0"
+                MinHeight="0"
                 Width="{Binding ButtonSize}"
-                Height="{Binding ButtonSize}">
+                Height="{Binding ButtonSize}" Margin="{Binding WidgetButtonMargin}" Padding="0">
                     <materialIcons:MaterialIcon Kind="ChevronDown"
                     Classes="widget-icon"
                     Width="{Binding IconSize}"
@@ -95,10 +95,10 @@
                 Command="{Binding ToggleCompactModeCommand}"
                 Classes="icon-button"
                 ToolTip.Tip="Toggle Compact Mode"
-                MinWidth="{DynamicResource MinHitTargetSize}"
-                MinHeight="{DynamicResource MinHitTargetSize}"
+                MinWidth="0"
+                MinHeight="0"
                 Width="{Binding ButtonSize}"
-                Height="{Binding ButtonSize}">
+                Height="{Binding ButtonSize}" Margin="{Binding WidgetButtonMargin}" Padding="0">
                     <materialIcons:MaterialIcon Kind="Menu"
                     Classes="widget-icon"
                     Width="{Binding IconSize}"
@@ -117,10 +117,11 @@
             <TextBlock Grid.Column="0"
                 Text="Project:"
                 FontSize="{Binding ProjectFontSize}"
-                Foreground="{DynamicResource SecondaryTextBrush}"
+                Foreground="{DynamicResource WidgetProjectLabelBrush}"
                 VerticalAlignment="Center" />
             <TextBox Grid.Column="1"
                 Classes="project-tag"
+                Margin="8,0,0,0"
                 Text="{Binding ProjectTag}"
                 Watermark="optional" />
         </Grid>

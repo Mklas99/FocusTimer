@@ -29,8 +29,9 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(Configuration)' == 'Debug'">
-    <PackageReference Include="Avalonia.Markup.Xaml.Loader" Version="11.2.0" PrivateAssets="All" />
-    <PackageReference Include="HotAvalonia" Version="3.1.5" PrivateAssets="All" />
+    <!-- Debug hot-reload runtime assets must flow to referencing projects. -->
+    <PackageReference Include="Avalonia.Markup.Xaml.Loader" Version="11.2.0" />
+    <PackageReference Include="HotAvalonia" Version="3.1.5" />
   </ItemGroup>
 
 </Project>

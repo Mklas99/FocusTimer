@@ -6,15 +6,19 @@ Defines the Settings window's structure and its hidden developer-mode unlock.
 ## Requirements
 
 ### Requirement: Settings Tabs
-The system SHALL provide a Settings window with General, Logging, Summary, Appearance, Hotkeys, and About tabs, covering auto-start, start-minimized, always-on-top, break reminders, worklog directory and retention, today's time breakdown, theme/opacity, hotkey display, and version/changelog/repo link.
+The system SHALL provide General, Logging, Appearance, Hotkeys, and About tabs in that order, using icon-and-underline navigation. They SHALL cover startup/window behavior, break reminders, logging and project rules, appearance, read-only hotkeys, and version/changelog/repository links with the existing developer unlock. Worklog reporting SHALL remain in the Worklog window rather than Settings.
 
 #### Scenario: User opens Settings
 - **WHEN** the user opens the Settings window
-- **THEN** the General, Logging, Summary, Appearance, Hotkeys, and About tabs are available with their respective controls
+- **THEN** General, Logging, Appearance, Hotkeys, and About are available in that order with their respective controls and labeled icons
 
 #### Scenario: User opens the Summary tab
-- **WHEN** the user selects the Summary tab
-- **THEN** today's breakdown is shown and refreshed
+- **WHEN** the user looks for today's time breakdown
+- **THEN** reporting is available in the Worklog Summary tab and Settings does not contain a Summary tab
+
+#### Scenario: User opens Hotkeys
+- **WHEN** the user selects Hotkeys
+- **THEN** the existing shortcut values remain read-only and the refresh does not introduce shortcut recording or editing
 
 ### Requirement: Hidden Developer Mode
 The system SHALL unlock a Developer section, including a log-level picker and an activity polling interval control, when the user clicks the version label 7 times in the About tab, and SHALL persist the unlock via `DeveloperModeEnabled`.
@@ -113,6 +117,8 @@ The system SHALL block user edits and duplicate commits while Apply or OK is com
 ### Requirement: Reserved Settings save feedback
 The system SHALL show an accessible "Saving..." status while a validated Apply or OK is committing, in a reserved footer area that does not move the content or buttons. Validation failures SHALL show an error without entering the saving state. The status SHALL clear after success, ordinary failure, or recovery-required failure; existing error and retry actions SHALL remain available as appropriate.
 
+Feedback SHALL sit left of OK/Apply/Cancel in the same footer row. Routine saving feedback SHALL not reserve a separate row above the actions. Long errors and retry actions SHALL wrap and scroll within a bounded feedback area, keeping actions reachable at the 500 by 400 minimum window size.
+
 #### Scenario: Commit starts and finishes
 - **WHEN** Apply or OK begins a validated commit
 - **THEN** "Saving..." is visible and announced while committing, then clears when the commit finishes; OK closes only after success and Apply keeps the window open
@@ -151,12 +157,12 @@ Button Normal SHALL control ordinary widget icons; Play/Pause color SHALL contro
 - **WHEN** the user edits a button state color while a widget button is in that state
 - **THEN** the rendered icon immediately uses the new color, Apply/OK retains it, and Cancel restores the last successful commit
 
-### Requirement: Reserved future status colors
-Settings SHALL retain editable Success and Danger color fields and their saved theme values for future status displays. Help text SHALL state that they are reserved for future use and currently do not affect notifications. These values SHALL survive import/export and Apply/OK, and Cancel SHALL restore the last successful commit. Warning SHALL continue to color existing summary warnings.
+### Requirement: Status theme colors
+Settings SHALL preserve Success, Warning, and Danger theme values through import/export and Apply/OK, and Cancel SHALL restore the last successful commit. Warning and Danger SHALL color warning and error notifications respectively. Warning SHALL continue to color existing summary warnings. Success SHALL remain reserved for future status displays. These saved theme values need not have individual editors in the current palette layout.
 
-#### Scenario: User edits a reserved status color
-- **WHEN** the user edits Success or Danger
-- **THEN** its swatch reflects the valid color, Apply/OK saves it, and Cancel restores it, without claiming an existing notification or status changes
+#### Scenario: User imports status colors
+- **WHEN** the user imports a theme with Success, Warning, or Danger values
+- **THEN** Apply/OK preserves those values and Cancel restores the last successful commit, while open warning/error notifications follow the previewed theme
 
 ### Requirement: Shared Settings draft
 The system SHALL keep edits from every editable Settings tab in one draft, separate from the last successfully applied settings. Navigation, theme selection, theme import, and theme reset SHALL NOT persist the draft.
@@ -330,3 +336,45 @@ ignored with a logged warning without resetting other settings, and a missing li
 #### Scenario: Open Worklog window after Apply
 - **WHEN** the Worklog window is open and the user applies a changed rule list
 - **THEN** the Entries table and Timeline show the new resolved projects without reloading, and the Summary shows them on its next refresh
+
+### Requirement: Settings visual organization
+Settings SHALL retain every existing setting and its draft binding while adopting compact rows and conditional peer-group cards. Appearance SHALL separate theme tools, widget layout, widget opacity, and palette editing into named groups. Every field SHALL have a persistent visible label. Collapsing a group or changing tabs SHALL NOT discard its draft or conceal an unresolved validation error without an indication.
+
+#### Scenario: User scans Appearance
+- **WHEN** Appearance opens
+- **THEN** theme actions, widget layout, widget opacity, and palette editing are identifiable without expanding every color group
+
+#### Scenario: User fills a rule
+- **WHEN** an application pattern, title pattern, or project name contains a value
+- **THEN** a persistent visible label still identifies the field independently of its watermark
+
+#### Scenario: User collapses an edited group
+- **WHEN** a group containing draft edits or invalid values is collapsed
+- **THEN** its edits remain in the shared draft and its header indicates any unresolved validation issue
+
+### Requirement: Settings layout at supported sizes
+Settings SHALL remain usable at its existing 500 by 400 logical-pixel minimum and default size, including supported display scaling. Content SHALL scroll vertically as needed while navigation and the OK, Apply, Cancel, and feedback footer remain reachable. Labels, opacity controls, rules, and validation messages SHALL wrap or reflow without overlapping, horizontal content clipping, or obscuring commit actions.
+
+#### Scenario: User resizes to the minimum
+- **WHEN** Settings is resized to 500 by 400 logical pixels
+- **THEN** every setting can be reached through the content scroll area and navigation and commit actions remain usable
+
+#### Scenario: Feedback appears
+- **WHEN** saving, validation, failure, or recovery feedback appears
+- **THEN** it occupies the reserved footer region without moving the action buttons or disabling the presentation of the complete draft
+- **AND** feedback is left of OK/Apply/Cancel in the same row, with long errors scrolling in a bounded area
+
+#### Scenario: User operates a long labeled control
+- **WHEN** a long label such as overall widget fade or activity polling interval is displayed
+- **THEN** the complete label remains readable beside or above its control and does not overlap that control
+
+### Requirement: Blank rule rows
+Rule lists (project rules, excluded applications, segmentation rules) SHALL treat a row whose fields are all empty as a notice rather than an error. Such a row SHALL be marked in the warning color with a message that it is removed when settings are applied, SHALL NOT block OK or Apply, SHALL be left out of the saved rules, and SHALL be removed from the list after a successful commit. A row with some but not all required fields SHALL be marked in the danger color with its validation message and SHALL block OK and Apply until completed or removed.
+
+#### Scenario: User leaves a rule empty
+- **WHEN** a rule row has no application pattern, window title pattern, or project name and the user chooses Apply or OK
+- **THEN** the row is shown with the warning color beforehand, the commit succeeds without it, and the row is gone afterwards
+
+#### Scenario: User half-fills a rule
+- **WHEN** a project rule has a pattern but no project name
+- **THEN** the row is shown with the danger color and its message, and Apply and OK do not commit until it is completed or removed

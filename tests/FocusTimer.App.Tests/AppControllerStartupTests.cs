@@ -10,6 +10,31 @@ using FocusTimer.Core.Stubs;
 
 public sealed class AppControllerStartupTests
 {
+    [Theory]
+    [InlineData("Dark", "Dark", "missing.fttheme")]
+    [InlineData("Custom", "Dark", "missing.fttheme")]
+    [InlineData("Unknown name", "Unknown name", "")]
+    [InlineData("Dark", "Dark", "")]
+    public async Task Startup_UsesCustomSnapshotWithoutReadingSourceOrFactory(string identity, string metadata, string path)
+    {
+        var settings = new Settings
+        {
+            ActiveThemeName = identity,
+            CustomThemePath = path,
+            Theme = new Theme { ThemeName = metadata, PrimaryText = "#123456", BackgroundOpacity = 0.37 },
+        };
+        var manager = new ThemeManager();
+        var controller = new AppController(
+            new FixedSettingsProvider(settings), new CountingHotkeys(), new LinuxIdleDetectionServiceStub(),
+            null!, new ThemeService(), manager,
+            () => throw new InvalidOperationException("No window in this isolated test."),
+            null!, null!, null!, new NullLogger(), null, new InstallationIdentity());
+        await controller.InitializeAsync();
+        Assert.Equal(identity == "Dark" && path.Length == 0 ? "Dark" : "Custom", controller.CurrentSettings.ActiveThemeName);
+        Assert.Equal("#123456", manager.ActiveTheme!.PrimaryText);
+        Assert.Equal(0.37, manager.ActiveTheme.BackgroundOpacity);
+    }
+
     [Fact]
     public async Task InitializeAsync_LoadFailureDoesNotActivateDefaultsAndCanRetry()
     {
@@ -299,8 +324,10 @@ public sealed class AppControllerStartupTests
         controller.ExitApplication();
 
         Assert.Equal(1, hotkeys.UnregisterCount);
-        if (failCleanup) Assert.Contains("Error during exit.", logger.Errors);
-        else Assert.Empty(logger.Errors);
+        if (failCleanup)
+            Assert.Contains("Error during exit.", logger.Errors);
+        else
+            Assert.Empty(logger.Errors);
     }
 
     private static AppController CreateController(Settings settings, CountingHotkeys hotkeys, RecordingLogger logger) => new(
@@ -445,7 +472,8 @@ public sealed class AppControllerStartupTests
 
         public void Register(HotkeyDefinition definition)
         {
-            if (this.FailRegister) throw new IOException("Registration failed.");
+            if (this.FailRegister)
+                throw new IOException("Registration failed.");
             this.RegisterCount++;
             this.Registered.Add(definition);
         }
@@ -453,7 +481,8 @@ public sealed class AppControllerStartupTests
         public void UnregisterAll()
         {
             this.UnregisterCount++;
-            if (this.FailUnregister) throw new IOException("Cleanup failed.");
+            if (this.FailUnregister)
+                throw new IOException("Cleanup failed.");
         }
     }
 

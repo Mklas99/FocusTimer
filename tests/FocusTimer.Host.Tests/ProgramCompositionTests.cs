@@ -34,10 +34,12 @@ public sealed class ProgramCompositionTests : IDisposable
     {
         var logDir = Path.Combine(this._root, "custom-logs");
 
-        this.Build(logDir, isWindows: true);
+        var services = this.Build(logDir, isWindows: true);
 
         Assert.True(Directory.Exists(logDir));
         Assert.True(Directory.Exists(Path.Combine(this._root, "worklogs")));
+        Assert.IsType<FocusTimer.App.Services.DesktopNotificationService>(
+            services.GetRequiredService<INotificationService>());
     }
 
     [Theory]

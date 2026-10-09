@@ -128,3 +128,9 @@ $RECYCLE.BIN/
 
 # Generated WiX harvest fragment (produced by build-installer.ps1)
 installer/FocusTimer.Installer/ProductComponents.wxs
+
+
+# a lot of images
+openspec/changes/archive/2026-10-08-adopt-dense-frost-design-system/evidence/*
+openspec/changes/archive/2026-10-08-adopt-dense-frost-design-system/references/*
+.codex-remote-attachments/

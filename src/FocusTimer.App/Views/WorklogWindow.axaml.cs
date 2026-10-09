@@ -5,6 +5,7 @@ namespace FocusTimer.App.Views
     using Avalonia.Controls;
     using Avalonia.Input;
     using Avalonia.VisualTree;
+    using FocusTimer.App.Services;
     using FocusTimer.App.ViewModels;
 
     /// <summary>
@@ -20,6 +21,7 @@ namespace FocusTimer.App.Views
         public WorklogWindow()
         {
             this.InitializeComponent();
+            DesktopWindowMaterial.Attach(this);
             this.Activated += this.OnWindowActivated;
             this.AddHandler(KeyDownEvent, this.OnWindowKeyDown, Avalonia.Interactivity.RoutingStrategies.Tunnel);
         }

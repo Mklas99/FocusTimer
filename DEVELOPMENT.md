@@ -652,6 +652,22 @@ For C# hot reload alongside XAML editing, use:
 dotnet watch --project src/FocusTimer.Host run -c Debug
 ```
 
+### Desktop window styles
+
+Settings, Worklog, and the color picker share the `settings-window` class. Add new desktop controls to `Styles/ControlStyles.axaml` under `Window.settings-window` and take sizes from the `Desktop*` tokens in `Styles/Tokens.axaml`; do not set per-view heights, radii, or fonts. Avalonia 11.2 has no `Grid.ColumnSpacing`/`RowSpacing`, so use child margins. Put page insets on the content `StackPanel` margin, not `ScrollViewer.Padding` (padding is subtracted only on arrange, so wide children overshoot it).
+
+Native layout and material checks run only on Windows and are skipped by default:
+
+```powershell
+$env:FOCUSTIMER_NATIVE_APPEARANCE_TESTS = "1"
+$env:FOCUSTIMER_EVIDENCE_DIR = "$PWD\artifacts\desktop-evidence"   # PNG output (default: the test bin folder)
+$env:FOCUSTIMER_EVIDENCE_THEMES = "Dark,Light"                       # comma-separated built-in themes
+dotnet test tests/FocusTimer.App.Tests --filter "FullyQualifiedName~DesktopShellEvidence"
+dotnet test tests/FocusTimer.App.Tests --filter "FullyQualifiedName~DesktopMaterialNative"
+```
+
+`DesktopShellEvidence` renders every Settings and Worklog page at the default and minimum sizes and asserts the commit buttons, tab labels, and page content stay inside the window. `DesktopMaterialNative` briefly shows windows on screen to compare the dense-frost shell with a solid and an unblurred-transparent control over a stripe pattern; it reports the frost as not verified when Windows transparency effects are off.
+
 ### Enable Verbose Logging
 
 There's no environment variable for log level today. Two options:
@@ -787,6 +803,8 @@ Rules are applied when entries are read, not when they are written. Adding, chan
 
 Settings uses IsDraftVisible for visual availability and CanEdit for mutation guards. During IsCommitting, a transparent shield blocks pointer edits, focus moves to the reserved Saving... status, dropdowns/context menus close, and window handlers consume keyboard, text, wheel, paste, and cut input. Handlers detach on close; Apply restores valid editor focus, while successful OK closes. Imports begun before a commit are rejected even if they finish after it. Commit start clears active preedit text through Avalonia's text-input-method client before focus movement releases the editor. The native fixture verifies preedit clearing; individual Windows IME language implementations are not exercised with physical keyboard input.
 
-Theme.playPauseColor is optional. Missing/null inherits ButtonNormal; an explicit valid color is cloned and serialized. TimerBackground remains preserved for legacy theme files but has no editor. Shared widget icon styles override normal foreground with Hover, Pressed, or Disabled colors in both modes; existing background highlights remain. Success and Danger remain reserved for future status displays.
+Theme.playPauseColor is optional. Missing/null inherits ButtonNormal; an explicit valid color is cloned and serialized. TimerBackground remains preserved for legacy theme files but has no editor. Shared widget icon styles override normal foreground with Hover, Pressed, or Disabled colors in both modes; existing background highlights remain. Danger and Warning color notification headings/outlines; Success remains reserved for future status displays.
+
+Factory palette edits belong in ThemeService, and desktop accessibility corrections belong in ThemeManager. Source snapshots survive import/export, Apply/OK, reopening, and restart. Imports display Custom/Imported and use canonical Custom identity while retaining their original metadata; selecting a preset or Reset clears provenance. The [palette tuning guide](docs/versions/current/ThemePaletteTuning.md) documents source roles, later personal adjustments, legacy identity, and required contrast/visual checks.
 
 The native appearance regression runs in a separate process because Avalonia platform initialization is global. In PowerShell, set FOCUSTIMER_NATIVE_APPEARANCE_TESTS=1 for that process and run dotnet test tests/FocusTimer.App.Tests --filter AppearanceNativeTests. Normal runs skip this Windows-only fixture. Its rendered saving/applied/error/recovery screenshots are written under the test output's appearance-evidence directory.

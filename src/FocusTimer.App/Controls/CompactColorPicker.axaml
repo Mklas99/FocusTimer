@@ -93,13 +93,14 @@
                                VerticalAlignment="Center"
                                FontSize="11"
                                FontWeight="Bold"
-                               Foreground="{Binding PreviewTextBrush}"
+                               Foreground="{DynamicResource DesktopInputTextBrush}"
+                               Background="{DynamicResource DesktopFieldBrush}"
                                Text="{Binding SelectedColorHex}" />
                 </Grid>
             </Border>
 
             <StackPanel Spacing="2">
-                <TextBlock Classes="settings-label" Text="H" />
+                <TextBlock Classes="SettingLabel" Margin="0" Text="H" />
                 <NumericUpDown Classes="small-spinners"
                                Minimum="0"
                                Maximum="360"
@@ -109,7 +110,7 @@
             </StackPanel>
 
             <StackPanel Spacing="2">
-                <TextBlock Classes="settings-label" Text="S %" />
+                <TextBlock Classes="SettingLabel" Margin="0" Text="S %" />
                 <NumericUpDown Classes="small-spinners"
                                Minimum="0"
                                Maximum="100"
@@ -119,7 +120,7 @@
             </StackPanel>
 
             <StackPanel Spacing="2">
-                <TextBlock Classes="settings-label" Text="V %" />
+                <TextBlock Classes="SettingLabel" Margin="0" Text="V %" />
                 <NumericUpDown Classes="small-spinners"
                                Minimum="0"
                                Maximum="100"

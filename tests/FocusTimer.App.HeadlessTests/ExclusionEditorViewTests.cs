@@ -29,7 +29,7 @@ public sealed class ExclusionEditorViewTests
         for (int i = 0; i < 20 && !vm.IsSettingsLoaded; i++) await Task.Delay(25);
         var window = new SettingsWindow { DataContext = vm };
         window.Show();
-        vm.SelectedTabIndex = 3; // About
+        vm.SelectedTabIndex = 4; // About
         Dispatcher.UIThread.RunJobs();
 
         Expander expander = window.GetVisualDescendants().OfType<Expander>().Single(e => (string?)e.Header == "Developer Options");

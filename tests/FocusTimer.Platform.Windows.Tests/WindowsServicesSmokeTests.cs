@@ -39,20 +39,6 @@ public class WindowsServicesSmokeTests
     }
 
     [Fact]
-    public async Task NotificationService_ShowMethods_DoNotThrowWithoutAvaloniaApp()
-    {
-        var service = new WindowsNotificationService();
-
-        var ex = await Record.ExceptionAsync(async () =>
-        {
-            await service.ShowNotificationAsync("Title", "Message");
-            await service.ShowBreakReminderAsync("Break", requireAcknowledgement: false);
-        });
-
-        Assert.Null(ex);
-    }
-
-    [Fact]
     public void HotkeyService_GivenNoWindowHandle_OperationsDoNotThrowAndDoNotRaiseEvent()
     {
         using var service = new WindowsHotkeyService();

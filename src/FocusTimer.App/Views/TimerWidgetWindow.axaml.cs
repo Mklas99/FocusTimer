@@ -55,6 +55,7 @@ namespace FocusTimer.App.Views
             // Setup Windows-specific hotkey message handling
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
+                Win32Properties.AddWndProcHookCallback(this, WidgetWindowMessage);
                 this.Opened += this.OnWindowOpenedForHotkeys;
             }
         }
@@ -73,6 +74,11 @@ namespace FocusTimer.App.Views
         /// <param name="e">The event args.</param>
         protected override void OnClosed(EventArgs e)
         {
+            if (OperatingSystem.IsWindows())
+            {
+                Win32Properties.RemoveWndProcHookCallback(this, WidgetWindowMessage);
+            }
+
             this._themeManager.ThemeApplied -= this.OnThemeApplied;
             this.PropertyChanged -= this.OnWindowPropertyChanged;
             if (this.DataContext is TimerWidgetViewModel viewModel)
@@ -93,6 +99,19 @@ namespace FocusTimer.App.Views
             {
                 dragArea.Cursor = new Cursor(StandardCursorType.DragMove);
             }
+        }
+
+        private static IntPtr WidgetWindowMessage(IntPtr hwnd, uint message, IntPtr wParam, IntPtr lParam, ref bool handled)
+        {
+            const uint windowPositionChanging = 0x0046;
+
+            // The borderless widget is sized by its content, without Windows' caption-size clamp.
+            if (message == windowPositionChanging)
+            {
+                handled = true;
+            }
+
+            return IntPtr.Zero;
         }
 
         private static bool IsInteractiveElement(object? source)

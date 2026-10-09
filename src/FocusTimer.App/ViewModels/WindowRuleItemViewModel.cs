@@ -31,6 +31,10 @@ namespace FocusTimer.App.ViewModels
             {
                 this.RaiseAndSetIfChanged(ref this._appPattern, value ?? string.Empty);
                 this.RaisePropertyChanged(nameof(this.Error));
+                this.RaisePropertyChanged(nameof(this.HasError));
+                this.RaisePropertyChanged(nameof(this.IsBlank));
+                this.RaisePropertyChanged(nameof(this.Warning));
+                this.RaisePropertyChanged(nameof(this.HasWarning));
             }
         }
 
@@ -42,11 +46,28 @@ namespace FocusTimer.App.ViewModels
             {
                 this.RaiseAndSetIfChanged(ref this._titlePattern, value ?? string.Empty);
                 this.RaisePropertyChanged(nameof(this.Error));
+                this.RaisePropertyChanged(nameof(this.HasError));
+                this.RaisePropertyChanged(nameof(this.IsBlank));
+                this.RaisePropertyChanged(nameof(this.Warning));
+                this.RaisePropertyChanged(nameof(this.HasWarning));
             }
         }
 
         /// <inheritdoc/>
-        public string Error => this.ToRule().IsValid
+        public bool IsBlank =>
+            string.IsNullOrWhiteSpace(this._appPattern) && string.IsNullOrWhiteSpace(this._titlePattern);
+
+        /// <inheritdoc/>
+        public string Warning => this.IsBlank ? "Empty rule: it is removed when you apply or confirm." : string.Empty;
+
+        /// <inheritdoc/>
+        public bool HasWarning => this.IsBlank;
+
+        /// <inheritdoc/>
+        public bool HasError => !string.IsNullOrEmpty(this.Error);
+
+        /// <inheritdoc/>
+        public string Error => this.IsBlank || this.ToRule().IsValid
             ? string.Empty
             : "Enter an application pattern, a window title pattern, or both.";
 

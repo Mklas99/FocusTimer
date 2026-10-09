@@ -108,7 +108,7 @@ namespace FocusTimer.Host
             if (isWindows)
             {
                 services.AddSingleton<IActiveWindowService, Platform.Windows.WindowsActiveWindowService>();
-                services.AddSingleton<INotificationService, Platform.Windows.WindowsNotificationService>();
+                services.AddSingleton<INotificationService, DesktopNotificationService>();
                 services.AddSingleton<IAutoStartService, Platform.Windows.WindowsAutoStartService>();
                 services.AddSingleton<IGlobalHotkeyService, Platform.Windows.WindowsHotkeyService>();
                 services.AddSingleton<ITrayIconController, TrayStateController>();

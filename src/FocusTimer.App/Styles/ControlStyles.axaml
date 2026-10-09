@@ -1,6 +1,7 @@
 <Styles xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:icons="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia">
+        xmlns:icons="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
+        xmlns:controls="using:FocusTimer.App.Controls">
 
     <!--
       FocusTimer Unified Component Styles
@@ -67,6 +68,7 @@
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="Foreground" Value="{DynamicResource ProjectTagTextBrush}" />
         <Setter Property="Padding" Value="6,3" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
         <Setter Property="FontSize" Value="{DynamicResource FontSizeBody}" />
         <Setter Property="CornerRadius" Value="{DynamicResource RadiusXs}" />
     </Style>
@@ -90,56 +92,455 @@
         <Setter Property="Foreground" Value="{DynamicResource SettingsLabelTextBrush}" />
     </Style>
 
-    <!-- Settings colors stay scoped so widget controls retain their own palette. -->
+    <!--
+      Desktop windows (Settings, Worklog, color picker) share the "settings-window" class. Everything below is
+      scoped under it so the timer widget keeps its own geometry, fonts, and palette.
+    -->
+    <Style Selector="Window.settings-window">
+        <Setter Property="FontFamily" Value="{DynamicResource DesktopFontFamily}" />
+        <Setter Property="FontSize" Value="{DynamicResource FontSizeBody}" />
+        <Setter Property="Background" Value="{DynamicResource DesktopShellBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DesktopTextBrush}" />
+    </Style>
+
+    <!-- Dense frost: only applied after the window verified an actual blur level (see DesktopWindowMaterial). -->
+    <Style Selector="Window.settings-window.frost-active">
+        <Setter Property="Background" Value="{DynamicResource DesktopShellFrostBrush}" />
+    </Style>
+
+    <!-- Typography hierarchy: page 24 / section 18 / body 14 / helper 12. -->
+    <Style Selector="Window.settings-window TextBlock.page-title">
+        <Setter Property="FontSize" Value="{DynamicResource FontSizeHeadline}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{DynamicResource DesktopHeadingBrush}" />
+    </Style>
+
+    <Style Selector="Window.settings-window TextBlock.helper-text">
+        <Setter Property="FontSize" Value="{DynamicResource FontSizeCaption}" />
+        <Setter Property="Foreground" Value="{DynamicResource DesktopLabelBrush}" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+
+    <Style Selector="Window.settings-window TextBlock.numeric-value">
+        <Setter Property="FontFeatures" Value="tnum" />
+        <Setter Property="TextAlignment" Value="Right" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+
+    <Style Selector="Window.settings-window TextBlock.SettingLabel, Window.settings-window TextBlock.settings-label">
+        <Setter Property="TextWrapping" Value="Wrap" />
+        <Setter Property="Foreground" Value="{DynamicResource DesktopLabelBrush}" />
+    </Style>
+
+    <Style Selector="Window.settings-window TextBlock.SectionHeader, Window.settings-window TextBlock.settings-section-header">
+        <Setter Property="Foreground" Value="{DynamicResource DesktopHeadingBrush}" />
+    </Style>
+
+    <Style Selector="Window.settings-window Border.help-hint">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Cursor" Value="Help" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="Margin" Value="6,0,0,0" />
+    </Style>
+
+    <!-- Group sections inside a page: compact rows with a restrained divider between sections. -->
+    <Style Selector="Window.settings-window StackPanel.settings-section">
+        <Setter Property="Spacing" Value="{DynamicResource DesktopRowGap}" />
+    </Style>
+
+    <Style Selector="Window.settings-window Border.settings-divider">
+        <Setter Property="Height" Value="1" />
+        <Setter Property="Background" Value="{DynamicResource DesktopTabUnderlineIdleBrush}" />
+        <Setter Property="Margin" Value="0,10" />
+    </Style>
+
+    <!-- Peer-group cards: near-solid, never nested translucent layers. -->
+    <Style Selector="Window.settings-window Border.desktop-card">
+        <Setter Property="Background" Value="{DynamicResource DesktopCardBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopBorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="{DynamicResource DesktopCardRadius}" />
+        <Setter Property="Padding" Value="{DynamicResource DesktopCardPadding}" />
+    </Style>
+
     <Style Selector="Window.settings-window TextBlock.settings-body">
-        <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DesktopTextBrush}" />
     </Style>
 
     <Style Selector="Window.settings-window TextBlock.settings-body:disabled">
         <Setter Property="Foreground" Value="{DynamicResource DisabledTextBrush}" />
     </Style>
 
+    <!-- CheckBox -->
     <Style Selector="Window.settings-window CheckBox">
-        <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DesktopTextBrush}" />
+        <Setter Property="MinHeight" Value="23" />
+        <Setter Property="Margin" Value="0,-3" />
+        <Setter Property="Padding" Value="8,0,0,0" />
+        <Setter Property="CornerRadius" Value="{DynamicResource RadiusXs}" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+
+    <Style Selector="Window.settings-window CheckBox /template/ Border#NormalRectangle">
+        <Setter Property="Width" Value="15" />
+        <Setter Property="Height" Value="15" />
+        <Setter Property="CornerRadius" Value="4" />
+        <Setter Property="Background" Value="{DynamicResource DesktopFieldBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopBorderBrush}" />
+    </Style>
+
+    <Style Selector="Window.settings-window CheckBox:checked /template/ Border#NormalRectangle, Window.settings-window CheckBox:indeterminate /template/ Border#NormalRectangle">
+        <Setter Property="Background" Value="{DynamicResource DesktopFocusBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopFocusBrush}" />
+    </Style>
+
+    <Style Selector="Window.settings-window CheckBox /template/ Path#CheckGlyph, Window.settings-window CheckBox /template/ Rectangle#IndeterminateGlyph">
+        <Setter Property="Fill" Value="{DynamicResource DesktopAccentTextBrush}" />
+    </Style>
+
+    <Style Selector="Window.settings-window CheckBox /template/ Grid">
+        <Setter Property="MinHeight" Value="0" />
     </Style>
 
     <Style Selector="Window.settings-window CheckBox:disabled">
         <Setter Property="Foreground" Value="{DynamicResource DisabledTextBrush}" />
     </Style>
 
-    <Style Selector="Window.settings-window Button">
-        <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+    <Style Selector="Window.settings-window CheckBox:focus-visible /template/ Border#NormalRectangle">
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopFocusBrush}" />
     </Style>
 
-    <Style Selector="Window.settings-window Button:disabled">
+    <!-- Options of plain (non-card) sections sit slightly inside their section header. -->
+    <Style Selector="ScrollViewer.settings-scroll > StackPanel > CheckBox">
+        <Setter Property="Margin" Value="12,-3,0,-3" />
+    </Style>
+
+    <Style Selector="ScrollViewer.settings-scroll > StackPanel > Grid, ScrollViewer.settings-scroll > StackPanel > TextBlock.SettingLabel, ScrollViewer.settings-scroll > StackPanel > TextBlock.helper-text">
+        <Setter Property="Margin" Value="12,0,0,0" />
+    </Style>
+
+    <Style Selector="ScrollViewer.settings-scroll > StackPanel > Grid.flush">
+        <Setter Property="Margin" Value="0" />
+    </Style>
+
+    <Style Selector="Window.settings-window Border.rule-row">
+        <Setter Property="BorderThickness" Value="2,0,0,0" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+        <Setter Property="Padding" Value="8,0,0,0" />
+        <Setter Property="CornerRadius" Value="2" />
+    </Style>
+
+    <Style Selector="Window.settings-window Border.rule-row.warning">
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopWarningBrush}" />
+    </Style>
+
+    <Style Selector="Window.settings-window Border.rule-row.danger">
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopDangerBrush}" />
+    </Style>
+
+    <Style Selector="Window.settings-window TextBlock.rule-warning">
+        <Setter Property="Foreground" Value="{DynamicResource DesktopWarningBrush}" />
+    </Style>
+
+    <Style Selector="Window.settings-window TextBlock.rule-error">
+        <Setter Property="Foreground" Value="{DynamicResource DesktopDangerBrush}" />
+    </Style>
+
+    <!--
+      Button: soft-rounded, 36 px, shared hover/pressed/disabled/focus states. Color swatches keep their fill,
+      and buttons that belong to another control's template (date picker, calendar) keep their own chrome.
+    -->
+    <Style Selector="Window.settings-window Button:not(.color-swatch)">
+        <Setter Property="Foreground" Value="{DynamicResource DesktopTextBrush}" />
+        <Setter Property="MinHeight" Value="{DynamicResource DesktopControlHeight}" />
+        <Setter Property="CornerRadius" Value="{DynamicResource DesktopControlRadius}" />
+        <Setter Property="Padding" Value="14,0" />
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+
+    <Style Selector="Window.settings-window Button:not(.color-swatch) /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource DesktopFieldBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopBorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+    </Style>
+
+    <Style Selector="Window.settings-window Button:not(.color-swatch):pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource DesktopControlHoverBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopBorderBrush}" />
+        <Setter Property="TextElement.Foreground" Value="{DynamicResource DesktopTextBrush}" />
+    </Style>
+
+    <Style Selector="Window.settings-window Button:not(.color-swatch):pressed /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource DesktopControlPressedBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopBorderBrush}" />
+        <Setter Property="TextElement.Foreground" Value="{DynamicResource DesktopTextBrush}" />
+    </Style>
+
+    <Style Selector="Window.settings-window Button:not(.color-swatch):disabled">
         <Setter Property="Foreground" Value="{DynamicResource DisabledTextBrush}" />
     </Style>
 
+    <Style Selector="Window.settings-window Button:not(.color-swatch):disabled /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource DesktopFieldBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopBorderBrush}" />
+        <Setter Property="TextElement.Foreground" Value="{DynamicResource DisabledTextBrush}" />
+    </Style>
+
+    <Style Selector="Window.settings-window Button:not(.color-swatch):focus-visible /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopFocusBrush}" />
+        <Setter Property="BorderThickness" Value="2" />
+        <!-- The ring grows outward by the extra border pixel, so focus never changes the button's layout size. -->
+        <Setter Property="Margin" Value="-1" />
+    </Style>
+
+    <!-- Action roles preserve geometry and commands; disabled controls use the shared neutral state. -->
+    <Style Selector="Window.settings-window Button.action-primary">
+        <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+
+    <Style Selector="Window.settings-window Button.action-primary:not(:disabled) /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource DesktopPrimaryActionBrush}" />
+        <Setter Property="TextElement.Foreground" Value="{DynamicResource DesktopPrimaryActionTextBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopFocusBrush}" />
+    </Style>
+
+    <Style Selector="Window.settings-window Button.action-primary:not(:disabled):pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource DesktopPrimaryActionHoverBrush}" />
+        <Setter Property="TextElement.Foreground" Value="{DynamicResource DesktopPrimaryActionTextBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopFocusBrush}" />
+    </Style>
+
+    <Style Selector="Window.settings-window Button.action-primary:not(:disabled):pressed /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource DesktopPrimaryActionPressedBrush}" />
+        <Setter Property="TextElement.Foreground" Value="{DynamicResource DesktopPrimaryActionTextBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopFocusBrush}" />
+    </Style>
+
+    <Style Selector="Window.settings-window Button.action-secondary:not(:disabled) /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource DesktopFieldBrush}" />
+        <Setter Property="TextElement.Foreground" Value="{DynamicResource DesktopTextBrush}" />
+    </Style>
+
+    <Style Selector="Window.settings-window Button.action-secondary:not(:disabled):pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource DesktopControlHoverBrush}" />
+        <Setter Property="TextElement.Foreground" Value="{DynamicResource DesktopTextBrush}" />
+    </Style>
+
+    <Style Selector="Window.settings-window Button.action-secondary:not(:disabled):pressed /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource DesktopControlPressedBrush}" />
+        <Setter Property="TextElement.Foreground" Value="{DynamicResource DesktopTextBrush}" />
+    </Style>
+
+    <Style Selector="Window.settings-window Button.action-destructive">
+        <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+
+    <Style Selector="Window.settings-window Button.action-destructive:not(:disabled) /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource DesktopDestructiveActionBrush}" />
+        <Setter Property="TextElement.Foreground" Value="{DynamicResource DesktopDestructiveActionTextBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopDestructiveActionTextBrush}" />
+    </Style>
+
+    <Style Selector="Window.settings-window Button.action-destructive:not(:disabled):pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource DesktopDestructiveActionHoverBrush}" />
+        <Setter Property="TextElement.Foreground" Value="{DynamicResource DesktopDestructiveActionTextBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopDestructiveActionTextBrush}" />
+    </Style>
+
+    <Style Selector="Window.settings-window Button.action-destructive:not(:disabled):pressed /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource DesktopDestructiveActionPressedBrush}" />
+        <Setter Property="TextElement.Foreground" Value="{DynamicResource DesktopDestructiveActionTextBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopDestructiveActionTextBrush}" />
+    </Style>
+
+    <Style Selector="Window.settings-window Button.action-primary:not(:disabled):focus-visible /template/ ContentPresenter#PART_ContentPresenter,
+                    Window.settings-window Button.action-secondary:not(:disabled):focus-visible /template/ ContentPresenter#PART_ContentPresenter,
+                    Window.settings-window Button.action-destructive:not(:disabled):focus-visible /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopActionFocusBrush}" />
+        <Setter Property="BorderThickness" Value="2" />
+        <Setter Property="Margin" Value="-1" />
+    </Style>
+
+    <!-- Buttons inside another control's template (date picker, calendar header) keep a compact glyph chrome. -->
+    <Style Selector="Window.settings-window CalendarDatePicker /template/ Button#PART_Button, Window.settings-window Calendar /template/ Button">
+        <Setter Property="MinHeight" Value="0" />
+        <Setter Property="MinWidth" Value="0" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="CornerRadius" Value="{DynamicResource RadiusXs}" />
+    </Style>
+
+    <Style Selector="Window.settings-window CalendarDatePicker /template/ Button#PART_Button /template/ ContentPresenter#PART_ContentPresenter, Window.settings-window Calendar /template/ Button /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+    </Style>
+
+    <Style Selector="Window.settings-window CalendarDatePicker /template/ Button#PART_Button:pointerover /template/ ContentPresenter#PART_ContentPresenter, Window.settings-window Calendar /template/ Button:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource DesktopControlHoverBrush}" />
+    </Style>
+
+    <!--
+      Small secondary actions (rule reorder/remove): borderless, smaller text in the label color, and a 28 px hit
+      target. They repeat the full state set because the shared button states above outrank plain selectors.
+    -->
+    <Style Selector="Window.settings-window Button.rule-action:not(.color-swatch)">
+        <Setter Property="MinWidth" Value="28" />
+        <Setter Property="MinHeight" Value="28" />
+        <Setter Property="Padding" Value="8,0" />
+        <Setter Property="FontSize" Value="{DynamicResource FontSizeCaption}" />
+        <Setter Property="Foreground" Value="{DynamicResource DesktopLabelBrush}" />
+    </Style>
+
+    <Style Selector="Window.settings-window Button.rule-action:not(.color-swatch) /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+        <Setter Property="TextElement.Foreground" Value="{DynamicResource DesktopLabelBrush}" />
+    </Style>
+
+    <Style Selector="Window.settings-window Button.rule-action:not(.color-swatch):pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource DesktopControlHoverBrush}" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+        <Setter Property="TextElement.Foreground" Value="{DynamicResource DesktopTextBrush}" />
+    </Style>
+
+    <Style Selector="Window.settings-window Button.rule-action:not(.color-swatch):pressed /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource DesktopControlPressedBrush}" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+    </Style>
+
+    <Style Selector="Window.settings-window Button.rule-action:not(.color-swatch):disabled /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+        <Setter Property="TextElement.Foreground" Value="{DynamicResource DisabledTextBrush}" />
+    </Style>
+
+    <Style Selector="Window.settings-window Button.rule-action:not(.color-swatch):focus-visible /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopFocusBrush}" />
+    </Style>
+
+    <!-- Square icon-only tool buttons (Worklog day arrows and refresh) keep the shared button chrome. -->
+    <Style Selector="Window.settings-window Button.icon-tool:not(.color-swatch)">
+        <Setter Property="MinWidth" Value="{DynamicResource DesktopControlHeight}" />
+        <Setter Property="Padding" Value="0" />
+    </Style>
+
+    <!-- Text fields -->
     <Style Selector="Window.settings-window TextBox">
-        <Setter Property="Background" Value="{DynamicResource InputBackgroundBrush}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource InputBorderBrush}" />
-        <Setter Property="Foreground" Value="{DynamicResource InputTextBrush}" />
-        <Setter Property="CaretBrush" Value="{DynamicResource InputTextBrush}" />
+        <Setter Property="Background" Value="{DynamicResource DesktopFieldBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopBorderBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DesktopInputTextBrush}" />
+        <Setter Property="CaretBrush" Value="{DynamicResource DesktopInputTextBrush}" />
+        <Setter Property="SelectionBrush" Value="{DynamicResource DesktopSelectionBrush}" />
+        <Setter Property="SelectionForegroundBrush" Value="{DynamicResource DesktopSelectedTextBrush}" />
+        <Setter Property="MinHeight" Value="{DynamicResource DesktopControlHeight}" />
+        <Setter Property="CornerRadius" Value="{DynamicResource DesktopControlRadius}" />
+        <Setter Property="Padding" Value="{DynamicResource DesktopControlPadding}" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
     </Style>
 
     <Style Selector="Window.settings-window TextBox:disabled">
         <Setter Property="Foreground" Value="{DynamicResource DisabledTextBrush}" />
     </Style>
 
+    <Style Selector="Window.settings-window TextBox:pointerover /template/ Border#PART_BorderElement">
+        <Setter Property="Background" Value="{DynamicResource DesktopFieldBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopBorderBrush}" />
+    </Style>
+
+    <Style Selector="Window.settings-window TextBox:focus /template/ Border#PART_BorderElement">
+        <Setter Property="Background" Value="{DynamicResource DesktopFieldBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopFocusBrush}" />
+    </Style>
+
+    <Style Selector="Window.settings-window TextBox[IsReadOnly=True] /template/ Border#PART_BorderElement">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopBorderBrush}" />
+    </Style>
+
+    <Style Selector="Window.settings-window TextBox[IsReadOnly=True]:focus /template/ Border#PART_BorderElement">
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopFocusBrush}" />
+    </Style>
+
+    <Style Selector="Window.settings-window TextBox:error /template/ Border#PART_BorderElement">
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopDangerBrush}" />
+    </Style>
+
+    <!-- Numeric fields -->
+    <Style Selector="Window.settings-window TextBox:not(:disabled) /template/ TextBlock#PART_Watermark">
+        <Setter Property="Foreground" Value="{DynamicResource DesktopSecondaryTextBrush}" />
+        <Setter Property="Opacity" Value="1" />
+    </Style>
+
+    <Style Selector="TextBox.project-tag:not(:disabled) /template/ TextBlock#PART_Watermark">
+        <Setter Property="Foreground" Value="{DynamicResource ProjectTagTextBrush}" />
+        <Setter Property="Opacity" Value="1" />
+    </Style>
+
     <Style Selector="Window.settings-window NumericUpDown">
-        <Setter Property="Background" Value="{DynamicResource InputBackgroundBrush}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource InputBorderBrush}" />
-        <Setter Property="Foreground" Value="{DynamicResource InputTextBrush}" />
+        <Setter Property="Background" Value="{DynamicResource DesktopFieldBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopBorderBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DesktopInputTextBrush}" />
+        <Setter Property="MinHeight" Value="{DynamicResource DesktopControlHeight}" />
+        <Setter Property="CornerRadius" Value="{DynamicResource DesktopControlRadius}" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+
+    <Style Selector="Window.settings-window NumericUpDown.numeric-field">
+        <Setter Property="Width" Value="{DynamicResource DesktopNumericFieldWidth}" />
+        <Setter Property="HorizontalAlignment" Value="Left" />
+    </Style>
+
+    <Style Selector="Window.settings-window NumericUpDown.no-spinners">
+        <Setter Property="MinWidth" Value="0" />
+        <Setter Property="Width" Value="56" />
+    </Style>
+
+    <Style Selector="Window.settings-window NumericUpDown /template/ TextBox#PART_TextBox">
+        <Setter Property="MinHeight" Value="0" />
+        <Setter Property="CornerRadius" Value="0" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+    </Style>
+
+    <Style Selector="Window.settings-window NumericUpDown /template/ TextBox#PART_TextBox /template/ Border#PART_BorderElement">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+    </Style>
+
+    <Style Selector="Window.settings-window NumericUpDown /template/ ButtonSpinner /template/ RepeatButton">
+        <Setter Property="Width" Value="24" />
+        <Setter Property="MinWidth" Value="0" />
+        <Setter Property="MinHeight" Value="0" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="FontSize" Value="8" />
+    </Style>
+
+    <Style Selector="Window.settings-window NumericUpDown /template/ ButtonSpinner /template/ RepeatButton PathIcon, Window.settings-window NumericUpDown /template/ ButtonSpinner /template/ RepeatButton Path">
+        <Setter Property="Width" Value="8" />
+        <Setter Property="Height" Value="8" />
     </Style>
 
     <Style Selector="Window.settings-window NumericUpDown:disabled">
         <Setter Property="Foreground" Value="{DynamicResource DisabledTextBrush}" />
     </Style>
 
+    <Style Selector="Window.settings-window NumericUpDown:focus-within">
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopFocusBrush}" />
+    </Style>
+
+    <Style Selector="Window.settings-window NumericUpDown:error">
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopDangerBrush}" />
+    </Style>
+
+    <!-- Dropdowns and popup items -->
     <Style Selector="Window.settings-window ComboBox">
-        <Setter Property="Background" Value="{DynamicResource InputBackgroundBrush}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource InputBorderBrush}" />
-        <Setter Property="Foreground" Value="{DynamicResource InputTextBrush}" />
+        <Setter Property="Background" Value="{DynamicResource DesktopFieldBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopBorderBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DesktopInputTextBrush}" />
+        <Setter Property="MinHeight" Value="{DynamicResource DesktopControlHeight}" />
+        <Setter Property="CornerRadius" Value="{DynamicResource DesktopControlRadius}" />
+        <Setter Property="Padding" Value="{DynamicResource DesktopControlPadding}" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
     </Style>
 
     <Style Selector="Window.settings-window ComboBox:disabled">
@@ -154,105 +555,586 @@
         <Setter Property="Foreground" Value="{DynamicResource DisabledTextBrush}" />
     </Style>
 
-    <Style Selector="Window.settings-window TextBox:pointerover /template/ Border#PART_BorderElement">
-        <Setter Property="Background" Value="{DynamicResource InputBackgroundBrush}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource InputBorderBrush}" />
-    </Style>
-
-    <Style Selector="Window.settings-window TextBox:focus /template/ Border#PART_BorderElement">
-        <Setter Property="Background" Value="{DynamicResource InputBackgroundBrush}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource InputFocusBorderBrush}" />
-    </Style>
-
-    <Style Selector="Window.settings-window NumericUpDown:focus-within, Window.settings-window ComboBox:focus-visible">
-        <Setter Property="BorderBrush" Value="{DynamicResource InputFocusBorderBrush}" />
+    <Style Selector="Window.settings-window ComboBox:focus-visible">
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopFocusBrush}" />
     </Style>
 
     <Style Selector="Window.settings-window ComboBox:pointerover /template/ Border#Background, Window.settings-window ComboBox:pressed /template/ Border#Background">
-        <Setter Property="Background" Value="{DynamicResource InputBackgroundBrush}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource InputBorderBrush}" />
+        <Setter Property="Background" Value="{DynamicResource DesktopFieldBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopBorderBrush}" />
     </Style>
 
     <Style Selector="Window.settings-window ComboBox:focus-visible /template/ Border#HighlightBackground">
-        <Setter Property="Background" Value="{DynamicResource InputBackgroundBrush}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource InputFocusBorderBrush}" />
+        <Setter Property="Background" Value="{DynamicResource DesktopFieldBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopFocusBrush}" />
     </Style>
 
     <Style Selector="Window.settings-window ComboBox:focus-within /template/ Border#Background">
-        <Setter Property="BorderBrush" Value="{DynamicResource InputFocusBorderBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopFocusBrush}" />
     </Style>
 
     <Style Selector="Window.settings-window ComboBox:focus-visible /template/ ContentControl#ContentPresenter">
-        <Setter Property="Foreground" Value="{DynamicResource InputTextBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DesktopInputTextBrush}" />
     </Style>
 
     <Style Selector="Window.settings-window ComboBox /template/ PathIcon#DropDownGlyph">
-        <Setter Property="Foreground" Value="{DynamicResource InputTextBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DesktopInputTextBrush}" />
     </Style>
 
     <Style Selector="Window.settings-window ComboBox:disabled /template/ PathIcon#DropDownGlyph">
         <Setter Property="Foreground" Value="{DynamicResource DisabledTextBrush}" />
     </Style>
 
-    <Style Selector="Window.settings-window TabItem">
-        <Setter Property="Background" Value="{DynamicResource TabBackgroundBrush}" />
-        <Setter Property="Foreground" Value="{DynamicResource TabTextBrush}" />
+    <Style Selector="Window.settings-window ComboBoxItem">
+        <Setter Property="MinHeight" Value="32" />
+        <Setter Property="CornerRadius" Value="6" />
+        <Setter Property="Padding" Value="10,0" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
     </Style>
 
+    <Style Selector="Window.settings-window NumericUpDown /template/ ButtonSpinner /template/ RepeatButton:not(:disabled) PathIcon">
+        <Setter Property="Foreground" Value="{DynamicResource DesktopInputTextBrush}" />
+    </Style>
+
+    <Style Selector="Window.settings-window NumericUpDown /template/ ButtonSpinner /template/ RepeatButton:not(:disabled) /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource DesktopFieldBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopBorderBrush}" />
+    </Style>
+
+    <Style Selector="Window.settings-window NumericUpDown /template/ ButtonSpinner /template/ RepeatButton:not(:disabled):pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource DesktopControlHoverBrush}" />
+    </Style>
+
+    <Style Selector="Window.settings-window NumericUpDown /template/ ButtonSpinner /template/ RepeatButton:not(:disabled):pressed /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource DesktopControlPressedBrush}" />
+    </Style>
+
+    <!-- Popup children live in a separate visual root. Dropdowns are desktop-only controls. -->
+    <Style Selector="ComboBox:not(:disabled) /template/ Border#PopupBorder">
+        <Setter Property="Background" Value="{DynamicResource DesktopShellBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopBorderBrush}" />
+    </Style>
+
+    <Style Selector="ComboBoxItem">
+        <Setter Property="Foreground" Value="{DynamicResource DesktopTextBrush}" />
+    </Style>
+
+    <Style Selector="ComboBoxItem /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource DesktopShellBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DesktopTextBrush}" />
+    </Style>
+
+    <Style Selector="ComboBoxItem:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource DesktopControlHoverBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DesktopTextBrush}" />
+    </Style>
+
+    <Style Selector="ComboBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter, ComboBoxItem:selected:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource DesktopSelectionBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DesktopSelectedTextBrush}" />
+    </Style>
+
+    <!-- Project suggestions are an AutoCompleteBox popup, separate from ComboBox dropdowns. -->
+    <Style Selector="Window.settings-window AutoCompleteBox">
+        <Setter Property="Background" Value="{DynamicResource DesktopFieldBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DesktopInputTextBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopBorderBrush}" />
+        <Setter Property="CornerRadius" Value="{DynamicResource DesktopControlRadius}" />
+        <Setter Property="Padding" Value="{DynamicResource DesktopControlPadding}" />
+    </Style>
+
+    <Style Selector="AutoCompleteBox:not(:disabled) /template/ Border#PART_SuggestionsContainer">
+        <Setter Property="Background" Value="{DynamicResource DesktopShellBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopBorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="{DynamicResource DesktopControlRadius}" />
+    </Style>
+
+    <Style Selector="AutoCompleteBox /template/ ListBox#PART_SelectingItemsControl ListBoxItem:not(:disabled) /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource DesktopShellBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DesktopTextBrush}" />
+        <Setter Property="CornerRadius" Value="{DynamicResource DesktopControlRadius}" />
+    </Style>
+
+    <Style Selector="AutoCompleteBox /template/ ListBox#PART_SelectingItemsControl ListBoxItem:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource DesktopControlHoverBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DesktopTextBrush}" />
+    </Style>
+
+    <Style Selector="AutoCompleteBox /template/ ListBox#PART_SelectingItemsControl ListBoxItem:pressed /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource DesktopControlPressedBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DesktopTextBrush}" />
+    </Style>
+
+    <Style Selector="AutoCompleteBox /template/ ListBox#PART_SelectingItemsControl ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter, AutoCompleteBox /template/ ListBox#PART_SelectingItemsControl ListBoxItem:selected:not(:focus) /template/ ContentPresenter#PART_ContentPresenter, AutoCompleteBox /template/ ListBox#PART_SelectingItemsControl ListBoxItem:selected:pointerover /template/ ContentPresenter#PART_ContentPresenter, AutoCompleteBox /template/ ListBox#PART_SelectingItemsControl ListBoxItem:selected:pressed /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource DesktopSelectionBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DesktopSelectedTextBrush}" />
+    </Style>
+
+    <!-- Sliders -->
+    <Style Selector="Window.settings-window Slider">
+        <Setter Property="MinHeight" Value="12" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+
+    <Style Selector="Window.settings-window Slider /template/ Thumb">
+        <Setter Property="Width" Value="12" />
+        <Setter Property="Height" Value="12" />
+    </Style>
+
+    <Style Selector="Window.settings-window Slider /template/ Track">
+        <Setter Property="MinHeight" Value="10" />
+    </Style>
+
+    <Style Selector="Window.settings-window Slider /template/ RepeatButton#PART_DecreaseButton /template/ Border#TrackBackground">
+        <Setter Property="Background" Value="{DynamicResource DesktopFocusBrush}" />
+    </Style>
+
+    <Style Selector="Window.settings-window Slider /template/ RepeatButton#PART_IncreaseButton /template/ Border#TrackBackground">
+        <Setter Property="Background" Value="{DynamicResource DesktopBorderBrush}" />
+    </Style>
+
+    <Style Selector="Window.settings-window Slider /template/ Thumb:not(:disabled) /template/ Border">
+        <Setter Property="Background" Value="{DynamicResource DesktopSliderThumbBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopFocusBrush}" />
+    </Style>
+
+    <!-- Date picker text field (Worklog toolbar) shares the text-field family. -->
+    <Style Selector="Window.settings-window CalendarDatePicker">
+        <Setter Property="Background" Value="{DynamicResource DesktopFieldBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DesktopInputTextBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopBorderBrush}" />
+        <Setter Property="Padding" Value="{DynamicResource DesktopControlPadding}" />
+        <Setter Property="MinHeight" Value="{DynamicResource DesktopControlHeight}" />
+        <Setter Property="CornerRadius" Value="{DynamicResource DesktopControlRadius}" />
+    </Style>
+
+    <Style Selector="Window.settings-window CalendarDatePicker:pointerover /template/ Border#Background, Window.settings-window CalendarDatePicker:pressed /template/ Border#Background">
+        <Setter Property="Background" Value="{DynamicResource DesktopFieldBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopBorderBrush}" />
+    </Style>
+
+    <Style Selector="Window.settings-window CalendarDatePicker:focus-within /template/ Border#Background">
+        <Setter Property="Background" Value="{DynamicResource DesktopFieldBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopFocusBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+    </Style>
+
+    <!-- The picker's calendar button shows the app's icon instead of Fluent's drawn glyph. -->
+    <Style Selector="Window.settings-window CalendarDatePicker /template/ Button#PART_Button">
+        <Setter Property="MinWidth" Value="28" />
+        <Setter Property="Template">
+            <ControlTemplate>
+                <Panel>
+                    <ContentPresenter Name="PART_ContentPresenter"
+                                      Background="{TemplateBinding Background}"
+                                      CornerRadius="{TemplateBinding CornerRadius}" />
+                    <icons:MaterialIcon Kind="CalendarMonthOutline" Width="18" Height="18"
+                                        HorizontalAlignment="Center" VerticalAlignment="Center"
+                                        Foreground="{DynamicResource DesktopTextBrush}" IsHitTestVisible="False" />
+                </Panel>
+            </ControlTemplate>
+        </Setter>
+    </Style>
+
+    <Style Selector="Window.settings-window CalendarDatePicker /template/ TextBox#PART_TextBox">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="{DynamicResource DesktopInputTextBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopBorderBrush}" />
+    </Style>
+
+    <Style Selector="Window.settings-window CalendarDatePicker /template/ TextBox#PART_TextBox:pointerover /template/ Border#PART_BorderElement, Window.settings-window CalendarDatePicker /template/ TextBox#PART_TextBox:focus /template/ Border#PART_BorderElement">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+    </Style>
+
+    <Style Selector="Window.settings-window CalendarDatePicker /template/ TextBox#PART_TextBox:not(:disabled)">
+        <Setter Property="SelectionBrush" Value="{DynamicResource DesktopSelectionBrush}" />
+        <Setter Property="SelectionForegroundBrush" Value="{DynamicResource DesktopSelectedTextBrush}" />
+        <Setter Property="CaretBrush" Value="{DynamicResource DesktopInputTextBrush}" />
+    </Style>
+
+    <!--
+      Icon-and-underline navigation. Existing tab roles keep their serialized names:
+      Tab background = normal surface, hover background = hover, text = normal label/icon,
+      selected background = the 2 px underline, selected text = selected label/icon.
+      All states reserve the same underline space so the row never moves.
+    -->
+    <Style Selector="Window.settings-window TabControl">
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="Template">
+            <ControlTemplate>
+                <Border Background="{TemplateBinding Background}"
+                        BorderBrush="{TemplateBinding BorderBrush}"
+                        BorderThickness="{TemplateBinding BorderThickness}"
+                        CornerRadius="{TemplateBinding CornerRadius}"
+                        HorizontalAlignment="{TemplateBinding HorizontalAlignment}"
+                        VerticalAlignment="{TemplateBinding VerticalAlignment}">
+                    <DockPanel>
+                        <Border DockPanel.Dock="Top"
+                                BorderBrush="{DynamicResource DesktopTabUnderlineIdleBrush}"
+                                BorderThickness="0,0,0,2">
+                            <ScrollViewer HorizontalScrollBarVisibility="Auto"
+                                          VerticalScrollBarVisibility="Disabled"
+                                          VerticalAlignment="Bottom">
+                                <ItemsPresenter Name="PART_ItemsPresenter"
+                                                ItemsPanel="{TemplateBinding ItemsPanel}" />
+                            </ScrollViewer>
+                        </Border>
+                        <ContentPresenter Name="PART_SelectedContentHost"
+                                          Margin="{TemplateBinding Padding}"
+                                          HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                          VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                                          Content="{TemplateBinding SelectedContent}"
+                                          ContentTemplate="{TemplateBinding SelectedContentTemplate}" />
+                    </DockPanel>
+                </Border>
+            </ControlTemplate>
+        </Setter>
+    </Style>
+
+    <Style Selector="Window.settings-window TabItem">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="{DynamicResource DesktopTabTextBrush}" />
+        <Setter Property="MinHeight" Value="{DynamicResource DesktopTabRowHeight}" />
+        <Setter Property="Padding" Value="6,0" />
+        <Setter Property="Margin" Value="0" />
+        <Setter Property="FontSize" Value="{DynamicResource FontSizeBody}" />
+        <Setter Property="Template">
+            <ControlTemplate>
+                <Border Name="PART_LayoutRoot"
+                        Background="{TemplateBinding Background}"
+                        BorderBrush="Transparent"
+                        BorderThickness="0,0,0,3"
+                        CornerRadius="6,6,0,0"
+                        Padding="{TemplateBinding Padding}">
+                    <Grid>
+                        <Border Name="PART_FocusRing"
+                                BorderBrush="Transparent"
+                                BorderThickness="2"
+                                CornerRadius="6"
+                                Margin="-6,4,-6,4"
+                                IsHitTestVisible="False" />
+                        <ContentPresenter Name="PART_ContentPresenter"
+                                          Content="{TemplateBinding Header}"
+                                          ContentTemplate="{TemplateBinding HeaderTemplate}"
+                                          Foreground="{TemplateBinding Foreground}"
+                                          FontFamily="{TemplateBinding FontFamily}"
+                                          FontSize="{TemplateBinding FontSize}"
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Center" />
+                    </Grid>
+                </Border>
+            </ControlTemplate>
+        </Setter>
+    </Style>
+
+    <!--
+      The selected label and icon use the theme accent, adjusted only as far as needed to stay readable on the
+      tab surface (TabSelectedLabelBrush). TabSelectedText keeps coloring text drawn on the selected fill, such
+      as the selected Worklog row, because built-in themes chose it for that fill rather than for the tab strip.
+    -->
     <Style Selector="Window.settings-window TabItem:selected">
-        <Setter Property="Background" Value="{DynamicResource TabSelectedBackgroundBrush}" />
-        <Setter Property="Foreground" Value="{DynamicResource TabSelectedTextBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource TabSelectedLabelBrush}" />
+    </Style>
+
+    <Style Selector="Window.settings-window TabItem:selected /template/ Border#PART_LayoutRoot">
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopTabSelectedBrush}" />
     </Style>
 
     <Style Selector="Window.settings-window TabItem:pointerover:not(:selected) /template/ Border#PART_LayoutRoot">
-        <Setter Property="Background" Value="{DynamicResource TabHoverBackgroundBrush}" />
-        <Setter Property="TextElement.Foreground" Value="{DynamicResource TabTextBrush}" />
+        <Setter Property="Background" Value="{DynamicResource DesktopTabHoverBrush}" />
     </Style>
 
-    <Style Selector="Window.settings-window TabItem:selected:pointerover /template/ Border#PART_LayoutRoot">
-        <Setter Property="Background" Value="{DynamicResource TabSelectedBackgroundBrush}" />
-        <Setter Property="TextElement.Foreground" Value="{DynamicResource TabSelectedTextBrush}" />
+    <Style Selector="Window.settings-window TabItem:disabled">
+        <Setter Property="Foreground" Value="{DynamicResource DisabledTextBrush}" />
     </Style>
 
-    <Style Selector="Window.settings-window TabItem:focus-visible /template/ Border#PART_LayoutRoot">
-        <Setter Property="BorderBrush" Value="{DynamicResource InputFocusBorderBrush}" />
-        <Setter Property="BorderThickness" Value="2" />
+    <Style Selector="Window.settings-window TabItem:focus-visible /template/ Border#PART_FocusRing">
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopTabFocusBrush}" />
     </Style>
 
-    <Style Selector="Window.settings-window TabItem:selected:focus-visible /template/ Border#PART_LayoutRoot">
-        <Setter Property="BorderBrush" Value="{DynamicResource TabSelectedTextBrush}" />
+    <Style Selector="Window.settings-window TabItem controls|TabHeader TextBlock.tab-label">
+        <Setter Property="FontWeight" Value="Normal" />
+    </Style>
+
+    <Style Selector="Window.settings-window TabItem:selected controls|TabHeader TextBlock.tab-label">
+        <Setter Property="FontWeight" Value="SemiBold" />
     </Style>
 
     <!-- Version Info Text in About tab -->
     <Style Selector="TextBlock.VersionInfoText">
         <Setter Property="Cursor" Value="Hand" />
-        <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DesktopTextBrush}" />
     </Style>
 
     <!-- Settings scroll viewer -->
     <Style Selector="ScrollViewer.settings-scroll">
-        <Setter Property="Padding" Value="0,0,14,0" />
+        <Setter Property="Padding" Value="0" />
         <Setter Property="HorizontalScrollBarVisibility" Value="Disabled" />
+        <Setter Property="VerticalScrollBarVisibility" Value="Auto" />
     </Style>
 
-    <!-- Settings accordion expander -->
-    <Style Selector="Expander.settings-accordion">
-        <Setter Property="Margin" Value="0,0,0,10" />
-        <Setter Property="BorderBrush" Value="{DynamicResource SettingsAccordionBorderBrush}" />
+    <!-- The inset is a margin, not ScrollViewer padding: padding is subtracted on arrange only, so wide children overshoot it. -->
+    <Style Selector="ScrollViewer.settings-scroll > StackPanel">
+        <Setter Property="Margin" Value="12,16,12,16" />
+    </Style>
+
+    <!--
+      Selectors on the calendar buttons carry a :not(.cal) activator so they outrank the desktop button rules
+      (activator-based selectors beat plain ones whatever their order).
+      Calendar (the Worklog date picker's popup). The popup is its own native window, outside the
+      Window.settings-window scope, so these selectors are global: Calendar is only used by desktop windows.
+    -->
+    <Style Selector="Calendar">
+        <Setter Property="Background" Value="{DynamicResource DesktopShellBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DesktopTextBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopBorderBrush}" />
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="Background" Value="{DynamicResource InputBackgroundBrush}" />
-        <Setter Property="CornerRadius" Value="{DynamicResource RadiusSm}" />
+        <Setter Property="CornerRadius" Value="{DynamicResource DesktopCardRadius}" />
+        <Setter Property="FontSize" Value="{DynamicResource FontSizeBody}" />
+        <Setter Property="FontFamily" Value="{DynamicResource DesktopFontFamily}" />
     </Style>
 
-    <Style Selector="Expander.settings-accordion /template/ ToggleButton">
-        <Setter Property="Background" Value="{DynamicResource SettingsAccordionHeaderBrush}" />
-        <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
-        <Setter Property="CornerRadius" Value="{DynamicResource RadiusSm}" />
+    <Style Selector="CalendarItem">
+        <Setter Property="Background" Value="{DynamicResource DesktopShellBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopBorderBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DesktopTextBrush}" />
+        <Setter Property="FontSize" Value="{DynamicResource FontSizeBody}" />
+        <Setter Property="Template">
+            <ControlTemplate>
+                <Border Name="CalendarFrame" Background="{TemplateBinding Background}"
+                        BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}"
+                        CornerRadius="{TemplateBinding CornerRadius}" Padding="4" ClipToBounds="True">
+                    <Grid RowDefinitions="33,Auto">
+                        <Border Name="MonthHeaderSeparator" BorderBrush="{DynamicResource DesktopBorderBrush}"
+                                BorderThickness="0,0,0,1" Padding="0" Background="{DynamicResource DesktopShellBrush}">
+                            <Grid ColumnDefinitions="*,32,32">
+                                <Button Name="PART_HeaderButton" HorizontalContentAlignment="Left" />
+                                <Button Name="PART_PreviousButton" Grid.Column="1" Padding="0">
+                                    <Path StrokeThickness="1.5" Data="M 0,9 L 9,0 L 18,9"
+                                          HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                </Button>
+                                <Button Name="PART_NextButton" Grid.Column="2" Padding="0">
+                                    <Path StrokeThickness="1.5" Data="M 0,0 L 9,9 L 18,0"
+                                          HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                </Button>
+                            </Grid>
+                        </Border>
+                        <!-- CalendarItem requires an empty month backdrop and populates both named grids. -->
+                        <Border Name="BackgroundLayer" Grid.Row="1" Background="{DynamicResource DesktopShellBrush}"
+                                IsVisible="{Binding #PART_MonthView.IsVisible}" />
+                        <Grid Name="PART_MonthView" Grid.Row="1" IsVisible="False"
+                              RowDefinitions="28,Auto,Auto,Auto,Auto,Auto,Auto"
+                              ColumnDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto" />
+                        <Grid Name="PART_YearView" Grid.Row="1" IsVisible="False" MinHeight="192" MinWidth="238"
+                              RowDefinitions="*,*,*" ColumnDefinitions="*,*,*,*"
+                              Background="{DynamicResource DesktopShellBrush}" />
+                    </Grid>
+                </Border>
+            </ControlTemplate>
+        </Setter>
     </Style>
 
-    <Style Selector="Expander.settings-accordion /template/ ToggleButton:pointerover">
-        <Setter Property="Background" Value="{DynamicResource SettingsAccordionHeaderHoverBrush}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource SettingsAccordionBorderBrush}" />
+    <!-- Clip the day/year panels to the rounded popup outline. -->
+    <Style Selector="CalendarItem /template/ Border">
+        <Setter Property="ClipToBounds" Value="True" />
+        <Setter Property="Padding" Value="4" />
+    </Style>
+
+    <!-- Keep the month backdrop empty; the divider belongs to the month navigation above it. -->
+    <Style Selector="CalendarItem:not(.cal) /template/ Border#BackgroundLayer">
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="Background" Value="{DynamicResource DesktopShellBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopBorderBrush}" />
+        <Setter Property="BorderThickness" Value="0" />
+    </Style>
+
+    <Style Selector="CalendarItem:not(.cal) /template/ Grid#PART_YearView">
+        <Setter Property="Background" Value="{DynamicResource DesktopShellBrush}" />
+    </Style>
+
+    <Style Selector="CalendarItem:not(.cal) /template/ Grid#PART_MonthView">
+        <Setter Property="MinHeight" Value="0" />
+    </Style>
+
+    <Style Selector="CalendarItem /template/ Button:not(.cal)">
+        <Setter Property="Foreground" Value="{DynamicResource DesktopTextBrush}" />
+        <Setter Property="FontSize" Value="{DynamicResource FontSizeBody}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="MinHeight" Value="0" />
+        <Setter Property="Height" Value="32" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Padding" Value="8,0" />
+    </Style>
+
+    <Style Selector="CalendarItem /template/ Button:not(.cal) /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="CornerRadius" Value="{DynamicResource DesktopControlRadius}" />
+    </Style>
+
+    <Style Selector="CalendarItem /template/ Button:not(.cal):pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource DesktopControlHoverBrush}" />
+    </Style>
+
+    <!-- Month arrows: small, same size as the day-row icons. -->
+    <Style Selector="CalendarItem /template/ Button#PART_PreviousButton:not(:disabled) Path, CalendarItem /template/ Button#PART_NextButton:not(:disabled) Path">
+        <Setter Property="Fill" Value="Transparent" />
+        <Setter Property="Stroke" Value="{DynamicResource DesktopTextBrush}" />
+    </Style>
+
+    <Style Selector="CalendarItem /template/ Button#PART_PreviousButton:disabled Path, CalendarItem /template/ Button#PART_NextButton:disabled Path">
+        <Setter Property="Fill" Value="Transparent" />
+        <Setter Property="Stroke" Value="{DynamicResource DesktopSecondaryTextBrush}" />
+        <Setter Property="Opacity" Value="0.4" />
+    </Style>
+
+    <!-- The template fixes the arrow's size, so the arrow buttons are scaled down instead. -->
+    <Style Selector="CalendarItem /template/ Button#PART_PreviousButton, CalendarItem /template/ Button#PART_NextButton">
+        <Setter Property="RenderTransform" Value="scale(0.7)" />
+    </Style>
+
+    <Style Selector="CalendarItem /template/ Button:not(.cal) /template/ Path">
+        <Setter Property="Fill" Value="{DynamicResource DesktopTextBrush}" />
+    </Style>
+
+    <!-- The ring around today. -->
+    <Style Selector="CalendarDayButton /template/ Border#Border">
+        <Setter Property="CornerRadius" Value="6" />
+    </Style>
+
+    <Style Selector="CalendarDayButton, CalendarButton">
+        <Setter Property="Foreground" Value="{DynamicResource DesktopTextBrush}" />
+        <Setter Property="FontSize" Value="{DynamicResource FontSizeBody}" />
+        <Setter Property="MinHeight" Value="32" />
+        <Setter Property="MinWidth" Value="32" />
+        <Setter Property="Height" Value="32" />
+        <!-- The template binds its root border to this, so the today ring and the hover fill are rounded. -->
+        <Setter Property="CornerRadius" Value="6" />
+    </Style>
+
+    <Style Selector="CalendarDayButton /template/ Border#Root, CalendarButton /template/ Border#Root, CalendarDayButton:today /template/ Border#Root, CalendarDayButton:selected /template/ Border#Root">
+        <Setter Property="CornerRadius" Value="6" />
+    </Style>
+
+    <Style Selector="CalendarDayButton:inactive /template/ Border#Root">
+        <Setter Property="Background" Value="{DynamicResource DesktopShellBrush}" />
+    </Style>
+
+    <Style Selector="CalendarDayButton:not(:inactive):not(:selected):not(:disabled):not(:pointerover) /template/ Border#Root">
+        <Setter Property="Background" Value="{DynamicResource DesktopCardBrush}" />
+    </Style>
+
+    <Style Selector="CalendarDayButton:disabled, CalendarDayButton:blackout, CalendarButton:disabled">
+        <Setter Property="Foreground" Value="{DynamicResource DisabledTextBrush}" />
+    </Style>
+
+    <!-- Disabled days are dimmed; Calendar may hide dates outside its DisplayDateStart/End range. -->
+    <Style Selector="CalendarDayButton:disabled">
+        <Setter Property="Opacity" Value="0.4" />
+    </Style>
+
+    <Style Selector="CalendarDayButton:disabled /template/ ContentPresenter#PART_ContentPresenter, CalendarDayButton:blackout /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Foreground" Value="{DynamicResource DisabledTextBrush}" />
+    </Style>
+
+    <Style Selector="CalendarDayButton:inactive">
+        <Setter Property="Foreground" Value="{DynamicResource DesktopTextBrush}" />
+    </Style>
+
+    <Style Selector="CalendarDayButton:not(:selected):not(:disabled):not(:blackout) /template/ ContentPresenter#PART_ContentPresenter, CalendarButton:not(:selected):not(:disabled) /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Foreground" Value="{DynamicResource DesktopTextBrush}" />
+    </Style>
+
+    <Style Selector="CalendarDayButton:today /template/ Border#Border">
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopFocusBrush}" />
+    </Style>
+
+    <Style Selector="CalendarDayButton:pointerover /template/ Border#Root, CalendarButton:pointerover /template/ Border#Root">
+        <Setter Property="Background" Value="{DynamicResource DesktopControlHoverBrush}" />
+    </Style>
+
+    <Style Selector="CalendarDayButton:selected /template/ Border#Root, CalendarDayButton:selected:pointerover /template/ Border#Root, CalendarButton:selected /template/ Border#Root">
+        <Setter Property="Background" Value="{DynamicResource DesktopSelectionBrush}" />
+    </Style>
+
+    <Style Selector="CalendarDayButton:selected /template/ ContentPresenter#PART_ContentPresenter, CalendarDayButton:selected:pointerover /template/ ContentPresenter#PART_ContentPresenter, CalendarButton:selected /template/ ContentPresenter#PART_ContentPresenter, CalendarButton:selected:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Foreground" Value="{DynamicResource DesktopSelectedTextBrush}" />
+    </Style>
+
+    <!-- Settings accordion: one self-contained template on the shared field surface. -->
+    <Style Selector="Expander.settings-accordion">
+        <Setter Property="HorizontalAlignment" Value="Stretch" />
+        <Setter Property="Margin" Value="0" />
+        <Setter Property="Template">
+            <ControlTemplate>
+                <Border Background="{DynamicResource DesktopFieldBrush}"
+                        BorderBrush="{DynamicResource DesktopBorderBrush}"
+                        BorderThickness="1"
+                        CornerRadius="{DynamicResource DesktopControlRadius}"
+                        ClipToBounds="True">
+                    <StackPanel>
+                        <ToggleButton Name="AccordionHeader"
+                                      Classes="accordion-header"
+                                      IsChecked="{TemplateBinding IsExpanded, Mode=TwoWay}"
+                                      HorizontalAlignment="Stretch"
+                                      HorizontalContentAlignment="Stretch">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <ContentPresenter Content="{TemplateBinding Header}"
+                                                  ContentTemplate="{TemplateBinding HeaderTemplate}"
+                                                  VerticalAlignment="Center" />
+                                <icons:MaterialIcon Grid.Column="1" Name="Chevron" Kind="ChevronDown" Width="18" Height="18"
+                                                    Foreground="{DynamicResource DesktopTextBrush}"
+                                                    VerticalAlignment="Center" RenderTransformOrigin="50%,50%" />
+                            </Grid>
+                        </ToggleButton>
+                        <Border Name="ExpanderContent" IsVisible="{TemplateBinding IsExpanded}" Padding="12,0,12,8">
+                            <ContentPresenter Content="{TemplateBinding Content}"
+                                              ContentTemplate="{TemplateBinding ContentTemplate}" />
+                        </Border>
+                    </StackPanel>
+                </Border>
+            </ControlTemplate>
+        </Setter>
+    </Style>
+
+    <Style Selector="Expander.settings-accordion ToggleButton.accordion-header">
+        <Setter Property="MinHeight" Value="{DynamicResource DesktopControlHeight}" />
+        <Setter Property="Padding" Value="10,0" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="CornerRadius" Value="0" />
+        <Setter Property="Foreground" Value="{DynamicResource DesktopTextBrush}" />
+    </Style>
+
+    <Style Selector="Expander.settings-accordion ToggleButton.accordion-header /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+    </Style>
+
+    <Style Selector="Expander.settings-accordion ToggleButton.accordion-header:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource DesktopControlHoverBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DesktopTextBrush}" />
+    </Style>
+
+    <Style Selector="Expander.settings-accordion ToggleButton.accordion-header:checked /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="{DynamicResource DesktopTextBrush}" />
+    </Style>
+
+    <Style Selector="Expander.settings-accordion ToggleButton.accordion-header:checked:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource DesktopControlHoverBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DesktopTextBrush}" />
+    </Style>
+
+    <Style Selector="Expander.settings-accordion ToggleButton.accordion-header:focus-visible /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopFocusBrush}" />
+        <Setter Property="BorderThickness" Value="2" />
+    </Style>
+
+    <Style Selector="Expander.settings-accordion ToggleButton.accordion-header:checked icons|MaterialIcon#Chevron">
+        <Setter Property="RenderTransform" Value="rotate(180deg)" />
     </Style>
 
     <!-- Spinners for NumericUpDown -->
@@ -268,32 +1150,49 @@
 
     <!-- Color picker controls and surfaces -->
     <Style Selector="Button.color-swatch">
+        <Setter Property="Template">
+            <ControlTemplate>
+                <ContentPresenter Name="SwatchSurface" Background="{TemplateBinding Background}"
+                                  BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}"
+                                  CornerRadius="{TemplateBinding CornerRadius}" Content="{TemplateBinding Content}" />
+            </ControlTemplate>
+        </Setter>
         <Setter Property="Width" Value="28" />
         <Setter Property="Height" Value="28" />
         <Setter Property="Padding" Value="0" />
         <Setter Property="CornerRadius" Value="{DynamicResource RadiusSm}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource AccentPrimaryBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopFocusBrush}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="HorizontalAlignment" Value="Right" />
         <Setter Property="Focusable" Value="True" />
     </Style>
 
     <Style Selector="Button.color-swatch:focus-visible">
-        <Setter Property="BorderBrush" Value="{DynamicResource FocusRingBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopFocusBrush}" />
+        <Setter Property="BorderThickness" Value="2" />
+    </Style>
+
+    <Style Selector="Expander.settings-accordion ToggleButton.accordion-header:pressed /template/ ContentPresenter#PART_ContentPresenter, Expander.settings-accordion ToggleButton.accordion-header:checked:pressed /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource DesktopControlPressedBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DesktopTextBrush}" />
+    </Style>
+
+    <Style Selector="Button.color-swatch:pointerover, Button.color-swatch:pressed">
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopFocusBrush}" />
         <Setter Property="BorderThickness" Value="2" />
     </Style>
 
     <Style Selector="Border.color-picker-surface">
         <Setter Property="CornerRadius" Value="{DynamicResource RadiusMd}" />
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="BorderBrush" Value="{DynamicResource InputBorderBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopBorderBrush}" />
         <Setter Property="ClipToBounds" Value="True" />
     </Style>
 
     <Style Selector="Border.color-picker-hue-strip">
         <Setter Property="CornerRadius" Value="{DynamicResource RadiusSm}" />
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="BorderBrush" Value="{DynamicResource InputBorderBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopBorderBrush}" />
         <Setter Property="ClipToBounds" Value="True" />
     </Style>
 
@@ -307,8 +1206,8 @@
     <Style Selector="Border.color-picker-chip">
         <Setter Property="CornerRadius" Value="{DynamicResource RadiusSm}" />
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="BorderBrush" Value="{DynamicResource InputBorderBrush}" />
-        <Setter Property="Background" Value="{DynamicResource InputBackgroundBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopBorderBrush}" />
+        <Setter Property="Background" Value="{DynamicResource DesktopFieldBrush}" />
         <Setter Property="Padding" Value="6,5" />
     </Style>
 
@@ -317,20 +1216,21 @@
         <Setter Property="BorderThickness" Value="2" />
         <Setter Property="BorderBrush" Value="#FFFFFFFF" />
         <Setter Property="Background" Value="#22000000" />
+        <Setter Property="BoxShadow" Value="0 0 0 1 #FF000000" />
     </Style>
 
     <Style Selector="Border.color-picker-strip-thumb">
         <Setter Property="CornerRadius" Value="{DynamicResource RadiusXs}" />
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="BorderBrush" Value="#CCFFFFFF" />
-        <Setter Property="Background" Value="#66000000" />
+        <Setter Property="BorderBrush" Value="#FFFFFFFF" />
+        <Setter Property="Background" Value="#FF000000" />
     </Style>
 
     <!-- ToolTips on transient surfaces -->
     <Style Selector="ToolTip">
-        <Setter Property="Background" Value="{DynamicResource SettingsBackgroundBrush}" />
-        <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtleBrush}" />
+        <Setter Property="Background" Value="{DynamicResource DesktopShellBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DesktopTextBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopBorderBrush}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="CornerRadius" Value="{DynamicResource RadiusXs}" />
         <Setter Property="Padding" Value="8,4" />
@@ -339,8 +1239,8 @@
 
     <!-- Context Menus -->
     <Style Selector="ContextMenu">
-        <Setter Property="Background" Value="{DynamicResource SettingsBackgroundBrush}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource BorderSubtleBrush}" />
+        <Setter Property="Background" Value="{DynamicResource DesktopShellBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopBorderBrush}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="CornerRadius" Value="{DynamicResource RadiusSm}" />
         <Setter Property="Padding" Value="4" />
@@ -348,7 +1248,70 @@
 
     <Style Selector="TextBlock.summary-unassigned">
         <Setter Property="FontStyle" Value="Italic" />
-        <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DesktopSecondaryTextBrush}" />
+    </Style>
+
+    <!-- Notifications follow the rounded dialog reference, with quiet chrome and secondary body text. -->
+    <Style Selector="Window.notification-window Border.notification-card">
+        <Setter Property="Background" Value="{DynamicResource DesktopShellBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopNotificationBorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="{DynamicResource NotificationCardRadius}" />
+        <Setter Property="Padding" Value="{DynamicResource NotificationContentPadding}" />
+    </Style>
+
+    <Style Selector="Window.notification-window TextBlock.notification-title">
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{DynamicResource DesktopHeadingBrush}" />
+    </Style>
+
+    <Style Selector="Window.notification-window TextBlock.notification-message">
+        <Setter Property="Foreground" Value="{DynamicResource DesktopNotificationBodyBrush}" />
+    </Style>
+
+    <Style Selector="Window.notification-window.warning Border.notification-card">
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopWarningBrush}" />
+    </Style>
+
+    <Style Selector="Window.notification-window.error Border.notification-card">
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopDangerBrush}" />
+    </Style>
+
+    <Style Selector="Window.notification-window.warning TextBlock.notification-title">
+        <Setter Property="Foreground" Value="{DynamicResource DesktopWarningBrush}" />
+    </Style>
+
+    <Style Selector="Window.notification-window.error TextBlock.notification-title">
+        <Setter Property="Foreground" Value="{DynamicResource DesktopDangerBrush}" />
+    </Style>
+
+    <Style Selector="Window.notification-window Button.notification-close">
+        <Setter Property="Width" Value="24" />
+        <Setter Property="Height" Value="24" />
+        <Setter Property="MinWidth" Value="{DynamicResource MinHitTargetSize}" />
+        <Setter Property="MinHeight" Value="{DynamicResource MinHitTargetSize}" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="VerticalAlignment" Value="Top" />
+        <Setter Property="Foreground" Value="{DynamicResource DesktopSecondaryTextBrush}" />
+    </Style>
+
+    <Style Selector="Window.notification-window Button.notification-close /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+    </Style>
+
+    <Style Selector="Window.notification-window Button.notification-close:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource DesktopControlHoverBrush}" />
+    </Style>
+
+    <Style Selector="Window.notification-window Button.notification-close:pressed /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource DesktopControlPressedBrush}" />
+    </Style>
+
+    <Style Selector="Window.notification-window Button.notification-close:focus-visible /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopFocusBrush}" />
+        <Setter Property="BorderThickness" Value="2" />
+        <Setter Property="Margin" Value="-2" />
     </Style>
 
 </Styles>

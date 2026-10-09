@@ -141,7 +141,7 @@ public class TimerWidgetBehaviorTests
     [InlineData(1.24, Orientation.Horizontal)]
     [InlineData(1.25, Orientation.Vertical)]
     [InlineData(2.0, Orientation.Vertical)]
-    public void ScaleChange_ReflowsTheLayoutAndPreservesAccessibleButtonTargets(double scale, Orientation orientation)
+    public void ScaleChange_ReflowsTheLayoutAndScalesButtonTargetsWithTheClock(double scale, Orientation orientation)
     {
         using var fixture = new Fixture();
 
@@ -150,8 +150,8 @@ public class TimerWidgetBehaviorTests
         Assert.Equal(orientation, fixture.ViewModel.ButtonPanelOrientation);
         Assert.Equal(DesignMetrics.BaseMainTimerFontSize * scale, fixture.ViewModel.MainTimerFontSize);
         Assert.Equal(DesignMetrics.BaseCompactTimerTextWidth * scale, fixture.ViewModel.CompactTimerTextWidth);
-        Assert.True(fixture.ViewModel.ButtonSize >= DesignMetrics.MinAccessibleHitTarget);
-        Assert.True(fixture.ViewModel.CompactButtonSize >= DesignMetrics.MinAccessibleHitTarget);
+        Assert.Equal(DesignMetrics.BaseButtonSize * scale, fixture.ViewModel.ButtonSize);
+        Assert.Equal(fixture.ViewModel.CompactIconSize + (6 * scale), fixture.ViewModel.CompactButtonSize);
     }
 
     [Theory]

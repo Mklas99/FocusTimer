@@ -145,8 +145,19 @@ namespace FocusTimer.App.ViewModels
         public Orientation ButtonPanelOrientation
         {
             get => this._buttonPanelOrientation;
-            set => this.RaiseAndSetIfChanged(ref this._buttonPanelOrientation, value);
+            set
+            {
+                this.RaiseAndSetIfChanged(ref this._buttonPanelOrientation, value);
+                this.RaisePropertyChanged(nameof(this.ButtonPanelVerticalAlignment));
+            }
         }
+
+        /// <summary>
+        /// Gets the vertical placement of the compact button panel: centered when the buttons are stacked,
+        /// stretched over the clock's height when they sit in a row so their click areas use the full height.
+        /// </summary>
+        public VerticalAlignment ButtonPanelVerticalAlignment =>
+            this._buttonPanelOrientation == Orientation.Vertical ? VerticalAlignment.Center : VerticalAlignment.Stretch;
 
         /// <summary>
         /// Gets or sets the main timer font size for responsive layout.
@@ -165,6 +176,23 @@ namespace FocusTimer.App.ViewModels
             get => this._compactTimerFontSize;
             set => this.RaiseAndSetIfChanged(ref this._compactTimerFontSize, value);
         }
+
+        /// <summary>Gets the shell radius, proportional to the scale and the selected mode.</summary>
+        public Avalonia.CornerRadius WidgetCornerRadius => new(
+            (this.UseCompactMode ? DesignMetrics.RadiusSm : DesignMetrics.RadiusMd) * this.AppearanceSettings.WidgetScale);
+
+        /// <summary>Gets the widget inset at the current appearance scale.</summary>
+        public Avalonia.Thickness WidgetContentMargin => new(DesignMetrics.SpacingSm * this.AppearanceSettings.WidgetScale);
+
+        /// <summary>Gets the spacing around each full-mode button at the current scale.</summary>
+        public Avalonia.Thickness WidgetButtonMargin => new(2 * this.AppearanceSettings.WidgetScale);
+
+        /// <summary>Gets equal visible clock and icon side gaps, accounting for the icon's click target.</summary>
+        public Avalonia.Thickness CompactContentMargin => new(
+            DesignMetrics.SpacingSm * this.AppearanceSettings.WidgetScale,
+            0,
+            Math.Max(0, (DesignMetrics.SpacingSm * this.AppearanceSettings.WidgetScale) - ((this.CompactButtonSize - this.CompactIconSize) / 2)),
+            0);
 
         /// <summary>
         /// Gets or sets a fixed width for the main timer text to avoid window jitter while ticking.
@@ -680,15 +708,21 @@ namespace FocusTimer.App.ViewModels
         private void UpdateResponsiveLayout()
         {
             double scale = this.AppearanceSettings.WidgetScale;
+            this.RaisePropertyChanged(nameof(this.WidgetCornerRadius));
+            this.RaisePropertyChanged(nameof(this.WidgetContentMargin));
+            this.RaisePropertyChanged(nameof(this.WidgetButtonMargin));
             this.MainTimerFontSize = DesignMetrics.BaseMainTimerFontSize * scale;
             this.CompactTimerFontSize = DesignMetrics.BaseCompactTimerFontSize * scale;
             this.MainTimerTextWidth = DesignMetrics.BaseMainTimerTextWidth * scale;
             this.CompactTimerTextWidth = DesignMetrics.BaseCompactTimerTextWidth * scale;
             this.ProjectFontSize = DesignMetrics.BaseProjectFontSize * scale;
-            this.ButtonSize = Math.Max(DesignMetrics.MinAccessibleHitTarget, DesignMetrics.BaseButtonSize * scale);
+            this.ButtonSize = DesignMetrics.BaseButtonSize * scale;
             this.IconSize = DesignMetrics.BaseIconSize * scale;
-            this.CompactButtonSize = Math.Max(DesignMetrics.MinAccessibleHitTarget, DesignMetrics.BaseButtonSize * 0.85 * scale);
-            this.CompactIconSize = DesignMetrics.BaseIconSize * 0.85 * scale;
+            this.CompactIconSize = DesignMetrics.BaseIconSize * 0.8 * scale;
+
+            // The icon's side gap equals the clock's side gap, so the widget has the same space left and right.
+            this.CompactButtonSize = this.CompactIconSize + (6 * scale);
+            this.RaisePropertyChanged(nameof(this.CompactContentMargin));
             this.ButtonPanelOrientation = scale >= 1.25 ? Orientation.Vertical : Orientation.Horizontal;
         }
 
@@ -836,6 +870,7 @@ namespace FocusTimer.App.ViewModels
             else if (e.PropertyName == nameof(this.Settings.UseCompactMode))
             {
                 this.RaisePropertyChanged(nameof(this.UseCompactMode));
+                this.RaisePropertyChanged(nameof(this.WidgetCornerRadius));
             }
 
             if (e.PropertyName == nameof(this.Settings.WidgetOpacity))

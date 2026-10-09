@@ -21,7 +21,7 @@ Views (FullModeView, CompactModeView, SettingsWindow, etc.)
 | Theme.cs Property | Type | Avalonia Semantic Key | Semantic Role |
 |---|---|---|---|
 | `WindowBackground` | Hex Color | `WindowBackgroundColor`, `WindowBackgroundBrush`, `WidgetShellTintBrush`, `WidgetShellFallbackBrush`, `WidgetShellActiveBrush` | Widget tint color and opaque material fallback; active brush follows the achieved backdrop |
-| `WindowForeground` | Hex Color | `WindowForegroundColor`, `WindowForegroundBrush` | High-emphasis window chrome |
+| `WindowForeground` | Hex Color | `WindowForegroundColor`, `WindowForegroundBrush`, derived `WidgetProjectLabelBrush` | Window chrome and widget project label; the label is corrected against the opaque widget shell without changing the saved source |
 | `WindowBorder` | Hex Color | `WindowBorderColor`, `WindowBorderBrush` | Widget window outline |
 | `PrimaryText` | Hex Color | `PrimaryTextColor`, `PrimaryTextBrush` | Main typography foreground |
 | `SecondaryText` | Hex Color | `SecondaryTextColor`, `SecondaryTextBrush` | Secondary/muted labels, subtle icons |
@@ -32,14 +32,14 @@ Views (FullModeView, CompactModeView, SettingsWindow, etc.)
 | `ButtonHover` | Hex Color | `ButtonHoverColor`, `ButtonHoverBrush` | Hover state for interactive controls |
 | `ButtonPressed` | Hex Color | `ButtonPressedColor`, `ButtonPressedBrush` | Active pressed state for controls |
 | `ButtonDisabled` | Hex Color | `ButtonDisabledColor`, `ButtonDisabledBrush` | Disabled button background/foreground |
-| `AccentPrimary` | Hex Color | `AccentPrimaryColor`, `AccentPrimaryBrush` | Brand highlight, focus indicators, toggles |
+| `AccentPrimary` | Hex Color | `AccentPrimaryColor`, `AccentPrimaryBrush`, derived `DesktopSliderThumbBrush` | Brand highlight, focus indicators, toggles; slider thumbs retain an accent tint with contrast against the active track |
 | `AccentSecondary` | Hex Color | `AccentSecondaryColor`, `AccentSecondaryBrush` | Secondary accent |
 | `DangerColor` | Hex Color | `DangerColor`, `DangerBrush` | Destructive/warning/reset state |
 | `SuccessColor` | Hex Color | `SuccessColor`, `SuccessBrush` | Timer completed, success confirmation |
 | `WarningColor` | Hex Color | `WarningColor`, `WarningBrush` | Break reminder, warning status |
 | `InputBackground` | Hex Color | `InputBackgroundColor`, `InputBackgroundBrush` | Text boxes, numeric inputs background |
 | `InputBorder` | Hex Color | `InputBorderColor`, `InputBorderBrush` | Input field borders |
-| `InputFocusBorder` | Hex Color | `InputFocusBorderColor`, `InputFocusBorderBrush` | Focused Settings input border, independent of the accent color |
+| `InputFocusBorder` | Hex Color | `InputFocusBorderColor`, `InputFocusBorderBrush` | Preserved compatibility role; desktop focus derives from `AccentPrimary` |
 | `InputText` | Hex Color | `InputTextColor`, `InputTextBrush` | Input field text foreground |
 | `ProjectTagBackground` | Hex Color | `ProjectTagBackgroundColor`, `ProjectTagBackgroundBrush` | Project input tag background |
 | `ProjectTagBorder` | Hex Color | `ProjectTagBorderColor`, `ProjectTagBorderBrush` | Project input tag border |
@@ -48,10 +48,10 @@ Views (FullModeView, CompactModeView, SettingsWindow, etc.)
 | `SettingsSectionHeader`| Hex Color | `SettingsSectionHeaderColor`, `SettingsSectionHeaderBrush` | Settings section header text |
 | `SettingsLabelText` | Hex Color | `SettingsLabelTextColor`, `SettingsLabelTextBrush` | Settings label text |
 | `TabBackground` | Hex Color | `TabBackgroundColor`, `TabBackgroundBrush` | Tab strip background |
-| `TabSelectedBackground` | Hex Color | `TabSelectedBackgroundColor`, `TabSelectedBackgroundBrush` | Selected Settings tab background, independent of the accent color |
+| `TabSelectedBackground` | Hex Color | `TabSelectedBackgroundColor`, `TabSelectedBackgroundBrush` | Preferred source for selected-tab underline and derived field/Worklog selection fill |
 | `TabHoverBackground` | Hex Color | `TabHoverBackgroundColor`, `TabHoverBackgroundBrush` | Tab hover state |
 | `TabText` | Hex Color | `TabTextColor`, `TabTextBrush` | Tab header text |
-| `TabSelectedText` | Hex Color | `TabSelectedTextColor`, `TabSelectedTextBrush` | Active tab text |
+| `TabSelectedText` | Hex Color | `TabSelectedTextColor`, `TabSelectedTextBrush` | Preferred text source on selection fills; selected tab labels use readable `AccentPrimary` |
 
 ## 3. Opacity Mapping Table
 
@@ -79,4 +79,4 @@ All 7 built-in themes define every property listed above:
 
 Theme switching modifies these resources at runtime via `ThemeManager.ApplyTheme()`. Invariant geometry (spacing, corner radii, font metrics) remains constant across all themes.
 
-Settings text, input, and tab roles are scoped to the Settings window. The seven built-in palettes include contrast adjustments for Dark input focus, Light selected tabs, Solarized Dark labels and tabs, Nord focus and selected tabs, and Dracula selected tabs. The measured pairs and visual check are recorded in [SETTINGS_THEME_COLOR_CONTRAST_CHECK.md](SETTINGS_THEME_COLOR_CONTRAST_CHECK.md).
+Desktop text, field, action, selection, tab, and status colors are derived from the existing source roles. Shared styles are scoped to desktop windows; calendar and dropdown popup templates use desktop-only control selectors because their popup roots sit outside those windows. Widget fields and buttons retain their own styles and source colors. The measured rendered pairs and review limits are recorded in [SETTINGS_THEME_COLOR_CONTRAST_CHECK.md](SETTINGS_THEME_COLOR_CONTRAST_CHECK.md), with source choices and personal editing guidance in [ThemePaletteTuning.md](../docs/versions/current/ThemePaletteTuning.md).

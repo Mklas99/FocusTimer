@@ -24,6 +24,20 @@ namespace FocusTimer.App.ViewModels
     public class SettingsWindowViewModel : ReactiveObject
     {
         private const double OpacityTolerance = 0.0001;
+
+        private static readonly HashSet<string> WidgetPaletteColors =
+        [
+            nameof(Theme.WindowBackground), nameof(Theme.TimerText), nameof(Theme.PlayPauseColor),
+            nameof(Theme.ButtonNormal), nameof(Theme.ButtonHover), nameof(Theme.ButtonPressed), nameof(Theme.ButtonDisabled),
+        ];
+
+        private static readonly HashSet<string> DialogPaletteColors =
+        [
+            nameof(Theme.SettingsBackground), nameof(Theme.PrimaryText), nameof(Theme.SecondaryText),
+            nameof(Theme.SettingsSectionHeader), nameof(Theme.SettingsLabelText), nameof(Theme.AccentPrimary),
+            nameof(Theme.InputBackground), nameof(Theme.InputBorder), nameof(Theme.InputText),
+        ];
+
         private readonly ISettingsProvider _settingsProvider;
         private readonly IAutoStartService _autoStartService;
         private readonly IThemeService _themeService;
@@ -38,6 +52,7 @@ namespace FocusTimer.App.ViewModels
         private Settings _settings;
         private Settings _lastAppliedSettings = new();
         private bool _observedAutoStartEnabled;
+        private bool _updatingThemeSelection;
         private string _selectedThemeName;
         private Theme _lastAppliedTheme = new();
         private bool _appearancePreviewChanged;
@@ -78,6 +93,7 @@ namespace FocusTimer.App.ViewModels
                 settingsProvider, autoStartService, settings => this._activateRuntime(settings));
             this._settings = new Settings();
             this._selectedThemeName = "Dark";
+            this.AvailableThemes = new ObservableCollection<string>(this._themeService.BuiltInThemes.Select(t => t.ThemeName));
             this.ChangelogContent = this.LoadChangelogContent();
             this.AttachSettings(this._settings);
 
@@ -305,7 +321,7 @@ namespace FocusTimer.App.ViewModels
         /// <summary>
         /// Gets list of available theme names for the ComboBox.
         /// </summary>
-        public List<string> AvailableThemes => [.. this._themeService.BuiltInThemes.Select(t => t.ThemeName)];
+        public ObservableCollection<string> AvailableThemes { get; }
 
         /// <summary>Gets or sets the explicit or inherited normal Play/Pause color.</summary>
         public string PlayPauseColor
@@ -421,7 +437,7 @@ namespace FocusTimer.App.ViewModels
             get => this._selectedThemeName;
             set
             {
-                if (!this.CanEdit || string.IsNullOrEmpty(value) || string.Equals(this._selectedThemeName, value, StringComparison.Ordinal))
+                if (this._updatingThemeSelection || !this.CanEdit || string.IsNullOrEmpty(value) || string.Equals(this._selectedThemeName, value, StringComparison.Ordinal))
                 {
                     return;
                 }
@@ -588,6 +604,26 @@ namespace FocusTimer.App.ViewModels
         public string OpacityDiagnosticsSummary =>
             $"BG={(this.SelectedBlurMode == WidgetBlurModes.Solid ? "solid" : this.NormalizedBackgroundOpacity.ToString("F2"))} | Clock={this.NormalizedClockOpacity:F2} | Controls={this.NormalizedButtonsOpacity:F2} | Overall={this.NormalizedOverallFade:F2}";
 
+        /// <summary>
+        /// Gets a value indicating whether a Timer Widget palette color currently holds an invalid value.
+        /// </summary>
+        public bool HasInvalidWidgetPalette => WidgetPaletteColors.Contains(FindInvalidThemeColor(this.Settings.Theme) ?? string.Empty);
+
+        /// <summary>
+        /// Gets a value indicating whether a Dialogs and Notifications palette color currently holds an invalid value.
+        /// </summary>
+        public bool HasInvalidDialogPalette => DialogPaletteColors.Contains(FindInvalidThemeColor(this.Settings.Theme) ?? string.Empty);
+
+        /// <summary>
+        /// Gets the Timer Widget palette group header, flagged while one of its colors is invalid.
+        /// </summary>
+        public string WidgetPaletteHeader => this.HasInvalidWidgetPalette ? "Widget colors (invalid color)" : "Widget colors";
+
+        /// <summary>
+        /// Gets the Dialogs and Notifications palette group header, flagged while one of its colors is invalid.
+        /// </summary>
+        public string DialogPaletteHeader => this.HasInvalidDialogPalette ? "Dialogs & co. colors (invalid color)" : "Dialogs & co. colors";
+
         /// <summary>Gets the generation used to reject appearance results from before a commit.</summary>
         internal int AppearanceEditGeneration => this._editGeneration;
 
@@ -664,8 +700,8 @@ namespace FocusTimer.App.ViewModels
             // The loaded theme may have been resolved from a preset when the saved names differed.
             restoredSettings.Theme = this._lastAppliedTheme.Clone();
             this.Settings = restoredSettings;
-            this._selectedThemeName = this.Settings.ActiveThemeName;
-            this.RaisePropertyChanged(nameof(this.SelectedThemeName));
+            this._selectedThemeName = ThemeSelection.Restore(this.Settings, this._themeService);
+            this.NotifyThemeSelection();
             this._previewAppearance?.Invoke(restoredSettings);
         }
 
@@ -759,10 +795,23 @@ namespace FocusTimer.App.ViewModels
 
             this.Settings.Theme = theme;
             this.Settings.CustomThemePath = filePath;
-            this.Settings.ActiveThemeName = theme.ThemeName;
-            this._selectedThemeName = "Custom";
-            this.RaisePropertyChanged(nameof(this.SelectedThemeName));
+            this.Settings.ActiveThemeName = ThemeSelection.CustomIdentity;
+            this._selectedThemeName = ThemeSelection.CustomLabel;
+            this.NotifyThemeSelection();
             this._logger.LogInformation($"Theme '{theme.ThemeName}' imported successfully");
+        }
+
+        private static string StripChangelogTitle(string text)
+        {
+            // The card already has a "Changelog" header, so the file's own "# Changelog" title line is dropped.
+            string trimmed = text.TrimStart();
+            if (!trimmed.StartsWith("# Changelog", StringComparison.OrdinalIgnoreCase))
+            {
+                return text;
+            }
+
+            int lineEnd = trimmed.IndexOf('\n');
+            return lineEnd < 0 ? string.Empty : trimmed[(lineEnd + 1)..].TrimStart('\r', '\n');
         }
 
         private static string? FindInvalidThemeColor(Theme theme)
@@ -843,6 +892,11 @@ namespace FocusTimer.App.ViewModels
                     this.RaisePropertyChanged(nameof(this.AutoStartDriftWarning));
                     this.RaisePropertyChanged(nameof(this.HasAutoStartDrift));
                     this._logger.LogDebug("Settings saved successfully");
+
+                    // Blank rule rows were left out of the saved rules; drop them from the draft too.
+                    this.ExclusionList.PruneBlank();
+                    this.SegmentationList.PruneBlank();
+                    this.ProjectList.PruneBlank();
                 }
                 else
                 {
@@ -998,20 +1052,12 @@ namespace FocusTimer.App.ViewModels
                 Settings savedSettings = await this._settingsProvider.LoadAsync();
                 this._lastAppliedSettings = savedSettings.Clone();
                 this.Settings = savedSettings.Clone();
-                Theme? selectedPreset = this._themeService.GetBuiltInTheme(this.Settings.ActiveThemeName);
-                if (selectedPreset != null && !string.Equals(
-                        this.Settings.Theme.ThemeName,
-                        selectedPreset.ThemeName,
-                        StringComparison.OrdinalIgnoreCase))
-                {
-                    this.Settings.Theme = selectedPreset;
-                }
+                this._selectedThemeName = ThemeSelection.Restore(this.Settings, this._themeService);
 
                 this._lastAppliedSettings = this.Settings.Clone();
                 this._lastAppliedTheme = this.Settings.Theme.Clone();
                 this._appearancePreviewChanged = false;
-                this._selectedThemeName = this.Settings.ActiveThemeName;
-                this.RaisePropertyChanged(nameof(this.SelectedThemeName));
+                this.NotifyThemeSelection();
                 this.RaisePropertyChanged(nameof(this.IsDeveloperModeVisible));
                 this.RaisePropertyChanged(nameof(this.SelectedDeveloperLogLevel));
                 this._observedAutoStartEnabled = this._autoStartService.IsAutoStartEnabled();
@@ -1137,9 +1183,33 @@ namespace FocusTimer.App.ViewModels
             this.Settings.Theme = this._themeService.GetBuiltInTheme("Dark")
                 ?? throw new InvalidOperationException("The built-in Dark theme is unavailable.");
             this.Settings.ActiveThemeName = "Dark";
+            this.Settings.CustomThemePath = null;
             this._selectedThemeName = "Dark";
-            this.RaisePropertyChanged(nameof(this.SelectedThemeName));
+            this.NotifyThemeSelection();
             this._logger.LogInformation("Theme reset to default.");
+        }
+
+        private void NotifyThemeSelection()
+        {
+            this._updatingThemeSelection = true;
+            try
+            {
+                bool custom = this.Settings.ActiveThemeName == ThemeSelection.CustomIdentity;
+                if (custom && !this.AvailableThemes.Contains(ThemeSelection.CustomLabel))
+                {
+                    this.AvailableThemes.Add(ThemeSelection.CustomLabel);
+                }
+                else if (!custom)
+                {
+                    this.AvailableThemes.Remove(ThemeSelection.CustomLabel);
+                }
+
+                this.RaisePropertyChanged(nameof(this.SelectedThemeName));
+            }
+            finally
+            {
+                this._updatingThemeSelection = false;
+            }
         }
 
         private void LoadThemeByName(string themeName)
@@ -1149,6 +1219,8 @@ namespace FocusTimer.App.ViewModels
             {
                 this.Settings.Theme = theme.Clone();
                 this.Settings.ActiveThemeName = themeName;
+                this.Settings.CustomThemePath = null;
+                this.NotifyThemeSelection();
             }
         }
 
@@ -1196,6 +1268,7 @@ namespace FocusTimer.App.ViewModels
             if (e.PropertyName == nameof(this.Settings.Theme))
             {
                 this.RaisePropertyChanged(nameof(this.PlayPauseColor));
+                this.RaisePaletteValidity();
                 this.AttachTheme(this.Settings.Theme);
                 this._appearancePreviewChanged = true;
                 this.ApplyThemeChanges();
@@ -1254,7 +1327,16 @@ namespace FocusTimer.App.ViewModels
                 this.RaisePropertyChanged(nameof(this.NormalizedButtonsOpacity));
             }
 
+            this.RaisePaletteValidity();
             this.RaisePropertyChanged(nameof(this.OpacityDiagnosticsSummary));
+        }
+
+        private void RaisePaletteValidity()
+        {
+            this.RaisePropertyChanged(nameof(this.HasInvalidWidgetPalette));
+            this.RaisePropertyChanged(nameof(this.HasInvalidDialogPalette));
+            this.RaisePropertyChanged(nameof(this.WidgetPaletteHeader));
+            this.RaisePropertyChanged(nameof(this.DialogPaletteHeader));
         }
 
         private void OnActualWidgetTransparencyChanged(WindowTransparencyLevel level) =>
@@ -1339,7 +1421,7 @@ namespace FocusTimer.App.ViewModels
                     string candidate = Path.Combine(current.FullName, "docs", "CHANGELOG.md");
                     if (File.Exists(candidate))
                     {
-                        return File.ReadAllText(candidate);
+                        return StripChangelogTitle(File.ReadAllText(candidate));
                     }
 
                     current = current.Parent;
