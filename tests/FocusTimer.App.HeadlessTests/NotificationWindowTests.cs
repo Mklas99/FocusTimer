@@ -15,6 +15,74 @@ public sealed class NotificationWindowTests
 {
     public NotificationWindowTests() => HeadlessAvaloniaFixture.EnsureInitialized();
 
+    [Fact]
+    public void CommittedPolicyControlsRealToastsAndDoesNotRetargetOpenTimers()
+    {
+        // Pump the UI dispatcher without moving this window test onto another thread.
+        void Complete(Task task)
+        {
+            var elapsed = System.Diagnostics.Stopwatch.StartNew();
+            while (!task.IsCompleted && elapsed.Elapsed < TimeSpan.FromSeconds(3))
+            {
+                Thread.Sleep(5);
+                Dispatcher.UIThread.RunJobs();
+            }
+
+            Assert.True(task.IsCompletedSuccessfully);
+        }
+
+        var windows = new List<NotificationWindow>();
+        using var opened = Window.WindowOpenedEvent.AddClassHandler<NotificationWindow>((window, _) => windows.Add(window));
+        var service = new DesktopNotificationService();
+        var settings = new Settings
+        {
+            InformationNotificationsEnabled = false,
+            WarningNotificationsEnabled = false,
+            InformationDismissalSeconds = 1,
+            ErrorDismissalSeconds = 1,
+        };
+        service.ApplySettings(settings);
+        try
+        {
+            Complete(service.ShowNotificationAsync("Idle", "Paused."));
+            Complete(service.ShowNotificationAsync("Warning", "Attention.", NotificationSeverity.Warning));
+            Assert.Empty(windows);
+            Complete(service.ShowNotificationAsync("Save failed", "Retry.", NotificationSeverity.Error));
+            NotificationWindow error = Assert.Single(windows);
+            Assert.True(error.IsVisible);
+            Task acknowledgement = service.ShowBreakReminderAsync("Take a break.", true);
+            Dispatcher.UIThread.RunJobs();
+            Assert.Equal(2, windows.Count);
+            NotificationWindow reminder = windows.Last();
+            Assert.True(reminder.FindControl<Button>("Acknowledge")!.IsVisible);
+            Assert.False(acknowledgement.IsCompleted);
+            Task automatic = service.ShowBreakReminderAsync("Automatic break.", false);
+            Dispatcher.UIThread.RunJobs();
+            NotificationWindow automaticReminder = windows.Last();
+            Assert.Equal(3, windows.Count);
+            Assert.True(automaticReminder.IsVisible);
+            settings.ErrorDismissalSeconds = 120;
+            service.ApplySettings(settings);
+            Complete(service.ShowNotificationAsync("Later error", "Retry.", NotificationSeverity.Error));
+            NotificationWindow later = windows.Last();
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+            Dispatcher.UIThread.MainLoop(timeout.Token);
+
+            Assert.False(error.IsVisible);
+            Assert.False(automaticReminder.IsVisible);
+            Complete(automatic);
+            Assert.True(later.IsVisible);
+            Assert.True(reminder.IsVisible);
+            Assert.False(acknowledgement.IsCompleted);
+            reminder.Close();
+            Complete(acknowledgement);
+        }
+        finally
+        {
+            foreach (NotificationWindow window in windows) window.Close();
+        }
+    }
+
     [Theory]
     [InlineData(NotificationSeverity.Information, 5)]
     [InlineData(NotificationSeverity.Warning, 15)]

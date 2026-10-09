@@ -672,7 +672,7 @@ dotnet test tests/FocusTimer.App.Tests --filter "FullyQualifiedName~DesktopMater
 
 There's no environment variable for log level today. Two options:
 - Change `.MinimumLevel.Debug()` in `Program.cs`'s Serilog setup directly.
-- Unlock the hidden developer mode (click the version label 7x in Settings → About) to access an in-app log-level picker.
+- Toggle the hidden developer mode (click the version label 7x in Settings → About) to access an in-app log-level picker.
 
 Log output location can be redirected via `FOCUSTIMER_LOG_DIR`:
 ```powershell
@@ -775,7 +775,7 @@ When contributing new features:
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the current project structure and service inventory — this guide's line-by-line examples can drift from it faster than that reference does.
 ## Activity polling
 
-In Settings → About, click the version seven times to unlock Developer Options. The activity polling interval defaults to **10 seconds** and accepts whole seconds from **1 to 60**. Apply saves and activates the value; OK saves before closing. Cancel discards edits made since the last Apply. Invalid input shows an error and cannot be saved.
+In Settings → About, click the version seven times to toggle Developer Options. Repeat seven clicks to hide it. Apply/OK persists the mode; Cancel/title-bar close restores the last commit, and hiding the section preserves its values. The activity polling interval defaults to **10 seconds** and accepts whole seconds from **1 to 60**. Apply saves and activates the value; OK saves before closing. Cancel discards edits made since the last Apply. Invalid input shows an error and cannot be saved.
 
 `ActivityPollingIntervalSeconds` is an additive integer in settings JSON. Missing, out-of-range, null, fractional, string, or structured values fall back to 10 without discarding other valid settings. The saved interval remains effective when Developer Options are hidden.
 
@@ -808,3 +808,9 @@ Theme.playPauseColor is optional. Missing/null inherits ButtonNormal; an explici
 Factory palette edits belong in ThemeService, and desktop accessibility corrections belong in ThemeManager. Source snapshots survive import/export, Apply/OK, reopening, and restart. Imports display Custom/Imported and use canonical Custom identity while retaining their original metadata; selecting a preset or Reset clears provenance. The [palette tuning guide](docs/versions/current/ThemePaletteTuning.md) documents source roles, later personal adjustments, legacy identity, and required contrast/visual checks.
 
 The native appearance regression runs in a separate process because Avalonia platform initialization is global. In PowerShell, set FOCUSTIMER_NATIVE_APPEARANCE_TESTS=1 for that process and run dotnet test tests/FocusTimer.App.Tests --filter AppearanceNativeTests. Normal runs skip this Windows-only fixture. Its rendered saving/applied/error/recovery screenshots are written under the test output's appearance-evidence directory.
+
+### Minor customization preferences
+
+Appearance's Place buttons below the clock previews placement in both modes. Full controls stay horizontal; compact controls stack vertically beside the clock and horizontally below it. The setting defaults to beside and is cloned/persisted as widgetButtonsBelowClock.
+
+General controls information/warning notification visibility and information, warning, and error dismissal seconds (1–120 whole seconds; defaults 5/15/15). Errors cannot be disabled. Break reminders keep their dedicated enable flag, use the information timeout, and bypass general information suppression. Acknowledgement reminders do not time out. Preferences activate only after a successful Apply/OK and affect new toasts; open toasts keep their initial timer. NotificationPolicy snapshots settings, and AppController activates it at startup and during coordinated commits/rollback.

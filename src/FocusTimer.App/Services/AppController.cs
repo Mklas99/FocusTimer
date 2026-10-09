@@ -150,6 +150,7 @@ namespace FocusTimer.App.Services
                 }
 
                 this.CurrentSettings = await this._settingsProvider.LoadAsync();
+                this._notificationService.ApplySettings(this.CurrentSettings);
                 this._projectRuleStore?.Update(this.CurrentSettings.ProjectRules);
             }
             catch (Exception ex)
@@ -633,6 +634,7 @@ namespace FocusTimer.App.Services
         private async Task ActivateSettingsAsync(Settings settings)
         {
             this.CurrentSettings = settings.Clone();
+            this._notificationService.ApplySettings(this.CurrentSettings);
             this._projectRuleStore?.Update(this.CurrentSettings.ProjectRules);
             this._themeService.ApplyTheme(this.CurrentSettings.Theme);
             this._themeManager.ApplyTheme(this.CurrentSettings.Theme);

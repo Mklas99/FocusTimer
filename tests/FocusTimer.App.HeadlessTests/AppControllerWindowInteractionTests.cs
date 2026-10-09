@@ -30,6 +30,66 @@ public sealed class AppControllerWindowInteractionTests
     [InlineData(false, true)]
     [InlineData(true, false)]
     [InlineData(true, true)]
+    public void Customization_WindowCloseOrCancelRestoresTheCommittedPreferences(bool apply, bool cancel)
+    {
+        void Complete(Task task)
+        {
+            for (int attempt = 0; attempt < 2000 && !task.IsCompleted; attempt++)
+            {
+                Dispatcher.UIThread.RunJobs();
+                Thread.Sleep(5);
+            }
+
+            Assert.True(task.IsCompleted);
+            task.GetAwaiter().GetResult();
+        }
+
+        using var harness = new Harness(settingsProvider: new SnapshotSettingsProvider());
+        Complete(harness.InitializeAsync());
+        Assert.True(harness.Notifications.Applied!.InformationNotificationsEnabled);
+        harness.Controller.ShowTimerWidget();
+        harness.Controller.ShowSettings();
+        Dispatcher.UIThread.RunJobs();
+        SettingsWindow window = Assert.IsType<SettingsWindow>(harness.FindOpenSettingsWindow());
+        var vm = Assert.IsType<SettingsWindowViewModel>(window.DataContext);
+        var widget = Assert.IsType<TimerWidgetViewModel>(harness.TimerWindow.DataContext);
+        vm.Settings.WidgetButtonsBelowClock = true;
+        vm.Settings.InformationNotificationsEnabled = false;
+        vm.WarningDismissalInput = 23;
+        for (int i = 0; i < 7; i++) vm.RegisterVersionInfoClick();
+        Assert.Equal(1, widget.ControlsRow);
+        Assert.True(harness.Notifications.Applied.InformationNotificationsEnabled);
+        if (apply)
+        {
+            Complete(((ReactiveCommand<Unit, Unit>)vm.ApplyCommand).Execute().ToTask());
+            Assert.True(vm.LastApplySucceeded);
+            Assert.False(harness.Notifications.Applied.InformationNotificationsEnabled);
+            Assert.Equal(23, harness.Notifications.Applied.WarningDismissalSeconds);
+            vm.Settings.WidgetButtonsBelowClock = false;
+            vm.Settings.InformationNotificationsEnabled = true;
+            vm.WarningDismissalInput = 2;
+            for (int i = 0; i < 7; i++) vm.RegisterVersionInfoClick();
+        }
+
+        if (cancel) vm.CancelCommand.Execute(window);
+        else window.Close();
+        Dispatcher.UIThread.RunJobs();
+        Assert.Equal(apply ? 1 : 0, widget.ControlsRow);
+        Assert.Equal(!apply, harness.Notifications.Applied.InformationNotificationsEnabled);
+        harness.Controller.ShowSettings();
+        Dispatcher.UIThread.RunJobs();
+        var reopened = Assert.IsType<SettingsWindowViewModel>(harness.FindOpenSettingsWindow()!.DataContext);
+        Assert.Equal(apply, reopened.Settings.WidgetButtonsBelowClock);
+        Assert.Equal(!apply, reopened.Settings.InformationNotificationsEnabled);
+        Assert.Equal(apply ? 23 : 15, reopened.WarningDismissalInput);
+        Assert.Equal(apply, reopened.IsDeveloperModeVisible);
+    }
+
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
     public void ImportedTheme_WindowCloseOrCancelRestoresTheCommittedSnapshot(bool apply, bool cancel)
     {
         void Complete(Task task)
@@ -458,7 +518,7 @@ public sealed class AppControllerWindowInteractionTests
         {
             this.Provider = settingsProvider ?? new SettingsProviderStub();
             this.Logger = logger ?? new RecordingLogger();
-            this.Notifications = new LinuxNotificationServiceStub();
+            this.Notifications = new RecordingNotificationService();
             this.Hotkeys = hotkeys ?? new RaisableHotkeyService();
             var idle = idleDetectionService ?? new RaisableIdleDetectionService();
             ThemeService themeService = new();
@@ -510,7 +570,7 @@ public sealed class AppControllerWindowInteractionTests
 
         public IAppLogger Logger { get; }
 
-        public LinuxNotificationServiceStub Notifications { get; }
+        public RecordingNotificationService Notifications { get; }
 
         public IGlobalHotkeyService Hotkeys { get; }
 
@@ -573,6 +633,17 @@ public sealed class AppControllerWindowInteractionTests
         public void RaiseBecameIdle(UserIdleEventArgs args) => this.UserBecameIdle?.Invoke(this, args);
 
         public void RaiseReturned(UserIdleEventArgs args) => this.UserReturned?.Invoke(this, args);
+    }
+
+    private sealed class RecordingNotificationService : INotificationService
+    {
+        public Settings? Applied { get; private set; }
+
+        public void ApplySettings(Settings settings) => this.Applied = settings.Clone();
+
+        public Task ShowNotificationAsync(string title, string message) => Task.CompletedTask;
+
+        public Task ShowBreakReminderAsync(string message, bool requireAcknowledgement) => Task.CompletedTask;
     }
 
     private sealed class RecordingLogger : IAppLogger

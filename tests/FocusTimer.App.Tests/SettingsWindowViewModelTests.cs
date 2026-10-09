@@ -949,7 +949,7 @@ public class SettingsWindowViewModelTests
     }
 
     [Fact]
-    public void DeveloperUnlock_RequiresSevenClicksAndNeverRelocksOrSavesTheDraft()
+    public void DeveloperToggle_RequiresSevenClicksEachWayAndDoesNotSaveTheDraft()
     {
         var provider = new StubSettingsProvider(new Settings());
         var vm = Create(provider: provider);
@@ -962,11 +962,152 @@ public class SettingsWindowViewModelTests
             Assert.True(vm.IsDeveloperModeVisible);
             for (int click = 0; click < 7; click++)
                 vm.RegisterVersionInfoClick();
-            Assert.True(vm.IsDeveloperModeVisible);
+            Assert.False(vm.IsDeveloperModeVisible);
             Assert.False(provider.Saved.DeveloperModeEnabled);
             Assert.Equal(0, provider.SaveCalls);
         }
         finally { vm.Dispose(); }
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task CustomizationCommit_FailedSaveRetryAndDiscardPreserveTheLastCommit(bool useOk)
+    {
+        var provider = new StubSettingsProvider(new Settings());
+        var vm = Create(provider: provider);
+        Settings active = provider.Saved.Clone();
+        Settings? preview = null;
+        vm.SetRuntimeActivator(candidate => { active = candidate.Clone(); return Task.CompletedTask; });
+        vm.SetAppearancePreview(candidate => preview = candidate.Clone());
+        try
+        {
+            vm.Settings.WidgetButtonsBelowClock = true;
+            Assert.True(preview!.WidgetButtonsBelowClock);
+            vm.Settings.InformationNotificationsEnabled = false;
+            vm.Settings.WarningNotificationsEnabled = false;
+            vm.InformationDismissalInput = 9;
+            vm.WarningDismissalInput = 20;
+            vm.ErrorDismissalInput = 40;
+            for (int i = 0; i < 7; i++) vm.RegisterVersionInfoClick();
+            provider.FailSave = true;
+            await ((ReactiveCommand<Unit, Unit>)vm.ApplyCommand).Execute().ToTask();
+            Assert.False(vm.LastApplySucceeded);
+            Assert.False(active.WidgetButtonsBelowClock);
+            Assert.True(active.InformationNotificationsEnabled);
+            Assert.False(active.DeveloperModeEnabled);
+            provider.FailSave = false;
+            await ((ReactiveCommand<Unit, Unit>)(useOk ? vm.OkCommand : vm.ApplyCommand)).Execute().ToTask();
+            Assert.True(vm.LastApplySucceeded);
+            Assert.True(provider.Saved.WidgetButtonsBelowClock);
+            Assert.False(active.InformationNotificationsEnabled);
+            Assert.False(active.WarningNotificationsEnabled);
+            Assert.Equal(9, active.InformationDismissalSeconds);
+            Assert.Equal(20, active.WarningDismissalSeconds);
+            Assert.Equal(40, active.ErrorDismissalSeconds);
+            Assert.True(active.DeveloperModeEnabled);
+            if (!useOk)
+            {
+                vm.Settings.WidgetButtonsBelowClock = false;
+                vm.InformationDismissalInput = 3;
+                vm.Settings.InformationNotificationsEnabled = true;
+                for (int i = 0; i < 7; i++) vm.RegisterVersionInfoClick();
+                Assert.False(vm.IsDeveloperModeVisible);
+                Assert.True(vm.TryDiscardAndClose());
+                Assert.True(vm.Settings.WidgetButtonsBelowClock);
+                Assert.Equal(9, vm.InformationDismissalInput);
+                Assert.False(vm.Settings.InformationNotificationsEnabled);
+                Assert.True(vm.IsDeveloperModeVisible);
+            }
+        }
+        finally { vm.Dispose(); }
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData(0.0)]
+    [InlineData(1.5)]
+    [InlineData(121.0)]
+    public async Task InvalidNotificationDurationCannotBeCommitted(double? input)
+    {
+        var provider = new StubSettingsProvider(new Settings());
+        var vm = Create(provider: provider);
+        try
+        {
+            vm.WarningDismissalInput = input.HasValue ? (decimal)input.Value : null;
+            Assert.NotEmpty(vm.NotificationDurationError);
+            await ((ReactiveCommand<Unit, Unit>)vm.ApplyCommand).Execute().ToTask();
+            Assert.False(vm.LastApplySucceeded);
+            Assert.Equal(0, provider.SaveCalls);
+            Assert.Equal(15, provider.Saved.WarningDismissalSeconds);
+            vm.RestoreAppearancePreview();
+            Assert.Empty(vm.NotificationDurationError);
+        }
+        finally { vm.Dispose(); }
+    }
+
+    [Fact]
+    public async Task DeveloperGestureIgnoresBlockedClicksAndPreservesHiddenValues()
+    {
+        var provider = new StubSettingsProvider(new Settings { DeveloperModeEnabled = true, ActivityPollingIntervalSeconds = 42 });
+        var vm = Create(provider: provider);
+        var activation = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        vm.SetRuntimeActivator(_ => activation.Task);
+        try
+        {
+            for (int i = 0; i < 6; i++) vm.RegisterVersionInfoClick();
+            Task applying = ((ReactiveCommand<Unit, Unit>)vm.ApplyCommand).Execute().ToTask();
+            await WaitUntilAsync(() => vm.IsCommitting);
+            for (int i = 0; i < 7; i++) vm.RegisterVersionInfoClick();
+            Assert.True(vm.IsDeveloperModeVisible);
+            activation.SetResult();
+            await applying;
+            vm.RegisterVersionInfoClick();
+            Assert.False(vm.IsDeveloperModeVisible);
+            Assert.Equal(42, vm.Settings.ActivityPollingIntervalSeconds);
+            Assert.True(vm.TryDiscardAndClose());
+            vm.Dispose();
+            for (int i = 0; i < 7; i++) vm.RegisterVersionInfoClick();
+            Assert.True(vm.IsDeveloperModeVisible);
+        }
+        finally { activation.TrySetResult(); vm.Dispose(); }
+    }
+
+    [Fact]
+    public async Task DeveloperToggle_DisablePersistsAndHiddenValuesSurviveReopening()
+    {
+        var provider = new StubSettingsProvider(new Settings
+        {
+            DeveloperModeEnabled = true,
+            DeveloperLogLevel = "Warning",
+            ActivityPollingIntervalSeconds = 42,
+        });
+        var vm = Create(provider: provider);
+        try
+        {
+            for (int i = 0; i < 7; i++) vm.RegisterVersionInfoClick();
+            await ((ReactiveCommand<Unit, Unit>)vm.ApplyCommand).Execute().ToTask();
+            Assert.True(vm.LastApplySucceeded);
+            Assert.False(provider.Saved.DeveloperModeEnabled);
+        }
+        finally { vm.Dispose(); }
+
+        var reopened = Create(provider: provider);
+        try
+        {
+            Assert.False(reopened.IsDeveloperModeVisible);
+            Assert.Equal("Warning", reopened.Settings.DeveloperLogLevel);
+            Assert.Equal(42, reopened.Settings.ActivityPollingIntervalSeconds);
+            for (int i = 0; i < 6; i++) reopened.RegisterVersionInfoClick();
+            reopened.RestoreAppearancePreview();
+            reopened.RegisterVersionInfoClick();
+            Assert.False(reopened.IsDeveloperModeVisible);
+            for (int i = 0; i < 6; i++) reopened.RegisterVersionInfoClick();
+            Assert.True(reopened.IsDeveloperModeVisible);
+            Assert.True(reopened.TryDiscardAndClose());
+            Assert.False(reopened.IsDeveloperModeVisible);
+        }
+        finally { reopened.Dispose(); }
     }
 
     [Theory]

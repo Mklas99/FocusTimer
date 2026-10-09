@@ -21,6 +21,12 @@ namespace FocusTimer.Core.Models
         private double _widgetScale = 1.0;
         private double _widgetOpacity = 1.0;
         private bool _useCompactMode;
+        private bool _widgetButtonsBelowClock;
+        private bool _informationNotificationsEnabled = true;
+        private bool _warningNotificationsEnabled = true;
+        private int _informationDismissalSeconds = 5;
+        private int _warningDismissalSeconds = 15;
+        private int _errorDismissalSeconds = 15;
         private bool _developerModeEnabled;
         private string _developerLogLevel = "Debug";
         private int _activityPollingIntervalSeconds = 10;
@@ -190,6 +196,48 @@ namespace FocusTimer.Core.Models
             set => this.SetField(ref this._useCompactMode, value);
         }
 
+        /// <summary>Gets or sets a value indicating whether widget controls sit below the clock.</summary>
+        public bool WidgetButtonsBelowClock
+        {
+            get => this._widgetButtonsBelowClock;
+            set => this.SetField(ref this._widgetButtonsBelowClock, value);
+        }
+
+        /// <summary>Gets or sets a value indicating whether general information notifications appear.</summary>
+        public bool InformationNotificationsEnabled
+        {
+            get => this._informationNotificationsEnabled;
+            set => this.SetField(ref this._informationNotificationsEnabled, value);
+        }
+
+        /// <summary>Gets or sets a value indicating whether warning notifications appear.</summary>
+        public bool WarningNotificationsEnabled
+        {
+            get => this._warningNotificationsEnabled;
+            set => this.SetField(ref this._warningNotificationsEnabled, value);
+        }
+
+        /// <summary>Gets or sets the information and nonacknowledgement reminder timeout in seconds.</summary>
+        public int InformationDismissalSeconds
+        {
+            get => this._informationDismissalSeconds;
+            set => this.SetField(ref this._informationDismissalSeconds, value);
+        }
+
+        /// <summary>Gets or sets the warning timeout in seconds.</summary>
+        public int WarningDismissalSeconds
+        {
+            get => this._warningDismissalSeconds;
+            set => this.SetField(ref this._warningDismissalSeconds, value);
+        }
+
+        /// <summary>Gets or sets the mandatory error notification timeout in seconds.</summary>
+        public int ErrorDismissalSeconds
+        {
+            get => this._errorDismissalSeconds;
+            set => this.SetField(ref this._errorDismissalSeconds, value);
+        }
+
         /// <summary>
         /// Gets or sets a value indicating whether developer options are unlocked.
         /// </summary>
@@ -325,6 +373,12 @@ namespace FocusTimer.Core.Models
             WidgetScale = this.WidgetScale,
             WidgetOpacity = this.WidgetOpacity,
             UseCompactMode = this.UseCompactMode,
+            WidgetButtonsBelowClock = this.WidgetButtonsBelowClock,
+            InformationNotificationsEnabled = this.InformationNotificationsEnabled,
+            WarningNotificationsEnabled = this.WarningNotificationsEnabled,
+            InformationDismissalSeconds = this.InformationDismissalSeconds,
+            WarningDismissalSeconds = this.WarningDismissalSeconds,
+            ErrorDismissalSeconds = this.ErrorDismissalSeconds,
             DeveloperModeEnabled = this.DeveloperModeEnabled,
             DeveloperLogLevel = this.DeveloperLogLevel,
             ActivityPollingIntervalSeconds = this.ActivityPollingIntervalSeconds,

@@ -58,6 +58,9 @@ namespace FocusTimer.App.ViewModels
         private bool _appearancePreviewChanged;
         private int _versionClickCount;
         private decimal? _activityPollingIntervalInput = 10;
+        private decimal? _informationDismissalInput = 5;
+        private decimal? _warningDismissalInput = 15;
+        private decimal? _errorDismissalInput = 15;
         private int _selectedTabIndex;
         private bool _isSettingsLoaded;
         private string _loadError = string.Empty;
@@ -308,6 +311,10 @@ namespace FocusTimer.App.ViewModels
                 this.DetachSettings(this._settings);
                 this.RaiseAndSetIfChanged(ref this._settings, value);
                 this.AttachSettings(value);
+                this._versionClickCount = 0;
+                this.InformationDismissalInput = value.InformationDismissalSeconds;
+                this.WarningDismissalInput = value.WarningDismissalSeconds;
+                this.ErrorDismissalInput = value.ErrorDismissalSeconds;
                 this.RaisePropertyChanged(nameof(this.PlayPauseColor));
                 this.ActivityPollingIntervalInput = value.ActivityPollingIntervalSeconds;
                 this.ExclusionList.Load(value.ExclusionRules);
@@ -428,6 +435,37 @@ namespace FocusTimer.App.ViewModels
         /// Gets a value indicating whether developer options are visible.
         /// </summary>
         public bool IsDeveloperModeVisible => this.Settings.DeveloperModeEnabled;
+
+        /// <summary>Gets or sets the information notification dismissal input in seconds.</summary>
+        public decimal? InformationDismissalInput
+        {
+            get => this._informationDismissalInput;
+            set => this.SetNotificationDuration(ref this._informationDismissalInput, value, NotificationSeverity.Information, nameof(this.InformationDismissalInput));
+        }
+
+        /// <summary>Gets or sets the warning notification dismissal input in seconds.</summary>
+        public decimal? WarningDismissalInput
+        {
+            get => this._warningDismissalInput;
+            set => this.SetNotificationDuration(ref this._warningDismissalInput, value, NotificationSeverity.Warning, nameof(this.WarningDismissalInput));
+        }
+
+        /// <summary>Gets or sets the error notification dismissal input in seconds.</summary>
+        public decimal? ErrorDismissalInput
+        {
+            get => this._errorDismissalInput;
+            set => this.SetNotificationDuration(ref this._errorDismissalInput, value, NotificationSeverity.Error, nameof(this.ErrorDismissalInput));
+        }
+
+        /// <summary>Gets validation feedback for notification durations.</summary>
+        public string NotificationDurationError =>
+            IsValidNotificationDuration(this.InformationDismissalInput) &&
+            IsValidNotificationDuration(this.WarningDismissalInput) &&
+            IsValidNotificationDuration(this.ErrorDismissalInput) &&
+            IsValidNotificationDuration(this.Settings.InformationDismissalSeconds) &&
+            IsValidNotificationDuration(this.Settings.WarningDismissalSeconds) &&
+            IsValidNotificationDuration(this.Settings.ErrorDismissalSeconds)
+                ? string.Empty : "Notification dismissal times must be whole seconds from 1 to 120.";
 
         /// <summary>
         /// Gets or sets currently selected theme name in the ComboBox.
@@ -801,6 +839,9 @@ namespace FocusTimer.App.ViewModels
             this._logger.LogInformation($"Theme '{theme.ThemeName}' imported successfully");
         }
 
+        private static bool IsValidNotificationDuration(decimal? value) =>
+            value is >= 1 and <= 120 && decimal.Truncate(value.Value) == value.Value;
+
         private static string StripChangelogTitle(string text)
         {
             // The card already has a "Changelog" header, so the file's own "# Changelog" title line is dropped.
@@ -962,8 +1003,36 @@ namespace FocusTimer.App.ViewModels
             }
         }
 
+        private void SetNotificationDuration(ref decimal? field, decimal? value, NotificationSeverity severity, string propertyName)
+        {
+            this.RaiseAndSetIfChanged(ref field, value, propertyName);
+            if (IsValidNotificationDuration(value))
+            {
+                int seconds = (int)value!.Value;
+                switch (severity)
+                {
+                    case NotificationSeverity.Information:
+                        this.Settings.InformationDismissalSeconds = seconds;
+                        break;
+                    case NotificationSeverity.Warning:
+                        this.Settings.WarningDismissalSeconds = seconds;
+                        break;
+                    case NotificationSeverity.Error:
+                        this.Settings.ErrorDismissalSeconds = seconds;
+                        break;
+                }
+            }
+
+            this.RaisePropertyChanged(nameof(this.NotificationDurationError));
+        }
+
         private string ValidateDraft()
         {
+            if (!string.IsNullOrEmpty(this.NotificationDurationError))
+            {
+                return this.NotificationDurationError;
+            }
+
             if (!string.IsNullOrEmpty(this.ActivityPollingIntervalError))
             {
                 return this.ActivityPollingIntervalError;
@@ -1283,7 +1352,8 @@ namespace FocusTimer.App.ViewModels
                 this.RaisePropertyChanged(nameof(this.OpacityDiagnosticsSummary));
             }
 
-            if (e.PropertyName is nameof(this.Settings.WidgetOpacity) or nameof(this.Settings.WidgetScale) or nameof(this.Settings.UseCompactMode))
+            if (e.PropertyName is nameof(this.Settings.WidgetOpacity) or nameof(this.Settings.WidgetScale) or
+                nameof(this.Settings.UseCompactMode) or nameof(this.Settings.WidgetButtonsBelowClock))
             {
                 this.ApplyThemeChanges();
             }
@@ -1395,6 +1465,11 @@ namespace FocusTimer.App.ViewModels
 
         private void OnVersionInfoClicked()
         {
+            if (!this.CanEdit || this.RecoveryRequired)
+            {
+                return;
+            }
+
             this._versionClickCount++;
             if (this._versionClickCount < 7)
             {
@@ -1402,12 +1477,7 @@ namespace FocusTimer.App.ViewModels
             }
 
             this._versionClickCount = 0;
-            if (this.Settings.DeveloperModeEnabled)
-            {
-                return;
-            }
-
-            this.Settings.DeveloperModeEnabled = true;
+            this.Settings.DeveloperModeEnabled = !this.Settings.DeveloperModeEnabled;
             this.RaisePropertyChanged(nameof(this.IsDeveloperModeVisible));
         }
 

@@ -119,7 +119,7 @@ ISettingsProvider    // Load/save settings (implemented in Persistence)
 IWorklogStore        // Append, query, patch, and delete worklog entries (implemented in Persistence)
 IGlobalHotkeyService // Register OS hotkeys (Platform.Windows / Linux stub)
 IActiveWindowService // Detect window/app in focus (Platform.Windows / Linux stub)
-INotificationService // Show Toast notifications (Platform.Windows / Linux stub)
+INotificationService // Apply committed preferences and show themed in-app notifications (App)
 ITrayIconController  // Manage system tray (implemented in App: TrayStateController)
 IIdleDetectionService // Poll OS idle state (Platform.Windows / Linux stub)
 IAutoStartService    // Register app in startup mechanisms (Platform.Windows / Linux stub)
@@ -224,11 +224,10 @@ formats.
 **Key Responsibilities**:
 - Global hotkey registration (P/Invoke to Windows APIs)
 - Active window detection (GetForegroundWindow, GetWindowText)
-- Toast notifications (WinRT)
 - Idle state detection (GetLastInputInfo)
 - Auto-start registry management
 
-System tray integration (`ITrayIconController`) is implemented in FocusTimer.App (`TrayStateController`), not here — it drives Avalonia's own tray APIs rather than a Win32 call, so it isn't platform-specific.
+System tray integration (`ITrayIconController`) is implemented in FocusTimer.App (`TrayStateController`); it drives Avalonia's tray APIs. Notifications also live in App: the Host registers `DesktopNotificationService`, which uses themed notification windows and snapshots committed visibility and severity timeouts through `NotificationPolicy` at startup and during settings activation.
 
 **Key Components**:
 
@@ -240,10 +239,6 @@ System tray integration (`ITrayIconController`) is implemented in FocusTimer.App
 - **WindowsActiveWindowService.cs**: Implements IActiveWindowService
   - Polls current foreground window via GetForegroundWindow
   - Returns app name and window title for logging
-
-- **WindowsNotificationService.cs**: Implements INotificationService
-  - Shows system toast notifications
-  - WinRT API integration
 
 - **WindowsIdleDetectionService.cs**: Implements IIdleDetectionService
   - GetLastInputInfo API to detect idle periods
