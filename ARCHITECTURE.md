@@ -473,6 +473,30 @@ The `else` branch in `Program.cs`'s static constructor already registers Linux n
 4. **Multi-Platform Host**: Host is still `net8.0-windows`-only (`WinExe`); multi-targeting is required to ship a Linux build once (3) lands
 
 See `docs/versions/current/OpenIssues.md` for the full, current backlog of known gaps.
+## Widget backdrop ownership
+
+App's `WidgetMaterialPolicy` separates requested material from effective Clear, Frosted, Solid or SolidFallback
+and its reason. The policy does not change a theme or saved tint. Frost requires the selected Windows acrylic
+backend, an available public capability, successful attachment and completed update, and permitted preferences/session conditions.
+Linux, an absent extension and attachment failure select SolidFallback. Core contains no native material types;
+App does not reference Platform.Windows for the Avalonia-owned backdrop.
+
+`WidgetBackdropCapability` binds only the versioned public `Win32BackdropControllerV1` API. Its optional public
+binding lets stock Avalonia remain a supported fallback build. It rejects updates for obsolete handles and after
+disposal. Avalonia owns the HWND target, native visuals, composition synchronization and resource disposal;
+App owns material selection and the widget lifecycle subscription. `TryUpdate` means queued acceptance;
+`IsApplied` means update completion, never visual qualification. The additive `TryUpdateWithCompletion` method
+reports completion/failure on the UI thread. App rejects superseded generations and callbacks after disposal.
+
+TimerWidgetWindow's `WidgetWindowMaterial` subscription owns attachment, physical-radius/overall-opacity updates,
+and preference/lifetime observation. It rechecks on activation/show, theme and system preference notifications,
+bounds and DPI changes. It removes the acrylic hint before releasing an obsolete controller. Native composition
+resources remain in Avalonia; no independent native target or App polling loop is introduced. ThemeManager paints
+one opaque shell until a completed update permits Frosted, and reports fallback separately from stored preferences.
+App pins the reproducible Windows fork; `FocusTimerUseStockBackend=true` builds the explicit unavailable-extension
+fallback. Linux remains unsupported for widget frost. See the active
+[frost change](openspec/changes/implement-widget-frosted-blur/verification.md) for qualification evidence and limits.
+
 ## Foreground capture cadence and ownership
 
 SessionTracker uses the injected TimeProvider's monotonic timestamps for foreground deadlines. TimerService keeps its one-second tick. Local-calendar maintenance runs before capture admission and before final closure, so midnight segmentation does not wait for the sampling deadline. A segment crossing local midnight is closed at 23:59:59 with the day-boundary end reason and its replacement starts at 00:00:00, so every persisted entry starts and ends on the same local date (a segment that began in the last second of a day is zero-length and is dropped). Foreground changes are attributed at observation time; longer intervals can miss intermediate visits.

@@ -190,6 +190,16 @@ Logs are written to:
 
 Settings are stored separately, in `%APPDATA%\Roaming\FocusTimer\settings.json`.
 
+Appearance offers Off, Frosted and Solid widget backgrounds. Off shows a clear desktop with the selected tint;
+Frosted blurs live desktop content on the qualified Windows backend while keeping controls sharp. Tint applies to
+Off/Frosted; Solid is opaque. High Contrast, disabled effects, unsupported sessions/renderers or native failure use
+an opaque fallback without changing the saved request or tint. Apply/OK saves; Cancel/title-bar close restores the
+last commit. Failed writes and successfully compensated activation failures retain the draft preview. Older builds
+reject Frosted theme imports, so select Off and Apply/export before rolling back. Factory defaults stay Off.
+Native production probes pass at 100% and 200%, with live DPI transitions on the same HWND. The user confirmed
+the remaining native interaction and 100%/150%/200% review on 2026-10-12. Release workloads meet the recorded
+budgets on the qualified Windows setup. Less-smooth live scaling preview with Frosted is deferred under OI-45.
+
 Widget controls can sit beside or below the clock in both modes. Select Place buttons below the clock in Appearance to preview the placement; Apply/OK saves it and Cancel/title-bar close restores the last commit. In About, every seven version-label clicks toggle Developer mode in the draft; hiding it preserves its configured values.
 
 All Appearance controls preview immediately, including colors, opacity, scale, and compact mode. Widget scaling preserves the clock-to-controls proportions, compact top and bottom spacing, and balanced side gaps at 0.5x through 3x; button areas shrink with the widget below 1x. Corner radii scale continuously too, from 8 px in compact mode and 12 px in full mode at 1x. Play/Pause color controls its normal icon color; Button Normal controls other icons, and Hover, Pressed, and Disabled control their shared interaction states. Older themes inherit Button Normal for Play/Pause. Warning and Danger colors mark warning and error notifications, with default dismissal times of 15 seconds; information notifications default to 5 seconds. General settings can disable information and warning notifications and set dismissal times by severity from 1 to 120 whole seconds. Errors remain enabled, and acknowledgement reminders stay open until dismissed. Notifications use rounded cards, muted readable body text, compact close controls, and the shared primary OK button for acknowledgement. Success remains reserved for future status displays. The widget's compact-mode button edits the same draft while Settings is open; with Settings closed it saves immediately. Desktop commit buttons use a restrained accent fill, Cancel uses a neutral bordered surface, and Worklog Delete uses a muted danger fill and outline. Apply saves the complete draft and keeps Settings open; OK saves and closes. While saving, Settings keeps its appearance, blocks edits, and displays "Saving..." left of OK/Apply/Cancel in the shared footer row. Long errors and retry actions scroll within that feedback area. Cancel or title-bar close restores the last successful Apply/OK. Other settings take effect only after a successful commit.

@@ -1,7 +1,6 @@
 namespace FocusTimer.App.Views
 {
     using System;
-    using System.Linq;
     using System.Runtime.InteropServices;
     using Avalonia;
     using Avalonia.Controls;
@@ -14,7 +13,6 @@ namespace FocusTimer.App.Views
     using FocusTimer.App.ViewModels;
     using FocusTimer.Core;
     using FocusTimer.Core.Interfaces;
-    using FocusTimer.Core.Models;
     using Microsoft.Extensions.DependencyInjection;
 
     /// <summary>
@@ -22,7 +20,7 @@ namespace FocusTimer.App.Views
     /// </summary>
     public partial class TimerWidgetWindow : Window
     {
-        private readonly ThemeManager _themeManager;
+        private readonly WidgetWindowMaterial? _material;
         private bool _isDragging = false;
 
         /// <summary>
@@ -38,15 +36,19 @@ namespace FocusTimer.App.Views
         /// </summary>
         /// <param name="themeManager">Shared theme manager for appearance preview.</param>
         public TimerWidgetWindow(ThemeManager themeManager)
+            : this(themeManager, manageMaterial: true)
         {
-            this._themeManager = themeManager;
+        }
+
+        /// <summary>Initializes a new instance of the <see cref="TimerWidgetWindow"/> class for backend qualification.</summary>
+        /// <param name="themeManager">Shared appearance manager.</param>
+        /// <param name="manageMaterial">Whether production policy owns backdrop hints.</param>
+        internal TimerWidgetWindow(ThemeManager themeManager, bool manageMaterial)
+        {
             this.InitializeComponent();
-            this._themeManager.ThemeApplied += this.OnThemeApplied;
-            this.PropertyChanged += this.OnWindowPropertyChanged;
-            this.Opened += this.OnWindowOpenedForTransparency;
-            if (this._themeManager.ActiveTheme is Theme activeTheme)
+            if (manageMaterial)
             {
-                this.ApplyBackdrop(activeTheme);
+                this._material = new WidgetWindowMaterial(this, this.FindControl<Border>("WidgetShell")!, themeManager);
             }
 
             // Handle closing event to hide instead of close
@@ -79,8 +81,7 @@ namespace FocusTimer.App.Views
                 Win32Properties.RemoveWndProcHookCallback(this, WidgetWindowMessage);
             }
 
-            this._themeManager.ThemeApplied -= this.OnThemeApplied;
-            this.PropertyChanged -= this.OnWindowPropertyChanged;
+            this._material?.Dispose();
             if (this.DataContext is TimerWidgetViewModel viewModel)
             {
                 viewModel.Dispose();
@@ -134,30 +135,6 @@ namespace FocusTimer.App.Views
             }
 
             return false;
-        }
-
-        private void OnThemeApplied(Theme theme) => this.ApplyBackdrop(theme);
-
-        private void ApplyBackdrop(Theme theme)
-        {
-            var levels = WidgetBackdropLevels.ForTheme(theme);
-            if (!this.TransparencyLevelHint.SequenceEqual(levels))
-            {
-                this.TransparencyLevelHint = levels;
-            }
-
-            this._themeManager.ReportActualWidgetTransparency(this.ActualTransparencyLevel);
-        }
-
-        private void OnWindowOpenedForTransparency(object? sender, EventArgs e) =>
-            this._themeManager.ReportActualWidgetTransparency(this.ActualTransparencyLevel);
-
-        private void OnWindowPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
-        {
-            if (e.Property == TopLevel.ActualTransparencyLevelProperty)
-            {
-                this._themeManager.ReportActualWidgetTransparency(this.ActualTransparencyLevel);
-            }
         }
 
         private void InitializeComponent()

@@ -123,7 +123,10 @@ public sealed class AppControllerWindowInteractionTests
         SynchronizationContext.SetSynchronizationContext(new AvaloniaSynchronizationContext());
         try
         {
-            Complete(new ThemeService().SaveThemeToFileAsync(new Theme { ThemeName = "Dark", PrimaryText = "#123456" }, path));
+            Complete(new ThemeService().SaveThemeToFileAsync(new Theme
+            {
+                ThemeName = "Dark", PrimaryText = "#123456", WidgetBlurMode = WidgetBlurModes.Frosted, BackgroundOpacity = 0.25,
+            }, path));
             Complete((Task)typeof(SettingsWindowViewModel).GetMethod(
                 "ImportThemeFileAsync", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
                 .Invoke(vm, [path])!);
@@ -166,6 +169,8 @@ public sealed class AppControllerWindowInteractionTests
             Assert.Equal(apply ? "Custom/Imported" : "Dark", reopenedDropdown.SelectedItem);
             Assert.Equal(apply ? "Custom/Imported" : "Dark", reopened.SelectedThemeName);
             Assert.Equal(apply ? "#123456" : originalColor, reopened.Settings.Theme.PrimaryText);
+            Assert.Equal(apply ? WidgetBlurModes.Frosted : WidgetBlurModes.Off, reopened.SelectedBlurMode);
+            if (apply) Assert.Equal(0.25, reopened.Settings.Theme.BackgroundOpacity);
             Assert.Equal(apply ? path : null, reopened.Settings.CustomThemePath);
         }
         finally

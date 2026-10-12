@@ -91,6 +91,7 @@ namespace FocusTimer.App.ViewModels
             this._themeService = themeService;
             this._themeManager = themeManager;
             this._themeManager.ActualWidgetTransparencyChanged += this.OnActualWidgetTransparencyChanged;
+            this._themeManager.WidgetMaterialChanged += this.OnWidgetMaterialChanged;
             this._logger = logWriter;
             this._commitCoordinator = new SettingsCommitCoordinator(
                 settingsProvider, autoStartService, settings => this._activateRuntime(settings));
@@ -524,10 +525,10 @@ namespace FocusTimer.App.ViewModels
         /// Gets the available widget backdrop choices.
         /// </summary>
         public IReadOnlyList<string> AvailableBlurModes { get; } =
-            [WidgetBlurModes.Off, WidgetBlurModes.Solid];
+            [WidgetBlurModes.Off, WidgetBlurModes.Frosted, WidgetBlurModes.Solid];
 
         /// <summary>Gets a value indicating whether tint opacity affects the selected backdrop.</summary>
-        public bool IsBackgroundTintOpacityAvailable => this.SelectedBlurMode != WidgetBlurModes.Solid;
+        public bool IsBackgroundTintOpacityAvailable => this.SelectedBlurMode is WidgetBlurModes.Off or WidgetBlurModes.Frosted;
 
         /// <summary>
         /// Gets or sets the selected widget backdrop blur choice.
@@ -628,13 +629,15 @@ namespace FocusTimer.App.ViewModels
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Major Code Smell", "S2325:Methods and properties that don't access instance data should be static", Justification = "Instance property required for XAML data binding.")]
         public string TransparencyDiagnostics =>
             $"Requested: {this.SelectedBlurMode} | Active: {this._themeManager.ActualWidgetTransparency}" +
-            $" | Surface: {this.GetWidgetSurfaceDescription()}";
+            $" | Surface: {this.GetWidgetSurfaceDescription()}" +
+            $" | Effective: {this._themeManager.EffectiveWidgetMaterial.State}" +
+            (this._themeManager.EffectiveWidgetMaterial.Reason is string reason ? $" | Reason: {reason}" : string.Empty);
 
         /// <summary>
         /// Gets acrylic diagnostics shown in Appearance tab.
         /// </summary>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Major Code Smell", "S2325:Methods and properties that don't access instance data should be static", Justification = "Instance property required for XAML data binding.")]
-        public string AcrylicDiagnostics => "Tint opacity applies to Off. Solid always uses a fully opaque background. Blur is unavailable for now.";
+        public string AcrylicDiagnostics => "Tint applies to Off and Frosted. Frosted uses supported Windows desktop blur; unavailable effects use a solid fallback. Solid always uses an opaque background.";
 
         /// <summary>
         /// Gets a single-line summary of effective normalized opacities.
@@ -807,6 +810,7 @@ namespace FocusTimer.App.ViewModels
             this.RaisePropertyChanged(nameof(this.IsDraftVisible));
             this._previewAppearance = null;
             this._themeManager.ActualWidgetTransparencyChanged -= this.OnActualWidgetTransparencyChanged;
+            this._themeManager.WidgetMaterialChanged -= this.OnWidgetMaterialChanged;
             this.DetachTheme();
             if (this._attachedSettings != null)
             {
@@ -1410,6 +1414,9 @@ namespace FocusTimer.App.ViewModels
         }
 
         private void OnActualWidgetTransparencyChanged(WindowTransparencyLevel level) =>
+            this.RaisePropertyChanged(nameof(this.TransparencyDiagnostics));
+
+        private void OnWidgetMaterialChanged(WidgetMaterialResult result) =>
             this.RaisePropertyChanged(nameof(this.TransparencyDiagnostics));
 
         private string GetWidgetSurfaceDescription()

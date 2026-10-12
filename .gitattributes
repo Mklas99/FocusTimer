@@ -28,6 +28,9 @@
 *.yml text eol=lf
 *.yaml text eol=lf
 
+# Unified patches contain required single-space context lines for blank source lines.
+third_party/avalonia-widget-backdrop/backend.patch text eol=lf whitespace=-blank-at-eol
+
 # Images and binaries (never modify)
 *.png binary
 *.jpg binary

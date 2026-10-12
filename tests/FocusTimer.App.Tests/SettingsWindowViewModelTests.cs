@@ -131,7 +131,7 @@ public class SettingsWindowViewModelTests
         var themes = new DelayedImportThemeService();
         var manager = new ThemeManager();
         var vm = Create(provider: provider, themeService: themes, themeManager: manager);
-        themes.CompleteImport(new Theme { ThemeName = metadata, PrimaryText = "#123456" });
+        themes.CompleteImport(new Theme { ThemeName = metadata, PrimaryText = "#123456", WidgetBlurMode = WidgetBlurModes.Frosted });
         await vm.ImportThemeFileAsync("missing.fttheme");
         Assert.Equal("Custom", vm.Settings.ActiveThemeName);
         Assert.Equal(metadata, vm.Settings.Theme.ThemeName);
@@ -142,6 +142,7 @@ public class SettingsWindowViewModelTests
         var reopened = Create(provider: provider, themeManager: manager);
         Assert.Equal("Custom/Imported", reopened.SelectedThemeName);
         Assert.Equal("#123456", reopened.Settings.Theme.PrimaryText);
+        Assert.Equal(WidgetBlurModes.Frosted, reopened.SelectedBlurMode);
         reopened.Dispose();
         vm.SelectedThemeName = "Light";
         Assert.True(string.IsNullOrEmpty(vm.Settings.CustomThemePath));
@@ -380,6 +381,72 @@ public class SettingsWindowViewModelTests
     }
 
     [Fact]
+    public async Task FrostedCompensationFailure_RetainsDraftAndBlocksFurtherCommits()
+    {
+        var provider = new StubSettingsProvider(new Settings());
+        var manager = new ThemeManager();
+        var vm = Create(manager, provider: provider);
+        vm.SelectedBlurMode = WidgetBlurModes.Frosted;
+        vm.BackgroundOpacityPercent = 25;
+        vm.SetRuntimeActivator(_ =>
+        {
+            provider.FailSave = true;
+            throw new IOException("Synthetic activation and compensation failure.");
+        });
+        await ((ReactiveCommand<Unit, Unit>)vm.ApplyCommand).Execute().ToTask();
+        Assert.True(vm.RecoveryRequired);
+        Assert.False(vm.CanCommit);
+        Assert.False(vm.LastApplySucceeded);
+        Assert.Equal(WidgetBlurModes.Frosted, vm.SelectedBlurMode);
+        Assert.Equal(25, vm.BackgroundOpacityPercent);
+        int writes = provider.SaveCalls;
+        await ((ReactiveCommand<Unit, Unit>)vm.ApplyCommand).Execute().ToTask();
+        Assert.Equal(writes, provider.SaveCalls);
+        vm.Dispose();
+    }
+
+    [Fact]
+    public async Task FrostedUnavailable_SaveFailureAndCancelKeepSeparateAppearanceRestorePoints()
+    {
+        var provider = new StubSettingsProvider(new Settings()) { FailSave = true };
+        var manager = new ThemeManager();
+        var vm = Create(manager, provider: provider);
+        vm.SelectedBlurMode = WidgetBlurModes.Frosted;
+        vm.BackgroundOpacityPercent = 25;
+        Assert.True(vm.IsBackgroundTintOpacityAvailable);
+        manager.ReportWidgetMaterial(new(WidgetMaterialState.SolidFallback, "Native attachment failed"));
+        Assert.Contains("Native attachment failed", vm.TransparencyDiagnostics);
+        await ((ReactiveCommand<Unit, Unit>)vm.ApplyCommand).Execute().ToTask();
+        Assert.False(vm.LastApplySucceeded);
+        Assert.Equal(WidgetBlurModes.Frosted, vm.SelectedBlurMode);
+        Assert.Equal(0.25, manager.ActiveTheme!.BackgroundOpacity);
+        Assert.Equal(WidgetMaterialState.SolidFallback, manager.EffectiveWidgetMaterial.State);
+        Assert.Equal(WidgetBlurModes.Off, provider.Saved.Theme.WidgetBlurMode);
+        Assert.True(vm.TryDiscardAndClose());
+        Assert.Equal(WidgetBlurModes.Off, manager.ActiveTheme.WidgetBlurMode);
+        vm.Dispose();
+    }
+
+    [Fact]
+    public void MaterialDiagnostics_RefreshReasonsAndUnsubscribeOnDispose()
+    {
+        var manager = new ThemeManager();
+        var vm = Create(manager);
+        vm.SelectedBlurMode = WidgetBlurModes.Frosted;
+        int notifications = 0;
+        vm.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(vm.TransparencyDiagnostics)) notifications++; };
+        manager.ReportWidgetMaterial(new(WidgetMaterialState.SolidFallback, "High Contrast"));
+        manager.ReportWidgetMaterial(new(WidgetMaterialState.SolidFallback, "Transparency effects disabled"));
+        Assert.Equal(2, notifications);
+        Assert.Contains("Transparency effects disabled", vm.TransparencyDiagnostics);
+        Assert.Equal(WidgetBlurModes.Frosted, vm.Settings.Theme.WidgetBlurMode);
+        vm.Dispose();
+        int disposedCount = notifications;
+        manager.ReportWidgetMaterial(new(WidgetMaterialState.Frosted));
+        Assert.Equal(disposedCount, notifications);
+    }
+
+    [Fact]
     public async Task RecoveryRetry_ReenablesEditingAfterPendingLoadIsResolved()
     {
         var provider = new ControlledSettingsProvider();
@@ -488,7 +555,7 @@ public class SettingsWindowViewModelTests
         Assert.Equal("Dark", vm.Settings.Theme.ThemeName);
         Assert.Equal(0.8, vm.Settings.Theme.BackgroundOpacity);
         Assert.Equal(WidgetBlurModes.Off, vm.SelectedBlurMode);
-        Assert.Equal([WidgetBlurModes.Off, WidgetBlurModes.Solid], vm.AvailableBlurModes);
+        Assert.Equal([WidgetBlurModes.Off, WidgetBlurModes.Frosted, WidgetBlurModes.Solid], vm.AvailableBlurModes);
         vm.Dispose();
     }
 
@@ -603,6 +670,7 @@ public class SettingsWindowViewModelTests
         });
 
         vm.BackgroundOpacityPercent = 25;
+        vm.SelectedBlurMode = WidgetBlurModes.Frosted;
         vm.ClockOpacityPercent = 50;
         vm.ButtonsOpacityPercent = 60;
         vm.OverallFadePercent = 40;
@@ -628,6 +696,7 @@ public class SettingsWindowViewModelTests
         Assert.Equal(0, provider.SaveCalls);
         Assert.Equal(1, provider.Saved.WidgetScale);
         Assert.Equal("#123456", manager.ActiveTheme!.TimerText);
+        Assert.Equal(WidgetBlurModes.Frosted, manager.ActiveTheme.WidgetBlurMode);
 
         provider.FailSave = action == "SaveFailure";
         var command = (ReactiveCommand<Unit, Unit>)(action == "OK" ? vm.OkCommand : vm.ApplyCommand);
@@ -638,6 +707,7 @@ public class SettingsWindowViewModelTests
         Assert.Equal(0.4, widget.OverallOpacity);
         Assert.True(widget.UseCompactMode);
         Assert.Equal("#123456", manager.ActiveTheme!.TimerText);
+        Assert.Equal(WidgetBlurModes.Frosted, manager.ActiveTheme.WidgetBlurMode);
         if (success)
         {
             Assert.Equal(1.5, provider.Saved.WidgetScale);
@@ -675,6 +745,7 @@ public class SettingsWindowViewModelTests
         Assert.Equal(success ? 0.5 : saved.Theme.TimerOpacity, widget.EffectiveClockOpacity);
         Assert.Equal(success ? 25 : saved.BreakIntervalMinutes, widget.Settings.BreakIntervalMinutes);
         Assert.Equal(success ? "#123456" : saved.Theme.TimerText, manager.ActiveTheme!.TimerText);
+        Assert.Equal(success ? WidgetBlurModes.Frosted : saved.Theme.WidgetBlurMode, manager.ActiveTheme.WidgetBlurMode);
         Assert.Equal(success ? "#112233" : saved.Theme.PlayPauseColor, manager.ActiveTheme.PlayPauseColor);
         vm.Dispose();
 
@@ -683,6 +754,7 @@ public class SettingsWindowViewModelTests
         Assert.Equal(success ? "#112233" : saved.Theme.PlayPauseColor, reopened.Settings.Theme.PlayPauseColor);
         Assert.Equal(success ? "#556677" : saved.Theme.SuccessColor, reopened.Settings.Theme.SuccessColor);
         Assert.Equal(success ? "#667788" : saved.Theme.DangerColor, reopened.Settings.Theme.DangerColor);
+        Assert.Equal(success ? WidgetBlurModes.Frosted : saved.Theme.WidgetBlurMode, reopened.SelectedBlurMode);
         reopened.Dispose();
         provider.FailSave = false;
         int savesBeforeWidgetToggle = provider.SaveCalls;

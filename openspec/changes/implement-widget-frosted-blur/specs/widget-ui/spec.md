@@ -48,8 +48,18 @@ The rendering path SHALL NOT capture desktop pixels.
 - **THEN** the widget updates to the solid fallback or resumes supported frost after the change is observed, without rewriting preferences
 
 #### Scenario: Frosted appearance commit and discard
-- **WHEN** the user previews Frosted and tint, then applies, cancels, or encounters a failed activation
-- **THEN** successful Apply/OK preserves the preview across restart, Cancel/title-bar close restores the last commit, and failed activation restores the previously active material
+- **WHEN** the user previews Frosted and tint, then successfully applies or discards the draft
+- **THEN** successful Apply/OK preserves the appearance across restart, and Cancel/title-bar close restores the last successfully committed appearance
+
+#### Scenario: Frosted appearance commit fails
+- **WHEN** Apply or OK fails to write settings, or later activation fails and compensation succeeds
+- **THEN** Settings remains open with an error, the prior saved settings and commit restore point remain intact, and the Frosted and tint draft preview is retained
+- **AND** a later Cancel/title-bar close restores the last successfully committed appearance
+- **AND** unavailable blur uses the material fallback independently of the commit result, without discarding the draft or rewriting its requested material or tint
+
+#### Scenario: Frosted appearance compensation fails
+- **WHEN** a failed commit cannot restore the prior settings
+- **THEN** Settings retains recovery data, blocks new commits pending recovery, and reports recovery required without claiming which values are active, as required by the Settings contract
 ## ADDED Requirements
 
 ### Requirement: Widget frost geometry and lifetime
@@ -64,12 +74,21 @@ Frosted rendering SHALL follow the widget bounds and rounded shell in both modes
 - **WHEN** the widget hides, shows, recreates its handle, or closes repeatedly
 - **THEN** the effect attaches only to the current window, releases obsolete resources, and preserves interaction behavior
 
+#### Scenario: Overall widget opacity reaches zero
+- **WHEN** the user reduces overall widget opacity to zero while Frosted is effective
+- **THEN** neither foreground nor native backdrop remains visible, and desktop content is not blurred by the invisible widget
+
+#### Scenario: Widget backdrop updates are isolated
+- **WHEN** the widget changes its rounded bounds or overall opacity while Settings or Worklog is open
+- **THEN** only the widget backdrop follows those changes, and the existing Settings and Worklog material remains unchanged
+
 ### Requirement: Native widget frost qualification
 Frosted SHALL be released only after native Windows evidence distinguishes it from clear transparency and solid fill over live desktop content, with sharp foreground and verified fallback. Qualification SHALL record OS, renderer, display scale, effect preferences, visual evidence and resource costs. A successful API result or headless rendering SHALL NOT count as proof of desktop blur.
 
 #### Scenario: Visible native effect qualification
 - **WHEN** Frosted is tested against Off and Solid at matched tint over controlled desktop patterns and moving content
-- **THEN** evidence demonstrates visible background variation, reduced sharp edges, sharp foreground, and solid fallback across both widget modes and placements
+- **THEN** evidence demonstrates edge widening after local contrast normalization, the design's minimum visible background detail, and backdrop changes corresponding to moving underlying windows while the widget remains stationary
+- **AND** sharp foreground and solid fallback are verified across both widget modes and placements; lower raw edge contrast alone cannot qualify Frosted
 
 #### Scenario: Invalid qualification environment
 - **WHEN** capture is obscured, effects are disabled, or the control pattern is not visible

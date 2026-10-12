@@ -668,6 +668,41 @@ dotnet test tests/FocusTimer.App.Tests --filter "FullyQualifiedName~DesktopMater
 
 `DesktopShellEvidence` renders every Settings and Worklog page at the default and minimum sizes and asserts the commit buttons, tab labels, and page content stay inside the window. `DesktopMaterialNative` briefly shows windows on screen to compare the dense-frost shell with a solid and an unblurred-transparent control over a stripe pattern; it reports the frost as not verified when Windows transparency effects are off.
 
+### Widget backdrop backend
+
+The qualified fork, pinned upstream revision, source patch, dependency locks, license notices and clean package
+procedure live in [third_party/avalonia-widget-backdrop](third_party/avalonia-widget-backdrop/README.md).
+Build with its `build.ps1` from a fresh ignored checkout, copy the resulting package to the documented local feed,
+and restore with the root NuGet.Config. App pins `Avalonia.Win32.11.2.0.5-focustimer.5`; the other Avalonia packages
+remain at 11.2.0. For the explicit stock-backend fallback build, restore/build with
+`-p:FocusTimerUseStockBackend=true` and omit `FocusTimerBackendPrototype`. Frosted remains a saved choice in that
+build and resolves to a solid shell because the public capability is absent. Settings/Worklog retain their separate
+material policy. Native prototype tests still need `FocusTimerBackendPrototype=true` for direct API probes.
+
+On every fork or upstream update, pin the new package and source inputs, review native ownership, synchronization
+and disposal, build twice from clean checkouts, compare backend assemblies and repeat native edge/detail, live
+sampling, sharp foreground, clipping, fade, DPI and lifetime checks. Repeat non-opted-in Settings/Worklog checks
+and record publish-size impact. Do not replace cached official DLLs. See the fork README for exact commands.
+
+The additive `TryUpdateWithCompletion` API reports composition-update completion/failure on the UI thread. App
+rejects superseded updates and disposed sessions, keeps an opaque shell while pending or failed, and retries on
+activation/show and observed preference changes. No App polling loop or desktop capture is used for rendering.
+Windows checks combine Avalonia's contrast preference, the Windows transparency setting, a local session and DWM
+composition, plus successful attachment to the qualified WinUI renderer. DWM being enabled is not proof of acrylic
+support ([Microsoft guidance](https://learn.microsoft.com/en-us/windows/win32/api/dwmapi/nf-dwmapi-dwmiscompositionenabled)).
+Requested/effective diagnostics describe policy and update status, not a guarantee about arbitrary desktop pixels.
+Windows 11/WinUI qualification is recorded in verification.md, including native production probes at 100%/200%
+and same-HWND DPI transitions. The user confirmed the remaining native interaction, 150% and physical drag
+review on 2026-10-12. Recorded idle/movement budgets and lifetime checks pass; manual observations supplement
+the measurements and do not supply a presented-frame trace. Live scaling-preview smoothness is deferred under OI-45.
+
+Frosted previews and commits through the existing Settings transaction. Failed writes and successfully compensated
+activation failures retain the Frosted/tint draft preview; Cancel/title-bar close restores the last commit.
+Material fallback never rewrites that request or tint. Older builds reject Frosted theme imports. Before rolling
+back, select Off and Apply in the current build and export any Frosted themes with Off; this changes only the
+material choice and preserves tint/palette values. `WidgetBlurModes.ForOlderBuild` provides the same token conversion
+for migration code. Legacy Soft/Strong/Blur still normalize to Off and factory defaults remain Off.
+
 ### Enable Verbose Logging
 
 There's no environment variable for log level today. Two options:

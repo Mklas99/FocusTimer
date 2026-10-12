@@ -21,6 +21,7 @@ namespace FocusTimer.App.Services
 
         private readonly IAppLogger? _logWriter;
         private IResourceDictionary? _activeResources;
+        private WidgetMaterialResult? _widgetMaterial;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ThemeManager"/> class.
@@ -41,6 +42,9 @@ namespace FocusTimer.App.Services
         /// </summary>
         public event Action<WindowTransparencyLevel>? ActualWidgetTransparencyChanged;
 
+        /// <summary>Raised when the effective widget material or its fallback reason changes.</summary>
+        public event Action<WidgetMaterialResult>? WidgetMaterialChanged;
+
         /// <summary>
         /// Gets the most recently applied theme snapshot.
         /// </summary>
@@ -55,9 +59,32 @@ namespace FocusTimer.App.Services
         /// Gets a value indicating whether the widget needs an opaque shell for the current backdrop result.
         /// </summary>
         public bool IsWidgetShellFallbackActive => this.ActiveTheme != null &&
-            (string.Equals(this.ActiveTheme.ThemeName, HighContrastThemeName, StringComparison.OrdinalIgnoreCase) ||
-             this.ActiveTheme.WidgetBlurMode == WidgetBlurModes.Solid ||
-             this.ActualWidgetTransparency == WindowTransparencyLevel.None);
+            this.EffectiveWidgetMaterial.State is WidgetMaterialState.Solid or WidgetMaterialState.SolidFallback;
+
+        /// <summary>Gets material diagnostics independently of the saved request and Avalonia's transparency hint.</summary>
+        public WidgetMaterialResult EffectiveWidgetMaterial => this._widgetMaterial ?? WidgetMaterialPolicy.Resolve(new(
+            this.ActiveTheme?.WidgetBlurMode ?? WidgetBlurModes.Off,
+            this.ActualWidgetTransparency,
+            string.Equals(this.ActiveTheme?.ThemeName, HighContrastThemeName, StringComparison.OrdinalIgnoreCase),
+            false,
+            true,
+            OperatingSystem.IsWindows(),
+            false,
+            false,
+            false));
+
+        /// <summary>Reports the widget's policy result and updates its one shell brush.</summary>
+        /// <param name="result">Current effective material and fallback reason.</param>
+        public void ReportWidgetMaterial(WidgetMaterialResult result)
+        {
+            WidgetMaterialResult previous = this.EffectiveWidgetMaterial;
+            this._widgetMaterial = result;
+            this.UpdateWidgetShellActiveBrush();
+            if (previous != result)
+            {
+                this.WidgetMaterialChanged?.Invoke(result);
+            }
+        }
 
         /// <summary>
         /// Reports the transparency level achieved by the widget window.
@@ -71,6 +98,7 @@ namespace FocusTimer.App.Services
             }
 
             this.ActualWidgetTransparency = level;
+            this._widgetMaterial = null;
             this.UpdateWidgetShellActiveBrush();
             this.ActualWidgetTransparencyChanged?.Invoke(level);
         }
@@ -98,6 +126,7 @@ namespace FocusTimer.App.Services
         public void ApplyTheme(Theme theme, IResourceDictionary? targetResources = null)
         {
             this.ActiveTheme = theme.Clone();
+            this._widgetMaterial = null;
             IResourceDictionary? resources = targetResources ?? Application.Current?.Resources;
             this._activeResources = resources;
             if (resources == null)

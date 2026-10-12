@@ -74,6 +74,34 @@ public class ThemeManagerFailureTests
     }
 
     [Fact]
+    public void FrostedPolicyTransitions_KeepOneShellAndNeverRewriteTheSnapshot()
+    {
+        var manager = new ThemeManager();
+        var resources = new ResourceDictionary();
+        var theme = new Theme { WidgetBlurMode = WidgetBlurModes.Frosted, BackgroundOpacity = 0.25 };
+        manager.ApplyTheme(theme, resources);
+        manager.ReportActualWidgetTransparency(WindowTransparencyLevel.AcrylicBlur);
+        var available = new WidgetMaterialInputs(
+            WidgetBlurModes.Frosted, WindowTransparencyLevel.AcrylicBlur, false, false, true, true, true, true, true);
+        WidgetMaterialInputs[] transitions =
+        [
+            available with { UpdateApplied = false }, available,
+            available with { TransparencyDisabled = true }, available,
+            available with { HighContrast = true }, available,
+            available with { SupportedSession = false }, available,
+            available with { AttachmentSucceeded = false }, available,
+        ];
+        foreach (var inputs in transitions)
+        {
+            manager.ReportWidgetMaterial(WidgetMaterialPolicy.Resolve(inputs));
+            Assert.Same(resources[inputs == available ? "WidgetShellTintBrush" : "WidgetShellFallbackBrush"], resources["WidgetShellActiveBrush"]);
+            Assert.Equal(WidgetBlurModes.Frosted, manager.ActiveTheme!.WidgetBlurMode);
+            Assert.Equal(0.25, manager.ActiveTheme.BackgroundOpacity);
+            Assert.Equal(WidgetBlurModes.Frosted, theme.WidgetBlurMode);
+        }
+    }
+
+    [Fact]
     public void ApplyingTheme_RepairsUnexpectedResourceTypes()
     {
         var manager = new ThemeManager();

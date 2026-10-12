@@ -101,8 +101,10 @@ public class JsonSettingsProviderTests : IDisposable
         Assert.Equal(expectedPath, provider.SettingsFilePath);
     }
 
-    [Fact]
-    public async Task SaveAndLoad_RoundTripsMultipleFields()
+    [Theory]
+    [InlineData(WidgetBlurModes.Solid)]
+    [InlineData(WidgetBlurModes.Frosted)]
+    public async Task SaveAndLoad_RoundTripsMultipleFields(string material)
     {
         var customPath = Path.Combine(this._testDirectory, "roundtrip.json");
         var provider = new JsonSettingsProvider(customPath, NullLogger.Instance);
@@ -112,7 +114,7 @@ public class JsonSettingsProviderTests : IDisposable
             BreakIntervalMinutes = 37,
             WorklogDirectory = Path.Combine(this._testDirectory, "worklogs"),
         };
-        settings.Theme.WidgetBlurMode = WidgetBlurModes.Solid;
+        settings.Theme.WidgetBlurMode = material;
         settings.Theme.BackgroundOpacity = 0.37;
 
         await provider.SaveAsync(settings);
@@ -122,7 +124,7 @@ public class JsonSettingsProviderTests : IDisposable
         Assert.Equal(37, loaded.BreakIntervalMinutes);
         Assert.Equal(settings.WorklogDirectory, loaded.WorklogDirectory);
         Assert.Equal(settings.DeviceId, loaded.DeviceId);
-        Assert.Equal(WidgetBlurModes.Solid, loaded.Theme.WidgetBlurMode);
+        Assert.Equal(material, loaded.Theme.WidgetBlurMode);
         Assert.Equal(0.37, loaded.Theme.BackgroundOpacity);
         Assert.False(string.IsNullOrWhiteSpace(loaded.DeviceId));
         Assert.True(File.Exists(customPath));

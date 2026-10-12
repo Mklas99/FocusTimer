@@ -14,6 +14,9 @@ namespace FocusTimer.Core.Models
         /// <summary>Use a fully opaque widget background.</summary>
         public const string Solid = "Solid";
 
+        /// <summary>Blur live desktop content using the qualified native widget backend.</summary>
+        public const string Frosted = "Frosted";
+
         /// <summary>Legacy lighter blur choice.</summary>
         public const string Soft = "Soft";
 
@@ -25,7 +28,12 @@ namespace FocusTimer.Core.Models
         /// </summary>
         /// <param name="value">The serialized blur choice.</param>
         /// <returns>True when the choice is supported.</returns>
-        public static bool IsValid(string? value) => value is Off or Solid or Blur or Soft or Strong;
+        public static bool IsValid(string? value) => value is Off or Solid or Frosted or Blur or Soft or Strong;
+
+        /// <summary>Converts the additive material token before opening a theme with an older build.</summary>
+        /// <param name="value">Current serialized material.</param>
+        /// <returns>A token supported by pre-Frosted builds.</returns>
+        public static string ForOlderBuild(string value) => value == Frosted ? Off : value;
 
         /// <summary>Maps older saved blur choices to the current choice.</summary>
         /// <param name="value">The serialized choice.</param>

@@ -1,0 +1,6 @@
+<Project>
+  <!-- Opt-in publish measurement only. Normal Host builds do not import this file. -->
+  <ItemGroup Condition="'$(MSBuildProjectName)' == 'FocusTimer.Host'">
+    <PackageReference Include="Avalonia.Win32" Version="11.2.0.5-focustimer.5" />
+  </ItemGroup>
+</Project>
