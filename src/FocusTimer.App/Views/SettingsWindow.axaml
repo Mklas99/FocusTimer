@@ -408,6 +408,17 @@
                                   Classes="settings-accordion"
                                   IsVisible="{Binding IsDeveloperModeVisible}">
                             <StackPanel Spacing="10" Margin="0,8,0,0">
+                                <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
+                                    <TextBlock Grid.Row="0" Classes="SettingLabel" Text="Desktop background tint" />
+                                    <TextBlock Grid.Row="0" Grid.Column="1"
+                                               Text="{Binding DesktopTintOpacityPercent, StringFormat='{}{0:F0}%'}" />
+                                    <Slider x:Name="DesktopTintSlider" Grid.Row="1" Grid.ColumnSpan="2" Minimum="50" Maximum="100"
+                                            TickFrequency="1" IsSnapToTickEnabled="True"
+                                            Value="{Binding DesktopTintOpacityPercent}"
+                                            AutomationProperties.Name="Desktop background tint" />
+                                </Grid>
+                                <TextBlock Classes="helper-text" TextWrapping="Wrap"
+                                           Text="Settings and Worklog frost tint. Default: 95%. Previews live; Apply saves and Cancel restores. High Contrast and unavailable effects stay opaque." />
                                 <Grid ColumnDefinitions="Auto,*">
                                     <TextBlock Grid.Column="0" Classes="SettingLabel" Text="Log level:" />
                                     <ComboBox Grid.Column="1"

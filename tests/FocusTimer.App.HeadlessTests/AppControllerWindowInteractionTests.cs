@@ -57,6 +57,11 @@ public sealed class AppControllerWindowInteractionTests
         vm.Settings.InformationNotificationsEnabled = false;
         vm.WarningDismissalInput = 23;
         for (int i = 0; i < 7; i++) vm.RegisterVersionInfoClick();
+        Slider tint = window.FindControl<Slider>("DesktopTintSlider")!;
+        tint.Value = 70;
+        Assert.Equal(70, vm.DesktopTintOpacityPercent);
+        Assert.Equal(0.7, Assert.IsType<Avalonia.Media.SolidColorBrush>(
+            Avalonia.Application.Current!.Resources["DesktopShellFrostBrush"]).Opacity);
         Assert.Equal(1, widget.ControlsRow);
         Assert.True(harness.Notifications.Applied.InformationNotificationsEnabled);
         if (apply)
@@ -68,6 +73,7 @@ public sealed class AppControllerWindowInteractionTests
             vm.Settings.WidgetButtonsBelowClock = false;
             vm.Settings.InformationNotificationsEnabled = true;
             vm.WarningDismissalInput = 2;
+            vm.DesktopTintOpacityPercent = 100;
             for (int i = 0; i < 7; i++) vm.RegisterVersionInfoClick();
         }
 
@@ -75,6 +81,8 @@ public sealed class AppControllerWindowInteractionTests
         else window.Close();
         Dispatcher.UIThread.RunJobs();
         Assert.Equal(apply ? 1 : 0, widget.ControlsRow);
+        Assert.Equal(apply ? 0.7 : 0.95, Assert.IsType<Avalonia.Media.SolidColorBrush>(
+            Avalonia.Application.Current!.Resources["DesktopShellFrostBrush"]).Opacity);
         Assert.Equal(!apply, harness.Notifications.Applied.InformationNotificationsEnabled);
         harness.Controller.ShowSettings();
         Dispatcher.UIThread.RunJobs();
@@ -83,6 +91,7 @@ public sealed class AppControllerWindowInteractionTests
         Assert.Equal(!apply, reopened.Settings.InformationNotificationsEnabled);
         Assert.Equal(apply ? 23 : 15, reopened.WarningDismissalInput);
         Assert.Equal(apply, reopened.IsDeveloperModeVisible);
+        Assert.Equal(apply ? 70 : 95, reopened.DesktopTintOpacityPercent);
     }
 
     [Theory]

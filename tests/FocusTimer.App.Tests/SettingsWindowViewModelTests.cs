@@ -14,6 +14,41 @@ using ReactiveUI;
 
 public class SettingsWindowViewModelTests
 {
+    [Fact]
+    public async Task DesktopTint_PreviewFailedSaveCommitAndDiscardPreserveTheRestorePoint()
+    {
+        var provider = new StubSettingsProvider(new Settings { DeveloperModeEnabled = true });
+        var manager = new ThemeManager();
+        var vm = Create(provider: provider, themeManager: manager);
+        var previews = new List<double>();
+        vm.SetAppearancePreview(settings => previews.Add(settings.DesktopTintOpacity));
+        Assert.Equal(95, vm.DesktopTintOpacityPercent);
+        vm.DesktopTintOpacityPercent = 70;
+        Assert.Equal(0.7, previews.Last());
+        Assert.Equal(0.95, provider.Saved.DesktopTintOpacity);
+        provider.FailSave = true;
+        await ((ReactiveCommand<Unit, Unit>)vm.ApplyCommand).Execute().ToTask();
+        Assert.False(vm.LastApplySucceeded);
+        Assert.Equal(70, vm.DesktopTintOpacityPercent);
+        vm.RestoreAppearancePreview();
+        Assert.Equal(95, vm.DesktopTintOpacityPercent);
+        Assert.Equal(0.95, previews.Last());
+        provider.FailSave = false;
+        vm.DesktopTintOpacityPercent = 80;
+        await ((ReactiveCommand<Unit, Unit>)vm.ApplyCommand).Execute().ToTask();
+        Assert.True(vm.LastApplySucceeded);
+        Assert.Equal(0.8, provider.Saved.DesktopTintOpacity);
+        vm.DesktopTintOpacityPercent = 100;
+        vm.RestoreAppearancePreview();
+        Assert.Equal(80, vm.DesktopTintOpacityPercent);
+        var reopened = Create(provider: provider, themeManager: manager);
+        Assert.Equal(80, reopened.DesktopTintOpacityPercent);
+        Assert.Equal(1, provider.Saved.WidgetOpacity);
+        Assert.Equal(0.95, new Settings().DesktopTintOpacity);
+        reopened.Dispose();
+        vm.Dispose();
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
@@ -660,7 +695,7 @@ public class SettingsWindowViewModelTests
         bool failActivation = action == "ActivationFailure";
         vm.SetRuntimeActivator(async candidate =>
         {
-            manager.ApplyTheme(candidate.Theme);
+            manager.ApplyTheme(candidate.Theme, desktopTintOpacity: candidate.DesktopTintOpacity);
             await widget.ActivateSettingsAsync(candidate);
             if (failActivation)
             {
@@ -675,6 +710,7 @@ public class SettingsWindowViewModelTests
         vm.ButtonsOpacityPercent = 60;
         vm.OverallFadePercent = 40;
         vm.Settings.WidgetScale = 1.5;
+        vm.DesktopTintOpacityPercent = 70;
         await ((ReactiveCommand<Unit, Unit>)widget.ToggleCompactModeCommand).Execute().ToTask();
         Assert.True(vm.Settings.UseCompactMode);
         vm.Settings.BreakIntervalMinutes = 25;
@@ -702,6 +738,8 @@ public class SettingsWindowViewModelTests
         var command = (ReactiveCommand<Unit, Unit>)(action == "OK" ? vm.OkCommand : vm.ApplyCommand);
         await command.Execute().ToTask();
         bool success = action is "Apply" or "OK";
+        Assert.Equal(70, vm.DesktopTintOpacityPercent);
+        Assert.Equal(success ? 0.7 : 0.95, provider.Saved.DesktopTintOpacity);
         Assert.Equal(success, vm.LastApplySucceeded);
         Assert.Equal(originalFontSize * 1.5, widget.MainTimerFontSize);
         Assert.Equal(0.4, widget.OverallOpacity);
@@ -731,12 +769,14 @@ public class SettingsWindowViewModelTests
         }
 
         vm.Settings.WidgetScale = 2;
+        vm.DesktopTintOpacityPercent = 100;
         vm.PlayPauseColor = "#FFFFFF";
         await ((ReactiveCommand<Unit, Unit>)widget.ToggleCompactModeCommand).Execute().ToTask();
         Assert.False(vm.Settings.UseCompactMode);
         vm.OverallFadePercent = 70;
         vm.ClockOpacityPercent = 20;
         Assert.True(vm.TryDiscardAndClose());
+        Assert.Equal(success ? 70 : 95, vm.DesktopTintOpacityPercent);
         widget.ClearAppearancePreview();
 
         Assert.Equal(originalFontSize * (success ? 1.5 : 1), widget.MainTimerFontSize);

@@ -20,6 +20,7 @@ namespace FocusTimer.Core.Models
         private int _dataRetentionDays = 90;
         private double _widgetScale = 1.0;
         private double _widgetOpacity = 1.0;
+        private double _desktopTintOpacity = 0.95;
         private bool _useCompactMode;
         private bool _widgetButtonsBelowClock;
         private bool _informationNotificationsEnabled = true;
@@ -185,6 +186,13 @@ namespace FocusTimer.Core.Models
                 double clamped = Math.Clamp(value, 0.0, 1.0);
                 this.SetField(ref this._widgetOpacity, clamped);
             }
+        }
+
+        /// <summary>Gets or sets desktop frost tint opacity (0.7 to 1.0), independently of widget opacity.</summary>
+        public double DesktopTintOpacity
+        {
+            get => this._desktopTintOpacity;
+            set => this.SetField(ref this._desktopTintOpacity, double.IsFinite(value) ? Math.Clamp(value, 0.7, 1.0) : 0.95);
         }
 
         /// <summary>
@@ -372,6 +380,7 @@ namespace FocusTimer.Core.Models
             DataRetentionDays = this.DataRetentionDays,
             WidgetScale = this.WidgetScale,
             WidgetOpacity = this.WidgetOpacity,
+            DesktopTintOpacity = this.DesktopTintOpacity,
             UseCompactMode = this.UseCompactMode,
             WidgetButtonsBelowClock = this.WidgetButtonsBelowClock,
             InformationNotificationsEnabled = this.InformationNotificationsEnabled,

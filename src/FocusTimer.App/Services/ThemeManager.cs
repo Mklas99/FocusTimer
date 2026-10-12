@@ -13,7 +13,7 @@ namespace FocusTimer.App.Services
     public class ThemeManager
     {
         /// <summary>
-        /// Tint opacity of the dense-frost Settings/Worklog shell (a near-solid 95% tint).
+        /// Default tint opacity of the dense-frost Settings/Worklog shell.
         /// </summary>
         public const double DesktopShellFrostOpacity = 0.95;
 
@@ -123,8 +123,10 @@ namespace FocusTimer.App.Services
         /// </summary>
         /// <param name="theme">The theme to apply.</param>
         /// <param name="targetResources">Optional target resource dictionary; uses Application.Current.Resources when null.</param>
-        public void ApplyTheme(Theme theme, IResourceDictionary? targetResources = null)
+        /// <param name="desktopTintOpacity">Settings/Worklog shell tint, independent of widget appearance.</param>
+        public void ApplyTheme(Theme theme, IResourceDictionary? targetResources = null, double desktopTintOpacity = DesktopShellFrostOpacity)
         {
+            desktopTintOpacity = double.IsFinite(desktopTintOpacity) ? Math.Clamp(desktopTintOpacity, 0.7, 1.0) : DesktopShellFrostOpacity;
             this.ActiveTheme = theme.Clone();
             this._widgetMaterial = null;
             IResourceDictionary? resources = targetResources ?? Application.Current?.Resources;
@@ -240,9 +242,9 @@ namespace FocusTimer.App.Services
                 var sourceShell = Color.FromRgb(shell.R, shell.G, shell.B);
                 Color anchor = ThemeContrast.Ratio(Colors.White, sourceShell) >= ThemeContrast.Ratio(Colors.Black, sourceShell)
                     ? Colors.White : Colors.Black;
-                Color opaqueShell = NormalizeSurface(sourceShell, sourceShell, anchor, includeFrost: true);
+                Color opaqueShell = NormalizeSurface(sourceShell, sourceShell, anchor, includeFrost: true, frostOpacity: desktopTintOpacity);
                 SetBrushIfChanged(resources, "DesktopShellBrush", opaqueShell);
-                SetBrushIfChanged(resources, "DesktopShellFrostBrush", opaqueShell, DesktopShellFrostOpacity);
+                SetBrushIfChanged(resources, "DesktopShellFrostBrush", opaqueShell, desktopTintOpacity);
                 var primaryText = Color.Parse(theme.PrimaryText);
                 var opaquePrimaryText = Color.FromArgb(255, primaryText.R, primaryText.G, primaryText.B);
 
@@ -255,8 +257,8 @@ namespace FocusTimer.App.Services
                 Color card = NormalizeSurface(Mix(opaqueShell, primaryText, 0.06), opaqueShell, anchor);
                 Color hover = NormalizeSurface(Mix(field, opaquePrimaryText, 0.10), opaqueShell, anchor);
                 Color pressed = NormalizeSurface(Mix(field, opaquePrimaryText, 0.18), opaqueShell, anchor);
-                Color frostDark = Composite(opaqueShell, Colors.Black, DesktopShellFrostOpacity);
-                Color frostLight = Composite(opaqueShell, Colors.White, DesktopShellFrostOpacity);
+                Color frostDark = Composite(opaqueShell, Colors.Black, desktopTintOpacity);
+                Color frostLight = Composite(opaqueShell, Colors.White, desktopTintOpacity);
                 Color[] surfaces = [opaqueShell, frostDark, frostLight, card, field, hover, pressed];
                 Color focus = ThemeContrast.EnsureContrastAcross(Color.Parse(theme.AccentPrimary), 3.0, surfaces);
                 SetBrushIfChanged(resources, "DesktopFocusBrush", focus);
@@ -380,7 +382,7 @@ namespace FocusTimer.App.Services
             return Color.FromRgb(Blend(foreground.R, background.R), Blend(foreground.G, background.G), Blend(foreground.B, background.B));
         }
 
-        private static Color NormalizeSurface(Color preferred, Color shell, Color foreground, bool includeFrost = false)
+        private static Color NormalizeSurface(Color preferred, Color shell, Color foreground, bool includeFrost = false, double frostOpacity = DesktopShellFrostOpacity)
         {
             Color frostTarget = foreground == Colors.White ? Colors.Black : Colors.White;
             Color target = includeFrost ? frostTarget : shell;
@@ -390,8 +392,8 @@ namespace FocusTimer.App.Services
                 bool readable = ThemeContrast.Ratio(foreground, candidate) >= ThemeContrast.TextRatio;
                 if (includeFrost)
                 {
-                    readable &= ThemeContrast.Ratio(foreground, Composite(candidate, Colors.Black, DesktopShellFrostOpacity)) >= ThemeContrast.TextRatio &&
-                        ThemeContrast.Ratio(foreground, Composite(candidate, Colors.White, DesktopShellFrostOpacity)) >= ThemeContrast.TextRatio;
+                    readable &= ThemeContrast.Ratio(foreground, Composite(candidate, Colors.Black, frostOpacity)) >= ThemeContrast.TextRatio &&
+                        ThemeContrast.Ratio(foreground, Composite(candidate, Colors.White, frostOpacity)) >= ThemeContrast.TextRatio;
                 }
 
                 if (readable)

@@ -323,6 +323,7 @@ namespace FocusTimer.App.ViewModels
                 this.ProjectList.Load(value.ProjectRules);
                 this.RaisePropertyChanged(nameof(this.IsDeveloperModeVisible));
                 this.RaisePropertyChanged(nameof(this.SelectedDeveloperLogLevel));
+                this.RaisePropertyChanged(nameof(this.DesktopTintOpacityPercent));
             }
         }
 
@@ -436,6 +437,13 @@ namespace FocusTimer.App.ViewModels
         /// Gets a value indicating whether developer options are visible.
         /// </summary>
         public bool IsDeveloperModeVisible => this.Settings.DeveloperModeEnabled;
+
+        /// <summary>Gets or sets Settings/Worklog background tint in percent.</summary>
+        public double DesktopTintOpacityPercent
+        {
+            get => ToPercent(this.Settings.DesktopTintOpacity);
+            set => this.Settings.DesktopTintOpacity = value / 100.0;
+        }
 
         /// <summary>Gets or sets the information notification dismissal input in seconds.</summary>
         public decimal? InformationDismissalInput
@@ -732,7 +740,7 @@ namespace FocusTimer.App.ViewModels
 
             if (this._appearancePreviewChanged)
             {
-                this._themeManager.ApplyTheme(this._lastAppliedTheme);
+                this._themeManager.ApplyTheme(this._lastAppliedTheme, desktopTintOpacity: this._lastAppliedSettings.DesktopTintOpacity);
                 this._appearancePreviewChanged = false;
             }
 
@@ -1356,7 +1364,12 @@ namespace FocusTimer.App.ViewModels
                 this.RaisePropertyChanged(nameof(this.OpacityDiagnosticsSummary));
             }
 
-            if (e.PropertyName is nameof(this.Settings.WidgetOpacity) or nameof(this.Settings.WidgetScale) or
+            if (e.PropertyName == nameof(this.Settings.DesktopTintOpacity))
+            {
+                this.RaisePropertyChanged(nameof(this.DesktopTintOpacityPercent));
+            }
+
+            if (e.PropertyName is nameof(this.Settings.DesktopTintOpacity) or nameof(this.Settings.WidgetOpacity) or nameof(this.Settings.WidgetScale) or
                 nameof(this.Settings.UseCompactMode) or nameof(this.Settings.WidgetButtonsBelowClock))
             {
                 this.ApplyThemeChanges();
@@ -1447,7 +1460,7 @@ namespace FocusTimer.App.ViewModels
             }
 
             this._appearancePreviewChanged = true;
-            this._themeManager.ApplyTheme(this.Settings.Theme);
+            this._themeManager.ApplyTheme(this.Settings.Theme, desktopTintOpacity: this.Settings.DesktopTintOpacity);
             this._previewAppearance?.Invoke(this.Settings);
             this._logger.LogInformation($"Applied theme: {this.Settings.Theme.ThemeName}");
         }

@@ -696,6 +696,12 @@ and same-HWND DPI transitions. The user confirmed the remaining native interacti
 review on 2026-10-12. Recorded idle/movement budgets and lifetime checks pass; manual observations supplement
 the measurements and do not supply a presented-frame trace. Live scaling-preview smoothness is deferred under OI-45.
 
+Developer Options' desktop tint slider stores `Settings.DesktopTintOpacity` (0.7–1.0, default 0.95).
+AppController supplies it during startup/activation; Settings supplies the draft and committed restore-point
+values during preview/discard. ThemeManager uses it in the Settings/Worklog frost brush and all desktop contrast
+derivation, including shell extremes over black/white. It is an application preference, not an exported theme
+field. Hidden Developer options retain the saved value; solid fallback does not use the translucent brush.
+
 Frosted previews and commits through the existing Settings transaction. Failed writes and successfully compensated
 activation failures retain the Frosted/tint draft preview; Cancel/title-bar close restores the last commit.
 Material fallback never rewrites that request or tint. Older builds reject Frosted theme imports. Before rolling

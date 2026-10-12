@@ -112,6 +112,7 @@ public class JsonSettingsProviderTests : IDisposable
         {
             ActiveThemeName = $"Theme_{Guid.NewGuid():N}",
             BreakIntervalMinutes = 37,
+            DesktopTintOpacity = 0.8,
             WorklogDirectory = Path.Combine(this._testDirectory, "worklogs"),
         };
         settings.Theme.WidgetBlurMode = material;
@@ -122,6 +123,7 @@ public class JsonSettingsProviderTests : IDisposable
 
         Assert.Equal(settings.ActiveThemeName, loaded.ActiveThemeName);
         Assert.Equal(37, loaded.BreakIntervalMinutes);
+        Assert.Equal(0.8, loaded.DesktopTintOpacity);
         Assert.Equal(settings.WorklogDirectory, loaded.WorklogDirectory);
         Assert.Equal(settings.DeviceId, loaded.DeviceId);
         Assert.Equal(material, loaded.Theme.WidgetBlurMode);
@@ -189,6 +191,7 @@ public class JsonSettingsProviderTests : IDisposable
         var restarted = await new JsonSettingsProvider(path, NullLogger.Instance).LoadAsync();
 
         Assert.Equal("Light", restarted.ActiveThemeName);
+        Assert.Equal(0.95, restarted.DesktopTintOpacity);
         Assert.Equal(first.DeviceId, restarted.DeviceId);
         Assert.Equal(WidgetBlurModes.Off, restarted.Theme.WidgetBlurMode);
     }

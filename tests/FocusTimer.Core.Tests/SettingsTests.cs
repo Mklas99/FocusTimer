@@ -5,6 +5,18 @@ using FocusTimer.Core.Models;
 
 public class SettingsTests
 {
+    [Theory]
+    [InlineData(0, 0.7)]
+    [InlineData(2, 1)]
+    [InlineData(0.8, 0.8)]
+    [InlineData(double.NaN, 0.95)]
+    [InlineData(double.PositiveInfinity, 0.95)]
+    public void DesktopTint_ClampsInvalidValuesAndDefaultsOlderSettings(double input, double expected)
+    {
+        Assert.Equal(0.95, JsonSerializer.Deserialize<Settings>("{}")!.DesktopTintOpacity);
+        Assert.Equal(expected, new Settings { DesktopTintOpacity = input }.DesktopTintOpacity);
+    }
+
     [Fact]
     public void Clone_PreservesEveryPersistedProperty()
     {
@@ -22,6 +34,7 @@ public class SettingsTests
             DataRetentionDays = 30,
             WidgetScale = 1.5,
             WidgetOpacity = 0.7,
+            DesktopTintOpacity = 0.8,
             UseCompactMode = true,
             DeveloperModeEnabled = true,
             DeveloperLogLevel = "Warning",

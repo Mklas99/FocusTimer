@@ -168,7 +168,7 @@ namespace FocusTimer.App.Services
             {
                 ThemeSelection.Restore(this.CurrentSettings, this._themeService);
 
-                this._themeManager.ApplyTheme(this.CurrentSettings.Theme);
+                this._themeManager.ApplyTheme(this.CurrentSettings.Theme, desktopTintOpacity: this.CurrentSettings.DesktopTintOpacity);
             }
             catch (Exception ex)
             {
@@ -178,7 +178,7 @@ namespace FocusTimer.App.Services
 
                 try
                 {
-                    this._themeManager.ApplyTheme(this.CurrentSettings.Theme);
+                    this._themeManager.ApplyTheme(this.CurrentSettings.Theme, desktopTintOpacity: this.CurrentSettings.DesktopTintOpacity);
                 }
                 catch (Exception fallbackEx)
                 {
@@ -637,7 +637,7 @@ namespace FocusTimer.App.Services
             this._notificationService.ApplySettings(this.CurrentSettings);
             this._projectRuleStore?.Update(this.CurrentSettings.ProjectRules);
             this._themeService.ApplyTheme(this.CurrentSettings.Theme);
-            this._themeManager.ApplyTheme(this.CurrentSettings.Theme);
+            this._themeManager.ApplyTheme(this.CurrentSettings.Theme, desktopTintOpacity: this.CurrentSettings.DesktopTintOpacity);
             if (this._timerWindow?.DataContext is TimerWidgetViewModel vm)
             {
                 await vm.ActivateSettingsAsync(this.CurrentSettings);

@@ -401,3 +401,15 @@ General settings SHALL provide information and warning visibility controls and w
 #### Scenario: Invalid or uncommitted duration
 - **WHEN** a duration is fractional or outside 1 through 120, or the draft is cancelled or fails to save
 - **THEN** no invalid or uncommitted policy is activated
+
+### Requirement: Developer desktop tint preview
+Developer Settings SHALL offer a 70–100% desktop frost tint slider, defaulting to 95% for missing settings. It SHALL preview Settings and Worklog live and persist independently of widget appearance and exported themes. Apply/OK SHALL commit it; Cancel/title-bar close SHALL restore the last commit. Failed commits SHALL follow the existing appearance recovery contract. High Contrast and unavailable effects SHALL retain solid fallback.
+
+#### Scenario: Desktop tint preview and discard
+- **WHEN** the user edits desktop tint and cancels or closes Settings without successfully applying
+- **THEN** the desktop appearance restores the last committed tint while the widget tint remains unchanged
+
+#### Scenario: Desktop tint persists and stays readable
+- **WHEN** the user successfully applies desktop tint and restarts or switches theme
+- **THEN** the saved desktop tint remains active and derived text/focus colors account for that tint over light/dark desktop extremes
+- **AND** hiding Developer options retains the preference, and unsupported effects or High Contrast use a solid shell
