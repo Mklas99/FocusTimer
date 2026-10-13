@@ -540,6 +540,11 @@ dotnet format
 ```
 This builds the solution, executes unit tests with OpenCover coverage collection, and submits the analysis and coverage reports to SonarQube / SonarCloud.
 
+The GitHub Actions Sonar workflow builds and verifies the widget backdrop package with SDK 8.0.425, then copies
+it into the ignored local NuGet feed before restoring the solution. Coverage reports are summarized and uploaded
+when Cobertura files exist, including after a coverage gate failure. Sonar finalization runs only after a successful
+analysis begin step. Local analysis requires preparing the feed first using the [backend build procedure](third_party/avalonia-widget-backdrop/README.md#build-and-test).
+
 ### Run Code Coverage Locally
 
 ```powershell
