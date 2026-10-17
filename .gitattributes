@@ -28,7 +28,8 @@
 *.yml text eol=lf
 *.yaml text eol=lf
 
-# Unified patches contain required single-space context lines for blank source lines.
+# Third-party reproducible build inputs checked against SHA256 in provenance.json
+third_party/avalonia-widget-backdrop/* text eol=lf
 third_party/avalonia-widget-backdrop/backend.patch text eol=lf whitespace=-blank-at-eol
 
 # Images and binaries (never modify)
