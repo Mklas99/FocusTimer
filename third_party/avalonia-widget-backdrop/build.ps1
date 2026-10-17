@@ -40,7 +40,8 @@ try {
     Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'backend.packages.lock.json') -Destination (Join-Path $backend 'packages.lock.json')
     Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'generators.packages.lock.json') -Destination 'src/tools/DevGenerators/packages.lock.json'
     $project = 'src/Windows/Avalonia.Win32/FocusTimerBackend.csproj'
-    Invoke-Checked dotnet @('restore', $project, '--locked-mode', '-p:DisableSourceLink=true')
+    $nugetConfig = Join-Path $checkout 'NuGet.Config'
+    Invoke-Checked dotnet @('restore', $project, '--locked-mode', '-p:DisableSourceLink=true', '--configfile', $nugetConfig)
     Invoke-Checked dotnet @('pack', $project, '--no-restore', '-c', 'Release', '-p:DisableSourceLink=true', '-o', (Join-Path $checkout 'packages'), '-v:q')
     $assemblyHash = (Get-FileHash -LiteralPath (Join-Path $backend 'bin/Release/net8.0/Avalonia.Win32.dll') -Algorithm SHA256).Hash
     if ($assemblyHash -ne $provenance.verifiedAssemblySha256) {
