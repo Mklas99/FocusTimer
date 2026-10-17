@@ -1,5 +1,6 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:icons="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
         x:Class="FocusTimer.App.Views.NotificationWindow"
         Classes="settings-window notification-window"
         Width="420" SizeToContent="Height" MaxHeight="480"
@@ -7,18 +8,19 @@
         SystemDecorations="None" ShowActivated="False"
         Background="Transparent" TransparencyLevelHint="Transparent">
     <Border x:Name="NotificationCard" Classes="notification-card">
-        <Grid RowDefinitions="Auto,Auto,Auto" ColumnDefinitions="*,Auto">
-            <TextBlock x:Name="Heading" Classes="notification-title" Margin="0,0,8,8"
-                       FontSize="{DynamicResource FontSizeTitle}" TextWrapping="Wrap" />
-            <Button x:Name="Dismiss" Grid.Column="1" Classes="notification-close" Content="×"
+        <Grid RowDefinitions="Auto,Auto,Auto" ColumnDefinitions="Auto,*,Auto">
+            <icons:MaterialIcon x:Name="StatusIcon" Classes="notification-icon" Grid.RowSpan="2"
+                                Width="24" Height="24" VerticalAlignment="Top" />
+            <TextBlock x:Name="Heading" Grid.Column="1" Classes="notification-title" TextWrapping="Wrap" />
+            <Button x:Name="Dismiss" Grid.Column="2" Classes="notification-close" Content="×"
                     AutomationProperties.Name="Dismiss notification" Click="OnDismiss"
                     IsCancel="True" />
-            <ScrollViewer Grid.Row="1" Grid.ColumnSpan="2" MaxHeight="320"
+            <ScrollViewer Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" MaxHeight="320"
                           HorizontalScrollBarVisibility="Disabled">
                 <TextBlock x:Name="Message" Classes="notification-message" TextWrapping="Wrap" />
             </ScrollViewer>
-            <Button x:Name="Acknowledge" Classes="action-primary" Grid.Row="2" Grid.ColumnSpan="2" Content="OK"
-                    HorizontalAlignment="Right" MinWidth="80" Margin="0,16,0,0"
+            <Button x:Name="Acknowledge" Classes="action-primary" Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2" Content="OK"
+                    HorizontalAlignment="Right" MinWidth="80" Margin="0,12,0,0"
                     IsDefault="True" Click="OnDismiss" />
         </Grid>
     </Border>

@@ -169,7 +169,16 @@ public class DesktopPaletteContrastTests
         Measure("DesktopSelectedTextBrush", "DesktopSelectionBrush", 4.5);
         Measure("DesktopSelectionBrush", "DesktopFieldBrush", 3);
         Measure("DesktopSelectionBrush", "DesktopShellBrush", 3);
-        Measure("DesktopNotificationBodyBrush", "DesktopShellBrush", 4.5);
+        foreach (string severity in new[] { "Information", "Warning", "Error" })
+        {
+            string fill = $"DesktopNotification{severity}FillBrush";
+            Measure($"DesktopNotification{severity}TextBrush", fill, 4.5);
+            Measure($"DesktopNotification{severity}BodyBrush", fill, 4.5);
+            if (theme.ThemeName == "High Contrast")
+            {
+                Measure($"DesktopNotification{severity}EdgeBrush", fill, 3);
+            }
+        }
         foreach (string action in new[] { "DesktopPrimaryAction", "DesktopDestructiveAction" })
         {
             foreach (string state in new[] { "", "Hover", "Pressed" })

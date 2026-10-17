@@ -18,6 +18,10 @@ namespace FocusTimer.App.Services
         public const double DesktopShellFrostOpacity = 0.95;
 
         private const string HighContrastThemeName = "High Contrast";
+        private const double NotificationTintAmount = 0.10;
+        private const double NotificationEdgeAmount = 0.35;
+        private const double NotificationTextMix = 0.15;
+        private const double NotificationErrorTextMix = 0.42;
 
         private readonly IAppLogger? _logWriter;
         private IResourceDictionary? _activeResources;
@@ -300,14 +304,24 @@ namespace FocusTimer.App.Services
                 SetBrushIfChanged(resources, "DesktopBorderBrush", ThemeContrast.EnsureContrastAcross(
                     Composite(Color.Parse(theme.InputBorder), field), 3.0, surfaces));
                 bool highContrast = string.Equals(theme.ThemeName, HighContrastThemeName, StringComparison.OrdinalIgnoreCase);
-                Color notificationBorder = highContrast
-                    ? ThemeContrast.EnsureContrast(Color.Parse(theme.WindowBorder), opaqueShell, 3.0)
-                    : Mix(opaqueShell, opaquePrimaryText, 0.12);
-                SetBrushIfChanged(resources, "DesktopNotificationBorderBrush", notificationBorder);
-                Color notificationBody = highContrast
-                    ? Color.Parse(theme.SecondaryText)
-                    : Mix(opaqueShell, Composite(Color.Parse(theme.SecondaryText), opaqueShell), 0.75);
-                SetBrushIfChanged(resources, "DesktopNotificationBodyBrush", ThemeContrast.EnsureContrast(notificationBody, opaqueShell));
+
+                // Notification banners tint the shell with the severity color; the title and icon share one readable
+                // color, and the message stays in the secondary text color. High Contrast uses the solid severity color as the edge.
+                void DeriveNotification(string severity, Color status, double textMix)
+                {
+                    Color fill = Mix(opaqueShell, status, NotificationTintAmount);
+                    Color edge = highContrast
+                        ? ThemeContrast.EnsureContrast(status, fill, 3.0)
+                        : Mix(opaqueShell, status, NotificationEdgeAmount);
+                    SetBrushIfChanged(resources, $"DesktopNotification{severity}FillBrush", fill);
+                    SetBrushIfChanged(resources, $"DesktopNotification{severity}EdgeBrush", edge);
+                    SetBrushIfChanged(resources, $"DesktopNotification{severity}TextBrush", ThemeContrast.EnsureContrast(Mix(status, opaquePrimaryText, textMix), fill));
+                    SetBrushIfChanged(resources, $"DesktopNotification{severity}BodyBrush", ThemeContrast.EnsureContrast(Composite(Color.Parse(theme.SecondaryText), opaqueShell), fill));
+                }
+
+                DeriveNotification("Information", Color.Parse(theme.AccentPrimary), NotificationTextMix);
+                DeriveNotification("Warning", Color.Parse(theme.WarningColor), NotificationTextMix);
+                DeriveNotification("Error", Color.Parse(theme.DangerColor), NotificationErrorTextMix);
                 Color tabHover = NormalizeSurface(Composite(Color.Parse(theme.TabHoverBackground), opaqueShell), opaqueShell, anchor);
                 SetBrushIfChanged(resources, "DesktopTabHoverBrush", tabHover);
                 SetBrushIfChanged(resources, "DesktopTabFocusBrush", ThemeContrast.EnsureContrastAcross(

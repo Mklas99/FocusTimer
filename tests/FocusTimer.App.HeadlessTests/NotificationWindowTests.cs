@@ -91,8 +91,9 @@ public sealed class NotificationWindowTests
         Assert.Equal(TimeSpan.FromSeconds(seconds), DesktopNotificationService.GetDismissalDelay(severity));
 
     [Theory]
-    [InlineData(NotificationSeverity.Warning, "DesktopWarningBrush")]
-    [InlineData(NotificationSeverity.Error, "DesktopDangerBrush")]
+    [InlineData(NotificationSeverity.Information, "Information")]
+    [InlineData(NotificationSeverity.Warning, "Warning")]
+    [InlineData(NotificationSeverity.Error, "Error")]
     public void Severity_UsesLiveThemeColorsAndAnExplicitLabel(NotificationSeverity severity, string resource)
     {
         var manager = new ThemeManager();
@@ -100,19 +101,32 @@ public sealed class NotificationWindowTests
         manager.ApplyTheme(themes.GetBuiltInTheme("Dark")!);
         var window = new NotificationWindow("Focus Timer", "An operation needs attention.", false, severity);
         window.Show();
+        Color Resolve(string suffix)
+        {
+            Assert.True(Application.Current!.TryGetResource($"DesktopNotification{resource}{suffix}Brush", null, out object? brush));
+            return Assert.IsAssignableFrom<ISolidColorBrush>(brush).Color;
+        }
+
         foreach (var theme in FocusTimer.Tests.ThemeFixtures.All)
         {
             manager.ApplyTheme(theme);
             Dispatcher.UIThread.RunJobs();
-            Assert.True(Application.Current!.TryGetResource(resource, null, out object? brush));
-            var expected = Assert.IsAssignableFrom<ISolidColorBrush>(brush);
             var card = window.FindControl<Border>("NotificationCard")!;
             var heading = window.FindControl<TextBlock>("Heading")!;
-            Assert.Equal(expected.Color, Assert.IsAssignableFrom<ISolidColorBrush>(card.BorderBrush).Color);
-            Assert.Equal(expected.Color, Assert.IsAssignableFrom<ISolidColorBrush>(heading.Foreground).Color);
+            var message = window.FindControl<TextBlock>("Message")!;
+            Color fill = Resolve("Fill");
+            Assert.Equal(fill, Assert.IsAssignableFrom<ISolidColorBrush>(card.Background).Color);
+            Assert.Equal(Resolve("Edge"), Assert.IsAssignableFrom<ISolidColorBrush>(card.BorderBrush).Color);
+            Assert.Equal(Resolve("Text"), Assert.IsAssignableFrom<ISolidColorBrush>(heading.Foreground).Color);
+            Assert.Equal(Resolve("Body"), Assert.IsAssignableFrom<ISolidColorBrush>(message.Foreground).Color);
             Assert.Equal(new Thickness(1), card.BorderThickness);
-            Assert.StartsWith($"{severity}:", heading.Text);
-            Assert.True(ThemeContrast.Ratio(expected.Color, Assert.IsAssignableFrom<ISolidColorBrush>(card.Background).Color) >= 4.5);
+            if (severity != NotificationSeverity.Information)
+            {
+                Assert.StartsWith($"{severity}:", heading.Text);
+            }
+
+            Assert.True(ThemeContrast.Ratio(Resolve("Text"), fill) >= 4.5);
+            Assert.True(ThemeContrast.Ratio(Resolve("Body"), fill) >= 4.5);
         }
 
         window.Close();
@@ -157,7 +171,7 @@ public sealed class NotificationWindowTests
             var background = Assert.IsAssignableFrom<ISolidColorBrush>(card.Background);
             var message = window.FindControl<TextBlock>("Message")!;
             var foreground = Assert.IsAssignableFrom<ISolidColorBrush>(message.Foreground);
-            Assert.Equal(Assert.IsAssignableFrom<ISolidColorBrush>(Application.Current!.Resources["DesktopShellBrush"]).Color, background.Color);
+            Assert.Equal(Assert.IsAssignableFrom<ISolidColorBrush>(Application.Current!.Resources["DesktopNotificationInformationFillBrush"]).Color, background.Color);
             Assert.True(ThemeContrast.Ratio(foreground.Color, background.Color) >= 4.5);
             if (theme.ThemeName == "High Contrast")
             {

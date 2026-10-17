@@ -3,6 +3,7 @@ namespace FocusTimer.App.Views;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using FocusTimer.Core.Models;
+using Material.Icons;
 
 /// <summary>App-owned notification chrome shared with the desktop editors.</summary>
 public partial class NotificationWindow : Window
@@ -25,6 +26,12 @@ public partial class NotificationWindow : Window
         this.Heading.Text = severity == NotificationSeverity.Information ? title : $"{severity}: {title}";
         this.Classes.Set("warning", severity == NotificationSeverity.Warning);
         this.Classes.Set("error", severity == NotificationSeverity.Error);
+        this.StatusIcon.Kind = severity switch
+        {
+            NotificationSeverity.Warning => MaterialIconKind.AlertOutline,
+            NotificationSeverity.Error => MaterialIconKind.AlertCircleOutline,
+            _ => MaterialIconKind.InformationOutline,
+        };
         this.Message.Text = message;
         this.Acknowledge.IsVisible = requireAcknowledgement;
         this.Dismiss.IsVisible = !requireAcknowledgement;
