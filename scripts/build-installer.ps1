@@ -77,29 +77,17 @@ function Resolve-ProductVersion {
         throw "Provided -Version '$RequestedVersion' is not a valid semantic version (x.y.z)."
     }
 
-    $candidates = @(
-        $env:FOCUSTIMER_VERSION,
-        $env:GITHUB_REF_NAME,
-        $env:GITHUB_REF,
-        $env:BUILD_SOURCEBRANCHNAME,
-        $env:BUILD_SOURCEBRANCH,
-        $env:CI_COMMIT_TAG
-    )
-
-    foreach ($candidate in $candidates) {
-        $parsed = Resolve-SemVerFromText -Text $candidate
-        if ($parsed) {
-            return $parsed
-        }
+    $versionFile = Join-Path $repoRoot "VERSION"
+    if (-not (Test-Path $versionFile)) {
+        throw "VERSION file not found at $versionFile."
     }
 
-    $gitTag = (git -C $repoRoot describe --tags --abbrev=0 2>$null)
-    $parsedGitTag = Resolve-SemVerFromText -Text $gitTag
-    if ($parsedGitTag) {
-        return $parsedGitTag
+    $parsed = Resolve-SemVerFromText -Text (Get-Content -Raw $versionFile)
+    if (-not $parsed) {
+        throw "VERSION file does not contain a valid semantic version (x.y.z)."
     }
 
-    return "0.1.1"
+    return $parsed
 }
 
 function Invoke-Signing {

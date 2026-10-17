@@ -44,4 +44,4 @@ The palette and imported-theme work has a separate [theme optimization plan](../
 
 Each actively implemented or completed feature receives a stable `F-##` identifier in the table above. Use that ID in its branch name as `feature/<F-##>_<short-kebab-case-description>`; for example, `feature/F-01_worklog-data-foundation`. Keep the ID with the feature when it is completed so release notes can refer to the same stable identifier.
 
-Foundation and maintenance work that is not a user-facing feature uses a stable `M##` identifier and a `maintainance/<M##>_<short-kebab-case-description>` branch, for example `maintainance/M01_establish-system-design-foundation`.
+Foundation and maintenance work that is not a user-facing feature uses a stable `M##` identifier and a `maintenance/<M##>_<short-kebab-case-description>` branch, for example `maintenance/M01_establish-system-design-foundation`.

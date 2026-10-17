@@ -6,7 +6,7 @@ Defines the quality gates and test infrastructure that back FocusTimer's develop
 ## Requirements
 
 ### Requirement: CI and Static Analysis
-The system SHALL be built and analyzed via a GitHub Actions sonar-scan workflow with SonarQube (`.sonarqube/`) and StyleCop (`stylecop.json`) rules enforced, with architecture documented in `ARCHITECTURE.md`.
+The system SHALL be built and analyzed via a GitHub Actions sonar-scan workflow with SonarQube (`.sonarqube/`) and StyleCop (`stylecop.json`) rules enforced, with architecture documented in `docs/ARCHITECTURE.md`.
 
 #### Scenario: Code is pushed to the repository
 - **WHEN** a change is pushed or a pull request is opened

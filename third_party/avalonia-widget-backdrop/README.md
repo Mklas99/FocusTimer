@@ -10,8 +10,8 @@ Prerequisites are Git, network access to GitHub/NuGet and .NET SDK 8.0.425 (sele
 
 ```powershell
 ./third_party/avalonia-widget-backdrop/build.ps1 -CheckoutName avalonia-widget-backdrop-clean
-New-Item -ItemType Directory -Path .build/widget-backdrop-packages -Force | Out-Null
-Copy-Item .build/avalonia-widget-backdrop-clean/packages/*.nupkg .build/widget-backdrop-packages/ -Force
+New-Item -ItemType Directory -Path third_party/avalonia-widget-backdrop/packages -Force | Out-Null
+Copy-Item .build/avalonia-widget-backdrop-clean/packages/*.nupkg third_party/avalonia-widget-backdrop/packages/ -Force
 dotnet restore tests/FocusTimer.App.Tests/FocusTimer.App.Tests.csproj -p:FocusTimerBackendPrototype=true --configfile third_party/avalonia-widget-backdrop/NuGet.Config
 $env:FOCUSTIMER_NATIVE_APPEARANCE_TESTS = '1'
 $env:FOCUSTIMER_EVIDENCE_DIR = Join-Path (Get-Location) 'tests/FocusTimer.App.Tests/bin/widget-frost-extension'

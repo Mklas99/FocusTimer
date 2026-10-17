@@ -67,7 +67,7 @@ The current implementation has several hidden blockers:
 - Entries are assigned to a day solely by `StartTime`. An entry crossing midnight is counted entirely on the starting day: [TodayStatsService.cs](C:/Users/mklas/Documents/_Development/Repos/FocusTimer/src/FocusTimer.Core/Services/TodayStatsService.cs:35).
 - `DateTime` plus separate time-only CSV fields loses timezone and daylight-saving context.
 - `Session` exists but is unused; adding another session abstraction around it would create competing models.
-- The architecture document claims thread-safe CSV writes and shows a filename that differs from the implemented/specification path. These should be corrected when the change is implemented: [ARCHITECTURE.md](C:/Users/mklas/Documents/_Development/Repos/FocusTimer/ARCHITECTURE.md:164), [activity-tracking spec](C:/Users/mklas/Documents/_Development/Repos/FocusTimer/openspec/specs/activity-tracking/spec.md:23).
+- The architecture document claims thread-safe CSV writes and shows a filename that differs from the implemented/specification path. These should be corrected when the change is implemented: [ARCHITECTURE.md](C:/Users/mklas/Documents/_Development/Repos/FocusTimer/docs/ARCHITECTURE.md:164), [activity-tracking spec](C:/Users/mklas/Documents/_Development/Repos/FocusTimer/openspec/specs/activity-tracking/spec.md:23).
 
 ## Recommended architecture
 

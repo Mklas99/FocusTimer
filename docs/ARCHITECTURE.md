@@ -91,7 +91,7 @@ All desktop windows carry the `settings-window` class. Shared desktop styles are
 
 ThemeManager derives readable desktop colors without changing stored Theme values. Fields and shell surfaces are normalized when opposing custom backgrounds cannot share readable text. `DesktopSelectionBrush` and `DesktopSelectedTextBrush` form an opaque matched pair for fields, rows, and timeline blocks; tab hover has its own derived surface. Text and indicators account for the selected desktop shell tint over light/dark extremes (70–100%, default 95%). The Developer slider previews through the Settings draft and restores the last commit on discard; AppController supplies the persisted value on startup/activation. Widget colors and opacity keep their independent source roles.
 
-`ThemeSelection` applies the same saved identity rule in startup and Settings load/restore. Imports use canonical `Custom` identity with original Theme metadata, and the dropdown shows `Custom/Imported` only for the current custom draft. Source paths are provenance, never reload dependencies. Saved edited presets override later factory tuning. See [Theme palette tuning](docs/versions/current/ThemePaletteTuning.md) for the legacy identity rule and adjustment workflow.
+`ThemeSelection` applies the same saved identity rule in startup and Settings load/restore. Imports use canonical `Custom` identity with original Theme metadata, and the dropdown shows `Custom/Imported` only for the current custom draft. Source paths are provenance, never reload dependencies. Saved edited presets override later factory tuning. See [Theme palette tuning](versions/current/ThemePaletteTuning.md) for the legacy identity rule and adjustment workflow.
 
 **Dependencies**: Core, Persistence
 
@@ -495,7 +495,7 @@ resources remain in Avalonia; no independent native target or App polling loop i
 one opaque shell until a completed update permits Frosted, and reports fallback separately from stored preferences.
 App pins the reproducible Windows fork; `FocusTimerUseStockBackend=true` builds the explicit unavailable-extension
 fallback. Linux remains unsupported for widget frost. See the active
-[frost change](openspec/changes/implement-widget-frosted-blur/verification.md) for qualification evidence and limits.
+[frost change](../openspec/changes/implement-widget-frosted-blur/verification.md) for qualification evidence and limits.
 
 ## Foreground capture cadence and ownership
 
@@ -509,4 +509,4 @@ One capture reservation covers both initial and periodic lookups. Busy periodic 
 
 WindowsActiveWindowService owns a single cached process name and a SYNCHRONIZE process handle. Every capture still reads the foreground window, PID, and title. A non-blocking liveness check on the owned handle validates the process lifetime before reuse; PID alone is insufficient. Switching processes, absent foreground, lookup failure, or disposal releases the entry. Failed handle acquisition uses uncached lookup. A lock serializes lookup and disposal, and Host DI disposes the singleton. Linux remains a stub with the same interface (OI-06).
 
-[Activity polling measurements](docs/versions/current/ActivityPollingPerformance.md) establish reduced component lookup work. Settings reads, persistence writes, and whole-app resource use require separate measurements.
+[Activity polling measurements](versions/current/ActivityPollingPerformance.md) establish reduced component lookup work. Settings reads, persistence writes, and whole-app resource use require separate measurements.

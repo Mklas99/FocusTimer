@@ -3,7 +3,7 @@
 # This script performs various code quality checks
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
-PROJECT_ROOT="$SCRIPT_DIR"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 echo "======================================"
 echo "FocusTimer - Code Quality Analysis"
