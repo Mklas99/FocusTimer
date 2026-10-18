@@ -18,6 +18,7 @@ sonar.tests=src
 sonar.test.inclusions=**/*Tests.cs,**/test/**
 
 # Code coverage
+sonar.coverage.exclusions=scripts/**,installer/**,tests/**,third_party/**,docs/**
 sonar.coverageReportPaths=coverage/sonar-coverage.xml
 
 # C# specific settings

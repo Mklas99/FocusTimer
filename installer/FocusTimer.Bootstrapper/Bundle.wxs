@@ -3,7 +3,8 @@
      xmlns:bal="http://wixtoolset.org/schemas/v4/wxs/bal"
      xmlns:netfx="http://wixtoolset.org/schemas/v4/wxs/netfx">
   <Bundle Name="FocusTimer" Manufacturer="FocusTimer" Version="$(var.ProductVersion)"
-          UpgradeCode="3e88d2e2-a51b-44f8-9b3e-0d3ec214c9bb">
+          UpgradeCode="3e88d2e2-a51b-44f8-9b3e-0d3ec214c9bb"
+          IconSourceFile="..\FocusTimer.Installer\FocusTimer.ico">
     <BootstrapperApplication>
       <bal:WixStandardBootstrapperApplication Theme="hyperlinkLicense" LicenseUrl="" />
     </BootstrapperApplication>
@@ -17,8 +18,7 @@
                   InstallArguments="/install /quiet /norestart"
                   RepairArguments="/repair /quiet /norestart"
                   PerMachine="yes" Permanent="yes" Vital="yes" />
-      <MsiPackage Id="FocusTimerMsi" SourceFile="$(var.FrameworkMsi)"
-                  bal:DisplayInternalUICondition="WixBundleAction = 6" />
+      <MsiPackage Id="FocusTimerMsi" SourceFile="$(var.FrameworkMsi)" />
     </Chain>
   </Bundle>
 </Wix>

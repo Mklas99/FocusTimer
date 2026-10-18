@@ -49,6 +49,10 @@ jobs:
           /o:"mklas99"
           /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
           /d:sonar.host.url="https://sonarcloud.io"
+          /d:sonar.sourceEncoding="UTF-8"
+          /d:sonar.sources="src"
+          /d:sonar.tests="tests"
+          /d:sonar.coverage.exclusions="scripts/**,installer/**,tests/**,third_party/**,docs/**"
           /d:sonar.cs.opencover.reportsPaths="artifacts/test-coverage/**/coverage.opencover.xml"
 
       - name: Build

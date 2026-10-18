@@ -19,7 +19,7 @@ The shared draft, full Apply/OK commit, Cancel/title-bar discard, temporary appe
 
 ## Selected visual direction
 
-The user selected the following direction on 2026-10-05. The [OpenSpec proposal](../../../openspec/changes/archive/2026-10-08-adopt-dense-frost-design-system/proposal.md), [design](../../../openspec/changes/archive/2026-10-08-adopt-dense-frost-design-system/design.md), and [screenshot references](../../../openspec/changes/archive/2026-10-08-adopt-dense-frost-design-system/references/README.md) define the remaining visual work. The layout, navigation, typography, and control refresh is implemented; the native Settings frost test now qualifies the Avalonia backend on the Windows development machine (see Implemented decisions).
+The user selected the following direction on 2026-10-05. The [OpenSpec proposal](../../../../openspec/changes/archive/2026-10-08-adopt-dense-frost-design-system/proposal.md), [design](../../../../openspec/changes/archive/2026-10-08-adopt-dense-frost-design-system/design.md), and [screenshot references](../../../../openspec/changes/archive/2026-10-08-adopt-dense-frost-design-system/references/README.md) define the remaining visual work. The layout, navigation, typography, and control refresh is implemented; the native Settings frost test now qualifies the Avalonia backend on the Windows development machine (see Implemented decisions).
 
 | Area | Decision |
 |---|---|
@@ -41,8 +41,8 @@ Theme palette changes are separate. Keep OK, Apply, Cancel, the implemented draf
 
 ## Investigation before design
 
-- Run [the theme color wiring audit prompt](../../design/SETTINGS_THEME_COLOR_WIRING_AUDIT_PROMPT.md). Verify actual theme consumers in Settings, both widget modes, and context menus. Identify system-controlled native menu colors and decide what can realistically follow the app theme.
-- Run [the control state audit prompt](../../design/SETTINGS_CONTROL_STATE_AUDIT_PROMPT.md). Record the current visual and keyboard states of tabs, accordions, fields, checkboxes, sliders, color swatches, and action buttons across the Settings pages.
+- Run [the theme color wiring audit prompt](../../../design/Settings/SETTINGS_THEME_COLOR_WIRING_AUDIT_PROMPT.md). Verify actual theme consumers in Settings, both widget modes, and context menus. Identify system-controlled native menu colors and decide what can realistically follow the app theme.
+- Run [the control state audit prompt](../../../design/Settings/SETTINGS_CONTROL_STATE_AUDIT_PROMPT.md). Record the current visual and keyboard states of tabs, accordions, fields, checkboxes, sliders, color swatches, and action buttons across the Settings pages.
 - Trace settings draft, runtime preview, persistence, Apply, Save/OK, Cancel, reset, theme import, and window-close behavior. Distinguish values merely shown in the form from values already applied to the running app.
 
 ## Design and implementation tasks

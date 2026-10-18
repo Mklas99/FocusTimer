@@ -19,6 +19,12 @@
     <ProjectReference Include="..\FocusTimer.Persistence\FocusTimer.Persistence.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="..\..\docs\CHANGELOG.md" Link="CHANGELOG.md">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
   <ItemGroup Condition="'$(TargetFramework)' == 'net8.0-windows'">
     <ProjectReference Include="..\FocusTimer.Platform.Windows\FocusTimer.Platform.Windows.csproj" />
   </ItemGroup>

@@ -1243,6 +1243,101 @@ public class SettingsWindowViewModelTests
         finally { vm.Dispose(); }
     }
 
+    [Fact]
+    public void ResolveChangelogContent_WhenCandidateDocsExists_ReturnsStrippedContent()
+    {
+        string tempDir = Path.Combine(Path.GetTempPath(), "ft_test_docs_" + Guid.NewGuid().ToString("N"));
+        string docsDir = Path.Combine(tempDir, "docs");
+        Directory.CreateDirectory(docsDir);
+        try
+        {
+            File.WriteAllText(Path.Combine(docsDir, "CHANGELOG.md"), "# Changelog\n\n## v0.2.0\n- Test entry");
+            string result = SettingsWindowViewModel.ResolveChangelogContent(tempDir, null);
+            Assert.Contains("## v0.2.0", result);
+            Assert.DoesNotContain("# Changelog", result);
+        }
+        finally
+        {
+            Directory.Delete(tempDir, true);
+        }
+    }
+
+    [Fact]
+    public void ResolveChangelogContent_WhenCandidateDirectExists_ReturnsStrippedContent()
+    {
+        string tempDir = Path.Combine(Path.GetTempPath(), "ft_test_direct_" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(tempDir);
+        try
+        {
+            File.WriteAllText(Path.Combine(tempDir, "CHANGELOG.md"), "# Changelog\n\n## Direct Title\n- Direct entry");
+            string result = SettingsWindowViewModel.ResolveChangelogContent(tempDir, null);
+            Assert.Contains("## Direct Title", result);
+            Assert.DoesNotContain("# Changelog", result);
+        }
+        finally
+        {
+            Directory.Delete(tempDir, true);
+        }
+    }
+
+    [Fact]
+    public void ResolveChangelogContent_WhenNoFilesOnDisk_FallsBackToEmbeddedResource()
+    {
+        string tempDir = Path.Combine(Path.GetTempPath(), "ft_test_empty_" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(tempDir);
+        try
+        {
+            string result = SettingsWindowViewModel.ResolveChangelogContent(tempDir, typeof(SettingsWindowViewModel).Assembly);
+            Assert.NotEmpty(result);
+            Assert.DoesNotContain("No changelog file found", result);
+            Assert.DoesNotContain("# Changelog", result);
+        }
+        finally
+        {
+            Directory.Delete(tempDir, true);
+        }
+    }
+
+    [Fact]
+    public void ResolveChangelogContent_WhenNeitherDiskNorResourceAvailable_ReturnsFallbackMessage()
+    {
+        string tempDir = Path.Combine(Path.GetTempPath(), "ft_test_none_" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(tempDir);
+        try
+        {
+            string result = SettingsWindowViewModel.ResolveChangelogContent(tempDir, typeof(string).Assembly);
+            Assert.Equal("No changelog file found. Add docs/CHANGELOG.md to populate this section.", result);
+        }
+        finally
+        {
+            Directory.Delete(tempDir, true);
+        }
+    }
+
+    [Fact]
+    public void ResolveChangelogContent_WhenExceptionOccurs_LogsErrorAndReturnsFallback()
+    {
+        var logger = new RecordingAppLogger();
+        string result = SettingsWindowViewModel.ResolveChangelogContent("\0invalid-path", null, logger);
+        Assert.Equal("No changelog file found. Add docs/CHANGELOG.md to populate this section.", result);
+        Assert.Single(logger.Errors);
+    }
+
+    private sealed class RecordingAppLogger : IAppLogger
+    {
+        public List<string> Errors { get; } = new();
+
+        public void LogCritical(string message, Exception? ex = null) { }
+
+        public void LogDebug(string message) { }
+
+        public void LogError(string message, Exception? ex = null) => this.Errors.Add(message);
+
+        public void LogInformation(string message) { }
+
+        public void LogWarning(string message) { }
+    }
+
     private sealed class RecoveryJournalProvider : ISettingsProvider, ISettingsCommitStore
     {
         private Settings _previous = new();

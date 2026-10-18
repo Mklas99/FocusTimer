@@ -13,7 +13,7 @@
         Icon="avares://FocusTimer.App/Assets/FocusTimer-idle.png">
 
     <StackPanel Margin="20" Spacing="15" VerticalAlignment="Center">
-        <TextBlock Text="FocusTimer � Skeleton"
+        <TextBlock Text="FocusTimer - Skeleton"
                    FontSize="24"
                    FontWeight="Bold"
                    HorizontalAlignment="Center"/>
