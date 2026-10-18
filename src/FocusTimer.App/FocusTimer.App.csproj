@@ -30,6 +30,9 @@
     <AvaloniaResource Include="Assets\FocusTimer-idle.png" />
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="..\..\docs\CHANGELOG.md" Link="Resources\CHANGELOG.md" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\FocusTimer.Core\FocusTimer.Core.csproj" />
     <ProjectReference Include="..\FocusTimer.Persistence\FocusTimer.Persistence.csproj" />
   </ItemGroup>

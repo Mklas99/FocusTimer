@@ -1508,13 +1508,27 @@ namespace FocusTimer.App.ViewModels
                 var current = new DirectoryInfo(AppContext.BaseDirectory);
                 for (int i = 0; i < 8 && current != null; i++)
                 {
-                    string candidate = Path.Combine(current.FullName, "docs", "CHANGELOG.md");
-                    if (File.Exists(candidate))
+                    string candidateDocs = Path.Combine(current.FullName, "docs", "CHANGELOG.md");
+                    if (File.Exists(candidateDocs))
                     {
-                        return StripChangelogTitle(File.ReadAllText(candidate));
+                        return StripChangelogTitle(File.ReadAllText(candidateDocs));
+                    }
+
+                    string candidateDirect = Path.Combine(current.FullName, "CHANGELOG.md");
+                    if (File.Exists(candidateDirect))
+                    {
+                        return StripChangelogTitle(File.ReadAllText(candidateDirect));
                     }
 
                     current = current.Parent;
+                }
+
+                using Stream? stream = typeof(SettingsWindowViewModel).Assembly.GetManifestResourceStream("FocusTimer.App.Resources.CHANGELOG.md")
+                    ?? typeof(SettingsWindowViewModel).Assembly.GetManifestResourceStream("FocusTimer.App.CHANGELOG.md");
+                if (stream != null)
+                {
+                    using var reader = new StreamReader(stream);
+                    return StripChangelogTitle(reader.ReadToEnd());
                 }
             }
             catch (Exception ex)

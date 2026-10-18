@@ -49,7 +49,7 @@ Gaps, completed milestones, and remaining backlog items as of the v0.2.0 release
 | OI-37 | Developer mode | Toggle Developer mode through activation interaction | Completed | Delivered by F-06: 7 clicks on About version label toggles Developer mode. |
 | OI-38 | Worklog inspection | Timeline entries cannot be bucketed into larger time groups | Open | Time-bucketing intervals for timeline inspection. |
 | OI-39 | Worklog management | Choosing a project in the project field is slow and error-prone | Open | Searchable/autocomplete project dropdown improvements. |
-| OI-40 | Installer experience | Installing development build opens two installer progress windows | Open | Streamline WiX bootstrapper UI flow into a single window. |
+| OI-40 | Installer experience | Installing development build opens two installer progress windows | Completed | Suppressed chained MSI internal UI in Bootstrapper Bundle.wxs; setup runs cleanly with a single progress window. |
 | OI-41 | Notifications | Configure notification visibility and dismissal times | Completed | Delivered by F-06: visibility toggles by severity and 1–120s dismissal duration. |
 | OI-42 | UI / buttons | Buttons for different actions have the same visual weight | Completed | Delivered by F-05: distinct action roles (primary accent, secondary bordered, destructive danger). |
 | OI-43 | Developer diagnostics | Developer Settings cannot trigger app actions for testing | Open | Test notification triggers in Developer Settings. |
