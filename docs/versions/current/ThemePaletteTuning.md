@@ -1,6 +1,6 @@
 # Theme palette tuning
 
-Factory palettes live in `src/FocusTimer.Core/Services/ThemeService.cs`. These are source values, not derived desktop brushes. The following comparison records the 2026-10-08 palette polish, including the follow-up surface and accent tuning; numerical contrast evidence is in [the contrast audit](../../../design/SETTINGS_THEME_COLOR_CONTRAST_CHECK.md).
+Factory palettes live in `src/FocusTimer.Core/Services/ThemeService.cs`. These are source values, not derived desktop brushes. The following comparison records the 2026-10-08 palette polish, including the follow-up surface and accent tuning; numerical contrast evidence is in [the contrast audit](../../design/SETTINGS_THEME_COLOR_CONTRAST_CHECK.md).
 
 The widget project label derives from `WindowForeground` against the widget shell, rather than using the desktop `SecondaryText` role. `ProjectTagText` supplies the project field and its placeholder. Personalize these roles in the preset source or an imported theme file; the existing color editor does not expose `WindowForeground`. Source snapshots are preserved. Desktop placeholders, spinner glyphs, and popup surfaces use derived desktop brushes independently of Fluent's Light/Dark variant.
 

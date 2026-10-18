@@ -62,7 +62,7 @@ src/FocusTimer.Host/bin/Release/net8.0-windows/win-x64/FocusTimer.Host.exe
 
 Dependency graph: Host → App, Core, Persistence, Platform.Windows. No circular dependencies.
 
-See [ARCHITECTURE.md](ARCHITECTURE.md) for detailed architecture, design patterns, and extension guide.
+See [ARCHITECTURE.md](docs/ARCHITECTURE.md) for detailed architecture, design patterns, and extension guide.
 
 ---
 
@@ -120,11 +120,9 @@ Build the self-contained MSI, framework-dependent setup, direct MSI, and portabl
 ./scripts/build-installer.ps1 -Runtime win-x64
 ```
 
-Version resolution order for MSI/exe metadata:
-- `-Version` parameter (if provided)
-- CI tag variables (`FOCUSTIMER_VERSION`, `GITHUB_REF_NAME`, `GITHUB_REF`, `BUILD_SOURCEBRANCHNAME`, `BUILD_SOURCEBRANCH`, `CI_COMMIT_TAG`)
-- Latest git tag (`git describe --tags --abbrev=0`)
-- Fallback: `0.1.1`
+The version comes from the `VERSION` file in the repository root, the only place it is written.
+`Directory.Build.props` reads it for the assemblies, and the installer script reads it for MSI/exe metadata.
+`-Version <x.y.z>` overrides it for a single build. The release workflow fails when the pushed tag is not `v` plus the `VERSION` content.
 
 Outputs:
 - Self-contained MSI: `artifacts/installer/FocusTimer.Installer.selfcontained.msi`
@@ -276,7 +274,7 @@ _eventBus.Publish(new EntriesLoggedEvent { Entries = entries });
 _eventBus.Subscribe<EntriesLoggedEvent>(e => LogSessions(e.Entries));
 ```
 
-See [ARCHITECTURE.md](ARCHITECTURE.md) for complete details, project descriptions, and extension guide.
+See [ARCHITECTURE.md](docs/ARCHITECTURE.md) for complete details, project descriptions, and extension guide.
 
 ---
 

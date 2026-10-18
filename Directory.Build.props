@@ -20,6 +20,8 @@
     <!-- Language features -->
     <LangVersion>latest</LangVersion>
 
+    <!-- Single version source: the VERSION file in the repository root. -->
+    <Version>$([System.IO.File]::ReadAllText("$(MSBuildThisFileDirectory)VERSION").Trim())</Version>
     <!-- Shared assembly metadata -->
     <Company>Mklas99</Company>
     <Product>FocusTimer</Product>

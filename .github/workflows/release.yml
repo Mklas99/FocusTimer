@@ -22,9 +22,15 @@ jobs:
         with:
           dotnet-version: "8.0.x"
 
+      - name: Check tag matches VERSION
+        shell: pwsh
+        run: |
+          $expected = "v" + (Get-Content VERSION -Raw).Trim()
+          if ("${{ github.ref_name }}" -ne $expected) { throw "Tag ${{ github.ref_name }} does not match VERSION ($expected)." }
+
       - name: Build both installers and portable EXE
         shell: pwsh
-        run: ./scripts/build-installer.ps1 -Version "${{ github.ref_name }}"
+        run: ./scripts/build-installer.ps1
 
       - name: Rename portable EXE for release
         shell: pwsh

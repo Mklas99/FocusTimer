@@ -4,7 +4,6 @@
 # Project information
 sonar.projectKey=focustimer
 sonar.projectName=FocusTimer
-sonar.projectVersion=0.2
 
 # Source code location
 sonar.sources=src

@@ -14,7 +14,7 @@ Explain why changing a theme color updates some Settings text and controls but l
 - `src/FocusTimer.App/App.axaml` and the Settings view, view model, and code-behind.
 - `src/FocusTimer.App/Views/TimerWidgetWindow.axaml`, `FullModeView.axaml`, `CompactModeView.axaml`, their code-behind and view model, and widget-related converters.
 - Context-menu creation and styling, including `src/FocusTimer.App/App.axaml.cs`, `src/FocusTimer.App/Services/TrayStateController.cs`, and the `ContextMenu` style in `ControlStyles.axaml`. Distinguish Avalonia context menus from the tray's native `NativeMenu`; determine which one users actually see and what the operating system controls.
-- `design/TOKEN_MAPPING.md`, relevant OpenSpec requirements, and any other code that reads or writes these theme resources.
+- `docs/design/TOKEN_MAPPING.md`, relevant OpenSpec requirements, and any other code that reads or writes these theme resources.
 
 Treat design documents as intended behavior, not proof of current behavior. Trace each color from its `Theme` property through runtime resource updates, style selectors, and the control that renders it. Account for Avalonia Fluent defaults, inherited properties, selector precedence, dynamic resources, widget opacity layers, native menu rendering, and live theme updates. Distinguish code-confirmed behavior from behavior that needs a running UI check.
 

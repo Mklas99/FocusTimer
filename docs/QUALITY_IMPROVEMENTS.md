@@ -74,7 +74,7 @@ This document outlines all the development process improvements that have been i
 ---
 
 ### 5. **`sonarqube-properties.txt`** - Legacy SonarQube Configuration (unused)
-**Location:** Project root
+**Location:** `scripts/`
 **Purpose:** Predates the current CI setup; kept for historical reference only. The actual SonarCloud
 analysis (project key `Mklas99_FocusTimer`, org `mklas99`) is driven entirely by
 `.github/workflows/sonar-scan.yml`, which passes its own project key, org, and coverage report paths
@@ -129,7 +129,7 @@ directly to `dotnet sonarscanner begin` — this file is not read by anything. S
 ---
 
 ### 10. **`analyze-code.sh`** - Code Analysis Script (Linux/macOS)
-**Location:** Project root
+**Location:** `scripts/`
 **Purpose:** Manual code analysis runner
 - Builds solution
 - Runs analyzers
@@ -137,18 +137,18 @@ directly to `dotnet sonarscanner begin` — this file is not read by anything. S
 
 **Usage:**
 ```bash
-bash analyze-code.sh
+bash scripts/analyze-code.sh
 ```
 
 ---
 
 ### 11. **`analyze-code.bat`** - Code Analysis Script (Windows)
-**Location:** Project root
+**Location:** `scripts/`
 **Purpose:** Same as above, for Windows/PowerShell
 
 **Usage:**
 ```bash
-.\analyze-code.bat
+.\scripts\analyze-code.bat
 ```
 
 ---

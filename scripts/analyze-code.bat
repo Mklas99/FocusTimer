@@ -5,7 +5,7 @@ REM This script performs various code quality checks
 setlocal enabledelayedexpansion
 
 set SCRIPT_DIR=%~dp0
-set PROJECT_ROOT=%SCRIPT_DIR:~0,-1%
+for %%I in ("%SCRIPT_DIR%..") do set PROJECT_ROOT=%%~fI
 
 echo.
 echo ======================================

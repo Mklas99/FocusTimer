@@ -27,8 +27,8 @@ jobs:
         shell: pwsh
         run: |
           ./third_party/avalonia-widget-backdrop/build.ps1 -CheckoutName avalonia-widget-backdrop-ci
-          New-Item -ItemType Directory -Path .build/widget-backdrop-packages -Force | Out-Null
-          Copy-Item .build/avalonia-widget-backdrop-ci/packages/*.nupkg .build/widget-backdrop-packages/ -Force
+          New-Item -ItemType Directory -Path third_party/avalonia-widget-backdrop/packages -Force | Out-Null
+          Copy-Item .build/avalonia-widget-backdrop-ci/packages/*.nupkg third_party/avalonia-widget-backdrop/packages/ -Force
 
       - name: Install SonarScanner for .NET
         shell: pwsh
