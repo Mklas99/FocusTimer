@@ -23,6 +23,7 @@ Major feature release introducing the Worklog Management window, smarter automat
 - **Desktop Action Hierarchy**: Unified button styling across dialogs (accent primary for OK/Apply/Save, neutral bordered for Cancel, muted danger for Delete).
 - **Theme Contrast Harmony**: Verified text and indicator contrast (WCAG 4.5:1 / 3:1) across all 7 built-in themes (Dark, Light, Monokai, Solarized Dark, Nord, Dracula, High Contrast).
 - **Imported Theme Preservation**: Preserved custom and imported theme snapshots with a dedicated dropdown entry surviving restarts and edits.
+- **Predictable Settings Edits**: Apply and OK commit the whole Settings draft, Cancel and closing the window restore the last saved state, appearance changes preview live, and a failed save shows its error and can be retried.
 
 ### Widget Layout & Backdrop
 - **Control Placement**: Choose button layout beside the clock or stacked horizontally below the clock in both Full and Compact modes.
@@ -40,11 +41,14 @@ Major feature release introducing the Worklog Management window, smarter automat
 
 ### Quality, Architecture & Tooling
 - Single-source versioning governed by the repository `VERSION` file.
-- Multi-flavor installer packaging: self-contained MSI, .NET 8 bootstrapper setup, and portable executable.
+- Multi-flavor installer packaging: self-contained MSI, .NET 8 bootstrapper setup, and portable executable. The setup shows one progress window and installs the changelog with the app.
 - Complete test isolation from user AppData directories.
 - SonarQube CI integration with automated OpenCover report ingestion.
 
-## v0.1 — 2026-09-16
+### Upgrade Notes
+- Worklog files now use a versioned CSV format with durable entry IDs. Files written by v0.1 are not read or converted, and no new entries are saved to a day whose file still has the old format. Move or delete the old `worklogs` folder (default `Documents\FocusTimer\worklogs`) before the first start.
+
+## v0.1.0 — 2026-09-16
 
 Initial "release" version.
 

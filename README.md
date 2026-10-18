@@ -142,12 +142,15 @@ The script cleans its generated output directories before publishing, reports th
 
 ### Downloadable Releases (GitHub)
 
-Pushing a tag matching `v*.*.*` (e.g. `v0.1.0`) triggers `.github/workflows/release.yml`, which runs `build-installer.ps1` and publishes a GitHub Release with the self-contained MSI, the .NET-aware setup, and the portable self-contained single-file EXE:
+Releases follow the `VERSION` file. To release: set the new number in `VERSION`, add its entry to `docs/CHANGELOG.md`, snapshot `docs/versions/current/` to `docs/versions/<version>/`, then tag. Pushing a tag matching `v*.*.*` triggers `.github/workflows/release.yml`, which runs `build-installer.ps1` and publishes a GitHub Release with the self-contained MSI, the .NET-aware setup, and the portable self-contained single-file EXE:
 
 ```powershell
-git tag v0.1.0
-git push origin v0.1.0
+$version = (Get-Content VERSION -Raw).Trim()
+git tag "v$version"
+git push origin "v$version"
 ```
+
+The workflow fails when the tag differs from `v` plus the `VERSION` content.
 
 ### WiX UI Feature Options
 
