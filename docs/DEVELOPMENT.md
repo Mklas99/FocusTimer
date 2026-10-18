@@ -569,6 +569,13 @@ Adding `FocusTimer.App.HeadlessTests` (24 tests exercising `AppController` windo
 - **Private fields**: camelCase with underscore (e.g., `_logger`)
 - **Constants**: UPPER_SNAKE_CASE (e.g., `IDLE_TIMEOUT_MS`)
 
+### Analyzer Configuration and Git Hooks
+
+- `.editorconfig` holds formatting and naming rules, `Directory.Build.props` enables NetAnalyzers and StyleCop with warnings as errors, and `stylecop.json` configures StyleCop.
+- `.githooks/pre-commit` (`pre-commit.bat` on Windows) builds the solution and runs the analyzers as errors when C# files are staged, and blocks the commit on failure. Install it by copying it to `.git/hooks/pre-commit`; see `.githooks/SETUP.md`. Use `--no-verify` only when you must.
+- To silence a rule, prefer `dotnet_diagnostic.<ID>.severity = silent` in `.editorconfig`, then `<NoWarn>` in the project file, and only as a last resort `#pragma warning disable <ID>` around the member.
+- CI: `.github/workflows/sonar-scan.yml` builds, runs the coverage gate, and submits to SonarCloud on pushes to `main` and on pull requests; `.github/workflows/release.yml` publishes a release for a `v*.*.*` tag.
+
 ---
 
 ## Common Patterns

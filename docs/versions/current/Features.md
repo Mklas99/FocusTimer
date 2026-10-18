@@ -10,7 +10,7 @@
 |---|---|---|---|
 | Everyday desktop control | The widget restores its position safely, offers configurable hotkeys, exposes useful tray actions, and makes logs easy to find. | OI-01, OI-02, OI-03, OI-05 | Candidate |
 | Better worklog management and reporting | Users can review ranges beyond one day, bucket and filter the timeline, pick projects quickly, and export tracked work. | OI-04, OI-09, OI-12, OI-23, OI-38, OI-39 | Partly delivered (single-day summary, entries and timeline); the rest is open |
-| Smarter automatic tracking | Projects are inferred from activity and advanced users tune sampling, segmentation, and application exclusions. | OI-08, OI-14, OI-32 | Implemented and archived; manual Windows walkthroughs remain open in [OpenTasks.md](../../OpenTasks.md) |
+| Smarter automatic tracking | Projects are inferred from activity and advanced users tune sampling, segmentation, and application exclusions. | OI-08, OI-14, OI-32 | Implemented and archived; manual Windows walkthroughs remain open in [Planning.md](Planning.md) |
 | Idle detection controls | Developer Settings configure idle thresholds and optional automatic resume when activity returns, while preserving manual pauses. | OI-36 | Candidate |
 | Focus modes | Pomodoro cycles and optional sound cues support deliberate work and break routines. | OI-10, OI-11 | Candidate |
 | Diagnostics and user feedback | Developer mode shows live application logs in Settings and can trigger test notifications; a consistent error and warning policy makes failures and recovery understandable. | OI-05, OI-30, OI-34, OI-43 | Candidate; the error-handling policy needs exploration |
