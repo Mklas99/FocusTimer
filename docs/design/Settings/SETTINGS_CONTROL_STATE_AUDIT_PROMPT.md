@@ -11,7 +11,7 @@ Identify where tabs, accordions, input fields, checkboxes, sliders, color swatch
 - `src/FocusTimer.App/Views/SettingsWindow.axaml` and `SettingsWindow.axaml.cs`.
 - `src/FocusTimer.App/ViewModels/SettingsWindowViewModel.cs` and relevant settings models.
 - `src/FocusTimer.App/Styles/ControlStyles.axaml`, `Tokens.axaml`, `ThemeResources.axaml`, and `App.axaml`.
-- `docs/design/UI_DESIGN_STANDARD.md`, `docs/design/FOCUSTIMER_UI_ADDENDUM.md`, relevant OpenSpec specs, and `docs/versions/current/OI-21-SettingsRedesign.md`.
+- `docs/design/UI_DESIGN_STANDARD.md`, `docs/design/FOCUSTIMER_UI_ADDENDUM.md`, relevant OpenSpec specs, and `docs/versions/v0.2/evidence/OI-21-SettingsRedesign.md`.
 
 Trace each visible control to its effective style, including Avalonia Fluent defaults, local property values, shared selectors, inherited properties, and theme resources. Inspect all Settings tabs: General, Logging, Appearance, Hotkeys, and About, including the developer section when unlocked. If a running UI or screenshots are available, compare rendered states with the code; otherwise label visual conclusions as hypotheses.
 
