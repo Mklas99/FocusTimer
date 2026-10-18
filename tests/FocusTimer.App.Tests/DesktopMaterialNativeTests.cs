@@ -60,64 +60,80 @@ public class DesktopMaterialNativeTests
                     CanResize = false,
                     SystemDecorations = SystemDecorations.None,
                     ShowInTaskbar = false,
+                    Topmost = true,
                     Content = BuildStripes(),
                 };
                 backdrop.Show();
-
-                SettingsWindowViewModel editor = SettingsWindowViewModelTests.CreateAppearanceEditor();
-                editor.SelectedTabIndex = 3; // Hotkeys: an almost empty page, so most pixels are plain shell.
-                var settings = new SettingsWindow { DataContext = editor, Position = new PixelPoint(260, 160) };
-                settings.Show();
-                settings.Activate();
-                Settle(900);
-
-                report.AppendLine(DesktopWindowMaterial.GetDescription(settings));
-                report.AppendLine($"Requested hint: {string.Join("/", settings.TransparencyLevelHint)}; actual: {settings.ActualTransparencyLevel}");
-                PixelMetrics frost = Measure(settings, folder, "frost");
-                DesktopMaterialState frostState = DesktopWindowMaterial.GetState(settings);
-                bool effectsOff = DesktopWindowMaterial.GetDescription(settings).Contains("transparency effects off", StringComparison.Ordinal);
-                bool blurReported = DesktopMaterialPolicy.IsBlurLevel(settings.ActualTransparencyLevel);
-                report.AppendLine($"Active material: {frostState}; {frost}");
-
-                // Control 1: the same shell forced to the solid fallback must hide the stripes completely.
-                Application.Current!.Resources[DesktopWindowMaterial.ForceSolidResourceKey] = true;
-                Settle(600);
-                Assert.Equal(DesktopMaterialState.SolidFallback, DesktopWindowMaterial.GetState(settings));
-                PixelMetrics solid = Measure(settings, folder, "solid");
-                report.AppendLine($"Forced solid fallback: {solid}");
-                Assert.True(solid.StdDev < 0.5, $"Solid fallback must not show the backdrop: {solid}");
-                Application.Current.Resources[DesktopWindowMaterial.ForceSolidResourceKey] = false;
-                Settle(600);
-
-                // Control 2: a transparent but unblurred shell shows the stripes sharply; this is what blur must differ from.
-                settings.Classes.Remove(DesktopWindowMaterial.FrostActiveClass);
-                settings.TransparencyLevelHint = [WindowTransparencyLevel.Transparent];
-                settings.Background = new SolidColorBrush(Color.Parse("#2D2D30"), ThemeManager.DesktopShellFrostOpacity);
-                Settle(900);
-                PixelMetrics sharp = Measure(settings, folder, "transparent-unblurred");
-                report.AppendLine($"Transparent, unblurred (control): {sharp}");
-                File.WriteAllText(Path.Combine(folder, "material-qualification.txt"), report.ToString());
-
-                Assert.True(sharp.MaxStep >= 6, $"Control must show sharp stripes to be meaningful: {sharp}");
-                if (effectsOff || !blurReported)
+                foreach (bool worklog in new[] { false, true })
                 {
-                    // Windows draws acrylic as a flat color while Transparency effects is off, so the active material cannot be
-                    // observed here. The fallback controls above still ran; the frost itself stays unqualified.
-                    report.AppendLine("RESULT: dense frost NOT VERIFIED on this machine (Windows transparency effects are off or no blur level was reported); solid fallback verified.");
+                    Window settings;
+                    if (worklog)
+                    {
+                        settings = new WorklogWindow();
+                    }
+                    else
+                    {
+                        SettingsWindowViewModel editor = SettingsWindowViewModelTests.CreateAppearanceEditor();
+                        editor.SelectedTabIndex = 3; // Hotkeys: an almost empty page, so most pixels are plain shell.
+                        settings = new SettingsWindow { DataContext = editor };
+                    }
+                    settings.Topmost = true;
+                    report.AppendLine(worklog ? "Window: Worklog (no data ViewModel; shell qualification only)" : "Window: Settings");
+                    settings.Show();
+                    // Startup centering overrides the initializer; position the realized window over the pattern.
+                    settings.Position = new PixelPoint(260, 160);
+                    settings.Activate();
+                    Settle(900);
+
+                    report.AppendLine(DesktopWindowMaterial.GetDescription(settings));
+                    report.AppendLine($"Window bounds: {settings.Bounds}; origin: {settings.PointToScreen(default)}; scale: {settings.RenderScaling}");
+                    report.AppendLine($"Requested hint: {string.Join("/", settings.TransparencyLevelHint)}; actual: {settings.ActualTransparencyLevel}");
+                    PixelMetrics frost = Measure(settings, folder, "frost");
+                    DesktopMaterialState frostState = DesktopWindowMaterial.GetState(settings);
+                    bool effectsOff = DesktopWindowMaterial.GetDescription(settings).Contains("transparency effects off", StringComparison.Ordinal);
+                    bool blurReported = DesktopMaterialPolicy.IsBlurLevel(settings.ActualTransparencyLevel);
+                    report.AppendLine($"Active material: {frostState}; {frost}");
+
+                    // Control 1: the same shell forced to the solid fallback must hide the stripes completely.
+                    Application.Current!.Resources[DesktopWindowMaterial.ForceSolidResourceKey] = true;
+                    Settle(600);
+                    Assert.Equal(DesktopMaterialState.SolidFallback, DesktopWindowMaterial.GetState(settings));
+                    PixelMetrics solid = Measure(settings, folder, "solid");
+                    report.AppendLine($"Forced solid fallback: {solid}");
+                    Assert.True(solid.StdDev < 0.5, $"Solid fallback must not show the backdrop: {solid}");
+                    Application.Current.Resources[DesktopWindowMaterial.ForceSolidResourceKey] = false;
+                    Settle(600);
+
+                    // Control 2: a transparent but unblurred shell shows the stripes sharply; this is what blur must differ from.
+                    settings.Classes.Remove(DesktopWindowMaterial.FrostActiveClass);
+                    settings.TransparencyLevelHint = [WindowTransparencyLevel.Transparent];
+                    settings.Background = new SolidColorBrush(Color.Parse("#2D2D30"), ThemeManager.DesktopShellFrostOpacity);
+                    Settle(900);
+                    PixelMetrics sharp = Measure(settings, folder, "transparent-unblurred");
+                    report.AppendLine($"Transparent, unblurred (control): {sharp}");
+                    File.WriteAllText(Path.Combine(folder, "material-qualification.txt"), report.ToString());
+
+                    Assert.True(sharp.MaxStep >= 6, $"Control must show sharp stripes to be meaningful: {sharp}");
+                    if (effectsOff || !blurReported)
+                    {
+                        // Windows draws acrylic as a flat color while Transparency effects is off, so the active material cannot be
+                        // observed here. The fallback controls above still ran; the frost itself stays unqualified.
+                        report.AppendLine("RESULT: dense frost NOT VERIFIED on this machine (Windows transparency effects are off or no blur level was reported); solid fallback verified.");
+                        File.WriteAllText(Path.Combine(folder, "material-qualification.txt"), report.ToString());
+                        settings.Close();
+                        backdrop.Close();
+                        return;
+                    }
+
+                    Assert.Equal(DesktopMaterialState.DenseFrost, frostState);
+                    Assert.True(frost.StdDev > 0.3, $"Backdrop must bleed through the near-solid tint: {frost}");
+                    Assert.True(
+                        frost.MaxStep * 3 <= sharp.MaxStep,
+                        $"Backdrop must be softened, not merely transparent. frost {frost}, unblurred control {sharp}");
+                    report.AppendLine("RESULT: dense frost VERIFIED: backdrop bleeds through smoothly (blurred), unlike the unblurred transparent control.");
                     File.WriteAllText(Path.Combine(folder, "material-qualification.txt"), report.ToString());
                     settings.Close();
-                    backdrop.Close();
-                    return;
                 }
-
-                Assert.Equal(DesktopMaterialState.DenseFrost, frostState);
-                Assert.True(frost.StdDev > 0.3, $"Backdrop must bleed through the near-solid tint: {frost}");
-                Assert.True(
-                    frost.MaxStep * 3 <= sharp.MaxStep,
-                    $"Backdrop must be softened, not merely transparent. frost {frost}, unblurred control {sharp}");
-                report.AppendLine("RESULT: dense frost VERIFIED: backdrop bleeds through smoothly (blurred), unlike the unblurred transparent control.");
-                File.WriteAllText(Path.Combine(folder, "material-qualification.txt"), report.ToString());
-                settings.Close();
                 backdrop.Close();
             }
             catch (Exception ex)
@@ -165,12 +181,14 @@ public class DesktopMaterialNativeTests
     private static PixelMetrics Measure(Window window, string folder, string name)
     {
         // A lower-right client area of the (nearly empty) Hotkeys page: plain shell, no controls.
-        PixelPoint topLeft = window.PointToScreen(new Point(60, window.Bounds.Height - 230));
+        // Worklog's bottom outer padding stays free of table controls, even without a data ViewModel.
+        bool worklog = window is WorklogWindow;
+        PixelPoint topLeft = window.PointToScreen(new Point(60, window.Bounds.Height - (worklog ? 8 : 230)));
         const int Width = 360;
-        const int Height = 100;
-        byte[] bgra = ScreenCapture.Capture(topLeft.X, topLeft.Y, Width, Height);
-        ScreenCapture.SavePng(bgra, Width, Height, Path.Combine(folder, $"material-{name}.png"));
-        return PixelMetrics.From(bgra, Width, Height);
+        int height = worklog ? 3 : 100;
+        byte[] bgra = ScreenCapture.Capture(topLeft.X, topLeft.Y, Width, height);
+        ScreenCapture.SavePng(bgra, Width, height, Path.Combine(folder, $"material-{(worklog ? "worklog-" : string.Empty)}{name}.png"));
+        return PixelMetrics.From(bgra, Width, height);
     }
 
     private readonly record struct PixelMetrics(double Mean, double StdDev, int MaxStep)

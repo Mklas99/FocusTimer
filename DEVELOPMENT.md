@@ -540,6 +540,11 @@ dotnet format
 ```
 This builds the solution, executes unit tests with OpenCover coverage collection, and submits the analysis and coverage reports to SonarQube / SonarCloud.
 
+The GitHub Actions Sonar workflow builds and verifies the widget backdrop package with SDK 8.0.425, then copies
+it into the ignored local NuGet feed before restoring the solution. Coverage reports are summarized and uploaded
+when Cobertura files exist, including after a coverage gate failure. Sonar finalization runs only after a successful
+analysis begin step. Local analysis requires preparing the feed first using the [backend build procedure](third_party/avalonia-widget-backdrop/README.md#build-and-test).
+
 ### Run Code Coverage Locally
 
 ```powershell
@@ -668,11 +673,52 @@ dotnet test tests/FocusTimer.App.Tests --filter "FullyQualifiedName~DesktopMater
 
 `DesktopShellEvidence` renders every Settings and Worklog page at the default and minimum sizes and asserts the commit buttons, tab labels, and page content stay inside the window. `DesktopMaterialNative` briefly shows windows on screen to compare the dense-frost shell with a solid and an unblurred-transparent control over a stripe pattern; it reports the frost as not verified when Windows transparency effects are off.
 
+### Widget backdrop backend
+
+The qualified fork, pinned upstream revision, source patch, dependency locks, license notices and clean package
+procedure live in [third_party/avalonia-widget-backdrop](third_party/avalonia-widget-backdrop/README.md).
+Build with its `build.ps1` from a fresh ignored checkout, copy the resulting package to the documented local feed,
+and restore with the root NuGet.Config. App pins `Avalonia.Win32.11.2.0.5-focustimer.5`; the other Avalonia packages
+remain at 11.2.0. For the explicit stock-backend fallback build, restore/build with
+`-p:FocusTimerUseStockBackend=true` and omit `FocusTimerBackendPrototype`. Frosted remains a saved choice in that
+build and resolves to a solid shell because the public capability is absent. Settings/Worklog retain their separate
+material policy. Native prototype tests still need `FocusTimerBackendPrototype=true` for direct API probes.
+
+On every fork or upstream update, pin the new package and source inputs, review native ownership, synchronization
+and disposal, build twice from clean checkouts, compare backend assemblies and repeat native edge/detail, live
+sampling, sharp foreground, clipping, fade, DPI and lifetime checks. Repeat non-opted-in Settings/Worklog checks
+and record publish-size impact. Do not replace cached official DLLs. See the fork README for exact commands.
+
+The additive `TryUpdateWithCompletion` API reports composition-update completion/failure on the UI thread. App
+rejects superseded updates and disposed sessions, keeps an opaque shell while pending or failed, and retries on
+activation/show and observed preference changes. No App polling loop or desktop capture is used for rendering.
+Windows checks combine Avalonia's contrast preference, the Windows transparency setting, a local session and DWM
+composition, plus successful attachment to the qualified WinUI renderer. DWM being enabled is not proof of acrylic
+support ([Microsoft guidance](https://learn.microsoft.com/en-us/windows/win32/api/dwmapi/nf-dwmapi-dwmiscompositionenabled)).
+Requested/effective diagnostics describe policy and update status, not a guarantee about arbitrary desktop pixels.
+Windows 11/WinUI qualification is recorded in verification.md, including native production probes at 100%/200%
+and same-HWND DPI transitions. The user confirmed the remaining native interaction, 150% and physical drag
+review on 2026-10-12. Recorded idle/movement budgets and lifetime checks pass; manual observations supplement
+the measurements and do not supply a presented-frame trace. Live scaling-preview smoothness is deferred under OI-45.
+
+Developer Options' desktop tint slider stores `Settings.DesktopTintOpacity` (0.7–1.0, default 0.95).
+AppController supplies it during startup/activation; Settings supplies the draft and committed restore-point
+values during preview/discard. ThemeManager uses it in the Settings/Worklog frost brush and all desktop contrast
+derivation, including shell extremes over black/white. It is an application preference, not an exported theme
+field. Hidden Developer options retain the saved value; solid fallback does not use the translucent brush.
+
+Frosted previews and commits through the existing Settings transaction. Failed writes and successfully compensated
+activation failures retain the Frosted/tint draft preview; Cancel/title-bar close restores the last commit.
+Material fallback never rewrites that request or tint. Older builds reject Frosted theme imports. Before rolling
+back, select Off and Apply in the current build and export any Frosted themes with Off; this changes only the
+material choice and preserves tint/palette values. `WidgetBlurModes.ForOlderBuild` provides the same token conversion
+for migration code. Legacy Soft/Strong/Blur still normalize to Off and factory defaults remain Off.
+
 ### Enable Verbose Logging
 
 There's no environment variable for log level today. Two options:
 - Change `.MinimumLevel.Debug()` in `Program.cs`'s Serilog setup directly.
-- Unlock the hidden developer mode (click the version label 7x in Settings → About) to access an in-app log-level picker.
+- Toggle the hidden developer mode (click the version label 7x in Settings → About) to access an in-app log-level picker.
 
 Log output location can be redirected via `FOCUSTIMER_LOG_DIR`:
 ```powershell
@@ -775,7 +821,7 @@ When contributing new features:
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the current project structure and service inventory — this guide's line-by-line examples can drift from it faster than that reference does.
 ## Activity polling
 
-In Settings → About, click the version seven times to unlock Developer Options. The activity polling interval defaults to **10 seconds** and accepts whole seconds from **1 to 60**. Apply saves and activates the value; OK saves before closing. Cancel discards edits made since the last Apply. Invalid input shows an error and cannot be saved.
+In Settings → About, click the version seven times to toggle Developer Options. Repeat seven clicks to hide it. Apply/OK persists the mode; Cancel/title-bar close restores the last commit, and hiding the section preserves its values. The activity polling interval defaults to **10 seconds** and accepts whole seconds from **1 to 60**. Apply saves and activates the value; OK saves before closing. Cancel discards edits made since the last Apply. Invalid input shows an error and cannot be saved.
 
 `ActivityPollingIntervalSeconds` is an additive integer in settings JSON. Missing, out-of-range, null, fractional, string, or structured values fall back to 10 without discarding other valid settings. The saved interval remains effective when Developer Options are hidden.
 
@@ -808,3 +854,9 @@ Theme.playPauseColor is optional. Missing/null inherits ButtonNormal; an explici
 Factory palette edits belong in ThemeService, and desktop accessibility corrections belong in ThemeManager. Source snapshots survive import/export, Apply/OK, reopening, and restart. Imports display Custom/Imported and use canonical Custom identity while retaining their original metadata; selecting a preset or Reset clears provenance. The [palette tuning guide](docs/versions/current/ThemePaletteTuning.md) documents source roles, later personal adjustments, legacy identity, and required contrast/visual checks.
 
 The native appearance regression runs in a separate process because Avalonia platform initialization is global. In PowerShell, set FOCUSTIMER_NATIVE_APPEARANCE_TESTS=1 for that process and run dotnet test tests/FocusTimer.App.Tests --filter AppearanceNativeTests. Normal runs skip this Windows-only fixture. Its rendered saving/applied/error/recovery screenshots are written under the test output's appearance-evidence directory.
+
+### Minor customization preferences
+
+Appearance's Place buttons below the clock previews placement in both modes. Full controls stay horizontal; compact controls stack vertically beside the clock and horizontally below it. The setting defaults to beside and is cloned/persisted as widgetButtonsBelowClock.
+
+General controls information/warning notification visibility and information, warning, and error dismissal seconds (1–120 whole seconds; defaults 5/15/15). Errors cannot be disabled. Break reminders keep their dedicated enable flag, use the information timeout, and bypass general information suppression. Acknowledgement reminders do not time out. Preferences activate only after a successful Apply/OK and affect new toasts; open toasts keep their initial timer. NotificationPolicy snapshots settings, and AppController activates it at startup and during coordinated commits/rollback.

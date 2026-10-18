@@ -21,11 +21,23 @@ The system SHALL provide General, Logging, Appearance, Hotkeys, and About tabs i
 - **THEN** the existing shortcut values remain read-only and the refresh does not introduce shortcut recording or editing
 
 ### Requirement: Hidden Developer Mode
-The system SHALL unlock a Developer section, including a log-level picker and an activity polling interval control, when the user clicks the version label 7 times in the About tab, and SHALL persist the unlock via `DeveloperModeEnabled`.
+The system SHALL toggle the Developer section, including a log-level picker and activity polling interval control, after each seven version-label clicks in About. The change SHALL belong to the Settings draft, persist through Apply/OK, and restore on Cancel/title-bar close. Hiding the section SHALL preserve its configured values. Clicks while the draft cannot be edited SHALL have no effect.
 
 #### Scenario: User clicks the version label 7 times
-- **WHEN** the user clicks the version label 7 times in the About tab
-- **THEN** the Developer section, including the log-level picker and activity polling interval control, becomes visible and stays unlocked across restarts
+- **WHEN** the user clicks the version label seven times with Developer mode disabled
+- **THEN** the Developer section becomes visible and a successful Apply/OK keeps it visible across restarts
+
+#### Scenario: Enable and disable Developer mode
+- **WHEN** the user clicks the version label seven times and then seven more times
+- **THEN** the Developer section becomes visible and then hidden without saving the draft
+
+#### Scenario: Save or discard Developer mode
+- **WHEN** the user changes Developer mode and applies or cancels
+- **THEN** Apply/OK persists the choice across restart and Cancel restores the last successful commit
+
+#### Scenario: Blocked version gesture
+- **WHEN** the user clicks the version label while loading, committing, recovering, or after closure
+- **THEN** Developer mode and the gesture's click count remain unchanged
 
 ### Requirement: Developer activity polling interval
 The system SHALL provide a numeric control labelled "Activity polling interval (seconds)" in the unlocked Developer section. It SHALL accept whole-second values from 1 through 60 and default to 10 seconds. It SHALL explain that longer intervals reduce polling work but can miss short app visits. Developer-section visibility SHALL NOT reset or otherwise change an already saved interval.
@@ -378,3 +390,26 @@ Rule lists (project rules, excluded applications, segmentation rules) SHALL trea
 #### Scenario: User half-fills a rule
 - **WHEN** a project rule has a pattern but no project name
 - **THEN** the row is shown with the danger color and its message, and Apply and OK do not commit until it is completed or removed
+
+### Requirement: Notification preferences draft
+General settings SHALL provide information and warning visibility controls and whole-second dismissal durations by severity from 1 through 120. Missing fields SHALL default to enabled and 5/15/15 seconds. Apply/OK SHALL validate, save, and activate preferences; Cancel SHALL restore the last successful commit. A failed save SHALL retain the previously active policy.
+
+#### Scenario: Notification preference commit
+- **WHEN** the user edits notification preferences and successfully applies
+- **THEN** newly opened notifications follow them without restart and saved preferences survive restart
+
+#### Scenario: Invalid or uncommitted duration
+- **WHEN** a duration is fractional or outside 1 through 120, or the draft is cancelled or fails to save
+- **THEN** no invalid or uncommitted policy is activated
+
+### Requirement: Developer desktop tint preview
+Developer Settings SHALL offer a 70–100% desktop frost tint slider, defaulting to 95% for missing settings. It SHALL preview Settings and Worklog live and persist independently of widget appearance and exported themes. Apply/OK SHALL commit it; Cancel/title-bar close SHALL restore the last commit. Failed commits SHALL follow the existing appearance recovery contract. High Contrast and unavailable effects SHALL retain solid fallback.
+
+#### Scenario: Desktop tint preview and discard
+- **WHEN** the user edits desktop tint and cancels or closes Settings without successfully applying
+- **THEN** the desktop appearance restores the last committed tint while the widget tint remains unchanged
+
+#### Scenario: Desktop tint persists and stays readable
+- **WHEN** the user successfully applies desktop tint and restarts or switches theme
+- **THEN** the saved desktop tint remains active and derived text/focus colors account for that tint over light/dark desktop extremes
+- **AND** hiding Developer options retains the preference, and unsupported effects or High Contrast use a solid shell

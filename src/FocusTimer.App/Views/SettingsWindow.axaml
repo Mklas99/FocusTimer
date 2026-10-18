@@ -54,6 +54,31 @@
                                            AutomationProperties.Name="Remind every (minutes)"
                                            IsEnabled="{Binding Settings.BreakRemindersEnabled}"  Margin="12,0,0,0"/>
                         </Grid>
+                        <Border Classes="settings-divider" />
+                        <TextBlock Classes="SectionHeader" Margin="0" Text="Notifications" />
+                        <CheckBox IsChecked="{Binding Settings.InformationNotificationsEnabled}"
+                                  Content="Show information notifications"
+                                  ToolTip.Tip="Includes idle pause and return messages. Break reminders use their own enable setting." />
+                        <CheckBox IsChecked="{Binding Settings.WarningNotificationsEnabled}"
+                                  Content="Show warning notifications" />
+                        <TextBlock Classes="settings-helper" TextWrapping="Wrap"
+                                   Text="Errors always appear. Break reminders use their own enable setting. Reminders requiring acknowledgement stay open until dismissed." />
+                        <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto">
+                            <TextBlock Grid.Row="0" Classes="SettingLabel" Text="Information / break dismissal (seconds)" />
+                            <NumericUpDown Grid.Row="0" Grid.Column="1" Classes="numeric-field"
+                                           Value="{Binding InformationDismissalInput}" Minimum="1" Maximum="120" Increment="1"
+                                           AutomationProperties.Name="Information dismissal seconds" />
+                            <TextBlock Grid.Row="1" Classes="SettingLabel" Text="Warning dismissal (seconds)" />
+                            <NumericUpDown Grid.Row="1" Grid.Column="1" Classes="numeric-field"
+                                           Value="{Binding WarningDismissalInput}" Minimum="1" Maximum="120" Increment="1"
+                                           AutomationProperties.Name="Warning dismissal seconds" />
+                            <TextBlock Grid.Row="2" Classes="SettingLabel" Text="Error dismissal (seconds)" />
+                            <NumericUpDown Grid.Row="2" Grid.Column="1" Classes="numeric-field"
+                                           Value="{Binding ErrorDismissalInput}" Minimum="1" Maximum="120" Increment="1"
+                                           AutomationProperties.Name="Error dismissal seconds" />
+                        </Grid>
+                        <TextBlock Text="{Binding NotificationDurationError}" TextWrapping="Wrap"
+                                   Foreground="{DynamicResource DesktopDangerBrush}" />
                     </StackPanel>
                 </ScrollViewer>
             </TabItem>
@@ -147,6 +172,9 @@
                                     </Grid>
                                     <CheckBox IsChecked="{Binding Settings.UseCompactMode}" Content="Use compact mode"
                                               ToolTip.Tip="Switches the timer widget into a minimal mode" />
+                                    <CheckBox IsChecked="{Binding Settings.WidgetButtonsBelowClock}"
+                                              Content="Place buttons below the clock"
+                                              ToolTip.Tip="Applies to both full and compact modes" />
                                 </StackPanel>
                             </Border>
 
@@ -380,6 +408,17 @@
                                   Classes="settings-accordion"
                                   IsVisible="{Binding IsDeveloperModeVisible}">
                             <StackPanel Spacing="10" Margin="0,8,0,0">
+                                <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
+                                    <TextBlock Grid.Row="0" Classes="SettingLabel" Text="Desktop background tint" />
+                                    <TextBlock Grid.Row="0" Grid.Column="1"
+                                               Text="{Binding DesktopTintOpacityPercent, StringFormat='{}{0:F0}%'}" />
+                                    <Slider x:Name="DesktopTintSlider" Grid.Row="1" Grid.ColumnSpan="2" Minimum="50" Maximum="100"
+                                            TickFrequency="1" IsSnapToTickEnabled="True"
+                                            Value="{Binding DesktopTintOpacityPercent}"
+                                            AutomationProperties.Name="Desktop background tint" />
+                                </Grid>
+                                <TextBlock Classes="helper-text" TextWrapping="Wrap"
+                                           Text="Settings and Worklog frost tint. Default: 95%. Previews live; Apply saves and Cancel restores. High Contrast and unavailable effects stay opaque." />
                                 <Grid ColumnDefinitions="Auto,*">
                                     <TextBlock Grid.Column="0" Classes="SettingLabel" Text="Log level:" />
                                     <ComboBox Grid.Column="1"

@@ -26,7 +26,7 @@ public sealed class AppControllerStartupTests
         var manager = new ThemeManager();
         var controller = new AppController(
             new FixedSettingsProvider(settings), new CountingHotkeys(), new LinuxIdleDetectionServiceStub(),
-            null!, new ThemeService(), manager,
+            new LinuxNotificationServiceStub(), new ThemeService(), manager,
             () => throw new InvalidOperationException("No window in this isolated test."),
             null!, null!, null!, new NullLogger(), null, new InstallationIdentity());
         await controller.InitializeAsync();
@@ -44,7 +44,7 @@ public sealed class AppControllerStartupTests
             provider,
             new CountingHotkeys(),
             new LinuxIdleDetectionServiceStub(),
-            null!,
+            new LinuxNotificationServiceStub(),
             new ThemeService(),
             manager,
             () => throw new InvalidOperationException("Window creation is unavailable in this test."),
@@ -75,7 +75,7 @@ public sealed class AppControllerStartupTests
             new FixedSettingsProvider(new Settings()),
             hotkeys,
             new LinuxIdleDetectionServiceStub(),
-            null!,
+            new LinuxNotificationServiceStub(),
             themeService,
             manager,
             () => throw new InvalidOperationException("Window creation is unavailable in this test."),
@@ -112,7 +112,7 @@ public sealed class AppControllerStartupTests
             new FixedSettingsProvider(new Settings()),
             hotkeys,
             new LinuxIdleDetectionServiceStub(),
-            null!,
+            new LinuxNotificationServiceStub(),
             new ThemeService(),
             new ThemeManager(),
             () => throw new InvalidOperationException("Window creation is unavailable in this test."),
@@ -146,7 +146,7 @@ public sealed class AppControllerStartupTests
             provider,
             new CountingHotkeys(),
             new LinuxIdleDetectionServiceStub(),
-            null!,
+            new LinuxNotificationServiceStub(),
             new ThemeService(),
             new ThemeManager(),
             () => throw new InvalidOperationException("Window creation is unavailable in this test."),
@@ -194,7 +194,7 @@ public sealed class AppControllerStartupTests
             new FixedSettingsProvider(settings),
             new CountingHotkeys(),
             new LinuxIdleDetectionServiceStub(),
-            null!,
+            new LinuxNotificationServiceStub(),
             new ThemeService(),
             new ThemeManager(),
             () => throw new InvalidOperationException("Window creation is unavailable in this test."),
@@ -225,7 +225,7 @@ public sealed class AppControllerStartupTests
             new FixedSettingsProvider(settings),
             hotkeys,
             new LinuxIdleDetectionServiceStub(),
-            null!,
+            new LinuxNotificationServiceStub(),
             new ThrowingThemeService(),
             new ThemeManager(),
             () => throw new InvalidOperationException("Window creation is unavailable in this test."),
@@ -354,7 +354,7 @@ public sealed class AppControllerStartupTests
         var loaded = new Settings();
         loaded.ProjectRules.Add(new ProjectRule("code", null, "Alpha"));
         var controller = new AppController(
-            new FixedSettingsProvider(loaded), new CountingHotkeys(), new LinuxIdleDetectionServiceStub(), null!,
+            new FixedSettingsProvider(loaded), new CountingHotkeys(), new LinuxIdleDetectionServiceStub(), new LinuxNotificationServiceStub(),
             new ThemeService(), new ThemeManager(),
             () => throw new InvalidOperationException("Window creation is unavailable in this test."),
             null!, null!, null!, new NullLogger(), null, new InstallationIdentity(),

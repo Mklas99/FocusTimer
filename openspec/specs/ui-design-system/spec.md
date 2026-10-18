@@ -78,7 +78,7 @@ The UI design system SHALL adapt to system accessibility modes, including High C
 - **THEN** surfaces, text, borders, and interactive states render with maximum contrast conforming to high-contrast requirements
 
 ### Requirement: Dense-frost desktop shells
-Settings and Worklog SHALL use a restrained dense-frost shell on supported Windows systems where native blur is visually verified, with a near-solid tint and subtle edge/depth. Foreground content SHALL remain sharp. Unavailable effects, reduced transparency, or High Contrast SHALL select a solid fallback without changing layout. A successful API response alone SHALL NOT establish blur support.
+Settings and Worklog SHALL use a restrained dense-frost shell on supported Windows systems where native blur is visually verified, with a readable tint (95% by default, developer-adjustable from 70% to 100%) and subtle edge/depth. Foreground content SHALL remain sharp. Unavailable effects, reduced transparency, or High Contrast SHALL select a solid fallback without changing layout. A successful API response alone SHALL NOT establish blur support.
 
 #### Scenario: Native frost is available
 - **WHEN** Settings or Worklog renders over a detailed desktop background with native blur enabled

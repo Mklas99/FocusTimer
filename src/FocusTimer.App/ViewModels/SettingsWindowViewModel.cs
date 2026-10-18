@@ -58,6 +58,9 @@ namespace FocusTimer.App.ViewModels
         private bool _appearancePreviewChanged;
         private int _versionClickCount;
         private decimal? _activityPollingIntervalInput = 10;
+        private decimal? _informationDismissalInput = 5;
+        private decimal? _warningDismissalInput = 15;
+        private decimal? _errorDismissalInput = 15;
         private int _selectedTabIndex;
         private bool _isSettingsLoaded;
         private string _loadError = string.Empty;
@@ -88,6 +91,7 @@ namespace FocusTimer.App.ViewModels
             this._themeService = themeService;
             this._themeManager = themeManager;
             this._themeManager.ActualWidgetTransparencyChanged += this.OnActualWidgetTransparencyChanged;
+            this._themeManager.WidgetMaterialChanged += this.OnWidgetMaterialChanged;
             this._logger = logWriter;
             this._commitCoordinator = new SettingsCommitCoordinator(
                 settingsProvider, autoStartService, settings => this._activateRuntime(settings));
@@ -308,6 +312,10 @@ namespace FocusTimer.App.ViewModels
                 this.DetachSettings(this._settings);
                 this.RaiseAndSetIfChanged(ref this._settings, value);
                 this.AttachSettings(value);
+                this._versionClickCount = 0;
+                this.InformationDismissalInput = value.InformationDismissalSeconds;
+                this.WarningDismissalInput = value.WarningDismissalSeconds;
+                this.ErrorDismissalInput = value.ErrorDismissalSeconds;
                 this.RaisePropertyChanged(nameof(this.PlayPauseColor));
                 this.ActivityPollingIntervalInput = value.ActivityPollingIntervalSeconds;
                 this.ExclusionList.Load(value.ExclusionRules);
@@ -315,6 +323,7 @@ namespace FocusTimer.App.ViewModels
                 this.ProjectList.Load(value.ProjectRules);
                 this.RaisePropertyChanged(nameof(this.IsDeveloperModeVisible));
                 this.RaisePropertyChanged(nameof(this.SelectedDeveloperLogLevel));
+                this.RaisePropertyChanged(nameof(this.DesktopTintOpacityPercent));
             }
         }
 
@@ -429,6 +438,44 @@ namespace FocusTimer.App.ViewModels
         /// </summary>
         public bool IsDeveloperModeVisible => this.Settings.DeveloperModeEnabled;
 
+        /// <summary>Gets or sets Settings/Worklog background tint in percent.</summary>
+        public double DesktopTintOpacityPercent
+        {
+            get => ToPercent(this.Settings.DesktopTintOpacity);
+            set => this.Settings.DesktopTintOpacity = value / 100.0;
+        }
+
+        /// <summary>Gets or sets the information notification dismissal input in seconds.</summary>
+        public decimal? InformationDismissalInput
+        {
+            get => this._informationDismissalInput;
+            set => this.SetNotificationDuration(ref this._informationDismissalInput, value, NotificationSeverity.Information, nameof(this.InformationDismissalInput));
+        }
+
+        /// <summary>Gets or sets the warning notification dismissal input in seconds.</summary>
+        public decimal? WarningDismissalInput
+        {
+            get => this._warningDismissalInput;
+            set => this.SetNotificationDuration(ref this._warningDismissalInput, value, NotificationSeverity.Warning, nameof(this.WarningDismissalInput));
+        }
+
+        /// <summary>Gets or sets the error notification dismissal input in seconds.</summary>
+        public decimal? ErrorDismissalInput
+        {
+            get => this._errorDismissalInput;
+            set => this.SetNotificationDuration(ref this._errorDismissalInput, value, NotificationSeverity.Error, nameof(this.ErrorDismissalInput));
+        }
+
+        /// <summary>Gets validation feedback for notification durations.</summary>
+        public string NotificationDurationError =>
+            IsValidNotificationDuration(this.InformationDismissalInput) &&
+            IsValidNotificationDuration(this.WarningDismissalInput) &&
+            IsValidNotificationDuration(this.ErrorDismissalInput) &&
+            IsValidNotificationDuration(this.Settings.InformationDismissalSeconds) &&
+            IsValidNotificationDuration(this.Settings.WarningDismissalSeconds) &&
+            IsValidNotificationDuration(this.Settings.ErrorDismissalSeconds)
+                ? string.Empty : "Notification dismissal times must be whole seconds from 1 to 120.";
+
         /// <summary>
         /// Gets or sets currently selected theme name in the ComboBox.
         /// </summary>
@@ -486,10 +533,10 @@ namespace FocusTimer.App.ViewModels
         /// Gets the available widget backdrop choices.
         /// </summary>
         public IReadOnlyList<string> AvailableBlurModes { get; } =
-            [WidgetBlurModes.Off, WidgetBlurModes.Solid];
+            [WidgetBlurModes.Off, WidgetBlurModes.Frosted, WidgetBlurModes.Solid];
 
         /// <summary>Gets a value indicating whether tint opacity affects the selected backdrop.</summary>
-        public bool IsBackgroundTintOpacityAvailable => this.SelectedBlurMode != WidgetBlurModes.Solid;
+        public bool IsBackgroundTintOpacityAvailable => this.SelectedBlurMode is WidgetBlurModes.Off or WidgetBlurModes.Frosted;
 
         /// <summary>
         /// Gets or sets the selected widget backdrop blur choice.
@@ -590,13 +637,15 @@ namespace FocusTimer.App.ViewModels
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Major Code Smell", "S2325:Methods and properties that don't access instance data should be static", Justification = "Instance property required for XAML data binding.")]
         public string TransparencyDiagnostics =>
             $"Requested: {this.SelectedBlurMode} | Active: {this._themeManager.ActualWidgetTransparency}" +
-            $" | Surface: {this.GetWidgetSurfaceDescription()}";
+            $" | Surface: {this.GetWidgetSurfaceDescription()}" +
+            $" | Effective: {this._themeManager.EffectiveWidgetMaterial.State}" +
+            (this._themeManager.EffectiveWidgetMaterial.Reason is string reason ? $" | Reason: {reason}" : string.Empty);
 
         /// <summary>
         /// Gets acrylic diagnostics shown in Appearance tab.
         /// </summary>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Major Code Smell", "S2325:Methods and properties that don't access instance data should be static", Justification = "Instance property required for XAML data binding.")]
-        public string AcrylicDiagnostics => "Tint opacity applies to Off. Solid always uses a fully opaque background. Blur is unavailable for now.";
+        public string AcrylicDiagnostics => "Tint applies to Off and Frosted. Frosted uses supported Windows desktop blur; unavailable effects use a solid fallback. Solid always uses an opaque background.";
 
         /// <summary>
         /// Gets a single-line summary of effective normalized opacities.
@@ -691,7 +740,7 @@ namespace FocusTimer.App.ViewModels
 
             if (this._appearancePreviewChanged)
             {
-                this._themeManager.ApplyTheme(this._lastAppliedTheme);
+                this._themeManager.ApplyTheme(this._lastAppliedTheme, desktopTintOpacity: this._lastAppliedSettings.DesktopTintOpacity);
                 this._appearancePreviewChanged = false;
             }
 
@@ -769,6 +818,7 @@ namespace FocusTimer.App.ViewModels
             this.RaisePropertyChanged(nameof(this.IsDraftVisible));
             this._previewAppearance = null;
             this._themeManager.ActualWidgetTransparencyChanged -= this.OnActualWidgetTransparencyChanged;
+            this._themeManager.WidgetMaterialChanged -= this.OnWidgetMaterialChanged;
             this.DetachTheme();
             if (this._attachedSettings != null)
             {
@@ -800,6 +850,9 @@ namespace FocusTimer.App.ViewModels
             this.NotifyThemeSelection();
             this._logger.LogInformation($"Theme '{theme.ThemeName}' imported successfully");
         }
+
+        private static bool IsValidNotificationDuration(decimal? value) =>
+            value is >= 1 and <= 120 && decimal.Truncate(value.Value) == value.Value;
 
         private static string StripChangelogTitle(string text)
         {
@@ -962,8 +1015,36 @@ namespace FocusTimer.App.ViewModels
             }
         }
 
+        private void SetNotificationDuration(ref decimal? field, decimal? value, NotificationSeverity severity, string propertyName)
+        {
+            this.RaiseAndSetIfChanged(ref field, value, propertyName);
+            if (IsValidNotificationDuration(value))
+            {
+                int seconds = (int)value!.Value;
+                switch (severity)
+                {
+                    case NotificationSeverity.Information:
+                        this.Settings.InformationDismissalSeconds = seconds;
+                        break;
+                    case NotificationSeverity.Warning:
+                        this.Settings.WarningDismissalSeconds = seconds;
+                        break;
+                    case NotificationSeverity.Error:
+                        this.Settings.ErrorDismissalSeconds = seconds;
+                        break;
+                }
+            }
+
+            this.RaisePropertyChanged(nameof(this.NotificationDurationError));
+        }
+
         private string ValidateDraft()
         {
+            if (!string.IsNullOrEmpty(this.NotificationDurationError))
+            {
+                return this.NotificationDurationError;
+            }
+
             if (!string.IsNullOrEmpty(this.ActivityPollingIntervalError))
             {
                 return this.ActivityPollingIntervalError;
@@ -1283,7 +1364,13 @@ namespace FocusTimer.App.ViewModels
                 this.RaisePropertyChanged(nameof(this.OpacityDiagnosticsSummary));
             }
 
-            if (e.PropertyName is nameof(this.Settings.WidgetOpacity) or nameof(this.Settings.WidgetScale) or nameof(this.Settings.UseCompactMode))
+            if (e.PropertyName == nameof(this.Settings.DesktopTintOpacity))
+            {
+                this.RaisePropertyChanged(nameof(this.DesktopTintOpacityPercent));
+            }
+
+            if (e.PropertyName is nameof(this.Settings.DesktopTintOpacity) or nameof(this.Settings.WidgetOpacity) or nameof(this.Settings.WidgetScale) or
+                nameof(this.Settings.UseCompactMode) or nameof(this.Settings.WidgetButtonsBelowClock))
             {
                 this.ApplyThemeChanges();
             }
@@ -1342,6 +1429,9 @@ namespace FocusTimer.App.ViewModels
         private void OnActualWidgetTransparencyChanged(WindowTransparencyLevel level) =>
             this.RaisePropertyChanged(nameof(this.TransparencyDiagnostics));
 
+        private void OnWidgetMaterialChanged(WidgetMaterialResult result) =>
+            this.RaisePropertyChanged(nameof(this.TransparencyDiagnostics));
+
         private string GetWidgetSurfaceDescription()
         {
             if (this._themeManager.IsWidgetShellFallbackActive)
@@ -1370,7 +1460,7 @@ namespace FocusTimer.App.ViewModels
             }
 
             this._appearancePreviewChanged = true;
-            this._themeManager.ApplyTheme(this.Settings.Theme);
+            this._themeManager.ApplyTheme(this.Settings.Theme, desktopTintOpacity: this.Settings.DesktopTintOpacity);
             this._previewAppearance?.Invoke(this.Settings);
             this._logger.LogInformation($"Applied theme: {this.Settings.Theme.ThemeName}");
         }
@@ -1395,6 +1485,11 @@ namespace FocusTimer.App.ViewModels
 
         private void OnVersionInfoClicked()
         {
+            if (!this.CanEdit || this.RecoveryRequired)
+            {
+                return;
+            }
+
             this._versionClickCount++;
             if (this._versionClickCount < 7)
             {
@@ -1402,12 +1497,7 @@ namespace FocusTimer.App.ViewModels
             }
 
             this._versionClickCount = 0;
-            if (this.Settings.DeveloperModeEnabled)
-            {
-                return;
-            }
-
-            this.Settings.DeveloperModeEnabled = true;
+            this.Settings.DeveloperModeEnabled = !this.Settings.DeveloperModeEnabled;
             this.RaisePropertyChanged(nameof(this.IsDeveloperModeVisible));
         }
 

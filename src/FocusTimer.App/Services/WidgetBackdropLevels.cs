@@ -25,6 +25,7 @@ namespace FocusTimer.App.Services
             return theme.WidgetBlurMode switch
             {
                 WidgetBlurModes.Off => [WindowTransparencyLevel.Transparent],
+                WidgetBlurModes.Frosted => [WindowTransparencyLevel.AcrylicBlur, WindowTransparencyLevel.Transparent],
                 _ => [WindowTransparencyLevel.Transparent],
             };
         }

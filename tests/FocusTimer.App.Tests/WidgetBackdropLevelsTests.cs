@@ -24,4 +24,13 @@ public sealed class WidgetBackdropLevelsTests
 
         Assert.Equal([WindowTransparencyLevel.Transparent], WidgetBackdropLevels.ForTheme(theme));
     }
+
+    [Fact]
+    public void Frosted_RequestsOnlyTheQualifiedEffectAndClearFallback()
+    {
+        Assert.Equal([WindowTransparencyLevel.AcrylicBlur, WindowTransparencyLevel.Transparent],
+            WidgetBackdropLevels.ForTheme(new Theme { WidgetBlurMode = WidgetBlurModes.Frosted }));
+        Assert.Equal([WindowTransparencyLevel.Transparent],
+            WidgetBackdropLevels.ForTheme(new Theme { ThemeName = "High Contrast", WidgetBlurMode = WidgetBlurModes.Frosted }));
+    }
 }

@@ -28,6 +28,15 @@
 *.yml text eol=lf
 *.yaml text eol=lf
 
+# Third-party reproducible build inputs checked against SHA256 in provenance.json
+third_party/avalonia-widget-backdrop/Win32BackdropControllerV1.cs text eol=lf
+third_party/avalonia-widget-backdrop/FocusTimerBackend.csproj text eol=lf
+third_party/avalonia-widget-backdrop/PublishPrototype.targets text eol=lf
+third_party/avalonia-widget-backdrop/backend.patch text eol=lf whitespace=-blank-at-eol
+third_party/avalonia-widget-backdrop/backend.packages.lock.json text eol=crlf
+third_party/avalonia-widget-backdrop/generators.packages.lock.json text eol=crlf
+third_party/avalonia-widget-backdrop/LICENSE.md text eol=crlf
+
 # Images and binaries (never modify)
 *.png binary
 *.jpg binary

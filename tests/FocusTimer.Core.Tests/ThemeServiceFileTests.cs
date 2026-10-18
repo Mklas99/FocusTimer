@@ -17,13 +17,15 @@ public sealed class ThemeServiceFileTests : IDisposable
         }
     }
 
-    [Fact]
-    public async Task SaveThenLoad_GivenTheme_RoundTripsColors()
+    [Theory]
+    [InlineData(WidgetBlurModes.Solid)]
+    [InlineData(WidgetBlurModes.Frosted)]
+    public async Task SaveThenLoad_GivenTheme_RoundTripsColors(string material)
     {
         var service = new ThemeService();
         var theme = service.GetBuiltInTheme("Light")!;
         theme.AccentPrimary = "#123456";
-        theme.WidgetBlurMode = WidgetBlurModes.Solid;
+        theme.WidgetBlurMode = material;
         theme.BackgroundOpacity = 0.43;
         var path = Path.Combine(this._dir, "nested", "theme.json");
 
@@ -33,8 +35,10 @@ public sealed class ThemeServiceFileTests : IDisposable
         Assert.Equal("#123456", loaded.AccentPrimary);
         Assert.Equal(theme.ThemeName, loaded.ThemeName);
         Assert.Equal(theme.WindowBackground, loaded.WindowBackground);
-        Assert.Equal(WidgetBlurModes.Solid, loaded.WidgetBlurMode);
+        Assert.Equal(material, loaded.WidgetBlurMode);
         Assert.Equal(0.43, loaded.BackgroundOpacity);
+        await service.SaveThemeToFileAsync(loaded, path);
+        Assert.Equal(material, (await service.LoadThemeFromFileAsync(path)).WidgetBlurMode);
     }
 
     [Fact]

@@ -20,7 +20,15 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
         with:
-          dotnet-version: '8.0.x'
+          # The backend build verifies the assembly against provenance from this SDK.
+          dotnet-version: '8.0.425'
+
+      - name: Build widget backdrop package
+        shell: pwsh
+        run: |
+          ./third_party/avalonia-widget-backdrop/build.ps1 -CheckoutName avalonia-widget-backdrop-ci
+          New-Item -ItemType Directory -Path .build/widget-backdrop-packages -Force | Out-Null
+          Copy-Item .build/avalonia-widget-backdrop-ci/packages/*.nupkg .build/widget-backdrop-packages/ -Force
 
       - name: Install SonarScanner for .NET
         shell: pwsh
@@ -32,6 +40,7 @@ jobs:
         run: dotnet restore FocusTimer.sln
 
       - name: Begin Sonar analysis
+        id: sonar_begin
         if: env.SONAR_TOKEN != ''
         shell: pwsh
         run: >
@@ -52,7 +61,7 @@ jobs:
         run: ./scripts/run-unit-coverage.ps1 -Configuration Release -NoBuild
 
       - name: Coverage summary
-        if: always()
+        if: ${{ !cancelled() && hashFiles('artifacts/test-coverage/**/coverage.cobertura.xml') != '' }}
         shell: pwsh
         run: |
           dotnet tool install --global dotnet-reportgenerator-globaltool
@@ -68,7 +77,7 @@ jobs:
           }
 
       - name: Upload coverage reports
-        if: always()
+        if: ${{ !cancelled() && hashFiles('artifacts/test-coverage/**/coverage.cobertura.xml') != '' }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: coverage-report
@@ -76,6 +85,6 @@ jobs:
           if-no-files-found: warn
 
       - name: End Sonar analysis
-        if: ${{ !cancelled() && env.SONAR_TOKEN != '' }}
+        if: ${{ !cancelled() && steps.sonar_begin.outcome == 'success' }}
         shell: pwsh
         run: dotnet sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"

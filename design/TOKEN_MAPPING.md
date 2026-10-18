@@ -80,3 +80,16 @@ All 7 built-in themes define every property listed above:
 Theme switching modifies these resources at runtime via `ThemeManager.ApplyTheme()`. Invariant geometry (spacing, corner radii, font metrics) remains constant across all themes.
 
 Desktop text, field, action, selection, tab, and status colors are derived from the existing source roles. Shared styles are scoped to desktop windows; calendar and dropdown popup templates use desktop-only control selectors because their popup roots sit outside those windows. Widget fields and buttons retain their own styles and source colors. The measured rendered pairs and review limits are recorded in [SETTINGS_THEME_COLOR_CONTRAST_CHECK.md](SETTINGS_THEME_COLOR_CONTRAST_CHECK.md), with source choices and personal editing guidance in [ThemePaletteTuning.md](../docs/versions/current/ThemePaletteTuning.md).
+
+## 5. Notification Banner Derivations
+
+Notification windows derive their colors in `ThemeManager.ApplyTheme()` from `AccentPrimary` (information), `WarningColor` and `DangerColor` (error) over the desktop shell. They are resources, not saved theme fields.
+
+| Resource (per severity: `Information`, `Warning`, `Error`) | Derivation |
+|---|---|
+| `DesktopNotification{Severity}FillBrush` | Desktop shell mixed 10% toward the severity color |
+| `DesktopNotification{Severity}EdgeBrush` | Shell mixed 35% toward the severity color; High Contrast uses the severity color adjusted to 3:1 on the fill |
+| `DesktopNotification{Severity}TextBrush` | Severity color mixed 15% (error 42%) toward `PrimaryText`, adjusted to 4.5:1 on the fill; used by the title, icon and close glyph |
+| `DesktopNotification{Severity}BodyBrush` | `SecondaryText` composited over the shell, adjusted to 4.5:1 on the fill |
+
+Geometry: 8px corners (`RadiusSm`), 16,12 padding (`NotificationContentPadding`), 1px edge, 24px icon and close target. No shadow.

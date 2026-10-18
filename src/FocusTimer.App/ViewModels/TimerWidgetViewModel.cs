@@ -188,11 +188,16 @@ namespace FocusTimer.App.ViewModels
         public Avalonia.Thickness WidgetButtonMargin => new(2 * this.AppearanceSettings.WidgetScale);
 
         /// <summary>Gets equal visible clock and icon side gaps, accounting for the icon's click target.</summary>
-        public Avalonia.Thickness CompactContentMargin => new(
-            DesignMetrics.SpacingSm * this.AppearanceSettings.WidgetScale,
-            0,
-            Math.Max(0, (DesignMetrics.SpacingSm * this.AppearanceSettings.WidgetScale) - ((this.CompactButtonSize - this.CompactIconSize) / 2)),
-            0);
+        public Avalonia.Thickness CompactContentMargin
+        {
+            get
+            {
+                double inset = DesignMetrics.SpacingSm * this.AppearanceSettings.WidgetScale;
+                double right = this.AppearanceSettings.WidgetButtonsBelowClock
+                    ? inset : Math.Max(0, inset - ((this.CompactButtonSize - this.CompactIconSize) / 2));
+                return new(inset, 0, right, 0);
+            }
+        }
 
         /// <summary>
         /// Gets or sets a fixed width for the main timer text to avoid window jitter while ticking.
@@ -526,6 +531,19 @@ namespace FocusTimer.App.ViewModels
         /// <summary>Gets a value indicating whether compact mode is currently shown, including an unsaved appearance preview.</summary>
         public bool UseCompactMode => this.AppearanceSettings.UseCompactMode;
 
+        /// <summary>Gets the row occupied by widget controls.</summary>
+        public int ControlsRow => this.AppearanceSettings.WidgetButtonsBelowClock ? 1 : 0;
+
+        /// <summary>Gets the column occupied by widget controls.</summary>
+        public int ControlsColumn => this.AppearanceSettings.WidgetButtonsBelowClock ? 0 : 1;
+
+        /// <summary>Gets the full-mode clock column span.</summary>
+        public int ClockColumnSpan => this.AppearanceSettings.WidgetButtonsBelowClock ? 2 : 1;
+
+        /// <summary>Gets the orientation of compact-mode controls.</summary>
+        public Orientation CompactControlsOrientation => this.AppearanceSettings.WidgetButtonsBelowClock
+            ? Orientation.Horizontal : Orientation.Vertical;
+
         private Settings AppearanceSettings => this._appearancePreview ?? this.Settings;
 
         /// <summary>
@@ -723,6 +741,10 @@ namespace FocusTimer.App.ViewModels
             // The icon's side gap equals the clock's side gap, so the widget has the same space left and right.
             this.CompactButtonSize = this.CompactIconSize + (6 * scale);
             this.RaisePropertyChanged(nameof(this.CompactContentMargin));
+            this.RaisePropertyChanged(nameof(this.ControlsRow));
+            this.RaisePropertyChanged(nameof(this.ControlsColumn));
+            this.RaisePropertyChanged(nameof(this.ClockColumnSpan));
+            this.RaisePropertyChanged(nameof(this.CompactControlsOrientation));
             this.ButtonPanelOrientation = scale >= 1.25 ? Orientation.Vertical : Orientation.Horizontal;
         }
 
@@ -863,7 +885,7 @@ namespace FocusTimer.App.ViewModels
 
         private void Settings_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
         {
-            if (e.PropertyName == nameof(this.Settings.WidgetScale))
+            if (e.PropertyName is nameof(this.Settings.WidgetScale) or nameof(this.Settings.WidgetButtonsBelowClock))
             {
                 this.UpdateResponsiveLayout();
             }

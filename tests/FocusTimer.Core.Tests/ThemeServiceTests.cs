@@ -17,15 +17,30 @@ public class ThemeServiceTests
         Assert.Equal(WidgetBlurModes.Off, service.GetBuiltInTheme("High Contrast")!.WidgetBlurMode);
     }
 
-    [Fact]
-    public void Clone_PreservesEditedBlurAndBackgroundOpacity()
+    [Theory]
+    [InlineData(WidgetBlurModes.Solid)]
+    [InlineData(WidgetBlurModes.Frosted)]
+    public void Clone_PreservesEditedBlurAndBackgroundOpacity(string material)
     {
-        var theme = new Theme { WidgetBlurMode = WidgetBlurModes.Solid, BackgroundOpacity = 0.42 };
+        var theme = new Theme { WidgetBlurMode = material, BackgroundOpacity = 0.42 };
 
         var clone = theme.Clone();
 
-        Assert.Equal(WidgetBlurModes.Solid, clone.WidgetBlurMode);
+        Assert.Equal(material, clone.WidgetBlurMode);
         Assert.Equal(0.42, clone.BackgroundOpacity);
+    }
+
+    [Fact]
+    public void OlderBuildRollback_ChangesOnlyTheAdditiveMaterialToken()
+    {
+        var theme = new Theme { WidgetBlurMode = WidgetBlurModes.Frosted, BackgroundOpacity = 0.37, PrimaryText = "#123456" };
+        Theme rollback = theme.Clone();
+        rollback.WidgetBlurMode = WidgetBlurModes.ForOlderBuild(rollback.WidgetBlurMode);
+        Assert.Equal(WidgetBlurModes.Off, rollback.WidgetBlurMode);
+        Assert.Equal(0.37, rollback.BackgroundOpacity);
+        Assert.Equal("#123456", rollback.PrimaryText);
+        Assert.Equal(WidgetBlurModes.Frosted, theme.WidgetBlurMode);
+        Assert.Equal(WidgetBlurModes.Solid, WidgetBlurModes.ForOlderBuild(WidgetBlurModes.Solid));
     }
 
     [Fact]

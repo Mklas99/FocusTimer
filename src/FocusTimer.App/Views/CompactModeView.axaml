@@ -22,11 +22,13 @@
     </UserControl.Styles>
 
     <Grid x:Name="WidgetContentRoot"
+        RowDefinitions="Auto,Auto"
         ColumnDefinitions="Auto,Auto"
         VerticalAlignment="Center"
         HorizontalAlignment="Center">
         <Grid x:Name="ClockLayer"
             Grid.Column="0"
+            Grid.ColumnSpan="{Binding ClockColumnSpan}"
             VerticalAlignment="Center"
             HorizontalAlignment="Center"
             Opacity="{Binding EffectiveClockOpacity}">
@@ -41,8 +43,10 @@
         </Grid>
 
         <StackPanel x:Name="ControlsLayer"
-            Grid.Column="1"
-            Orientation="Vertical"
+            Grid.Row="{Binding ControlsRow}"
+            Grid.Column="{Binding ControlsColumn}"
+            Grid.ColumnSpan="{Binding ClockColumnSpan}"
+            Orientation="{Binding CompactControlsOrientation, FallbackValue=Vertical}"
             VerticalAlignment="Center"
             HorizontalAlignment="Center"
             Margin="0"

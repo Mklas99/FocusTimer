@@ -46,13 +46,17 @@ public class DesktopPaletteContrastTests
         }
     }
 
-    [Fact]
-    public void EveryBuiltInTheme_DesktopTextAndStatusColorsAreReadableOnEveryControlState()
+    [Theory]
+    [InlineData(0.7)]
+    [InlineData(0.8)]
+    [InlineData(0.95)]
+    [InlineData(1.0)]
+    public void EveryBuiltInTheme_DesktopTextAndStatusColorsAreReadableOnEveryControlState(double opacity)
     {
         var rows = new List<string> { "theme\tforeground\tbackground\tratio\tthreshold" };
         foreach (Theme theme in FocusTimer.Tests.ThemeFixtures.All)
         {
-            Check(theme, rows);
+            Check(theme, rows, opacity);
         }
 
         string? folder = Environment.GetEnvironmentVariable("FOCUSTIMER_THEME_EVIDENCE_DIR");
@@ -85,10 +89,10 @@ public class DesktopPaletteContrastTests
         Assert.Equal(before, System.Text.Json.JsonSerializer.Serialize(theme));
     }
 
-    private static void Check(Theme theme, List<string>? evidence = null)
+    private static void Check(Theme theme, List<string>? evidence = null, double opacity = ThemeManager.DesktopShellFrostOpacity)
     {
         var resources = new ResourceDictionary();
-        new ThemeManager().ApplyTheme(theme, resources);
+        new ThemeManager().ApplyTheme(theme, resources, opacity);
         Color Brush(string key) => Assert.IsType<SolidColorBrush>(resources[key]).Color;
         void Measure(string foreground, string background, double threshold)
         {
@@ -108,7 +112,7 @@ public class DesktopPaletteContrastTests
         }
 
         var frost = Assert.IsType<SolidColorBrush>(resources["DesktopShellFrostBrush"]);
-        Assert.Equal(ThemeManager.DesktopShellFrostOpacity, frost.Opacity);
+        Assert.Equal(opacity, frost.Opacity);
         foreach (Color desktop in new[] { Colors.Black, Colors.White })
         {
             byte Channel(byte foreground, byte background) => (byte)Math.Round(foreground * frost.Opacity + background * (1 - frost.Opacity));
@@ -165,7 +169,16 @@ public class DesktopPaletteContrastTests
         Measure("DesktopSelectedTextBrush", "DesktopSelectionBrush", 4.5);
         Measure("DesktopSelectionBrush", "DesktopFieldBrush", 3);
         Measure("DesktopSelectionBrush", "DesktopShellBrush", 3);
-        Measure("DesktopNotificationBodyBrush", "DesktopShellBrush", 4.5);
+        foreach (string severity in new[] { "Information", "Warning", "Error" })
+        {
+            string fill = $"DesktopNotification{severity}FillBrush";
+            Measure($"DesktopNotification{severity}TextBrush", fill, 4.5);
+            Measure($"DesktopNotification{severity}BodyBrush", fill, 4.5);
+            if (theme.ThemeName == "High Contrast")
+            {
+                Measure($"DesktopNotification{severity}EdgeBrush", fill, 3);
+            }
+        }
         foreach (string action in new[] { "DesktopPrimaryAction", "DesktopDestructiveAction" })
         {
             foreach (string state in new[] { "", "Hover", "Pressed" })

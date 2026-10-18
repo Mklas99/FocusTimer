@@ -14,6 +14,41 @@ using ReactiveUI;
 
 public class SettingsWindowViewModelTests
 {
+    [Fact]
+    public async Task DesktopTint_PreviewFailedSaveCommitAndDiscardPreserveTheRestorePoint()
+    {
+        var provider = new StubSettingsProvider(new Settings { DeveloperModeEnabled = true });
+        var manager = new ThemeManager();
+        var vm = Create(provider: provider, themeManager: manager);
+        var previews = new List<double>();
+        vm.SetAppearancePreview(settings => previews.Add(settings.DesktopTintOpacity));
+        Assert.Equal(95, vm.DesktopTintOpacityPercent);
+        vm.DesktopTintOpacityPercent = 70;
+        Assert.Equal(0.7, previews.Last());
+        Assert.Equal(0.95, provider.Saved.DesktopTintOpacity);
+        provider.FailSave = true;
+        await ((ReactiveCommand<Unit, Unit>)vm.ApplyCommand).Execute().ToTask();
+        Assert.False(vm.LastApplySucceeded);
+        Assert.Equal(70, vm.DesktopTintOpacityPercent);
+        vm.RestoreAppearancePreview();
+        Assert.Equal(95, vm.DesktopTintOpacityPercent);
+        Assert.Equal(0.95, previews.Last());
+        provider.FailSave = false;
+        vm.DesktopTintOpacityPercent = 80;
+        await ((ReactiveCommand<Unit, Unit>)vm.ApplyCommand).Execute().ToTask();
+        Assert.True(vm.LastApplySucceeded);
+        Assert.Equal(0.8, provider.Saved.DesktopTintOpacity);
+        vm.DesktopTintOpacityPercent = 100;
+        vm.RestoreAppearancePreview();
+        Assert.Equal(80, vm.DesktopTintOpacityPercent);
+        var reopened = Create(provider: provider, themeManager: manager);
+        Assert.Equal(80, reopened.DesktopTintOpacityPercent);
+        Assert.Equal(1, provider.Saved.WidgetOpacity);
+        Assert.Equal(0.95, new Settings().DesktopTintOpacity);
+        reopened.Dispose();
+        vm.Dispose();
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
@@ -131,7 +166,7 @@ public class SettingsWindowViewModelTests
         var themes = new DelayedImportThemeService();
         var manager = new ThemeManager();
         var vm = Create(provider: provider, themeService: themes, themeManager: manager);
-        themes.CompleteImport(new Theme { ThemeName = metadata, PrimaryText = "#123456" });
+        themes.CompleteImport(new Theme { ThemeName = metadata, PrimaryText = "#123456", WidgetBlurMode = WidgetBlurModes.Frosted });
         await vm.ImportThemeFileAsync("missing.fttheme");
         Assert.Equal("Custom", vm.Settings.ActiveThemeName);
         Assert.Equal(metadata, vm.Settings.Theme.ThemeName);
@@ -142,6 +177,7 @@ public class SettingsWindowViewModelTests
         var reopened = Create(provider: provider, themeManager: manager);
         Assert.Equal("Custom/Imported", reopened.SelectedThemeName);
         Assert.Equal("#123456", reopened.Settings.Theme.PrimaryText);
+        Assert.Equal(WidgetBlurModes.Frosted, reopened.SelectedBlurMode);
         reopened.Dispose();
         vm.SelectedThemeName = "Light";
         Assert.True(string.IsNullOrEmpty(vm.Settings.CustomThemePath));
@@ -380,6 +416,72 @@ public class SettingsWindowViewModelTests
     }
 
     [Fact]
+    public async Task FrostedCompensationFailure_RetainsDraftAndBlocksFurtherCommits()
+    {
+        var provider = new StubSettingsProvider(new Settings());
+        var manager = new ThemeManager();
+        var vm = Create(manager, provider: provider);
+        vm.SelectedBlurMode = WidgetBlurModes.Frosted;
+        vm.BackgroundOpacityPercent = 25;
+        vm.SetRuntimeActivator(_ =>
+        {
+            provider.FailSave = true;
+            throw new IOException("Synthetic activation and compensation failure.");
+        });
+        await ((ReactiveCommand<Unit, Unit>)vm.ApplyCommand).Execute().ToTask();
+        Assert.True(vm.RecoveryRequired);
+        Assert.False(vm.CanCommit);
+        Assert.False(vm.LastApplySucceeded);
+        Assert.Equal(WidgetBlurModes.Frosted, vm.SelectedBlurMode);
+        Assert.Equal(25, vm.BackgroundOpacityPercent);
+        int writes = provider.SaveCalls;
+        await ((ReactiveCommand<Unit, Unit>)vm.ApplyCommand).Execute().ToTask();
+        Assert.Equal(writes, provider.SaveCalls);
+        vm.Dispose();
+    }
+
+    [Fact]
+    public async Task FrostedUnavailable_SaveFailureAndCancelKeepSeparateAppearanceRestorePoints()
+    {
+        var provider = new StubSettingsProvider(new Settings()) { FailSave = true };
+        var manager = new ThemeManager();
+        var vm = Create(manager, provider: provider);
+        vm.SelectedBlurMode = WidgetBlurModes.Frosted;
+        vm.BackgroundOpacityPercent = 25;
+        Assert.True(vm.IsBackgroundTintOpacityAvailable);
+        manager.ReportWidgetMaterial(new(WidgetMaterialState.SolidFallback, "Native attachment failed"));
+        Assert.Contains("Native attachment failed", vm.TransparencyDiagnostics);
+        await ((ReactiveCommand<Unit, Unit>)vm.ApplyCommand).Execute().ToTask();
+        Assert.False(vm.LastApplySucceeded);
+        Assert.Equal(WidgetBlurModes.Frosted, vm.SelectedBlurMode);
+        Assert.Equal(0.25, manager.ActiveTheme!.BackgroundOpacity);
+        Assert.Equal(WidgetMaterialState.SolidFallback, manager.EffectiveWidgetMaterial.State);
+        Assert.Equal(WidgetBlurModes.Off, provider.Saved.Theme.WidgetBlurMode);
+        Assert.True(vm.TryDiscardAndClose());
+        Assert.Equal(WidgetBlurModes.Off, manager.ActiveTheme.WidgetBlurMode);
+        vm.Dispose();
+    }
+
+    [Fact]
+    public void MaterialDiagnostics_RefreshReasonsAndUnsubscribeOnDispose()
+    {
+        var manager = new ThemeManager();
+        var vm = Create(manager);
+        vm.SelectedBlurMode = WidgetBlurModes.Frosted;
+        int notifications = 0;
+        vm.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(vm.TransparencyDiagnostics)) notifications++; };
+        manager.ReportWidgetMaterial(new(WidgetMaterialState.SolidFallback, "High Contrast"));
+        manager.ReportWidgetMaterial(new(WidgetMaterialState.SolidFallback, "Transparency effects disabled"));
+        Assert.Equal(2, notifications);
+        Assert.Contains("Transparency effects disabled", vm.TransparencyDiagnostics);
+        Assert.Equal(WidgetBlurModes.Frosted, vm.Settings.Theme.WidgetBlurMode);
+        vm.Dispose();
+        int disposedCount = notifications;
+        manager.ReportWidgetMaterial(new(WidgetMaterialState.Frosted));
+        Assert.Equal(disposedCount, notifications);
+    }
+
+    [Fact]
     public async Task RecoveryRetry_ReenablesEditingAfterPendingLoadIsResolved()
     {
         var provider = new ControlledSettingsProvider();
@@ -488,7 +590,7 @@ public class SettingsWindowViewModelTests
         Assert.Equal("Dark", vm.Settings.Theme.ThemeName);
         Assert.Equal(0.8, vm.Settings.Theme.BackgroundOpacity);
         Assert.Equal(WidgetBlurModes.Off, vm.SelectedBlurMode);
-        Assert.Equal([WidgetBlurModes.Off, WidgetBlurModes.Solid], vm.AvailableBlurModes);
+        Assert.Equal([WidgetBlurModes.Off, WidgetBlurModes.Frosted, WidgetBlurModes.Solid], vm.AvailableBlurModes);
         vm.Dispose();
     }
 
@@ -593,7 +695,7 @@ public class SettingsWindowViewModelTests
         bool failActivation = action == "ActivationFailure";
         vm.SetRuntimeActivator(async candidate =>
         {
-            manager.ApplyTheme(candidate.Theme);
+            manager.ApplyTheme(candidate.Theme, desktopTintOpacity: candidate.DesktopTintOpacity);
             await widget.ActivateSettingsAsync(candidate);
             if (failActivation)
             {
@@ -603,10 +705,12 @@ public class SettingsWindowViewModelTests
         });
 
         vm.BackgroundOpacityPercent = 25;
+        vm.SelectedBlurMode = WidgetBlurModes.Frosted;
         vm.ClockOpacityPercent = 50;
         vm.ButtonsOpacityPercent = 60;
         vm.OverallFadePercent = 40;
         vm.Settings.WidgetScale = 1.5;
+        vm.DesktopTintOpacityPercent = 70;
         await ((ReactiveCommand<Unit, Unit>)widget.ToggleCompactModeCommand).Execute().ToTask();
         Assert.True(vm.Settings.UseCompactMode);
         vm.Settings.BreakIntervalMinutes = 25;
@@ -628,16 +732,20 @@ public class SettingsWindowViewModelTests
         Assert.Equal(0, provider.SaveCalls);
         Assert.Equal(1, provider.Saved.WidgetScale);
         Assert.Equal("#123456", manager.ActiveTheme!.TimerText);
+        Assert.Equal(WidgetBlurModes.Frosted, manager.ActiveTheme.WidgetBlurMode);
 
         provider.FailSave = action == "SaveFailure";
         var command = (ReactiveCommand<Unit, Unit>)(action == "OK" ? vm.OkCommand : vm.ApplyCommand);
         await command.Execute().ToTask();
         bool success = action is "Apply" or "OK";
+        Assert.Equal(70, vm.DesktopTintOpacityPercent);
+        Assert.Equal(success ? 0.7 : 0.95, provider.Saved.DesktopTintOpacity);
         Assert.Equal(success, vm.LastApplySucceeded);
         Assert.Equal(originalFontSize * 1.5, widget.MainTimerFontSize);
         Assert.Equal(0.4, widget.OverallOpacity);
         Assert.True(widget.UseCompactMode);
         Assert.Equal("#123456", manager.ActiveTheme!.TimerText);
+        Assert.Equal(WidgetBlurModes.Frosted, manager.ActiveTheme.WidgetBlurMode);
         if (success)
         {
             Assert.Equal(1.5, provider.Saved.WidgetScale);
@@ -661,12 +769,14 @@ public class SettingsWindowViewModelTests
         }
 
         vm.Settings.WidgetScale = 2;
+        vm.DesktopTintOpacityPercent = 100;
         vm.PlayPauseColor = "#FFFFFF";
         await ((ReactiveCommand<Unit, Unit>)widget.ToggleCompactModeCommand).Execute().ToTask();
         Assert.False(vm.Settings.UseCompactMode);
         vm.OverallFadePercent = 70;
         vm.ClockOpacityPercent = 20;
         Assert.True(vm.TryDiscardAndClose());
+        Assert.Equal(success ? 70 : 95, vm.DesktopTintOpacityPercent);
         widget.ClearAppearancePreview();
 
         Assert.Equal(originalFontSize * (success ? 1.5 : 1), widget.MainTimerFontSize);
@@ -675,6 +785,7 @@ public class SettingsWindowViewModelTests
         Assert.Equal(success ? 0.5 : saved.Theme.TimerOpacity, widget.EffectiveClockOpacity);
         Assert.Equal(success ? 25 : saved.BreakIntervalMinutes, widget.Settings.BreakIntervalMinutes);
         Assert.Equal(success ? "#123456" : saved.Theme.TimerText, manager.ActiveTheme!.TimerText);
+        Assert.Equal(success ? WidgetBlurModes.Frosted : saved.Theme.WidgetBlurMode, manager.ActiveTheme.WidgetBlurMode);
         Assert.Equal(success ? "#112233" : saved.Theme.PlayPauseColor, manager.ActiveTheme.PlayPauseColor);
         vm.Dispose();
 
@@ -683,6 +794,7 @@ public class SettingsWindowViewModelTests
         Assert.Equal(success ? "#112233" : saved.Theme.PlayPauseColor, reopened.Settings.Theme.PlayPauseColor);
         Assert.Equal(success ? "#556677" : saved.Theme.SuccessColor, reopened.Settings.Theme.SuccessColor);
         Assert.Equal(success ? "#667788" : saved.Theme.DangerColor, reopened.Settings.Theme.DangerColor);
+        Assert.Equal(success ? WidgetBlurModes.Frosted : saved.Theme.WidgetBlurMode, reopened.SelectedBlurMode);
         reopened.Dispose();
         provider.FailSave = false;
         int savesBeforeWidgetToggle = provider.SaveCalls;
@@ -949,7 +1061,7 @@ public class SettingsWindowViewModelTests
     }
 
     [Fact]
-    public void DeveloperUnlock_RequiresSevenClicksAndNeverRelocksOrSavesTheDraft()
+    public void DeveloperToggle_RequiresSevenClicksEachWayAndDoesNotSaveTheDraft()
     {
         var provider = new StubSettingsProvider(new Settings());
         var vm = Create(provider: provider);
@@ -962,11 +1074,152 @@ public class SettingsWindowViewModelTests
             Assert.True(vm.IsDeveloperModeVisible);
             for (int click = 0; click < 7; click++)
                 vm.RegisterVersionInfoClick();
-            Assert.True(vm.IsDeveloperModeVisible);
+            Assert.False(vm.IsDeveloperModeVisible);
             Assert.False(provider.Saved.DeveloperModeEnabled);
             Assert.Equal(0, provider.SaveCalls);
         }
         finally { vm.Dispose(); }
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task CustomizationCommit_FailedSaveRetryAndDiscardPreserveTheLastCommit(bool useOk)
+    {
+        var provider = new StubSettingsProvider(new Settings());
+        var vm = Create(provider: provider);
+        Settings active = provider.Saved.Clone();
+        Settings? preview = null;
+        vm.SetRuntimeActivator(candidate => { active = candidate.Clone(); return Task.CompletedTask; });
+        vm.SetAppearancePreview(candidate => preview = candidate.Clone());
+        try
+        {
+            vm.Settings.WidgetButtonsBelowClock = true;
+            Assert.True(preview!.WidgetButtonsBelowClock);
+            vm.Settings.InformationNotificationsEnabled = false;
+            vm.Settings.WarningNotificationsEnabled = false;
+            vm.InformationDismissalInput = 9;
+            vm.WarningDismissalInput = 20;
+            vm.ErrorDismissalInput = 40;
+            for (int i = 0; i < 7; i++) vm.RegisterVersionInfoClick();
+            provider.FailSave = true;
+            await ((ReactiveCommand<Unit, Unit>)vm.ApplyCommand).Execute().ToTask();
+            Assert.False(vm.LastApplySucceeded);
+            Assert.False(active.WidgetButtonsBelowClock);
+            Assert.True(active.InformationNotificationsEnabled);
+            Assert.False(active.DeveloperModeEnabled);
+            provider.FailSave = false;
+            await ((ReactiveCommand<Unit, Unit>)(useOk ? vm.OkCommand : vm.ApplyCommand)).Execute().ToTask();
+            Assert.True(vm.LastApplySucceeded);
+            Assert.True(provider.Saved.WidgetButtonsBelowClock);
+            Assert.False(active.InformationNotificationsEnabled);
+            Assert.False(active.WarningNotificationsEnabled);
+            Assert.Equal(9, active.InformationDismissalSeconds);
+            Assert.Equal(20, active.WarningDismissalSeconds);
+            Assert.Equal(40, active.ErrorDismissalSeconds);
+            Assert.True(active.DeveloperModeEnabled);
+            if (!useOk)
+            {
+                vm.Settings.WidgetButtonsBelowClock = false;
+                vm.InformationDismissalInput = 3;
+                vm.Settings.InformationNotificationsEnabled = true;
+                for (int i = 0; i < 7; i++) vm.RegisterVersionInfoClick();
+                Assert.False(vm.IsDeveloperModeVisible);
+                Assert.True(vm.TryDiscardAndClose());
+                Assert.True(vm.Settings.WidgetButtonsBelowClock);
+                Assert.Equal(9, vm.InformationDismissalInput);
+                Assert.False(vm.Settings.InformationNotificationsEnabled);
+                Assert.True(vm.IsDeveloperModeVisible);
+            }
+        }
+        finally { vm.Dispose(); }
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData(0.0)]
+    [InlineData(1.5)]
+    [InlineData(121.0)]
+    public async Task InvalidNotificationDurationCannotBeCommitted(double? input)
+    {
+        var provider = new StubSettingsProvider(new Settings());
+        var vm = Create(provider: provider);
+        try
+        {
+            vm.WarningDismissalInput = input.HasValue ? (decimal)input.Value : null;
+            Assert.NotEmpty(vm.NotificationDurationError);
+            await ((ReactiveCommand<Unit, Unit>)vm.ApplyCommand).Execute().ToTask();
+            Assert.False(vm.LastApplySucceeded);
+            Assert.Equal(0, provider.SaveCalls);
+            Assert.Equal(15, provider.Saved.WarningDismissalSeconds);
+            vm.RestoreAppearancePreview();
+            Assert.Empty(vm.NotificationDurationError);
+        }
+        finally { vm.Dispose(); }
+    }
+
+    [Fact]
+    public async Task DeveloperGestureIgnoresBlockedClicksAndPreservesHiddenValues()
+    {
+        var provider = new StubSettingsProvider(new Settings { DeveloperModeEnabled = true, ActivityPollingIntervalSeconds = 42 });
+        var vm = Create(provider: provider);
+        var activation = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        vm.SetRuntimeActivator(_ => activation.Task);
+        try
+        {
+            for (int i = 0; i < 6; i++) vm.RegisterVersionInfoClick();
+            Task applying = ((ReactiveCommand<Unit, Unit>)vm.ApplyCommand).Execute().ToTask();
+            await WaitUntilAsync(() => vm.IsCommitting);
+            for (int i = 0; i < 7; i++) vm.RegisterVersionInfoClick();
+            Assert.True(vm.IsDeveloperModeVisible);
+            activation.SetResult();
+            await applying;
+            vm.RegisterVersionInfoClick();
+            Assert.False(vm.IsDeveloperModeVisible);
+            Assert.Equal(42, vm.Settings.ActivityPollingIntervalSeconds);
+            Assert.True(vm.TryDiscardAndClose());
+            vm.Dispose();
+            for (int i = 0; i < 7; i++) vm.RegisterVersionInfoClick();
+            Assert.True(vm.IsDeveloperModeVisible);
+        }
+        finally { activation.TrySetResult(); vm.Dispose(); }
+    }
+
+    [Fact]
+    public async Task DeveloperToggle_DisablePersistsAndHiddenValuesSurviveReopening()
+    {
+        var provider = new StubSettingsProvider(new Settings
+        {
+            DeveloperModeEnabled = true,
+            DeveloperLogLevel = "Warning",
+            ActivityPollingIntervalSeconds = 42,
+        });
+        var vm = Create(provider: provider);
+        try
+        {
+            for (int i = 0; i < 7; i++) vm.RegisterVersionInfoClick();
+            await ((ReactiveCommand<Unit, Unit>)vm.ApplyCommand).Execute().ToTask();
+            Assert.True(vm.LastApplySucceeded);
+            Assert.False(provider.Saved.DeveloperModeEnabled);
+        }
+        finally { vm.Dispose(); }
+
+        var reopened = Create(provider: provider);
+        try
+        {
+            Assert.False(reopened.IsDeveloperModeVisible);
+            Assert.Equal("Warning", reopened.Settings.DeveloperLogLevel);
+            Assert.Equal(42, reopened.Settings.ActivityPollingIntervalSeconds);
+            for (int i = 0; i < 6; i++) reopened.RegisterVersionInfoClick();
+            reopened.RestoreAppearancePreview();
+            reopened.RegisterVersionInfoClick();
+            Assert.False(reopened.IsDeveloperModeVisible);
+            for (int i = 0; i < 6; i++) reopened.RegisterVersionInfoClick();
+            Assert.True(reopened.IsDeveloperModeVisible);
+            Assert.True(reopened.TryDiscardAndClose());
+            Assert.False(reopened.IsDeveloperModeVisible);
+        }
+        finally { reopened.Dispose(); }
     }
 
     [Theory]

@@ -7,6 +7,12 @@ namespace FocusTimer.Core.Interfaces
     /// </summary>
     public interface INotificationService
     {
+        /// <summary>Activates a committed notification preferences snapshot.</summary>
+        /// <param name="settings">Committed application settings.</param>
+        void ApplySettings(Settings settings)
+        {
+        }
+
         /// <summary>
         /// Shows a break reminder notification.
         /// </summary>

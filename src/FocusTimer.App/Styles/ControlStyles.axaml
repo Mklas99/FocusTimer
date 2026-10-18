@@ -1251,38 +1251,68 @@
         <Setter Property="Foreground" Value="{DynamicResource DesktopSecondaryTextBrush}" />
     </Style>
 
-    <!-- Notifications follow the rounded dialog reference, with quiet chrome and secondary body text. -->
+    <!--
+      Notification banner: a severity-tinted fill and edge, a status icon, a semibold title, secondary-colored message,
+      and a close button. Information is the default; .warning and .error override the derived brushes.
+    -->
     <Style Selector="Window.notification-window Border.notification-card">
-        <Setter Property="Background" Value="{DynamicResource DesktopShellBrush}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource DesktopNotificationBorderBrush}" />
+        <Setter Property="Background" Value="{DynamicResource DesktopNotificationInformationFillBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopNotificationInformationEdgeBrush}" />
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="CornerRadius" Value="{DynamicResource NotificationCardRadius}" />
+        <Setter Property="CornerRadius" Value="{DynamicResource RadiusSm}" />
         <Setter Property="Padding" Value="{DynamicResource NotificationContentPadding}" />
     </Style>
 
+    <Style Selector="Window.notification-window icons|MaterialIcon.notification-icon">
+        <Setter Property="Foreground" Value="{DynamicResource DesktopNotificationInformationTextBrush}" />
+        <Setter Property="Margin" Value="0,0,12,0" />
+    </Style>
+
     <Style Selector="Window.notification-window TextBlock.notification-title">
+        <Setter Property="FontSize" Value="{DynamicResource FontSizeBody}" />
         <Setter Property="FontWeight" Value="SemiBold" />
-        <Setter Property="Foreground" Value="{DynamicResource DesktopHeadingBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DesktopNotificationInformationTextBrush}" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="MinHeight" Value="24" />
     </Style>
 
     <Style Selector="Window.notification-window TextBlock.notification-message">
-        <Setter Property="Foreground" Value="{DynamicResource DesktopNotificationBodyBrush}" />
+        <Setter Property="FontSize" Value="{DynamicResource FontSizeBody}" />
+        <Setter Property="Foreground" Value="{DynamicResource DesktopNotificationInformationBodyBrush}" />
     </Style>
 
     <Style Selector="Window.notification-window.warning Border.notification-card">
-        <Setter Property="BorderBrush" Value="{DynamicResource DesktopWarningBrush}" />
+        <Setter Property="Background" Value="{DynamicResource DesktopNotificationWarningFillBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopNotificationWarningEdgeBrush}" />
     </Style>
 
     <Style Selector="Window.notification-window.error Border.notification-card">
-        <Setter Property="BorderBrush" Value="{DynamicResource DesktopDangerBrush}" />
+        <Setter Property="Background" Value="{DynamicResource DesktopNotificationErrorFillBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource DesktopNotificationErrorEdgeBrush}" />
+    </Style>
+
+    <Style Selector="Window.notification-window.warning icons|MaterialIcon.notification-icon">
+        <Setter Property="Foreground" Value="{DynamicResource DesktopNotificationWarningTextBrush}" />
     </Style>
 
     <Style Selector="Window.notification-window.warning TextBlock.notification-title">
-        <Setter Property="Foreground" Value="{DynamicResource DesktopWarningBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DesktopNotificationWarningTextBrush}" />
+    </Style>
+
+    <Style Selector="Window.notification-window.error icons|MaterialIcon.notification-icon">
+        <Setter Property="Foreground" Value="{DynamicResource DesktopNotificationErrorTextBrush}" />
     </Style>
 
     <Style Selector="Window.notification-window.error TextBlock.notification-title">
-        <Setter Property="Foreground" Value="{DynamicResource DesktopDangerBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DesktopNotificationErrorTextBrush}" />
+    </Style>
+
+    <Style Selector="Window.notification-window.warning TextBlock.notification-message">
+        <Setter Property="Foreground" Value="{DynamicResource DesktopNotificationWarningBodyBrush}" />
+    </Style>
+
+    <Style Selector="Window.notification-window.error TextBlock.notification-message">
+        <Setter Property="Foreground" Value="{DynamicResource DesktopNotificationErrorBodyBrush}" />
     </Style>
 
     <Style Selector="Window.notification-window Button.notification-close">
@@ -1292,7 +1322,15 @@
         <Setter Property="MinHeight" Value="{DynamicResource MinHitTargetSize}" />
         <Setter Property="Padding" Value="0" />
         <Setter Property="VerticalAlignment" Value="Top" />
-        <Setter Property="Foreground" Value="{DynamicResource DesktopSecondaryTextBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DesktopNotificationInformationTextBrush}" />
+    </Style>
+
+    <Style Selector="Window.notification-window.warning Button.notification-close">
+        <Setter Property="Foreground" Value="{DynamicResource DesktopNotificationWarningTextBrush}" />
+    </Style>
+
+    <Style Selector="Window.notification-window.error Button.notification-close">
+        <Setter Property="Foreground" Value="{DynamicResource DesktopNotificationErrorTextBrush}" />
     </Style>
 
     <Style Selector="Window.notification-window Button.notification-close /template/ ContentPresenter#PART_ContentPresenter">

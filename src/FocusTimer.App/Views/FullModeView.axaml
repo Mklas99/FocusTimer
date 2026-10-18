@@ -18,11 +18,13 @@
         HorizontalAlignment="Center">
         <!-- Row 0: main controls -->
         <Grid Grid.Row="0"
-            ColumnDefinitions="Auto,Auto,Auto,Auto,Auto"
+            RowDefinitions="Auto,Auto"
+            ColumnDefinitions="Auto,Auto"
             VerticalAlignment="Center">
             <!-- Timer -->
             <Grid x:Name="ClockLayer"
                 Grid.Column="0"
+                Grid.ColumnSpan="{Binding ClockColumnSpan}"
                 VerticalAlignment="Center"
                 HorizontalAlignment="Center"
                 Opacity="{Binding EffectiveClockOpacity}">
@@ -35,8 +37,10 @@
             </Grid>
 
             <Grid x:Name="ControlsLayer"
-                Grid.Column="1"
-                Grid.ColumnSpan="4"
+                Grid.Row="{Binding ControlsRow}"
+                Grid.Column="{Binding ControlsColumn}"
+                Grid.ColumnSpan="{Binding ClockColumnSpan}"
+                HorizontalAlignment="Center"
                 ColumnDefinitions="Auto,Auto,Auto,Auto"
                 Opacity="{Binding EffectiveControlsOpacity}"
                 IsHitTestVisible="{Binding AreControlsInteractable}">

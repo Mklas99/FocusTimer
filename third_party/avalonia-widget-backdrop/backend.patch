@@ -1,0 +1,208 @@
+diff --git a/src/Windows/Avalonia.Win32/WinRT/Composition/WinUiCompositedWindow.cs b/src/Windows/Avalonia.Win32/WinRT/Composition/WinUiCompositedWindow.cs
+index d720e52..e58a545 100644
+--- a/src/Windows/Avalonia.Win32/WinRT/Composition/WinUiCompositedWindow.cs
++++ b/src/Windows/Avalonia.Win32/WinRT/Composition/WinUiCompositedWindow.cs
+@@ -11,7 +11,8 @@ internal class WinUiCompositedWindow : IDisposable
+ {
+     public EglGlPlatformSurface.IEglWindowGlPlatformSurfaceInfo WindowInfo { get; }
+     private readonly WinUiCompositionShared _shared;
+-    private readonly ICompositionRoundedRectangleGeometry? _compositionRoundedRectangleGeometry;
++    private ICompositionRoundedRectangleGeometry? _compositionRoundedRectangleGeometry;
++    private readonly float? _originalCornerRadius;
+     private readonly IVisual? _micaLight;
+     private readonly IVisual? _micaDark;
+     private readonly IVisual _blur;
+@@ -39,6 +40,7 @@ public WinUiCompositedWindow(EglGlPlatformSurface.IEglWindowGlPlatformSurfaceInf
+     {
+         WindowInfo = info;
+         _shared = shared;
++        _originalCornerRadius = backdropCornerRadius;
+         using var desktopTarget = shared.DesktopInterop.CreateDesktopWindowTarget(WindowInfo.Handle, 0);
+         _target = desktopTarget.QueryInterface<ICompositionTarget>();
+ 
+@@ -80,6 +82,31 @@ public WinUiCompositedWindow(EglGlPlatformSurface.IEglWindowGlPlatformSurfaceInf
+ 
+     public void SetSurface(ICompositionSurface surface) => _surfaceBrush.SetSurface(surface);
+ 
++    // Executed on the composition owner thread by the existing commit loop.
++    public void SetBackdrop(BackdropStateV1? state)
++    {
++        _compositionRoundedRectangleGeometry?.Dispose();
++        _compositionRoundedRectangleGeometry = null;
++        // Clear the previous clip before installing the new per-window geometry.
++        _blur.SetClip(null);
++        if (state.HasValue)
++        {
++            var value = state.Value;
++            _compositionRoundedRectangleGeometry = WinUiCompositionUtils.ClipVisual(_shared.Compositor,
++                value.CornerRadiusPixels, _blur);
++            _compositionRoundedRectangleGeometry?.SetSize(new Vector2(_size.Width, _size.Height));
++            _blur.SetOpacity(value.Opacity);
++            _blur.SetIsVisible(value.Enabled && value.Opacity > 0 ? 1 : 0);
++        }
++        else
++        {
++            _compositionRoundedRectangleGeometry = WinUiCompositionUtils.ClipVisual(_shared.Compositor,
++                _originalCornerRadius, _blur, _micaLight, _micaDark);
++            _compositionRoundedRectangleGeometry?.SetSize(new Vector2(_size.Width, _size.Height));
++            _blur.SetOpacity(1);
++        }
++    }
++
+     public void SetBlur(BlurEffect blurEffect)
+     {
+         lock (_shared.SyncRoot)
+diff --git a/src/Windows/Avalonia.Win32/WinRT/Composition/WinUiCompositedWindowSurface.cs b/src/Windows/Avalonia.Win32/WinRT/Composition/WinUiCompositedWindowSurface.cs
+index 2addbc6..7c65e6e 100644
+--- a/src/Windows/Avalonia.Win32/WinRT/Composition/WinUiCompositedWindowSurface.cs
++++ b/src/Windows/Avalonia.Win32/WinRT/Composition/WinUiCompositedWindowSurface.cs
+@@ -1,6 +1,7 @@
+ ﻿using System;
+ using Avalonia.OpenGL.Egl;
+ using Avalonia.Platform;
++using Avalonia.Threading;
+ using Avalonia.Win32.DirectX;
+ using Avalonia.Win32.Interop;
+ using MicroCom.Runtime;
+@@ -13,6 +14,45 @@ internal class WinUiCompositedWindowSurface : IDirect3D11TexturePlatformSurface,
+         private readonly EglGlPlatformSurface.IEglWindowGlPlatformSurfaceInfo _info;
+         private WinUiCompositedWindow? _window;
+         private BlurEffect _blurEffect;
++        private BackdropStateV1? _backdrop;
++        private bool _queued;
++        private bool _disposed;
++        private bool _applied;
++        private Action<bool>? _completion;
++
++        public bool BackdropApplied { get { lock (_shared.SyncRoot) return _applied && !_disposed; } }
++
++        public bool QueueBackdrop(BackdropStateV1? state, Action<bool>? completed = null)
++        {
++            lock (_shared.SyncRoot)
++            {
++                if (_disposed) return false;
++                _backdrop = state;
++                _completion = completed;
++                _applied = false;
++                ScheduleBackdrop();
++                return true;
++            }
++        }
++
++        private void ScheduleBackdrop()
++        {
++            if (_queued) return;
++            _queued = true;
++            _shared.QueueBackdropUpdate(() =>
++            {
++                _queued = false;
++                if (_disposed || _window == null) return;
++                try { _window.SetBackdrop(_backdrop); if (!_backdrop.HasValue) _window.SetBlur(_blurEffect); _applied = true; }
++                catch { _applied = false; try { _window.SetBlur(BlurEffect.None); } catch { } }
++                NotifyCompletion(_completion, _applied);
++            });
++        }
++
++        private static void NotifyCompletion(Action<bool>? completion, bool applied)
++        {
++            if (completion != null) Dispatcher.UIThread.Post(() => completion(applied));
++        }
+ 
+         public WinUiCompositedWindowSurface(WinUiCompositionShared shared, EglGlPlatformSurface.IEglWindowGlPlatformSurfaceInfo info)
+         {
+@@ -26,14 +66,22 @@ public IDirect3D11TextureRenderTarget CreateRenderTarget(IPlatformGraphicsContex
+                 ?.WinUICompositionBackdropCornerRadius;
+             _window ??= new WinUiCompositedWindow(_info, _shared, cornerRadius);
+             _window.SetBlur(_blurEffect);
++            lock (_shared.SyncRoot)
++                if (_backdrop.HasValue) ScheduleBackdrop();
+ 
+             return new WinUiCompositedWindowRenderTarget(context, _window, d3dDevice, _shared.Compositor);
+         }
+ 
+         public void Dispose()
+         {
+-            _window?.Dispose();
+-            _window = null;
++            lock (_shared.SyncRoot)
++            {
++                _disposed = true;
++                NotifyCompletion(_completion, false);
++                _completion = null;
++                _window?.Dispose();
++                _window = null;
++            }
+         }
+ 
+         public bool IsBlurSupported(BlurEffect effect) => effect switch
+@@ -49,6 +97,8 @@ public void SetBlur(BlurEffect enable)
+         {
+             _blurEffect = enable;
+             _window?.SetBlur(enable);
++            lock (_shared.SyncRoot)
++                if (_backdrop.HasValue) ScheduleBackdrop();
+         }
+     }
+ 
+diff --git a/src/Windows/Avalonia.Win32/WinRT/Composition/WinUiCompositionShared.cs b/src/Windows/Avalonia.Win32/WinRT/Composition/WinUiCompositionShared.cs
+index 7a775af..5ec3453 100644
+--- a/src/Windows/Avalonia.Win32/WinRT/Composition/WinUiCompositionShared.cs
++++ b/src/Windows/Avalonia.Win32/WinRT/Composition/WinUiCompositionShared.cs
+@@ -1,4 +1,5 @@
+ using System;
++using System.Collections.Generic;
+ using MicroCom.Runtime;
+ 
+ namespace Avalonia.Win32.WinRT.Composition;
+@@ -12,6 +13,18 @@ internal class WinUiCompositionShared : IDisposable
+     public ICompositionBrush? MicaBrushLight { get; }
+     public ICompositionBrush? MicaBrushDark { get; }
+     public object SyncRoot { get; } = new();
++    private readonly Queue<Action> _backdropUpdates = new();
++
++    public void QueueBackdropUpdate(Action update)
++    {
++        lock (SyncRoot) _backdropUpdates.Enqueue(update);
++    }
++
++    // Called by the existing composition-thread commit loop while holding SyncRoot.
++    public void ApplyBackdropUpdates()
++    {
++        while (_backdropUpdates.Count != 0) _backdropUpdates.Dequeue()();
++    }
+ 
+     public static readonly Version MinWinCompositionVersion = new(10, 0, 17134);
+     public static readonly Version MinAcrylicVersion = new(10, 0, 15063);
+diff --git a/src/Windows/Avalonia.Win32/WinRT/Composition/WinUiCompositorConnection.cs b/src/Windows/Avalonia.Win32/WinRT/Composition/WinUiCompositorConnection.cs
+index 11721cd..e1c3cd8 100644
+--- a/src/Windows/Avalonia.Win32/WinRT/Composition/WinUiCompositorConnection.cs
++++ b/src/Windows/Avalonia.Win32/WinRT/Composition/WinUiCompositorConnection.cs
+@@ -108,6 +108,7 @@ private void ScheduleNextCommit()
+         {
+             lock (_parent._shared.SyncRoot)
+             {
++                _parent._shared.ApplyBackdropUpdates();
+                 _commitDueAt = _st.Elapsed + TimeSpan.FromSeconds(1);
+                 _currentCommit = _parent._shared.Compositor5.RequestCommitAsync();
+                 _currentCommit.SetCompleted(this);
+diff --git a/src/Windows/Avalonia.Win32/WindowImpl.cs b/src/Windows/Avalonia.Win32/WindowImpl.cs
+index f18c358..937300b 100644
+--- a/src/Windows/Avalonia.Win32/WindowImpl.cs
++++ b/src/Windows/Avalonia.Win32/WindowImpl.cs
+@@ -34,6 +34,16 @@ namespace Avalonia.Win32
+     /// </summary>
+     internal partial class WindowImpl : IWindowImpl, EglGlPlatformSurface.IEglWindowGlPlatformSurfaceInfo, IWin32OptionsTopLevelImpl
+     {
++        internal bool MatchesBackdropHandle(IntPtr handle) => handle != IntPtr.Zero && _hwnd == handle;
++
++        internal static Win32BackdropControllerV1? CreateBackdropController(IntPtr handle)
++        {
++            foreach (var window in s_instances)
++                if (window.MatchesBackdropHandle(handle) && window._glSurface is WinUiCompositedWindowSurface surface
++                    && Win32Platform.WindowsVersion >= WinUiCompositionShared.MinHostBackdropVersion)
++                    return new Win32BackdropControllerV1(window, surface, handle);
++            return null;
++        }
+         private static readonly List<WindowImpl> s_instances = new();
+ 
+         private static readonly IntPtr s_defaultCursor = LoadCursor(

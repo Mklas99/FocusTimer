@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
@@ -25,6 +25,13 @@
   <ItemGroup>
     <Using Include="Xunit" />
     <Compile Include="..\ThemeFixtures.cs" Link="ThemeFixtures.cs" />
+  </ItemGroup>
+
+  <PropertyGroup Condition="'$(FocusTimerBackendPrototype)' == 'true'">
+    <DefineConstants>$(DefineConstants);FOCUSTIMER_BACKEND_PROTOTYPE</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(FocusTimerBackendPrototype)' == 'true'">
+    <PackageReference Include="Avalonia.Win32" Version="11.2.0.5-focustimer.5" />
   </ItemGroup>
 
 </Project>

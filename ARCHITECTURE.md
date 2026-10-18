@@ -89,7 +89,7 @@ All desktop windows carry the `settings-window` class. Shared desktop styles are
 - `Controls/TabHeader` renders an outlined Material icon beside the label and reserves the semibold width; `Controls/ResponsiveCardsPanel` places peer cards side by side from 560 px of content width and stacks them below that.
 - `Services/DesktopWindowMaterial` (attached by the `SettingsWindow` and `WorklogWindow` constructors) requests `AcrylicBlur` then `None`, and sets the `frost-active` class only when `DesktopMaterialPolicy` sees a reported blur level with no High Contrast, no system contrast preference, and Windows transparency effects on (`WindowsTransparencySetting`). Otherwise the solid `DesktopShellBrush` stays. Layout is identical in both states. The App project does not reference `FocusTimer.Platform.Windows`, and no Host DI is involved.
 
-ThemeManager derives readable desktop colors without changing stored Theme values. Fields and shell surfaces are normalized when opposing custom backgrounds cannot share readable text. `DesktopSelectionBrush` and `DesktopSelectedTextBrush` form an opaque matched pair for fields, rows, and timeline blocks; tab hover has its own derived surface. Text and indicators account for the 95% shell tint over light/dark extremes. Widget colors and opacity keep their independent source roles.
+ThemeManager derives readable desktop colors without changing stored Theme values. Fields and shell surfaces are normalized when opposing custom backgrounds cannot share readable text. `DesktopSelectionBrush` and `DesktopSelectedTextBrush` form an opaque matched pair for fields, rows, and timeline blocks; tab hover has its own derived surface. Text and indicators account for the selected desktop shell tint over light/dark extremes (70–100%, default 95%). The Developer slider previews through the Settings draft and restores the last commit on discard; AppController supplies the persisted value on startup/activation. Widget colors and opacity keep their independent source roles.
 
 `ThemeSelection` applies the same saved identity rule in startup and Settings load/restore. Imports use canonical `Custom` identity with original Theme metadata, and the dropdown shows `Custom/Imported` only for the current custom draft. Source paths are provenance, never reload dependencies. Saved edited presets override later factory tuning. See [Theme palette tuning](docs/versions/current/ThemePaletteTuning.md) for the legacy identity rule and adjustment workflow.
 
@@ -119,7 +119,7 @@ ISettingsProvider    // Load/save settings (implemented in Persistence)
 IWorklogStore        // Append, query, patch, and delete worklog entries (implemented in Persistence)
 IGlobalHotkeyService // Register OS hotkeys (Platform.Windows / Linux stub)
 IActiveWindowService // Detect window/app in focus (Platform.Windows / Linux stub)
-INotificationService // Show Toast notifications (Platform.Windows / Linux stub)
+INotificationService // Apply committed preferences and show themed in-app notifications (App)
 ITrayIconController  // Manage system tray (implemented in App: TrayStateController)
 IIdleDetectionService // Poll OS idle state (Platform.Windows / Linux stub)
 IAutoStartService    // Register app in startup mechanisms (Platform.Windows / Linux stub)
@@ -224,11 +224,10 @@ formats.
 **Key Responsibilities**:
 - Global hotkey registration (P/Invoke to Windows APIs)
 - Active window detection (GetForegroundWindow, GetWindowText)
-- Toast notifications (WinRT)
 - Idle state detection (GetLastInputInfo)
 - Auto-start registry management
 
-System tray integration (`ITrayIconController`) is implemented in FocusTimer.App (`TrayStateController`), not here — it drives Avalonia's own tray APIs rather than a Win32 call, so it isn't platform-specific.
+System tray integration (`ITrayIconController`) is implemented in FocusTimer.App (`TrayStateController`); it drives Avalonia's tray APIs. Notifications also live in App: the Host registers `DesktopNotificationService`, which uses themed notification windows and snapshots committed visibility and severity timeouts through `NotificationPolicy` at startup and during settings activation.
 
 **Key Components**:
 
@@ -240,10 +239,6 @@ System tray integration (`ITrayIconController`) is implemented in FocusTimer.App
 - **WindowsActiveWindowService.cs**: Implements IActiveWindowService
   - Polls current foreground window via GetForegroundWindow
   - Returns app name and window title for logging
-
-- **WindowsNotificationService.cs**: Implements INotificationService
-  - Shows system toast notifications
-  - WinRT API integration
 
 - **WindowsIdleDetectionService.cs**: Implements IIdleDetectionService
   - GetLastInputInfo API to detect idle periods
@@ -478,6 +473,30 @@ The `else` branch in `Program.cs`'s static constructor already registers Linux n
 4. **Multi-Platform Host**: Host is still `net8.0-windows`-only (`WinExe`); multi-targeting is required to ship a Linux build once (3) lands
 
 See `docs/versions/current/OpenIssues.md` for the full, current backlog of known gaps.
+## Widget backdrop ownership
+
+App's `WidgetMaterialPolicy` separates requested material from effective Clear, Frosted, Solid or SolidFallback
+and its reason. The policy does not change a theme or saved tint. Frost requires the selected Windows acrylic
+backend, an available public capability, successful attachment and completed update, and permitted preferences/session conditions.
+Linux, an absent extension and attachment failure select SolidFallback. Core contains no native material types;
+App does not reference Platform.Windows for the Avalonia-owned backdrop.
+
+`WidgetBackdropCapability` binds only the versioned public `Win32BackdropControllerV1` API. Its optional public
+binding lets stock Avalonia remain a supported fallback build. It rejects updates for obsolete handles and after
+disposal. Avalonia owns the HWND target, native visuals, composition synchronization and resource disposal;
+App owns material selection and the widget lifecycle subscription. `TryUpdate` means queued acceptance;
+`IsApplied` means update completion, never visual qualification. The additive `TryUpdateWithCompletion` method
+reports completion/failure on the UI thread. App rejects superseded generations and callbacks after disposal.
+
+TimerWidgetWindow's `WidgetWindowMaterial` subscription owns attachment, physical-radius/overall-opacity updates,
+and preference/lifetime observation. It rechecks on activation/show, theme and system preference notifications,
+bounds and DPI changes. It removes the acrylic hint before releasing an obsolete controller. Native composition
+resources remain in Avalonia; no independent native target or App polling loop is introduced. ThemeManager paints
+one opaque shell until a completed update permits Frosted, and reports fallback separately from stored preferences.
+App pins the reproducible Windows fork; `FocusTimerUseStockBackend=true` builds the explicit unavailable-extension
+fallback. Linux remains unsupported for widget frost. See the active
+[frost change](openspec/changes/implement-widget-frosted-blur/verification.md) for qualification evidence and limits.
+
 ## Foreground capture cadence and ownership
 
 SessionTracker uses the injected TimeProvider's monotonic timestamps for foreground deadlines. TimerService keeps its one-second tick. Local-calendar maintenance runs before capture admission and before final closure, so midnight segmentation does not wait for the sampling deadline. A segment crossing local midnight is closed at 23:59:59 with the day-boundary end reason and its replacement starts at 00:00:00, so every persisted entry starts and ends on the same local date (a segment that began in the last second of a day is zero-length and is dropped). Foreground changes are attributed at observation time; longer intervals can miss intermediate visits.

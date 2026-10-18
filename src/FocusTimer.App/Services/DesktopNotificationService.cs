@@ -12,16 +12,21 @@ using FocusTimer.Core.Models;
 public sealed class DesktopNotificationService : INotificationService
 {
     private readonly IAppLogger? _logger;
+    private NotificationPolicy _policy = new(new Settings());
 
     /// <summary>Initializes a new instance of the <see cref="DesktopNotificationService"/> class.</summary>
     /// <param name="logger">Optional diagnostic logger.</param>
     public DesktopNotificationService(IAppLogger? logger = null) => this._logger = logger;
 
-    /// <summary>Gets the automatic dismissal delay for a notification.</summary>
+    /// <summary>Gets the default automatic dismissal delay for a notification.</summary>
     /// <param name="severity">The urgency of the notification.</param>
     /// <returns>Fifteen seconds for warnings/errors, five seconds for information.</returns>
     public static TimeSpan GetDismissalDelay(NotificationSeverity severity) =>
         TimeSpan.FromSeconds(severity == NotificationSeverity.Information ? 5 : 15);
+
+    /// <inheritdoc/>
+    public void ApplySettings(Settings settings) =>
+        Volatile.Write(ref this._policy, new NotificationPolicy(settings));
 
     /// <inheritdoc/>
     public async Task ShowBreakReminderAsync(string message, bool requireAcknowledgement)
@@ -50,7 +55,18 @@ public sealed class DesktopNotificationService : INotificationService
     {
         try
         {
-            await Dispatcher.UIThread.InvokeAsync(() => { _ = this.ShowWindow(title, message, false, severity); });
+            await Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                NotificationPolicy policy = Volatile.Read(ref this._policy);
+                if (policy.IsEnabled(severity))
+                {
+                    _ = this.ShowWindow(title, message, false, severity, policy);
+                }
+                else
+                {
+                    this._logger?.LogDebug($"{severity} notification suppressed by preferences.");
+                }
+            });
         }
         catch (Exception ex)
         {
@@ -58,11 +74,12 @@ public sealed class DesktopNotificationService : INotificationService
         }
     }
 
-    private Task ShowWindow(string title, string message, bool requireAcknowledgement, NotificationSeverity severity = NotificationSeverity.Information)
+    private Task ShowWindow(string title, string message, bool requireAcknowledgement, NotificationSeverity severity = NotificationSeverity.Information, NotificationPolicy? policy = null)
     {
         var completion = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var window = new NotificationWindow(title, message, requireAcknowledgement, severity);
-        var timer = new DispatcherTimer { Interval = GetDismissalDelay(severity) };
+        policy ??= Volatile.Read(ref this._policy);
+        var timer = new DispatcherTimer { Interval = policy.GetDismissalDelay(severity) };
         window.Closed += (_, _) =>
         {
             timer.Stop();

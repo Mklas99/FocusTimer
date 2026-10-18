@@ -1,7 +1,6 @@
 namespace FocusTimer.App.Views
 {
     using System;
-    using System.Linq;
     using System.Runtime.InteropServices;
     using Avalonia;
     using Avalonia.Controls;
@@ -14,7 +13,6 @@ namespace FocusTimer.App.Views
     using FocusTimer.App.ViewModels;
     using FocusTimer.Core;
     using FocusTimer.Core.Interfaces;
-    using FocusTimer.Core.Models;
     using Microsoft.Extensions.DependencyInjection;
 
     /// <summary>
@@ -22,7 +20,7 @@ namespace FocusTimer.App.Views
     /// </summary>
     public partial class TimerWidgetWindow : Window
     {
-        private readonly ThemeManager _themeManager;
+        private readonly WidgetWindowMaterial? _material;
         private bool _isDragging = false;
 
         /// <summary>
@@ -38,15 +36,19 @@ namespace FocusTimer.App.Views
         /// </summary>
         /// <param name="themeManager">Shared theme manager for appearance preview.</param>
         public TimerWidgetWindow(ThemeManager themeManager)
+            : this(themeManager, manageMaterial: true)
         {
-            this._themeManager = themeManager;
+        }
+
+        /// <summary>Initializes a new instance of the <see cref="TimerWidgetWindow"/> class for backend qualification.</summary>
+        /// <param name="themeManager">Shared appearance manager.</param>
+        /// <param name="manageMaterial">Whether production policy owns backdrop hints.</param>
+        internal TimerWidgetWindow(ThemeManager themeManager, bool manageMaterial)
+        {
             this.InitializeComponent();
-            this._themeManager.ThemeApplied += this.OnThemeApplied;
-            this.PropertyChanged += this.OnWindowPropertyChanged;
-            this.Opened += this.OnWindowOpenedForTransparency;
-            if (this._themeManager.ActiveTheme is Theme activeTheme)
+            if (manageMaterial)
             {
-                this.ApplyBackdrop(activeTheme);
+                this._material = new WidgetWindowMaterial(this, this.FindControl<Border>("WidgetShell")!, themeManager);
             }
 
             // Handle closing event to hide instead of close
@@ -66,42 +68,14 @@ namespace FocusTimer.App.Views
         /// </summary>
         public bool IsAppShuttingDown { get; set; }
 
-        // Instance-based logger via DataContext (TimerWidgetViewModel exposes Logger)
-
-        /// <summary>
-        /// Clean up the ViewModel when window closes.
-        /// </summary>
-        /// <param name="e">The event args.</param>
-        protected override void OnClosed(EventArgs e)
-        {
-            if (OperatingSystem.IsWindows())
-            {
-                Win32Properties.RemoveWndProcHookCallback(this, WidgetWindowMessage);
-            }
-
-            this._themeManager.ThemeApplied -= this.OnThemeApplied;
-            this.PropertyChanged -= this.OnWindowPropertyChanged;
-            if (this.DataContext is TimerWidgetViewModel viewModel)
-            {
-                viewModel.Dispose();
-            }
-
-            base.OnClosed(e);
-        }
-
-        /// <inheritdoc/>
-        protected override void OnPointerReleased(PointerReleasedEventArgs e)
-        {
-            base.OnPointerReleased(e);
-            this._isDragging = false;
-            Border? dragArea = this.FindControl<Border>("WidgetSurface");
-            if (dragArea != null)
-            {
-                dragArea.Cursor = new Cursor(StandardCursorType.DragMove);
-            }
-        }
-
-        private static IntPtr WidgetWindowMessage(IntPtr hwnd, uint message, IntPtr wParam, IntPtr lParam, ref bool handled)
+        /// <summary>Filters Win32 messages to allow the widget to size naturally by its content.</summary>
+        /// <param name="hwnd">The window handle.</param>
+        /// <param name="message">The message identifier.</param>
+        /// <param name="wParam">The wParam parameter.</param>
+        /// <param name="lParam">The lParam parameter.</param>
+        /// <param name="handled">Whether the message was handled.</param>
+        /// <returns>Zero pointer result.</returns>
+        internal static IntPtr WidgetWindowMessage(IntPtr hwnd, uint message, IntPtr wParam, IntPtr lParam, ref bool handled)
         {
             const uint windowPositionChanging = 0x0046;
 
@@ -114,7 +88,10 @@ namespace FocusTimer.App.Views
             return IntPtr.Zero;
         }
 
-        private static bool IsInteractiveElement(object? source)
+        /// <summary>Determines whether the visual tree source represents an interactive control.</summary>
+        /// <param name="source">The input source object.</param>
+        /// <returns>True if the element or any ancestor is an interactive control.</returns>
+        internal static bool IsInteractiveElement(object? source)
         {
             Avalonia.Visual? current = source as Avalonia.Visual;
             while (current != null)
@@ -136,27 +113,37 @@ namespace FocusTimer.App.Views
             return false;
         }
 
-        private void OnThemeApplied(Theme theme) => this.ApplyBackdrop(theme);
+        // Instance-based logger via DataContext (TimerWidgetViewModel exposes Logger)
 
-        private void ApplyBackdrop(Theme theme)
+        /// <summary>
+        /// Clean up the ViewModel when window closes.
+        /// </summary>
+        /// <param name="e">The event args.</param>
+        protected override void OnClosed(EventArgs e)
         {
-            var levels = WidgetBackdropLevels.ForTheme(theme);
-            if (!this.TransparencyLevelHint.SequenceEqual(levels))
+            if (OperatingSystem.IsWindows())
             {
-                this.TransparencyLevelHint = levels;
+                Win32Properties.RemoveWndProcHookCallback(this, WidgetWindowMessage);
             }
 
-            this._themeManager.ReportActualWidgetTransparency(this.ActualTransparencyLevel);
+            this._material?.Dispose();
+            if (this.DataContext is TimerWidgetViewModel viewModel)
+            {
+                viewModel.Dispose();
+            }
+
+            base.OnClosed(e);
         }
 
-        private void OnWindowOpenedForTransparency(object? sender, EventArgs e) =>
-            this._themeManager.ReportActualWidgetTransparency(this.ActualTransparencyLevel);
-
-        private void OnWindowPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
+        /// <inheritdoc/>
+        protected override void OnPointerReleased(PointerReleasedEventArgs e)
         {
-            if (e.Property == TopLevel.ActualTransparencyLevelProperty)
+            base.OnPointerReleased(e);
+            this._isDragging = false;
+            Border? dragArea = this.FindControl<Border>("WidgetSurface");
+            if (dragArea != null)
             {
-                this._themeManager.ReportActualWidgetTransparency(this.ActualTransparencyLevel);
+                dragArea.Cursor = new Cursor(StandardCursorType.DragMove);
             }
         }
 

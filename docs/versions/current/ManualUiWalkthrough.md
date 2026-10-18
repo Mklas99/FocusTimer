@@ -93,10 +93,10 @@ Use a past day inside the retention window and disposable entries. Example: yest
 
 Use existing app events or a controlled test run. Developer notification-trigger buttons are a separate open issue, OI-43; do not assume they are available.
 
-- [x] Information notification: inspect the rounded card, title, muted body, and close control. It dismisses automatically after about five seconds.
+- [ ] Information notification: inspect the tinted banner card, status icon, semibold title, secondary-color message, and close control. It dismisses automatically after about five seconds. (Re-check after the banner redesign.)
 - [x] Dismiss an information notification using the close control. Check hover and keyboard focus where the window can receive focus.
 - [x] Acknowledgement reminder: it remains open beyond the ordinary timeout, has a reachable OK button, and closes when acknowledged by mouse or keyboard.
-- [x] Warning and error notifications: the severity is named explicitly, colors are readable, and automatic dismissal occurs after about fifteen seconds.
+- [ ] Warning and error notifications: the severity is named explicitly in the title, each has its own icon shape and severity tint, colors are readable in every theme, and automatic dismissal occurs after about fifteen seconds. (Re-check after the banner redesign.)
 - [x] Long message: body text scrolls while the dismissal action stays reachable.
 
 ## 7. Failure and recovery

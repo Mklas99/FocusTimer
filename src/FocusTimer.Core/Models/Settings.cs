@@ -20,7 +20,14 @@ namespace FocusTimer.Core.Models
         private int _dataRetentionDays = 90;
         private double _widgetScale = 1.0;
         private double _widgetOpacity = 1.0;
+        private double _desktopTintOpacity = 0.95;
         private bool _useCompactMode;
+        private bool _widgetButtonsBelowClock;
+        private bool _informationNotificationsEnabled = true;
+        private bool _warningNotificationsEnabled = true;
+        private int _informationDismissalSeconds = 5;
+        private int _warningDismissalSeconds = 15;
+        private int _errorDismissalSeconds = 15;
         private bool _developerModeEnabled;
         private string _developerLogLevel = "Debug";
         private int _activityPollingIntervalSeconds = 10;
@@ -181,6 +188,13 @@ namespace FocusTimer.Core.Models
             }
         }
 
+        /// <summary>Gets or sets desktop frost tint opacity (0.7 to 1.0), independently of widget opacity.</summary>
+        public double DesktopTintOpacity
+        {
+            get => this._desktopTintOpacity;
+            set => this.SetField(ref this._desktopTintOpacity, double.IsFinite(value) ? Math.Clamp(value, 0.7, 1.0) : 0.95);
+        }
+
         /// <summary>
         /// Gets or sets a value indicating whether the widget should use compact mode.
         /// </summary>
@@ -188,6 +202,48 @@ namespace FocusTimer.Core.Models
         {
             get => this._useCompactMode;
             set => this.SetField(ref this._useCompactMode, value);
+        }
+
+        /// <summary>Gets or sets a value indicating whether widget controls sit below the clock.</summary>
+        public bool WidgetButtonsBelowClock
+        {
+            get => this._widgetButtonsBelowClock;
+            set => this.SetField(ref this._widgetButtonsBelowClock, value);
+        }
+
+        /// <summary>Gets or sets a value indicating whether general information notifications appear.</summary>
+        public bool InformationNotificationsEnabled
+        {
+            get => this._informationNotificationsEnabled;
+            set => this.SetField(ref this._informationNotificationsEnabled, value);
+        }
+
+        /// <summary>Gets or sets a value indicating whether warning notifications appear.</summary>
+        public bool WarningNotificationsEnabled
+        {
+            get => this._warningNotificationsEnabled;
+            set => this.SetField(ref this._warningNotificationsEnabled, value);
+        }
+
+        /// <summary>Gets or sets the information and nonacknowledgement reminder timeout in seconds.</summary>
+        public int InformationDismissalSeconds
+        {
+            get => this._informationDismissalSeconds;
+            set => this.SetField(ref this._informationDismissalSeconds, value);
+        }
+
+        /// <summary>Gets or sets the warning timeout in seconds.</summary>
+        public int WarningDismissalSeconds
+        {
+            get => this._warningDismissalSeconds;
+            set => this.SetField(ref this._warningDismissalSeconds, value);
+        }
+
+        /// <summary>Gets or sets the mandatory error notification timeout in seconds.</summary>
+        public int ErrorDismissalSeconds
+        {
+            get => this._errorDismissalSeconds;
+            set => this.SetField(ref this._errorDismissalSeconds, value);
         }
 
         /// <summary>
@@ -324,7 +380,14 @@ namespace FocusTimer.Core.Models
             DataRetentionDays = this.DataRetentionDays,
             WidgetScale = this.WidgetScale,
             WidgetOpacity = this.WidgetOpacity,
+            DesktopTintOpacity = this.DesktopTintOpacity,
             UseCompactMode = this.UseCompactMode,
+            WidgetButtonsBelowClock = this.WidgetButtonsBelowClock,
+            InformationNotificationsEnabled = this.InformationNotificationsEnabled,
+            WarningNotificationsEnabled = this.WarningNotificationsEnabled,
+            InformationDismissalSeconds = this.InformationDismissalSeconds,
+            WarningDismissalSeconds = this.WarningDismissalSeconds,
+            ErrorDismissalSeconds = this.ErrorDismissalSeconds,
             DeveloperModeEnabled = this.DeveloperModeEnabled,
             DeveloperLogLevel = this.DeveloperLogLevel,
             ActivityPollingIntervalSeconds = this.ActivityPollingIntervalSeconds,
