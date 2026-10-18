@@ -15,7 +15,10 @@ namespace FocusTimer.App.Services
         private readonly Window _window;
         private readonly Border _shell;
         private readonly ThemeManager _manager;
-        private readonly WidgetBackdropCapability _capability = new();
+        private readonly WidgetBackdropCapability _capability;
+        private readonly Func<bool> _isTransparencyDisabled;
+        private readonly Func<bool> _isCompositionSupported;
+        private readonly Func<IntPtr> _windowHandleProvider;
         private readonly IPlatformSettings? _platformSettings;
         private WidgetBackdropCapability.Session? _session;
         private (IntPtr Handle, double Radius, double Opacity, Size Size, bool Enabled)? _lastUpdate;
@@ -31,10 +34,34 @@ namespace FocusTimer.App.Services
         /// <param name="shell">Its single tint and outline border.</param>
         /// <param name="manager">Shared appearance manager.</param>
         internal WidgetWindowMaterial(Window window, Border shell, ThemeManager manager)
+            : this(window, shell, manager, new WidgetBackdropCapability(), WindowsTransparencySetting.IsDisabled, WindowsWidgetComposition.IsSupported)
+        {
+        }
+
+        /// <summary>Initializes a new instance of the <see cref="WidgetWindowMaterial"/> class with injected dependencies for testing.</summary>
+        /// <param name="window">The widget window.</param>
+        /// <param name="shell">Its single tint and outline border.</param>
+        /// <param name="manager">Shared appearance manager.</param>
+        /// <param name="capability">Backdrop capability instance.</param>
+        /// <param name="isTransparencyDisabled">Optional probe for Windows transparency setting.</param>
+        /// <param name="isCompositionSupported">Optional probe for Windows local composition support.</param>
+        /// <param name="windowHandleProvider">Optional provider for window platform handle.</param>
+        internal WidgetWindowMaterial(
+            Window window,
+            Border shell,
+            ThemeManager manager,
+            WidgetBackdropCapability capability,
+            Func<bool>? isTransparencyDisabled = null,
+            Func<bool>? isCompositionSupported = null,
+            Func<IntPtr>? windowHandleProvider = null)
         {
             this._window = window;
             this._shell = shell;
             this._manager = manager;
+            this._capability = capability;
+            this._isTransparencyDisabled = isTransparencyDisabled ?? WindowsTransparencySetting.IsDisabled;
+            this._isCompositionSupported = isCompositionSupported ?? WindowsWidgetComposition.IsSupported;
+            this._windowHandleProvider = windowHandleProvider ?? (() => window.TryGetPlatformHandle()?.Handle ?? IntPtr.Zero);
             this._platformSettings = window.PlatformSettings;
             manager.ThemeApplied += this.OnThemeApplied;
             window.PropertyChanged += this.OnWindowPropertyChanged;
@@ -83,7 +110,9 @@ namespace FocusTimer.App.Services
             this.Detach();
         }
 
-        private void Refresh(bool retry = false)
+        /// <summary>Re-evaluates widget appearance and material policy against current theme and platform conditions.</summary>
+        /// <param name="retry">Whether to clear any previous failure reason before re-evaluating.</param>
+        internal void Refresh(bool retry = false)
         {
             if (this._disposed || this._refreshing || this._manager.ActiveTheme is not Theme theme)
             {
@@ -100,11 +129,11 @@ namespace FocusTimer.App.Services
 
                 bool highContrast = string.Equals(theme.ThemeName, "High Contrast", StringComparison.OrdinalIgnoreCase) ||
                     this._platformSettings?.GetColorValues().ContrastPreference == ColorContrastPreference.High;
-                bool transparencyOff = WindowsTransparencySetting.IsDisabled();
-                bool supported = WindowsWidgetComposition.IsSupported();
+                bool transparencyOff = this._isTransparencyDisabled();
+                bool supported = this._isCompositionSupported();
                 bool frost = theme.WidgetBlurMode == WidgetBlurModes.Frosted && !highContrast && !transparencyOff &&
                     supported && this._capability.IsAvailable && this._failureReason == null && this._window.IsVisible;
-                IntPtr handle = this._window.TryGetPlatformHandle()?.Handle ?? IntPtr.Zero;
+                IntPtr handle = this._windowHandleProvider();
                 if (this._session?.Handle != handle || !frost)
                 {
                     // Remove the acrylic hint before restoring Avalonia's original backdrop policy on disposal.
@@ -151,7 +180,7 @@ namespace FocusTimer.App.Services
                             applied =>
                             {
                                 if (this._disposed || this._session != session ||
-                                    this._window.TryGetPlatformHandle()?.Handle != session.Handle)
+                                    this._windowHandleProvider() != session.Handle)
                                 {
                                     return;
                                 }
@@ -191,23 +220,9 @@ namespace FocusTimer.App.Services
             }
         }
 
-        private void SetLevels(IReadOnlyList<WindowTransparencyLevel> levels)
-        {
-            if (!this._window.TransparencyLevelHint.SequenceEqual(levels))
-            {
-                this._window.TransparencyLevelHint = levels;
-            }
-        }
-
-        private void Detach()
-        {
-            this._session?.Dispose();
-            this._session = null;
-            this._lastUpdate = null;
-            this._applied = false;
-        }
-
-        private void PostRefresh(bool retry)
+        /// <summary>Posts a deferred material refresh request to the UI dispatcher.</summary>
+        /// <param name="retry">Whether the queued refresh should clear previous failure reasons.</param>
+        internal void PostRefresh(bool retry)
         {
             this._retryPosted |= retry;
             if (this._disposed || this._refreshPosted)
@@ -225,6 +240,39 @@ namespace FocusTimer.App.Services
                     this.Refresh(recheck);
                 },
                 DispatcherPriority.Loaded);
+        }
+
+        /// <summary>Filters Win32 notification messages relevant to composition and theme changes.</summary>
+        /// <param name="handle">The window handle.</param>
+        /// <param name="message">The message identifier.</param>
+        /// <param name="wParam">The wParam parameter.</param>
+        /// <param name="lParam">The lParam parameter.</param>
+        /// <param name="handled">Whether the message was handled.</param>
+        /// <returns>Zero pointer result.</returns>
+        internal IntPtr OnWindowMessage(IntPtr handle, uint message, IntPtr wParam, IntPtr lParam, ref bool handled)
+        {
+            if (message is 0x001A or 0x031A or 0x031E or 0x02B1)
+            {
+                this.PostRefresh(retry: true);
+            }
+
+            return IntPtr.Zero;
+        }
+
+        private void SetLevels(IReadOnlyList<WindowTransparencyLevel> levels)
+        {
+            if (!this._window.TransparencyLevelHint.SequenceEqual(levels))
+            {
+                this._window.TransparencyLevelHint = levels;
+            }
+        }
+
+        private void Detach()
+        {
+            this._session?.Dispose();
+            this._session = null;
+            this._lastUpdate = null;
+            this._applied = false;
         }
 
         private void OnThemeApplied(Theme theme) => this.Refresh(retry: true);
@@ -252,16 +300,6 @@ namespace FocusTimer.App.Services
             {
                 this.Refresh(retry: e.Property == Visual.IsVisibleProperty && this._window.IsVisible);
             }
-        }
-
-        private IntPtr OnWindowMessage(IntPtr handle, uint message, IntPtr wParam, IntPtr lParam, ref bool handled)
-        {
-            if (message is 0x001A or 0x031A or 0x031E or 0x02B1)
-            {
-                this.PostRefresh(retry: true);
-            }
-
-            return IntPtr.Zero;
         }
     }
 }

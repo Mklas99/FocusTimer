@@ -68,6 +68,51 @@ namespace FocusTimer.App.Views
         /// </summary>
         public bool IsAppShuttingDown { get; set; }
 
+        /// <summary>Filters Win32 messages to allow the widget to size naturally by its content.</summary>
+        /// <param name="hwnd">The window handle.</param>
+        /// <param name="message">The message identifier.</param>
+        /// <param name="wParam">The wParam parameter.</param>
+        /// <param name="lParam">The lParam parameter.</param>
+        /// <param name="handled">Whether the message was handled.</param>
+        /// <returns>Zero pointer result.</returns>
+        internal static IntPtr WidgetWindowMessage(IntPtr hwnd, uint message, IntPtr wParam, IntPtr lParam, ref bool handled)
+        {
+            const uint windowPositionChanging = 0x0046;
+
+            // The borderless widget is sized by its content, without Windows' caption-size clamp.
+            if (message == windowPositionChanging)
+            {
+                handled = true;
+            }
+
+            return IntPtr.Zero;
+        }
+
+        /// <summary>Determines whether the visual tree source represents an interactive control.</summary>
+        /// <param name="source">The input source object.</param>
+        /// <returns>True if the element or any ancestor is an interactive control.</returns>
+        internal static bool IsInteractiveElement(object? source)
+        {
+            Avalonia.Visual? current = source as Avalonia.Visual;
+            while (current != null)
+            {
+                if (current is Button
+                    or ToggleButton
+                    or TextBox
+                    or Slider
+                    or ComboBox
+                    or CheckBox
+                    or NumericUpDown)
+                {
+                    return true;
+                }
+
+                current = current.GetVisualParent();
+            }
+
+            return false;
+        }
+
         // Instance-based logger via DataContext (TimerWidgetViewModel exposes Logger)
 
         /// <summary>
@@ -100,41 +145,6 @@ namespace FocusTimer.App.Views
             {
                 dragArea.Cursor = new Cursor(StandardCursorType.DragMove);
             }
-        }
-
-        private static IntPtr WidgetWindowMessage(IntPtr hwnd, uint message, IntPtr wParam, IntPtr lParam, ref bool handled)
-        {
-            const uint windowPositionChanging = 0x0046;
-
-            // The borderless widget is sized by its content, without Windows' caption-size clamp.
-            if (message == windowPositionChanging)
-            {
-                handled = true;
-            }
-
-            return IntPtr.Zero;
-        }
-
-        private static bool IsInteractiveElement(object? source)
-        {
-            Avalonia.Visual? current = source as Avalonia.Visual;
-            while (current != null)
-            {
-                if (current is Button
-                    or ToggleButton
-                    or TextBox
-                    or Slider
-                    or ComboBox
-                    or CheckBox
-                    or NumericUpDown)
-                {
-                    return true;
-                }
-
-                current = current.GetVisualParent();
-            }
-
-            return false;
         }
 
         private void InitializeComponent()
