@@ -79,7 +79,7 @@ All 7 built-in themes define every property listed above:
 
 Theme switching modifies these resources at runtime via `ThemeManager.ApplyTheme()`. Invariant geometry (spacing, corner radii, font metrics) remains constant across all themes.
 
-Desktop text, field, action, selection, tab, and status colors are derived from the existing source roles. Shared styles are scoped to desktop windows; calendar and dropdown popup templates use desktop-only control selectors because their popup roots sit outside those windows. Widget fields and buttons retain their own styles and source colors. The measured rendered pairs and review limits are recorded in [SETTINGS_THEME_COLOR_CONTRAST_CHECK.md](SETTINGS_THEME_COLOR_CONTRAST_CHECK.md), with source choices and personal editing guidance in [ThemePaletteTuning.md](../versions/current/ThemePaletteTuning.md).
+Desktop text, field, action, selection, tab, and status colors are derived from the existing source roles. Shared styles are scoped to desktop windows; calendar and dropdown popup templates use desktop-only control selectors because their popup roots sit outside those windows. Widget fields and buttons retain their own styles and source colors. The measured rendered pairs and review limits are recorded in [SETTINGS_THEME_COLOR_CONTRAST_CHECK.md](Settings/SETTINGS_THEME_COLOR_CONTRAST_CHECK.md), with source choices and personal editing guidance in [ThemePaletteTuning.md](ThemePaletteTuning.md).
 
 ## 5. Notification Banner Derivations
 

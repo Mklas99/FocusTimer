@@ -3,7 +3,7 @@
 ## F-02 worklog summary breakdown
 
 - [x] Fix the Windows startup crash in `WindowsHotkeyService.CallWindowProc`. The import now targets `CallWindowProcW`; a native window message regression test passes, and the debug app stays open after launch.
-- [x] F-02 task 3.2 (archived unchecked): check the Summary view in the running Windows app, in a light theme and in High Contrast. Confirmed complete by the user on 2026-10-08 through F-03 walkthrough (recorded in ManualUiWalkthrough.md).
+- [x] F-02 task 3.2 (archived unchecked): check the Summary view in the running Windows app, in a light theme and in High Contrast. Confirmed complete by the user on 2026-10-08 through F-03 walkthrough (recorded in docs/versions/v0.2/evidence/ManualUiWalkthrough.md).
 - [x] F-02 task 4.1 (archived): the Summary tab now lives in the Worklog window (F-03), not in Settings. Covered by F-03 task 10.5 and confirmed complete by the user on 2026-10-08.
 
 The F-02 implementation tasks are archived in `openspec/changes/archive/2026-10-02-worklog-summary-breakdown/tasks.md`.

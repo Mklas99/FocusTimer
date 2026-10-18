@@ -557,7 +557,7 @@ App coverage is measured across two test projects: `FocusTimer.App.Tests` (plain
 
 The full-assembly Release baseline measured on 2026-10-02 was Core 90.84%, Persistence 88.38%, App 38.94%, Windows platform 57.37%, and Host 97.43%. All 476 tests passed, with one native App fixture skipped. App and Windows failed the unchanged 60% gate at that baseline.
 
-After the maintenance tests and review-driven branch tests, 592 tests pass and one native App fixture remains skipped. App coverage is 45.40% lines / 54.32% branches; Windows platform coverage is 75.26% lines / 67.12% branches. Core, Persistence, and Host coverage is unchanged. Overall local coverage is 63.00% lines / 65.98% branches. Windows passes the gate, while App still fails it, including in CI. See [the maintenance test plan](versions/current/MaintenanceTestPlan.md) for tested behaviors, the idle shutdown fix, and remaining gaps.
+After the maintenance tests and review-driven branch tests, 592 tests pass and one native App fixture remains skipped. App coverage is 45.40% lines / 54.32% branches; Windows platform coverage is 75.26% lines / 67.12% branches. Core, Persistence, and Host coverage is unchanged. Overall local coverage is 63.00% lines / 65.98% branches. Windows passes the gate, while App still fails it, including in CI. See [the maintenance test plan](versions/v0.2/evidence/MaintenanceTestPlan.md) for tested behaviors, the idle shutdown fix, and remaining gaps.
 
 Adding `FocusTimer.App.HeadlessTests` (24 tests exercising `AppController` window interactions and `TrayStateController`, previously untestable because no window could be constructed) brings merged App coverage to 77.89% lines / 66.60% branches, passing the 60% gate. A follow-up pass added 13 tests for `App.axaml.cs`'s bootstrap and 3 for `SettingsWindowViewModel`'s file-dialog cancel paths, raising App to 81.56% lines / 70.05% branches. Core, Persistence, Windows platform, and Host are unchanged. See the maintenance test plan for the classes covered and what remains untested by design (Views/XAML code-behind, generated resources, and the file-dialog branches a non-virtual `StorageProvider` getter leaves no seam to reach).
 
@@ -827,7 +827,7 @@ In Settings → About, click the version seven times to toggle Developer Options
 
 Foreground capture occurs immediately when tracking starts, then at the configured interval. Longer intervals reduce polling work but can miss short app visits; changes are attributed when observed. Timer display and day-boundary maintenance still run every second. Changing the interval preserves elapsed time and does not split the active segment.
 
-Measurements and reproduction instructions: [Activity polling performance](versions/current/ActivityPollingPerformance.md). The isolated Windows smoke driver is `tools/FocusTimer.PollingSmoke`; pass an absolute synthetic-data directory when launching it. It uses platform stubs and does not register global hotkeys or change autostart.
+Measurements and reproduction instructions: [Activity polling performance](performance/ActivityPollingPerformance.md). The isolated Windows smoke driver is `tools/FocusTimer.PollingSmoke`; pass an absolute synthetic-data directory when launching it. It uses platform stubs and does not register global hotkeys or change autostart.
 
 ## Application exclusions
 
@@ -851,7 +851,7 @@ Settings uses IsDraftVisible for visual availability and CanEdit for mutation gu
 
 Theme.playPauseColor is optional. Missing/null inherits ButtonNormal; an explicit valid color is cloned and serialized. TimerBackground remains preserved for legacy theme files but has no editor. Shared widget icon styles override normal foreground with Hover, Pressed, or Disabled colors in both modes; existing background highlights remain. Danger and Warning color notification headings/outlines; Success remains reserved for future status displays.
 
-Factory palette edits belong in ThemeService, and desktop accessibility corrections belong in ThemeManager. Source snapshots survive import/export, Apply/OK, reopening, and restart. Imports display Custom/Imported and use canonical Custom identity while retaining their original metadata; selecting a preset or Reset clears provenance. The [palette tuning guide](versions/current/ThemePaletteTuning.md) documents source roles, later personal adjustments, legacy identity, and required contrast/visual checks.
+Factory palette edits belong in ThemeService, and desktop accessibility corrections belong in ThemeManager. Source snapshots survive import/export, Apply/OK, reopening, and restart. Imports display Custom/Imported and use canonical Custom identity while retaining their original metadata; selecting a preset or Reset clears provenance. The [palette tuning guide](design/ThemePaletteTuning.md) documents source roles, later personal adjustments, legacy identity, and required contrast/visual checks.
 
 The native appearance regression runs in a separate process because Avalonia platform initialization is global. In PowerShell, set FOCUSTIMER_NATIVE_APPEARANCE_TESTS=1 for that process and run dotnet test tests/FocusTimer.App.Tests --filter AppearanceNativeTests. Normal runs skip this Windows-only fixture. Its rendered saving/applied/error/recovery screenshots are written under the test output's appearance-evidence directory.
 

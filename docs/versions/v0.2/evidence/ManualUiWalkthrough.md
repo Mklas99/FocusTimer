@@ -118,9 +118,9 @@ These checks require a controlled failure scenario. Use an isolated test setup o
 - [x] Record any failures or unavailable scenarios above.
 - [x] Record whether the walkthrough is complete or which checks remain open. Untested failure/recovery cases may remain a separate verification item.
 
-This checklist covers the UI interaction review, including the completed native theme and OI-29 checks. Automated palette and imported-selection work is implemented in [theme verification](../../../openspec/changes/archive/2026-10-08-optimize-theme-readability/verification.md). The separate F-03 data-management walkthrough, tracking-rule walkthroughs, OI-44, and widget blur OI-28 retain their own completion criteria.
+This checklist covers the UI interaction review, including the completed native theme and OI-29 checks. Automated palette and imported-selection work is implemented in [theme verification](../../../../openspec/changes/archive/2026-10-08-optimize-theme-readability/verification.md). The separate F-03 data-management walkthrough, tracking-rule walkthroughs, OI-44, and widget blur OI-28 retain their own completion criteria.
 
-Related planning: [Settings redesign](OI-21-SettingsRedesign.md), [open issues](OpenIssues.md), and [OpenSpec verification notes](../../../openspec/changes/archive/2026-10-08-adopt-dense-frost-design-system/verification.md).
+Related planning: [Settings redesign](OI-21-SettingsRedesign.md), [open issues](../../current/OpenIssues.md), and [OpenSpec verification notes](../../../../openspec/changes/archive/2026-10-08-adopt-dense-frost-design-system/verification.md).
 
 ## F-03 walkthrough completion, 2026-10-08
 

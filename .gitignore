@@ -16,6 +16,7 @@ docs/*
 !docs/CHANGELOG.md
 !docs/*.md
 !docs/design/
+!docs/performance/
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs

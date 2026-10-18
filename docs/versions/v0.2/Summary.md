@@ -3,6 +3,7 @@
 A comprehensive recap of the v0.2.0 development cycle, expanding FocusTimer from its initial baseline into a feature-rich, customizable time tracking application with dedicated worklog management, smart tracking, and a modern dense-frost design system.
 
 - Companion files: [Features.md](Features.md) (what's implemented) and [OpenIssues.md](OpenIssues.md) (known gaps and remaining backlog).
+- Planning of this cycle: [Planning.md](Planning.md). Verification and design evidence for finished items: [evidence/](evidence/).
 - Previous version snapshot: [v0.1/](../v0.1/).
 - Spec history: [openspec/changes/archive/](../../../openspec/changes/archive/).
 
