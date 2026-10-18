@@ -22,6 +22,10 @@ $beginArgs = @(
     "/k:$ProjectKey",
     "/d:sonar.host.url=$HostUrl",
     "/d:sonar.token=$Token",
+    "/d:sonar.sourceEncoding=UTF-8",
+    "/d:sonar.sources=src",
+    "/d:sonar.tests=tests",
+    "/d:sonar.coverage.exclusions=scripts/**,installer/**,tests/**,third_party/**,docs/**",
     "/d:sonar.cs.opencover.reportsPaths=**/TestResults/*.coverage.opencover.xml,**/TestResults/*.opencover.xml",
     "/d:sonar.verbose=true"
 )

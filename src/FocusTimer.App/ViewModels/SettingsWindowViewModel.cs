@@ -826,6 +826,57 @@ namespace FocusTimer.App.ViewModels
             }
         }
 
+        /// <summary>
+        /// Resolves changelog content by inspecting filesystem candidates and falling back to embedded assembly resources.
+        /// </summary>
+        /// <param name="baseDirectory">The root directory to search upwards from.</param>
+        /// <param name="resourceAssembly">The assembly containing embedded changelog fallback resources.</param>
+        /// <param name="logger">Optional logger for recording load exceptions.</param>
+        /// <returns>The stripped changelog markdown content or a fallback message.</returns>
+        internal static string ResolveChangelogContent(string? baseDirectory, Assembly? resourceAssembly, IAppLogger? logger = null)
+        {
+            try
+            {
+                if (!string.IsNullOrEmpty(baseDirectory))
+                {
+                    var current = new DirectoryInfo(baseDirectory);
+                    for (int i = 0; i < 8 && current != null; i++)
+                    {
+                        string candidateDocs = Path.Combine(current.FullName, "docs", "CHANGELOG.md");
+                        if (File.Exists(candidateDocs))
+                        {
+                            return StripChangelogTitle(File.ReadAllText(candidateDocs));
+                        }
+
+                        string candidateDirect = Path.Combine(current.FullName, "CHANGELOG.md");
+                        if (File.Exists(candidateDirect))
+                        {
+                            return StripChangelogTitle(File.ReadAllText(candidateDirect));
+                        }
+
+                        current = current.Parent;
+                    }
+                }
+
+                if (resourceAssembly != null)
+                {
+                    using Stream? stream = resourceAssembly.GetManifestResourceStream("FocusTimer.App.Resources.CHANGELOG.md")
+                        ?? resourceAssembly.GetManifestResourceStream("FocusTimer.App.CHANGELOG.md");
+                    if (stream != null)
+                    {
+                        using var reader = new StreamReader(stream);
+                        return StripChangelogTitle(reader.ReadToEnd());
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                logger?.LogError("Failed to load changelog content.", ex);
+            }
+
+            return "No changelog file found. Add docs/CHANGELOG.md to populate this section.";
+        }
+
         /// <summary>Loads a selected theme into the editable draft if the window remains active.</summary>
         /// <param name="filePath">Selected theme file.</param>
         /// <returns>A task representing the import.</returns>
@@ -1503,40 +1554,7 @@ namespace FocusTimer.App.ViewModels
 
         private string LoadChangelogContent()
         {
-            try
-            {
-                var current = new DirectoryInfo(AppContext.BaseDirectory);
-                for (int i = 0; i < 8 && current != null; i++)
-                {
-                    string candidateDocs = Path.Combine(current.FullName, "docs", "CHANGELOG.md");
-                    if (File.Exists(candidateDocs))
-                    {
-                        return StripChangelogTitle(File.ReadAllText(candidateDocs));
-                    }
-
-                    string candidateDirect = Path.Combine(current.FullName, "CHANGELOG.md");
-                    if (File.Exists(candidateDirect))
-                    {
-                        return StripChangelogTitle(File.ReadAllText(candidateDirect));
-                    }
-
-                    current = current.Parent;
-                }
-
-                using Stream? stream = typeof(SettingsWindowViewModel).Assembly.GetManifestResourceStream("FocusTimer.App.Resources.CHANGELOG.md")
-                    ?? typeof(SettingsWindowViewModel).Assembly.GetManifestResourceStream("FocusTimer.App.CHANGELOG.md");
-                if (stream != null)
-                {
-                    using var reader = new StreamReader(stream);
-                    return StripChangelogTitle(reader.ReadToEnd());
-                }
-            }
-            catch (Exception ex)
-            {
-                this._logger.LogError("Failed to load changelog content.", ex);
-            }
-
-            return "No changelog file found. Add docs/CHANGELOG.md to populate this section.";
+            return ResolveChangelogContent(AppContext.BaseDirectory, typeof(SettingsWindowViewModel).Assembly, this._logger);
         }
 
         private void RaiseOpacityDiagnostics()
