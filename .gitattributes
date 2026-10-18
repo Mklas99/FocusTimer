@@ -49,6 +49,7 @@ third_party/avalonia-widget-backdrop/LICENSE.md text eol=crlf
 *.dll binary
 *.pdb binary
 *.wixpdb binary
+*.nupkg binary
 
 # Catch-all: auto-detect text files
 * text=auto

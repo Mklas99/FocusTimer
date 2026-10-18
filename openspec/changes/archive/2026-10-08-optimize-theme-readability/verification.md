@@ -139,7 +139,7 @@ The selection/solver regressions failed before their fixes. Actual template test
 - `openspec validate --specs`: 21 specifications passed. Both `optimize-theme-readability` and `adopt-dense-frost-design-system` passed strict validation. Existing long-requirement informational notices and Node JSON-module warnings remain.
 - `git diff --check`: passed.
 
-TRX results, build logs, derived contrast rows, source snapshots, and capture manifests are under `artifacts/theme-readability/`. [The contrast audit](../../../../design/SETTINGS_THEME_COLOR_CONTRAST_CHECK.md) records current measured minima; [palette tuning](../../../../docs/versions/current/ThemePaletteTuning.md) records each preset's source decisions and how to personalize a saved snapshot.
+TRX results, build logs, derived contrast rows, source snapshots, and capture manifests are under `artifacts/theme-readability/`. [The contrast audit](../../../../docs/design/SETTINGS_THEME_COLOR_CONTRAST_CHECK.md) records current measured minima; [palette tuning](../../../../docs/versions/current/ThemePaletteTuning.md) records each preset's source decisions and how to personalize a saved snapshot.
 
 ## Windows palette evidence and limits
 

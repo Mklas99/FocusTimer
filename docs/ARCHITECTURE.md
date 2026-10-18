@@ -494,8 +494,8 @@ bounds and DPI changes. It removes the acrylic hint before releasing an obsolete
 resources remain in Avalonia; no independent native target or App polling loop is introduced. ThemeManager paints
 one opaque shell until a completed update permits Frosted, and reports fallback separately from stored preferences.
 App pins the reproducible Windows fork; `FocusTimerUseStockBackend=true` builds the explicit unavailable-extension
-fallback. Linux remains unsupported for widget frost. See the active
-[frost change](../openspec/changes/implement-widget-frosted-blur/verification.md) for qualification evidence and limits.
+fallback. Linux remains unsupported for widget frost. See the
+[archived frost change](../openspec/changes/archive/2026-10-17-implement-widget-frosted-blur/verification.md) for qualification evidence and limits.
 
 ## Foreground capture cadence and ownership
 

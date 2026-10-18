@@ -59,15 +59,15 @@ The resulting `establish-worklog-data-foundation` OpenSpec change is implemented
 
 The current implementation has several hidden blockers:
 
-- `TimeEntry` has no identity, provenance, timezone offset, or concurrency metadata: [TimeEntry.cs](C:/Users/mklas/Documents/_Development/Repos/FocusTimer/src/FocusTimer.Core/Models/TimeEntry.cs:6).
-- `ISessionRepository` really stores entries, not sessions, and only supports append plus one-day reads: [ISessionRepository.cs](C:/Users/mklas/Documents/_Development/Repos/FocusTimer/src/FocusTimer.Core/Interfaces/ISessionRepository.cs:11).
-- CSV parsing is positional and assumes exactly the current schema. Appending extended rows to an existing legacy file would leave an old header describing new-width rows: [CsvSessionRepository.cs](C:/Users/mklas/Documents/_Development/Repos/FocusTimer/src/FocusTimer.Persistence/CsvSessionRepository.cs:19).
+- `TimeEntry` has no identity, provenance, timezone offset, or concurrency metadata: [TimeEntry.cs](../../../src/FocusTimer.Core/Models/TimeEntry.cs).
+- `ISessionRepository` really stores entries, not sessions, and only supports append plus one-day reads (superseded by `ITimeEntryRepository` and `IWorklogStore`).
+- CSV parsing is positional and assumes exactly the current schema. Appending extended rows to an existing legacy file would leave an old header describing new-width rows: [CsvSessionRepository.cs](../../../src/FocusTimer.Persistence/CsvSessionRepository.cs).
 - The regex parser cannot safely handle quoted fields containing line breaks, even though the writer allows them.
 - Read failures and malformed rows can become an empty result, which a report could incorrectly present as “zero time.”
-- Entries are assigned to a day solely by `StartTime`. An entry crossing midnight is counted entirely on the starting day: [TodayStatsService.cs](C:/Users/mklas/Documents/_Development/Repos/FocusTimer/src/FocusTimer.Core/Services/TodayStatsService.cs:35).
+- Entries are assigned to a day solely by `StartTime`. An entry crossing midnight is counted entirely on the starting day: [TodayStatsService.cs](../../../src/FocusTimer.Core/Services/TodayStatsService.cs).
 - `DateTime` plus separate time-only CSV fields loses timezone and daylight-saving context.
 - `Session` exists but is unused; adding another session abstraction around it would create competing models.
-- The architecture document claims thread-safe CSV writes and shows a filename that differs from the implemented/specification path. These should be corrected when the change is implemented: [ARCHITECTURE.md](C:/Users/mklas/Documents/_Development/Repos/FocusTimer/docs/ARCHITECTURE.md:164), [activity-tracking spec](C:/Users/mklas/Documents/_Development/Repos/FocusTimer/openspec/specs/activity-tracking/spec.md:23).
+- The architecture document claims thread-safe CSV writes and shows a filename that differs from the implemented/specification path. These should be corrected when the change is implemented: [ARCHITECTURE.md](../../ARCHITECTURE.md), [activity-tracking spec](../../../openspec/specs/activity-tracking/spec.md).
 
 ## Recommended architecture
 
