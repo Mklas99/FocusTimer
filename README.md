@@ -68,15 +68,22 @@ See [ARCHITECTURE.md](docs/ARCHITECTURE.md) for detailed architecture, design pa
 
 ## Features
 
-- **Compact Timer Widget**: Minimal, distraction-free UI for time tracking
-- **System Tray Integration**: Hide/show and control timer from the tray menu, and open the Worklog window (entries and summary for a chosen day) or Settings
-- **Global Hotkeys**: Configurable keyboard shortcuts (Windows)
-- **Automatic Time Entry Logging**: Versioned daily CSV worklogs with durable entry/session identities
-- **JSON Settings**: Persist user preferences (theme, hotkeys, start minimized, etc.)
-- **Idle Detection**: Detect OS idle state and optionally auto-pause
-- **Responsive Design**: Avalonia reactive MVVM bindings
-- **Clean Dependency Injection**: All services registered and wired in Host
-- **Event-Driven Architecture**: Decoupled messaging via EventBus
+- **Timer Widget**: Minimal, distraction-free UI with Full and Compact modes, configurable button placement (beside or below the clock), independent shell tint opacity, and qualified Windows frosted blur.
+- **Worklog Management Window**: Dedicated tray-accessible window with three views:
+  - **Entries**: Inspect raw daily activity records to the minute, search with highlighting, add manual entries, edit window titles/projects/durations, and delete entries with collision protection.
+  - **Timeline**: Zoomable visual timeline (Ctrl + mouse wheel) with column grouping by application, project, or window.
+  - **Summary**: Daily aggregate time breakdowns grouped by application, project, or window for any day in the retention window.
+- **Smart Automatic Activity Tracking**:
+  - **Rule-Based Projects**: Map window patterns to projects dynamically at read time without modifying stored logs.
+  - **Application Exclusions**: Exclude chosen applications from being recorded in logs.
+  - **Segmentation Rules**: Suppress noisy title-change segment splits for applications like browsers.
+  - **Configurable Polling**: Adjustable foreground-window sampling (1–60s) with process handle caching.
+- **Dense Frost Design System**: Modernized Settings and Worklog windows with Segoe UI typography, soft-rounded controls, peer cards, and unified desktop action buttons.
+- **Theming & Contrast Harmony**: 7 built-in themes verified for contrast compliance, custom `.fttheme` import/export, and preserved imported custom theme snapshots.
+- **Notification Preferences**: Configurable visibility by severity, custom auto-dismissal timeouts (1–120s), and persistent break acknowledgement reminders.
+- **Developer Mode**: Unlocked via 7 clicks on the About version label, exposing advanced tracking and polling options.
+- **System Tray & Hotkeys**: State-aware tray icon with tooltip summaries, quick menu actions, and configurable system-wide keyboard shortcuts.
+- **Robust Persistence & Architecture**: Versioned daily RFC 4180 CSV logs with atomic file replacements, JSON settings, clean DI, and decoupled EventBus messaging.
 
 ---
 

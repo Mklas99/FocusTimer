@@ -16,4 +16,12 @@ M03 delivers the current widget and Settings improvements; remaining work stays 
 3. Corrected rendered theme contrast, tuned built-in palettes, and preserved imported and personally edited theme snapshots.
 4. Recorded the user-confirmed native walkthroughs, synced all 12 delta specs, and archived all three changes.
 
-Worklog and UI/theme changes are complete; broader reporting ranges, widget blur, and separately tracked follow-ups remain in [OpenIssues.md](OpenIssues.md).
+## Minor customizations, widget blur, and version baseline completion, 2026-10-18
+
+1. Added widget control placement choices (beside or below the clock in Full and Compact modes).
+2. Added notification preferences (severity-based visibility and 1–120s dismissal duration) and refined notification chrome.
+3. Added the 7-click Developer mode activation interaction on the About version label.
+4. Qualified native Windows frosted blur using the pinned Avalonia backdrop extension with graceful solid fallback.
+5. Consolidated repository layout, single-source versioning in `VERSION`, tracked package feeds, and normalized file line endings.
+6. Closed out the v0.2.0 baseline and archived the release documentation snapshot.
+

@@ -1,12 +1,11 @@
 # FocusTimer - Next-Version Features
 
-> This document groups larger outcomes for the next version. Candidate scope and priority may change before implementation.
+> This document groups larger outcomes for the next version (v0.3.0). Candidate scope and priority may change before implementation.
 
-`OpenIssues.md` is the detailed backlog and source of truth. This document groups related issues into outcomes instead of repeating their implementation details.
+`OpenIssues.md` is the detailed backlog and source of truth. Features completed in prior versions are snapshotted in [v0.1/](../v0.1/Features.md) and [v0.2/](../v0.2/Features.md).
 
-The palette and imported-theme work has a separate [theme optimization plan](../../../openspec/changes/archive/2026-10-08-optimize-theme-readability/proposal.md), including color harmony within each built-in theme and preservation of later personal taste adjustments. Its tasks preserve the delivered dense-frost layout and Settings commit model; implementation and automated verification are delivered; theme-focused native interaction and desktop-content widget review were confirmed complete by the user on 2026-10-08 ([evidence](../../../openspec/changes/archive/2026-10-08-optimize-theme-readability/verification.md)).
+## Delivered in v0.2.0 baseline
 
-## Active implementation and completed features
 
 | ID | Feature | Outcome | Related issues | Status | Branch / change |
 |---|---|---|---|---|---|

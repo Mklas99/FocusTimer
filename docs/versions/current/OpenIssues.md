@@ -1,8 +1,7 @@
 # FocusTimer - Next-Version Open Issues
 
-> This is the working backlog for the next version. Items are derived from `Planning.md` and have not yet been committed to a release scope.
+> This is the working backlog for the next version (v0.3.0). Items are derived from `Planning.md` and feature follow-ups. Archived baselines are snapshotted in [v0.1/](../v0.1/OpenIssues.md) and [v0.2/](../v0.2/OpenIssues.md).
 
-The remaining OI-24 palette work and OI-29 imported-theme selection have an [implementation plan](../../../openspec/changes/archive/2026-10-08-optimize-theme-readability/proposal.md), with [design decisions](../../../openspec/changes/archive/2026-10-08-optimize-theme-readability/design.md) and [tasks](../../../openspec/changes/archive/2026-10-08-optimize-theme-readability/tasks.md). It includes harmonizing each built-in palette and preserving later personal taste adjustments. Both issues are now completed; the archived plan and verification record their delivery.
 
 | ID | Area | Open issue | Status | Notes |
 |---|---|---|---|---|
