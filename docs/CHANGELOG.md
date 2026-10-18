@@ -4,30 +4,32 @@
 
 Worklog window, smarter tracking, a redesigned look, and more widget options.
 
-### Worklog
+#### Worklog
 - Tray-opened Worklog window with Entries, Timeline, and Summary tabs, driven by one day selector.
 - Entries: search, full details per entry, manual entries (`2h 30m` or `2.5h`), edit and delete.
 - Timeline: zoom, and grouping by application, project, or window.
 - Summary: time per application, project, or window with shares, for any day in the retention window.
 
-### Tracking
+#### Tracking
 - Project rules assign activity to projects when it is read, without rewriting stored logs.
 - Exclusion rules keep chosen applications out of the worklog; segmentation rules stop title changes from splitting entries.
 - Developer Options set the polling interval (1–60 s).
 
-### Look and widget
+#### Look and widget
 - Redesigned Settings and Worklog windows, consistent action buttons, readable contrast in all 7 themes, and imported themes that survive restarts.
 - Settings: Apply and OK commit the whole draft, Cancel restores the last saved state, appearance previews live, and a failed save shows its error.
 - Widget buttons beside or below the clock, a separate tint slider, native frosted blur on Windows with a solid fallback. The Minimize button is gone; use Show/Hide in the tray.
 - Notifications: choose which severities appear and for how long (1–120 s).
 - Developer mode toggles with seven clicks on the About version label.
 
-### Under the hood
+#### Under the hood
 - One `VERSION` file; self-contained MSI, setup EXE that checks for .NET 8, and portable EXE; the setup shows one progress window and installs the changelog.
 - Tests no longer write to the real AppData folder; SonarQube coverage runs in CI.
 
-### Upgrade Notes
+#### Upgrade Notes
 - Worklogs now use a versioned CSV format. Files written by v0.1 are not read or converted, and no new entries are saved to a day whose file still has the old format. Move or delete the old `worklogs` folder (default `Documents\FocusTimer\worklogs`) before the first start.
+
+---
 
 ## v0.1.0 — 2026-09-16
 
